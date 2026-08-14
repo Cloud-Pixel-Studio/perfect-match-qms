@@ -52,6 +52,13 @@
         <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
     </record>
 
+    <record id="rule_pm_qms_control_instance_company" model="ir.rule">
+        <field name="name">Perfect Match QMS control instance company boundary</field>
+        <field name="model_id" ref="model_pm_qms_control_instance"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
     <record id="rule_pm_qms_activity_company" model="ir.rule">
         <field name="name">Perfect Match QMS activity company boundary</field>
         <field name="model_id" ref="model_pm_qms_activity"/>

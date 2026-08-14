@@ -9,6 +9,7 @@ This scaffold introduces the reusable core entities needed before standard packs
 - QMS organizations.
 - QMS processes.
 - Perfect Match proprietary controls.
+- Client control instances.
 - Implementation activities.
 - Evidence requirements.
 - External mappings stored separately from proprietary controls.
@@ -19,11 +20,15 @@ External mappings store only framework names, editions, reference identifiers, a
 
 The central object is `pm.qms.control`. It is a proprietary Perfect Match implementation object, not an ISO clause or an external standard requirement.
 
+`pm.qms.control.instance` is separate. It represents how a specific organization
+is implementing a reusable Perfect Match Control.
+
 ## Models
 
 - `pm.qms.organization`: optional company-bound container for processes.
 - `pm.qms.process`: QMS process definitions with owners, hierarchy, inputs, and outputs.
 - `pm.qms.control`: proprietary Perfect Match Controls with sequence/manual identifiers.
+- `pm.qms.control.instance`: organization-specific implementation status, owner, dates, and notes.
 - `pm.qms.activity`: reusable implementation activities tied to controls.
 - `pm.qms.evidence.requirement`: expected evidence definitions tied to controls.
 - `pm.qms.external.mapping`: reference-only external standard mappings tied to controls.

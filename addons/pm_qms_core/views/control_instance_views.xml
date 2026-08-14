@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_control_instance_list" model="ir.ui.view">
+        <field name="name">pm.qms.control.instance.list</field>
+        <field name="model">pm.qms.control.instance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="control_id"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <field name="implementation_status"/>
+                <field name="applicability"/>
+                <field name="target_date"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_control_instance_form" model="ir.ui.view">
+        <field name="name">pm.qms.control.instance.form</field>
+        <field name="model">pm.qms.control.instance</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_in_progress" type="object" string="Start" invisible="implementation_status != 'not_started'"/>
+                    <button name="action_request_evidence" type="object" string="Require Evidence" invisible="implementation_status not in ('not_started', 'in_progress')"/>
+                    <button name="action_submit_for_review" type="object" string="Submit for Review" invisible="implementation_status not in ('in_progress', 'evidence_required')"/>
+                    <button name="action_mark_implemented" type="object" string="Mark Implemented" invisible="implementation_status != 'under_review'"/>
+                    <button name="action_mark_not_applicable" type="object" string="Not Applicable" invisible="implementation_status == 'implemented'"/>
+                    <field name="implementation_status" widget="statusbar" statusbar_visible="not_started,in_progress,evidence_required,under_review,implemented"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="control_id"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                        </group>
+                        <group string="Implementation">
+                            <field name="owner_id"/>
+                            <field name="applicability"/>
+                            <field name="target_date"/>
+                            <field name="implementation_date"/>
+                            <field name="review_date"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Justification">
+                            <field name="justification"/>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_control_instance" model="ir.actions.act_window">
+        <field name="name">Control Instances</field>
+        <field name="res_model">pm.qms.control.instance</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

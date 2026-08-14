@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_control_instance_form_documents" model="ir.ui.view">
+        <field name="name">pm.qms.control.instance.form.documents</field>
+        <field name="model">pm.qms.control.instance</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_control_instance_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Documents">
+                    <group>
+                        <field name="document_count"/>
+                    </group>
+                    <field name="document_ids">
+                        <list>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="document_type"/>
+                            <field name="current_revision"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

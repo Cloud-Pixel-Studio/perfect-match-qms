@@ -26,6 +26,9 @@ Perfect Match proprietary controls are stored separately from external standard 
 Mission 02 establishes the isolated Odoo DEV environment and the first installable
 `pm_qms_core` addon.
 
+Mission 03 adds the client implementation layer, controlled documents, document
+revisions, and actual evidence records.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -34,6 +37,8 @@ Core paths:
 - `docs/TESTING.md`
 - `docs/ARCHITECTURE.md`
 - `addons/pm_qms_core/`
+- `addons/pm_qms_documents/`
+- `addons/pm_qms_evidence/`
 
 ## DEV Quick Start
 
@@ -44,6 +49,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh up
 ./deployment/scripts/odoo-dev.sh install-core
 ./deployment/scripts/odoo-dev.sh test-core
+./deployment/scripts/odoo-dev.sh install-mission03
+./deployment/scripts/odoo-dev.sh test-mission03
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -56,3 +63,12 @@ docker compose -f deployment/docker/dev/compose.yml down
 
 The DEV stack uses `pmqms_dev_network`, `pmqms_dev_postgres`, and
 `pmqms_dev_odoo_data`. It is intentionally separate from Plane.
+
+## Framework vs Client Implementation
+
+`pm.qms.control` defines reusable Perfect Match methodology. It remains a
+framework definition.
+
+`pm.qms.control.instance` represents how a specific organization implements a
+framework control. Documents and evidence attach to the client implementation,
+not to copied external standard text.

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_document_form_evidence" model="ir.ui.view">
+        <field name="name">pm.qms.document.form.evidence</field>
+        <field name="model">pm.qms.document</field>
+        <field name="inherit_id" ref="pm_qms_documents.view_pm_qms_document_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Evidence">
+                    <field name="evidence_ids">
+                        <list>
+                            <field name="name"/>
+                            <field name="control_instance_id"/>
+                            <field name="evidence_requirement_id"/>
+                            <field name="state"/>
+                            <field name="reviewer_id"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

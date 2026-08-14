@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_documents"
+        name="Documents"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_controlled_documents"
+        name="Controlled Documents"
+        parent="menu_pm_qms_documents"
+        action="action_pm_qms_document"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_document_revisions"
+        name="Revisions"
+        parent="menu_pm_qms_documents"
+        action="action_pm_qms_document_revision"
+        sequence="20"/>
+</odoo>

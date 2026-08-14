@@ -66,6 +66,11 @@ class PmQmsControl(models.Model):
         "control_id",
         string="External Mappings",
     )
+    control_instance_ids = fields.One2many(
+        "pm.qms.control.instance",
+        "control_id",
+        string="Client Implementations",
+    )
     external_mapping_count = fields.Integer(compute="_compute_external_mapping_count")
 
     _code_company_uniq = models.Constraint(

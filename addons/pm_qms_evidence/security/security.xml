@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_evidence_company" model="ir.rule">
+        <field name="name">Perfect Match QMS evidence company boundary</field>
+        <field name="model_id" ref="model_pm_qms_evidence"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>

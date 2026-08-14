@@ -8,6 +8,9 @@ access_pm_qms_process_admin,pm.qms.process admin,model_pm_qms_process,pm_qms_cor
 access_pm_qms_control_user,pm.qms.control user,model_pm_qms_control,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_control_manager,pm.qms.control manager,model_pm_qms_control,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_control_admin,pm.qms.control admin,model_pm_qms_control,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_control_instance_user,pm.qms.control.instance user,model_pm_qms_control_instance,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_control_instance_manager,pm.qms.control.instance manager,model_pm_qms_control_instance,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_control_instance_admin,pm.qms.control.instance admin,model_pm_qms_control_instance,pm_qms_core.group_pm_qms_administrator,1,1,1,1
 access_pm_qms_activity_user,pm.qms.activity user,model_pm_qms_activity,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_activity_manager,pm.qms.activity manager,model_pm_qms_activity,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_activity_admin,pm.qms.activity admin,model_pm_qms_activity,pm_qms_core.group_pm_qms_administrator,1,1,1,1

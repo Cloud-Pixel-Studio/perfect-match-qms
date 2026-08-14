@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_document_revision_list" model="ir.ui.view">
+        <field name="name">pm.qms.document.revision.list</field>
+        <field name="model">pm.qms.document.revision</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="document_id"/>
+                <field name="revision"/>
+                <field name="revision_date"/>
+                <field name="effective_date"/>
+                <field name="state"/>
+                <field name="prepared_by"/>
+                <field name="reviewed_by"/>
+                <field name="approved_by"/>
+                <field name="approval_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_document_revision_form" model="ir.ui.view">
+        <field name="name">pm.qms.document.revision.form</field>
+        <field name="model">pm.qms.document.revision</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit_for_review" type="object" string="Submit for Review" invisible="state not in ('draft', 'rejected')"/>
+                    <button name="action_approve" type="object" string="Approve" invisible="state != 'under_review'"/>
+                    <button name="action_reject" type="object" string="Reject" invisible="state != 'under_review'"/>
+                    <button name="action_activate" type="object" string="Activate" invisible="state != 'approved'"/>
+                    <button name="action_supersede" type="object" string="Supersede" invisible="state != 'active'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,under_review,approved,active,superseded"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="document_id"/>
+                            <field name="revision"/>
+                            <field name="revision_date"/>
+                            <field name="effective_date"/>
+                            <field name="review_date"/>
+                        </group>
+                        <group>
+                            <field name="prepared_by"/>
+                            <field name="reviewed_by"/>
+                            <field name="approved_by"/>
+                            <field name="approval_date"/>
+                            <field name="attachment_id"/>
+                        </group>
+                    </group>
+                    <field name="change_summary"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_document_revision" model="ir.actions.act_window">
+        <field name="name">Revisions</field>
+        <field name="res_model">pm.qms.document.revision</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

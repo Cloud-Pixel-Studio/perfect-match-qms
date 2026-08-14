@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_evidence_list" model="ir.ui.view">
+        <field name="name">pm.qms.evidence.list</field>
+        <field name="model">pm.qms.evidence</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="control_instance_id"/>
+                <field name="evidence_requirement_id"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="evidence_type"/>
+                <field name="owner_id"/>
+                <field name="evidence_date"/>
+                <field name="review_date"/>
+                <field name="state"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_evidence_form" model="ir.ui.view">
+        <field name="name">pm.qms.evidence.form</field>
+        <field name="model">pm.qms.evidence</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="Submit Evidence" invisible="state != 'draft'"/>
+                    <button name="action_review" type="object" string="Review" invisible="state != 'submitted'"/>
+                    <button name="action_accept" type="object" string="Accept" invisible="state not in ('submitted', 'under_review')"/>
+                    <button name="action_reject" type="object" string="Reject" invisible="state not in ('submitted', 'under_review')"/>
+                    <button name="action_expire" type="object" string="Expire" invisible="state != 'accepted'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,under_review,accepted,rejected,expired"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Implementation">
+                            <field name="control_instance_id"/>
+                            <field name="evidence_requirement_id"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Evidence">
+                            <field name="evidence_type"/>
+                            <field name="owner_id"/>
+                            <field name="evidence_date"/>
+                            <field name="expiration_date"/>
+                            <field name="review_date"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
+                        <page string="Documents">
+                            <field name="document_ids"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids"/>
+                        </page>
+                        <page string="Review">
+                            <group>
+                                <field name="reviewer_id"/>
+                                <field name="reviewed_on"/>
+                            </group>
+                            <field name="review_notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_evidence" model="ir.actions.act_window">
+        <field name="name">Evidence Records</field>
+        <field name="res_model">pm.qms.evidence</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

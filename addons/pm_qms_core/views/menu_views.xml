@@ -7,6 +7,19 @@
         groups="pm_qms_core.group_pm_qms_user"/>
 
     <menuitem
+        id="menu_pm_qms_implementation"
+        name="Implementation"
+        parent="menu_pm_qms_root"
+        sequence="5"/>
+
+    <menuitem
+        id="menu_pm_qms_control_instances"
+        name="Control Instances"
+        parent="menu_pm_qms_implementation"
+        action="action_pm_qms_control_instance"
+        sequence="10"/>
+
+    <menuitem
         id="menu_pm_qms_framework"
         name="Framework"
         parent="menu_pm_qms_root"

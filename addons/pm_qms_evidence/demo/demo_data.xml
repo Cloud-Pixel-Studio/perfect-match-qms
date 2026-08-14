@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_organization" model="pm.qms.organization">
+        <field name="name">Perfect Match Demo Organization</field>
+        <field name="code">PM-DEMO-ORG</field>
+    </record>
+
+    <record id="demo_process_document_management" model="pm.qms.process">
+        <field name="name">Document Management</field>
+        <field name="code">PM-DEMO-DOC-MGMT</field>
+        <field name="organization_id" ref="demo_organization"/>
+    </record>
+
+    <record id="demo_control_document_authorization" model="pm.qms.control">
+        <field name="name">Controlled Document Authorization</field>
+        <field name="code">PM-QMS-DOC-001</field>
+        <field name="objective">Establish a consistent internal mechanism for reviewing and authorizing managed documents before operational release.</field>
+        <field name="process_id" ref="demo_process_document_management"/>
+    </record>
+
+    <record id="demo_activity_document_authorization" model="pm.qms.activity">
+        <field name="name">Define document review and authorization responsibilities.</field>
+        <field name="control_id" ref="demo_control_document_authorization"/>
+    </record>
+
+    <record id="demo_evidence_requirement_document_authorization" model="pm.qms.evidence.requirement">
+        <field name="name">Approved controlled document showing current revision.</field>
+        <field name="control_id" ref="demo_control_document_authorization"/>
+        <field name="evidence_type">document</field>
+        <field name="mandatory">True</field>
+    </record>
+
+    <record id="demo_control_instance_document_authorization" model="pm.qms.control.instance">
+        <field name="name">Demo document authorization implementation</field>
+        <field name="code">DEMO-PM-QMS-DOC-001</field>
+        <field name="control_id" ref="demo_control_document_authorization"/>
+        <field name="organization_id" ref="demo_organization"/>
+        <field name="process_id" ref="demo_process_document_management"/>
+        <field name="implementation_status">evidence_required</field>
+    </record>
+
+    <record id="demo_document_quality_procedure" model="pm.qms.document">
+        <field name="name">Quality Procedure</field>
+        <field name="code">PM-DEMO-PROC-001</field>
+        <field name="organization_id" ref="demo_organization"/>
+        <field name="process_id" ref="demo_process_document_management"/>
+        <field name="document_type">procedure</field>
+        <field name="related_control_ids" eval="[Command.link(ref('demo_control_document_authorization'))]"/>
+        <field name="related_control_instance_ids" eval="[Command.link(ref('demo_control_instance_document_authorization'))]"/>
+    </record>
+
+    <record id="demo_evidence_quality_procedure" model="pm.qms.evidence">
+        <field name="name">Approved revision record.</field>
+        <field name="control_instance_id" ref="demo_control_instance_document_authorization"/>
+        <field name="evidence_requirement_id" ref="demo_evidence_requirement_document_authorization"/>
+        <field name="evidence_type">document</field>
+        <field name="document_ids" eval="[Command.link(ref('demo_document_quality_procedure'))]"/>
+    </record>
+</odoo>

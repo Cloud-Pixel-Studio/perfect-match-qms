@@ -8,6 +8,8 @@ SECRETS_DIR="${PMQMS_ODOO_DEV_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-dev}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
+MISSION03_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence"
+MISSION03_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -89,7 +91,35 @@ Commands:
   install-core   Install pm_qms_core in pmqms_dev.
   update-core    Upgrade pm_qms_core in pmqms_dev.
   test-core      Run pm_qms_core Odoo tests in pmqms_test.
+  install-mission03
+                Install core, documents, and evidence addons in pmqms_dev.
+  update-mission03
+                Upgrade core, documents, and evidence addons in pmqms_dev.
+  test-mission03
+                Run Mission 03 addon tests in pmqms_test.
 EOF
+}
+
+run_odoo_tests() {
+  local modules="$1"
+  local tags="$2"
+  local label="$3"
+  prepare_runtime_permissions
+  compose up -d postgres-dev
+  compose exec -T postgres-dev dropdb -U odoo --if-exists pmqms_test
+  local test_log
+  test_log="$(mktemp)"
+  set +e
+  compose run --rm odoo-dev odoo -d pmqms_test --init "$modules" --test-enable --test-tags "$tags" --stop-after-init --without-demo=all --log-level=test 2>&1 | tee "$test_log"
+  local odoo_rc="${PIPESTATUS[0]}"
+  set -e
+  if grep -Eq "odoo\\.tests\\.result: .*([1-9][0-9]* failed|[1-9][0-9]* error\\(s\\))" "$test_log"; then
+    rm -f "$test_log"
+    echo "$label tests reported failures." >&2
+    exit 1
+  fi
+  rm -f "$test_log"
+  exit "$odoo_rc"
 }
 
 command="${1:-}"
@@ -149,21 +179,18 @@ case "$command" in
     compose run --rm odoo-dev odoo -d pmqms_dev --update pm_qms_core --stop-after-init
     ;;
   test-core)
+    run_odoo_tests "pm_qms_core" "/pm_qms_core" "pm_qms_core"
+    ;;
+  install-mission03)
     prepare_runtime_permissions
-    compose up -d postgres-dev
-    compose exec -T postgres-dev dropdb -U odoo --if-exists pmqms_test
-    test_log="$(mktemp)"
-    set +e
-    compose run --rm odoo-dev odoo -d pmqms_test --init pm_qms_core --test-enable --test-tags /pm_qms_core --stop-after-init --without-demo=all --log-level=test 2>&1 | tee "$test_log"
-    odoo_rc="${PIPESTATUS[0]}"
-    set -e
-    if grep -Eq "odoo\\.tests\\.result: .*([1-9][0-9]* failed|[1-9][0-9]* error\\(s\\))" "$test_log"; then
-      rm -f "$test_log"
-      echo "pm_qms_core tests reported failures." >&2
-      exit 1
-    fi
-    rm -f "$test_log"
-    exit "$odoo_rc"
+    compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION03_ADDONS" --without-demo=all --stop-after-init
+    ;;
+  update-mission03)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION03_ADDONS" --stop-after-init
+    ;;
+  test-mission03)
+    run_odoo_tests "$MISSION03_ADDONS" "$MISSION03_TEST_TAGS" "Mission 03"
     ;;
   ""|help|-h|--help)
     usage

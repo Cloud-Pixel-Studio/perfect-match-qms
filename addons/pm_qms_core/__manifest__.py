@@ -5,8 +5,10 @@
 Perfect Match QMS Core defines the foundational proprietary QMS objects for
 Perfect Match Digital QMS: organizations, processes, controls, implementation
 activities, evidence requirements, and reference-only external mappings.
+It also defines client control instances that keep implementation status
+separate from reusable framework controls.
     """,
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
@@ -18,6 +20,7 @@ activities, evidence requirements, and reference-only external mappings.
         "data/sequence_data.xml",
         "views/process_views.xml",
         "views/control_views.xml",
+        "views/control_instance_views.xml",
         "views/activity_views.xml",
         "views/evidence_views.xml",
         "views/external_mapping_views.xml",

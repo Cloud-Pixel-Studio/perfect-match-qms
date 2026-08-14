@@ -10,3 +10,6 @@
 The AI copilot must use controlled application functions and must not have unrestricted SQL or filesystem access.
 
 The standard development platform must not store CUI.
+
+See `docs/SECURITY_ARCHITECTURE.md` for the QMS role model, company isolation,
+document/evidence access rules, and future portal principles.

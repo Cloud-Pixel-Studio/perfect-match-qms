@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_evidence"
+        name="Evidence"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="40"/>
+
+    <menuitem
+        id="menu_pm_qms_evidence_records"
+        name="Evidence Records"
+        parent="menu_pm_qms_evidence"
+        action="action_pm_qms_evidence"
+        sequence="10"/>
+</odoo>

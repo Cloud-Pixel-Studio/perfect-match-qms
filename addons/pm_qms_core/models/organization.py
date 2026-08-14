@@ -17,6 +17,11 @@ class PmQmsOrganization(models.Model):
         index=True,
     )
     process_ids = fields.One2many("pm.qms.process", "organization_id", string="Processes")
+    control_instance_ids = fields.One2many(
+        "pm.qms.control.instance",
+        "organization_id",
+        string="Control Instances",
+    )
     active = fields.Boolean(default=True)
 
     _code_company_uniq = models.Constraint(

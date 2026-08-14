@@ -85,3 +85,45 @@ The DEV stack uses:
 
 It is isolated from Plane and must not reuse Plane PostgreSQL, Docker networks,
 volumes, or secrets.
+
+## Mission 03 Operational Layer
+
+```text
+PERFECT MATCH FRAMEWORK
+
+pm.qms.control
+        |
+        v
+
+CLIENT IMPLEMENTATION
+
+pm.qms.control.instance
+        |
+        |-- pm.qms.document
+        |       `-- pm.qms.document.revision
+        |
+        `-- pm.qms.evidence
+```
+
+`pm.qms.control` defines what Perfect Match expects. It is reusable
+methodology.
+
+`pm.qms.control.instance` defines how a specific organization is implementing
+that control. Implementation status, applicability, owner, target dates,
+document links, and evidence completion belong to the instance.
+
+The framework control lifecycle remains separate from client implementation
+readiness. The system uses implementation language such as "Implementation
+Status" and "Evidence Completion"; it does not claim certification readiness.
+
+## Documents And Evidence
+
+- `pm.qms.document` is the stable identity of a controlled document.
+- `pm.qms.document.revision` is revision history and approval state.
+- `pm.qms.evidence.requirement` defines expected evidence in reusable
+  methodology.
+- `pm.qms.evidence` is an actual client evidence record tied to a control
+  instance.
+
+Files are linked through Odoo `ir.attachment`. The QMS models reference
+attachments instead of duplicating binary content in custom tables.

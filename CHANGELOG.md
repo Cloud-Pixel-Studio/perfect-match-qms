@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 - 2026-08-14
+
+- Added `pm.qms.control.instance` to separate reusable Perfect Match framework controls from client implementation status.
+- Added `pm_qms_documents` with controlled documents, document revisions, approval workflow, and attachment linkage.
+- Added `pm_qms_evidence` with actual evidence records, evidence review workflow, and evidence completion counts.
+- Added multi-company tests for control instances, documents, revisions, and evidence.
+- Added security architecture documentation and ADRs for security, implementation separation, and document revisions.
+- Added Mission 03 DEV script targets for install, update, and tests.
+
 ## 0.1.0 - 2026-08-14
 
 - Added isolated Odoo 19 DEV Docker Compose stack with PostgreSQL 15 under `deployment/docker/dev/`.

@@ -22,6 +22,11 @@ class PmQmsProcess(models.Model):
     parent_id = fields.Many2one("pm.qms.process", string="Parent Process", index=True)
     child_ids = fields.One2many("pm.qms.process", "parent_id", string="Child Processes")
     control_ids = fields.One2many("pm.qms.control", "process_id", string="Controls")
+    control_instance_ids = fields.One2many(
+        "pm.qms.control.instance",
+        "process_id",
+        string="Control Instances",
+    )
     department = fields.Char()
     process_type = fields.Selection(
         [
