@@ -3,7 +3,8 @@
 
 The repository remains the source of truth. This importer reads the Markdown
 files under plane/ and writes to Plane through the official REST API.
-Secrets are read from PLANE_API_TOKEN or /opt/perfect-match/secrets/plane-api.env.
+Secrets are read from PLANE_API_KEY, PLANE_API_TOKEN, or
+/opt/perfect-match/secrets/plane-api.env.
 """
 
 from __future__ import annotations
@@ -100,14 +101,15 @@ class WorkItemSpec:
 
 
 def token() -> str:
-    value = os.getenv("PLANE_API_TOKEN")
-    if value:
-        return value.strip()
+    for env_name in ("PLANE_API_KEY", "PLANE_API_TOKEN"):
+        value = os.getenv(env_name)
+        if value:
+            return value.strip()
     if SECRET_FILE.exists():
-        match = re.search(r"^PLANE_API_TOKEN=(.+)$", SECRET_FILE.read_text(), re.M)
+        match = re.search(r"^PLANE_API_(?:KEY|TOKEN)=(.+)$", SECRET_FILE.read_text(), re.M)
         if match:
             return match.group(1).strip()
-    raise SystemExit("PLANE_API_TOKEN not found")
+    raise SystemExit("PLANE_API_KEY not found")
 
 
 def ext_id(key: str) -> str:

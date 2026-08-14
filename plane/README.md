@@ -17,7 +17,9 @@ Use official Plane mechanisms only:
 2. Official Plane REST API.
 3. Official Plane MCP integration, if later enabled and appropriate.
 
-The current self-hosted instance requires an API key for REST calls. Generate it in Plane under Profile Settings > Personal Access Tokens, then store it outside Git as a root-readable secret or environment variable such as `PLANE_API_TOKEN`.
+The current self-hosted instance requires an API key for REST calls. Generate it in Plane under Profile Settings > Personal Access Tokens, then store it outside Git as a root-readable secret or environment variable such as `PLANE_API_KEY`.
+
+`PLANE_API_TOKEN` is accepted only as a backward-compatible alias by existing tooling. Prefer `PLANE_API_KEY` for new automation.
 
 Do not paste tokens into source files, Markdown documents, shell history, or Git commits.
 
