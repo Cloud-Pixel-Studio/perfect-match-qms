@@ -1,0 +1,46 @@
+# DEV Environment
+
+Mission 02 establishes a local-only Odoo 19 development environment for Perfect Match Digital QMS.
+
+## Architecture
+
+- Odoo runs from the official `odoo:19.0` Docker image.
+- PostgreSQL runs from `postgres:15`.
+- Custom addons are mounted from `addons/` into `/mnt/extra-addons`.
+- Odoo HTTP and longpolling ports bind to `127.0.0.1` by default.
+- Runtime secrets and generated `odoo.conf` live outside Git under `/opt/perfect-match/secrets/odoo-dev/`.
+
+This stack is separate from the production-like Plane deployment. It does not share Plane volumes, networks, ports, databases, or environment files.
+
+## Quick Start
+
+```bash
+cd /opt/perfect-match/perfect-match-qms
+./deployment/scripts/odoo-dev.sh init-secrets
+./deployment/scripts/odoo-dev.sh config
+./deployment/scripts/odoo-dev.sh up
+./deployment/scripts/odoo-dev.sh install-core
+```
+
+Open Odoo through an SSH tunnel:
+
+```bash
+ssh -L 8069:127.0.0.1:8069 administrator-plane@192.168.68.151
+```
+
+Then open `http://127.0.0.1:8069` on your workstation.
+
+## Testing
+
+```bash
+./deployment/scripts/odoo-dev.sh test-core
+```
+
+The command installs `pm_qms_core` into the `pmqms_test` database with demo data disabled and Odoo tests enabled.
+
+## Safety Rules
+
+- Do not expose DEV Odoo directly to the Internet.
+- Do not use production credentials in the DEV stack.
+- Do not connect DEV Odoo to the Plane database.
+- Do not commit generated config, database dumps, filestore content, or secrets.

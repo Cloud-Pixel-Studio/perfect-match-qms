@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_control_tree" model="ir.ui.view">
+        <field name="name">pm.qms.control.tree</field>
+        <field name="model">pm.qms.control</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <field name="state"/>
+                <field name="external_mapping_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_control_form" model="ir.ui.view">
+        <field name="name">pm.qms.control.form</field>
+        <field name="model">pm.qms.control</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_activate" type="object" string="Activate" invisible="state != 'draft'"/>
+                    <button name="action_retire" type="object" string="Retire" invisible="state != 'active'"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,retired"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="process_id"/>
+                            <field name="owner_id"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Objective">
+                            <field name="objective"/>
+                        </page>
+                        <page string="Activities">
+                            <field name="implementation_activity_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="responsible_id"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Evidence Requirements">
+                            <field name="evidence_requirement_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="evidence_type"/>
+                                    <field name="required"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="External Mappings">
+                            <field name="external_mapping_ids">
+                                <list editable="bottom">
+                                    <field name="framework"/>
+                                    <field name="reference"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_control" model="ir.actions.act_window">
+        <field name="name">Perfect Match Controls</field>
+        <field name="res_model">pm.qms.control</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

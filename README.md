@@ -23,4 +23,23 @@ Perfect Match proprietary controls are stored separately from external standard 
 
 ## Current Status
 
-Bootstrap artifacts only: documentation, ADRs, Plane-as-code planning files, backlog, cycles, milestones, labels, and empty Odoo addon directories. No application module implementation exists yet.
+Mission 02 established the Odoo DEV environment and the initial `pm_qms_core` addon scaffold.
+
+Core paths:
+
+- `deployment/docker/odoo-dev.compose.yml`
+- `deployment/scripts/odoo-dev.sh`
+- `docs/DEV_ENVIRONMENT.md`
+- `docs/TESTING.md`
+- `addons/pm_qms_core/`
+
+## DEV Quick Start
+
+```bash
+cd /opt/perfect-match/perfect-match-qms
+./deployment/scripts/odoo-dev.sh init-secrets
+./deployment/scripts/odoo-dev.sh config
+./deployment/scripts/odoo-dev.sh up
+./deployment/scripts/odoo-dev.sh install-core
+./deployment/scripts/odoo-dev.sh test-core
+```

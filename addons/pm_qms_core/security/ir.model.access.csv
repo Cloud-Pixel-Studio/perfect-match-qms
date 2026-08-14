@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pm_qms_process_user,pm.qms.process user,model_pm_qms_process,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_process_manager,pm.qms.process manager,model_pm_qms_process,pm_qms_core.group_pm_qms_manager,1,1,1,1
+access_pm_qms_control_user,pm.qms.control user,model_pm_qms_control,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_control_manager,pm.qms.control manager,model_pm_qms_control,pm_qms_core.group_pm_qms_manager,1,1,1,1
+access_pm_qms_implementation_activity_user,pm.qms.implementation.activity user,model_pm_qms_implementation_activity,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_implementation_activity_manager,pm.qms.implementation.activity manager,model_pm_qms_implementation_activity,pm_qms_core.group_pm_qms_manager,1,1,1,1
+access_pm_qms_evidence_requirement_user,pm.qms.evidence.requirement user,model_pm_qms_evidence_requirement,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_evidence_requirement_manager,pm.qms.evidence.requirement manager,model_pm_qms_evidence_requirement,pm_qms_core.group_pm_qms_manager,1,1,1,1
+access_pm_qms_external_mapping_user,pm.qms.external.mapping user,model_pm_qms_external_mapping,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_external_mapping_manager,pm.qms.external.mapping manager,model_pm_qms_external_mapping,pm_qms_core.group_pm_qms_manager,1,1,1,1

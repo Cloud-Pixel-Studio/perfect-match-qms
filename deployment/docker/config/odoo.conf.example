@@ -1,0 +1,13 @@
+[options]
+addons_path = /usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons
+data_dir = /var/lib/odoo
+list_db = True
+proxy_mode = False
+workers = 0
+max_cron_threads = 0
+
+; The runtime odoo.conf is generated outside Git by:
+; ./deployment/scripts/odoo-dev.sh init-secrets
+;
+; The generated file includes a random admin_passwd and lives under:
+; /opt/perfect-match/secrets/odoo-dev/config/odoo.conf

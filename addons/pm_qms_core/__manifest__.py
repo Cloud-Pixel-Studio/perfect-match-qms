@@ -1,0 +1,20 @@
+{
+    "name": "Perfect Match QMS Core",
+    "summary": "Core proprietary QMS entities for Perfect Match Digital QMS",
+    "version": "19.0.1.0.0",
+    "category": "Operations/Quality",
+    "author": "Perfect Match Investments LLC",
+    "website": "https://cloudpixelstudio.agency",
+    "license": "Other proprietary",
+    "depends": ["base", "mail"],
+    "data": [
+        "security/pm_qms_core_security.xml",
+        "security/ir.model.access.csv",
+        "data/sequence_data.xml",
+        "views/pm_qms_process_views.xml",
+        "views/pm_qms_control_views.xml",
+        "views/pm_qms_menu_views.xml",
+    ],
+    "application": True,
+    "installable": True,
+}

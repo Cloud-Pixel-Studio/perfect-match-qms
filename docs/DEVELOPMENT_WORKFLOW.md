@@ -13,3 +13,27 @@ Target workflow:
 Critical path: Architecture, Infrastructure, Odoo development environment, PM QMS Core, Controls, Evidence, Document Control, Risk/NCR/CAPA, Audits, KPI, Management Review, ISO 9001 Pack, Project Generator, Oliva Torras Pilot.
 
 AI, multi-standard, and CMMC work come later.
+
+## Local Odoo DEV Loop
+
+Use the isolated DEV stack:
+
+```bash
+./deployment/scripts/odoo-dev.sh config
+./deployment/scripts/odoo-dev.sh up
+./deployment/scripts/odoo-dev.sh install-core
+./deployment/scripts/odoo-dev.sh test-core
+```
+
+Before closing a Plane work item:
+
+- Make sure the related addon installs or updates cleanly.
+- Run the relevant Odoo test command.
+- Update docs when architecture, security, data model, or workflow behavior changes.
+- Confirm no external standard text was copied into code, XML, tests, seed data, or documentation.
+
+## Secrets
+
+Runtime secrets belong outside Git. For the local DEV stack they are generated under:
+
+`/opt/perfect-match/secrets/odoo-dev/`

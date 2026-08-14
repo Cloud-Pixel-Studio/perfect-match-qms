@@ -1,0 +1,60 @@
+name: perfect-match-odoo-dev
+
+services:
+  db:
+    image: postgres:15
+    container_name: pmqms-odoo-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/odoo_pg_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pmqms_odoo_dev_db:/var/lib/postgresql/data/pgdata
+    secrets:
+      - odoo_pg_password
+    networks:
+      - pmqms_odoo_dev
+
+  odoo:
+    image: odoo:19.0
+    container_name: pmqms-odoo-dev-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${ODOO_DEV_HTTP_BIND:-127.0.0.1}:${ODOO_DEV_HTTP_PORT:-8069}:8069"
+      - "${ODOO_DEV_LONGPOLLING_BIND:-127.0.0.1}:${ODOO_DEV_LONGPOLLING_PORT:-8072}:8072"
+    environment:
+      HOST: db
+      PORT: "5432"
+      USER: odoo
+      PASSWORD_FILE: /run/secrets/odoo_pg_password
+    command: ["odoo", "--dev=reload,qweb,werkzeug,xml", "--log-level=info"]
+    volumes:
+      - ../../addons:/mnt/extra-addons:rw
+      - ${ODOO_DEV_CONFIG_DIR:-/opt/perfect-match/secrets/odoo-dev/config}:/etc/odoo:ro
+      - pmqms_odoo_dev_data:/var/lib/odoo
+    secrets:
+      - odoo_pg_password
+    networks:
+      - pmqms_odoo_dev
+
+secrets:
+  odoo_pg_password:
+    file: ${ODOO_DEV_PG_PASSWORD_FILE:-/opt/perfect-match/secrets/odoo-dev/odoo_pg_password}
+
+volumes:
+  pmqms_odoo_dev_data:
+  pmqms_odoo_dev_db:
+
+networks:
+  pmqms_odoo_dev:
+    driver: bridge

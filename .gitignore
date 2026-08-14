@@ -22,6 +22,8 @@ id_rsa*
 id_ed25519*
 deployment/docker/.volumes/
 deployment/docker/data/
+deployment/docker/secrets/
+deployment/docker/config/odoo.conf
 .vscode/
 .idea/
 .DS_Store

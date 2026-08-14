@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_root"
+        name="Perfect Match QMS"
+        sequence="60"
+        groups="pm_qms_core.group_pm_qms_user"/>
+
+    <menuitem
+        id="menu_pm_qms_core"
+        name="Core"
+        parent="menu_pm_qms_root"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_processes"
+        name="Processes"
+        parent="menu_pm_qms_core"
+        action="action_pm_qms_process"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_controls"
+        name="Controls"
+        parent="menu_pm_qms_core"
+        action="action_pm_qms_control"
+        sequence="20"/>
+</odoo>
