@@ -12,6 +12,7 @@ import argparse
 import html
 import os
 import re
+import time
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
@@ -210,10 +211,21 @@ class Plane:
     def request(self, method: str, path: str, ok: tuple[int, ...], **kwargs: Any) -> Any:
         if self.dry_run and method in {"POST", "PATCH", "DELETE"}:
             return {"id": f"dry-{abs(hash(path + str(kwargs.get('json', ''))))}", "name": kwargs.get("json", {}).get("name", "dry")}
-        response = self.session.request(method, BASE_URL + path, timeout=30, **kwargs)
+        response = None
+        for attempt in range(8):
+            response = self.session.request(method, BASE_URL + path, timeout=30, **kwargs)
+            if response.status_code != 429:
+                break
+            retry_after = response.headers.get("Retry-After")
+            delay = float(retry_after) if retry_after and retry_after.isdigit() else min(30.0, 2.0 * (attempt + 1))
+            print(f"rate limit hit; waiting {delay:.0f}s before retrying {method} {path}")
+            time.sleep(delay)
+        assert response is not None
         if response.status_code not in ok:
             body = response.text[:700].replace("\n", " ")
             raise RuntimeError(f"{method} {path} failed with {response.status_code}: {body}")
+        if method in {"POST", "PATCH", "DELETE"}:
+            time.sleep(0.15)
         if response.status_code == 204 or not response.text.strip():
             return None
         return response.json()
