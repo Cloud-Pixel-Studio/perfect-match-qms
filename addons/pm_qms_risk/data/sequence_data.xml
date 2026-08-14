@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_pm_qms_risk" model="ir.sequence">
+        <field name="name">Perfect Match QMS Risk</field>
+        <field name="code">pm.qms.risk</field>
+        <field name="prefix">PM-RISK-</field>
+        <field name="padding">5</field>
+        <field name="number_next">1</field>
+    </record>
+</odoo>

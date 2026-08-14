@@ -20,3 +20,6 @@ access_pm_qms_evidence_requirement_admin,pm.qms.evidence.requirement admin,model
 access_pm_qms_external_mapping_user,pm.qms.external.mapping user,model_pm_qms_external_mapping,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_external_mapping_manager,pm.qms.external.mapping manager,model_pm_qms_external_mapping,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_external_mapping_admin,pm.qms.external.mapping admin,model_pm_qms_external_mapping,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_event_user,pm.qms.event user,model_pm_qms_event,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_event_manager,pm.qms.event manager,model_pm_qms_event,pm_qms_core.group_pm_qms_manager,1,0,0,0
+access_pm_qms_event_admin,pm.qms.event admin,model_pm_qms_event,pm_qms_core.group_pm_qms_administrator,1,0,0,0

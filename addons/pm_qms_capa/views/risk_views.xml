@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_risk_form_capa" model="ir.ui.view">
+        <field name="name">pm.qms.risk.form.capa</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="inherit_id" ref="pm_qms_risk.view_pm_qms_risk_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_create_capa" type="object" string="Create CAPA" invisible="state not in ('action_required', 'monitoring')"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="CAPA">
+                    <field name="capa_ids"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

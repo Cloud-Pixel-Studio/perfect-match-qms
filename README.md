@@ -29,6 +29,10 @@ Mission 02 establishes the isolated Odoo DEV environment and the first installab
 Mission 03 adds the client implementation layer, controlled documents, document
 revisions, and actual evidence records.
 
+Mission 04 adds operational hardening, risk and opportunity management,
+nonconformity management, CAPA, CI quality gates, and DEV backup/restore
+validation.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -39,6 +43,10 @@ Core paths:
 - `addons/pm_qms_core/`
 - `addons/pm_qms_documents/`
 - `addons/pm_qms_evidence/`
+- `addons/pm_qms_risk/`
+- `addons/pm_qms_ncr/`
+- `addons/pm_qms_capa/`
+- `.github/workflows/qms-ci.yml`
 
 ## DEV Quick Start
 
@@ -51,6 +59,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-core
 ./deployment/scripts/odoo-dev.sh install-mission03
 ./deployment/scripts/odoo-dev.sh test-mission03
+./deployment/scripts/odoo-dev.sh install-mission04
+./deployment/scripts/odoo-dev.sh test-mission04
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -72,3 +82,7 @@ framework definition.
 `pm.qms.control.instance` represents how a specific organization implements a
 framework control. Documents and evidence attach to the client implementation,
 not to copied external standard text.
+
+Risk, NCR, and CAPA records are also client operational records. They relate to
+control instances and client evidence/documents without mutating reusable
+framework controls.

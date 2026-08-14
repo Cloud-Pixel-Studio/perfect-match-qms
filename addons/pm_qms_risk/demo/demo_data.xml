@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_risk_organization" model="pm.qms.organization">
+        <field name="name">Perfect Match Risk Demo Organization</field>
+        <field name="code">PM-RISK-DEMO-ORG</field>
+    </record>
+
+    <record id="demo_risk_process" model="pm.qms.process">
+        <field name="name">Operational Risk Review</field>
+        <field name="code">PM-RISK-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_risk_organization"/>
+    </record>
+
+    <record id="demo_risk_delayed_document_approval" model="pm.qms.risk">
+        <field name="name">Delayed approval of controlled operational documents</field>
+        <field name="organization_id" ref="demo_risk_organization"/>
+        <field name="process_id" ref="demo_risk_process"/>
+        <field name="risk_type">risk</field>
+        <field name="category">document</field>
+        <field name="description">Delayed approval may result in obsolete instructions remaining in use.</field>
+        <field name="cause">Review ownership is unclear during the demo workflow.</field>
+        <field name="potential_effect">Teams may continue using superseded instructions.</field>
+        <field name="likelihood">3</field>
+        <field name="impact">4</field>
+        <field name="response_strategy">mitigate</field>
+        <field name="mitigation_plan">Assign document review ownership and monitor approval aging.</field>
+        <field name="target_date">2026-09-30</field>
+    </record>
+</odoo>

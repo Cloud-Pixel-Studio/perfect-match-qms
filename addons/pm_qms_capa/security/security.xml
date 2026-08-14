@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_capa_company" model="ir.rule">
+        <field name="name">Perfect Match QMS CAPA company boundary</field>
+        <field name="model_id" ref="model_pm_qms_capa"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_capa_action_company" model="ir.rule">
+        <field name="name">Perfect Match QMS CAPA action company boundary</field>
+        <field name="model_id" ref="model_pm_qms_capa_action"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_capa_why_company" model="ir.rule">
+        <field name="name">Perfect Match QMS CAPA why company boundary</field>
+        <field name="model_id" ref="model_pm_qms_capa_why"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>

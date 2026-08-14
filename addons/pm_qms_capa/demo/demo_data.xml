@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_capa_organization" model="pm.qms.organization">
+        <field name="name">Perfect Match CAPA Demo Organization</field>
+        <field name="code">PM-CAPA-DEMO-ORG</field>
+    </record>
+
+    <record id="demo_capa_process" model="pm.qms.process">
+        <field name="name">Corrective Action Review</field>
+        <field name="code">PM-CAPA-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_capa_organization"/>
+    </record>
+
+    <record id="demo_capa_control" model="pm.qms.control">
+        <field name="name">Controlled Distribution Verification</field>
+        <field name="code">PM-QMS-CAPA-DEMO-001</field>
+        <field name="objective">Verify that controlled operational information is distributed and checked.</field>
+        <field name="process_id" ref="demo_capa_process"/>
+    </record>
+
+    <record id="demo_capa_control_instance" model="pm.qms.control.instance">
+        <field name="name">Demo controlled distribution verification</field>
+        <field name="code">DEMO-PM-QMS-CAPA-001</field>
+        <field name="control_id" ref="demo_capa_control"/>
+        <field name="organization_id" ref="demo_capa_organization"/>
+        <field name="process_id" ref="demo_capa_process"/>
+    </record>
+
+    <record id="demo_capa_distribution" model="pm.qms.capa">
+        <field name="name">Controlled distribution verification</field>
+        <field name="organization_id" ref="demo_capa_organization"/>
+        <field name="process_id" ref="demo_capa_process"/>
+        <field name="source_type">other</field>
+        <field name="problem_statement">A demo review identified that distribution checks need clearer ownership.</field>
+        <field name="root_cause_method">5why</field>
+        <field name="root_cause">Distribution verification was not assigned to a named owner.</field>
+        <field name="action_plan">Implement controlled distribution verification and review effectiveness after the next cycle.</field>
+        <field name="target_date">2026-09-30</field>
+        <field name="effectiveness_review_date">2026-10-31</field>
+        <field name="related_control_instance_ids" eval="[Command.link(ref('demo_capa_control_instance'))]"/>
+    </record>
+
+    <record id="demo_capa_action_distribution" model="pm.qms.capa.action">
+        <field name="capa_id" ref="demo_capa_distribution"/>
+        <field name="name">Assign distribution verification owner</field>
+        <field name="description">Name the owner and define the recurring check.</field>
+        <field name="target_date">2026-09-30</field>
+    </record>
+</odoo>

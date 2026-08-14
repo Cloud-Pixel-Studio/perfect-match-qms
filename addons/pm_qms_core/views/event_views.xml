@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_event_list" model="ir.ui.view">
+        <field name="name">pm.qms.event.list</field>
+        <field name="model">pm.qms.event</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="event_date"/>
+                <field name="event_type"/>
+                <field name="record_name"/>
+                <field name="previous_state"/>
+                <field name="new_state"/>
+                <field name="decision"/>
+                <field name="user_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_event_form" model="ir.ui.view">
+        <field name="name">pm.qms.event.form</field>
+        <field name="model">pm.qms.event</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0">
+                <sheet>
+                    <group>
+                        <group string="Event">
+                            <field name="name"/>
+                            <field name="event_date"/>
+                            <field name="event_type"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group string="Record">
+                            <field name="res_model"/>
+                            <field name="res_id"/>
+                            <field name="record_name"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="organization_id"/>
+                        </group>
+                    </group>
+                    <group string="Decision">
+                        <field name="previous_state"/>
+                        <field name="new_state"/>
+                        <field name="reviewer_id"/>
+                        <field name="approver_id"/>
+                        <field name="decision"/>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_event_search" model="ir.ui.view">
+        <field name="name">pm.qms.event.search</field>
+        <field name="model">pm.qms.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="record_name"/>
+                <field name="res_model"/>
+                <field name="event_type"/>
+                <field name="user_id"/>
+                <filter name="workflow" string="Workflow" domain="[('event_type', '=', 'workflow')]"/>
+                <filter name="closure" string="Closure" domain="[('event_type', '=', 'closure')]"/>
+                <filter name="effectiveness" string="Effectiveness" domain="[('event_type', '=', 'effectiveness')]"/>
+                <filter name="group_model" string="Model" context="{'group_by': 'res_model'}"/>
+                <filter name="group_event_type" string="Event Type" context="{'group_by': 'event_type'}"/>
+                <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_event" model="ir.actions.act_window">
+        <field name="name">Operational Events</field>
+        <field name="res_model">pm.qms.event</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

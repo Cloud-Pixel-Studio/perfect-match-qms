@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 - 2026-08-14
+
+- Added `pm_qms_risk` with risk/opportunity records, configurable scoring thresholds, workflow actions, overdue logic, attachments, and tests.
+- Added `pm_qms_ncr` with nonconformity records, containment, investigation, verification, closure controls, relationships, and tests.
+- Added `pm_qms_capa` with CAPA headers, 5 Why entries, multiple actions, effectiveness review, NCR/Risk source creation, and tests.
+- Added `pm.qms.event` for lightweight operational workflow history across critical transitions.
+- Hardened direct state changes for control instances and operational workflows.
+- Added Mission 04 DEV script targets, CI workflow, addon validation, secret scan, and DEV backup/restore scripts.
+- Added CI, backup/recovery, security, architecture, and ADR documentation for Mission 04.
+
 ## 0.2.0 - 2026-08-14
 
 - Added `pm.qms.control.instance` to separate reusable Perfect Match framework controls from client implementation status.

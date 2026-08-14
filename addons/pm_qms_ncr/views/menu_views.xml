@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_nonconformities"
+        name="Nonconformities"
+        parent="pm_qms_risk.menu_pm_qms_risk_improvement"
+        action="action_pm_qms_nonconformity"
+        sequence="20"/>
+</odoo>

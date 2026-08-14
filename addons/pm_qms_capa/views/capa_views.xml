@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_capa_list" model="ir.ui.view">
+        <field name="name">pm.qms.capa.list</field>
+        <field name="model">pm.qms.capa</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="source_type"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <field name="target_date"/>
+                <field name="is_overdue"/>
+                <field name="effectiveness_review_date"/>
+                <field name="effectiveness_is_overdue"/>
+                <field name="effectiveness_result"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_capa_form" model="ir.ui.view">
+        <field name="name">pm.qms.capa.form</field>
+        <field name="model">pm.qms.capa</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start_analysis" type="object" string="Analyze" invisible="state != 'draft'"/>
+                    <button name="action_plan_actions" type="object" string="Plan Actions" invisible="state != 'analysis'"/>
+                    <button name="action_start_implementation" type="object" string="Implement" invisible="state != 'action_planned'"/>
+                    <button name="action_complete_implementation" type="object" string="Complete Implementation" invisible="state != 'implementation'"/>
+                    <button name="action_mark_effective" type="object" string="Effective" invisible="state != 'effectiveness_review'"/>
+                    <button name="action_mark_ineffective" type="object" string="Ineffective" invisible="state != 'effectiveness_review'"/>
+                    <button name="action_reopen_actions" type="object" string="Reopen Actions" invisible="state != 'ineffective'"/>
+                    <button name="action_close" type="object" string="Close" invisible="state != 'effective'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('closed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,analysis,action_planned,implementation,effectiveness_review,effective,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="source_type"/>
+                            <field name="source_reference"/>
+                            <field name="source_ncr_id"/>
+                            <field name="source_risk_id"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="owner_id"/>
+                        </group>
+                        <group string="Action Control">
+                            <field name="action_owner_id"/>
+                            <field name="target_date"/>
+                            <field name="is_overdue"/>
+                            <field name="days_overdue"/>
+                            <field name="implementation_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Problem">
+                            <field name="problem_statement"/>
+                        </page>
+                        <page string="Root Cause">
+                            <field name="root_cause_method"/>
+                            <field name="root_cause_analysis"/>
+                            <field name="root_cause"/>
+                            <field name="why_ids"/>
+                        </page>
+                        <page string="Actions">
+                            <field name="action_plan"/>
+                            <field name="action_ids"/>
+                        </page>
+                        <page string="Implementation">
+                            <field name="implementation_notes"/>
+                        </page>
+                        <page string="Effectiveness">
+                            <field name="effectiveness_required"/>
+                            <field name="effectiveness_review_date"/>
+                            <field name="effectiveness_is_overdue"/>
+                            <field name="effectiveness_days_overdue"/>
+                            <field name="effectiveness_reviewer_id"/>
+                            <field name="effectiveness_reviewed_on"/>
+                            <field name="effectiveness_result"/>
+                            <field name="effectiveness_notes"/>
+                        </page>
+                        <page string="Relationships">
+                            <field name="related_control_instance_ids"/>
+                            <field name="related_document_ids"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_capa_search" model="ir.ui.view">
+        <field name="name">pm.qms.capa.search</field>
+        <field name="model">pm.qms.capa</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="owner_id"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <filter name="open" string="Open CAPAs" domain="[('state', 'not in', ('closed', 'cancelled'))]"/>
+                <filter name="overdue" string="Overdue CAPAs" domain="[('is_overdue', '=', True)]"/>
+                <filter name="effectiveness_due" string="Awaiting Effectiveness" domain="[('state', '=', 'effectiveness_review')]"/>
+                <filter name="effectiveness_overdue" string="Effectiveness Overdue" domain="[('effectiveness_is_overdue', '=', True)]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_source" string="Source" context="{'group_by': 'source_type'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_capa_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.capa.pivot</field>
+        <field name="model">pm.qms.capa</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="state" type="row"/>
+                <field name="source_type" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_capa_graph" model="ir.ui.view">
+        <field name="name">pm.qms.capa.graph</field>
+        <field name="model">pm.qms.capa</field>
+        <field name="arch" type="xml">
+            <graph string="CAPA Status">
+                <field name="state" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_capa" model="ir.actions.act_window">
+        <field name="name">CAPA</field>
+        <field name="res_model">pm.qms.capa</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_capa_search"/>
+    </record>
+</odoo>

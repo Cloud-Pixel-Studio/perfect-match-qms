@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_risk_improvement"
+        name="Risk &amp; Improvement"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="25"/>
+
+    <menuitem
+        id="menu_pm_qms_risks"
+        name="Risks &amp; Opportunities"
+        parent="menu_pm_qms_risk_improvement"
+        action="action_pm_qms_risk"
+        sequence="10"/>
+</odoo>

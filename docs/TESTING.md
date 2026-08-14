@@ -34,12 +34,27 @@ Perfect Match Digital QMS uses Odoo-native tests for addon behavior.
 - Organization/company document alignment.
 - Multi-company evidence isolation.
 
+Mission 04 adds tests covering:
+
+- Risk and opportunity creation, sequence generation, scoring, residual
+  scoring, workflow events, overdue logic, company isolation, organization
+  constraints, unauthorized closure prevention, and protected attachment access.
+- NCR creation, sequence generation, containment workflow, closure
+  requirements, severity, relationships, company isolation, relationship
+  constraints, and unauthorized closure prevention.
+- CAPA creation, NCR-to-CAPA and risk-to-CAPA generation, 5 Why entries,
+  multiple actions, overdue actions, implementation, effectiveness review,
+  effective closure, ineffective reopening, company isolation, permissions, and
+  the integration chain from control instance through evidence, NCR, CAPA,
+  effectiveness review, and closure.
+
 ## Run Tests
 
 ```bash
 cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-core
 ./deployment/scripts/odoo-dev.sh test-mission03
+./deployment/scripts/odoo-dev.sh test-mission04
 ```
 
 ## Rules

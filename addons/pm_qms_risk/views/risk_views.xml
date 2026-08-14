@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_risk_list" model="ir.ui.view">
+        <field name="name">pm.qms.risk.list</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="risk_type"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <field name="initial_score"/>
+                <field name="initial_level"/>
+                <field name="residual_score"/>
+                <field name="residual_level"/>
+                <field name="target_date"/>
+                <field name="is_overdue"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_risk_form" model="ir.ui.view">
+        <field name="name">pm.qms.risk.form</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_assess" type="object" string="Assess" invisible="state != 'draft'"/>
+                    <button name="action_require_action" type="object" string="Require Action" invisible="state not in ('assessed', 'monitoring')"/>
+                    <button name="action_start_monitoring" type="object" string="Monitor" invisible="state not in ('assessed', 'action_required')"/>
+                    <button name="action_review" type="object" string="Review" invisible="state not in ('action_required', 'monitoring')"/>
+                    <button name="action_close" type="object" string="Close" invisible="state == 'closed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,assessed,action_required,monitoring,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="risk_type"/>
+                            <field name="category"/>
+                            <field name="source"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="owner_id"/>
+                        </group>
+                        <group string="Assessment">
+                            <field name="likelihood"/>
+                            <field name="impact"/>
+                            <field name="initial_score"/>
+                            <field name="initial_level"/>
+                            <field name="residual_likelihood"/>
+                            <field name="residual_impact"/>
+                            <field name="residual_score"/>
+                            <field name="residual_level"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Response">
+                            <field name="response_strategy"/>
+                            <field name="target_date"/>
+                            <field name="is_overdue"/>
+                            <field name="days_overdue"/>
+                        </group>
+                        <group string="Review">
+                            <field name="assessment_date"/>
+                            <field name="assessor_id"/>
+                            <field name="review_date"/>
+                            <field name="last_review_date"/>
+                            <field name="closure_date"/>
+                            <field name="closed_by_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                            <field name="cause"/>
+                            <field name="potential_effect"/>
+                        </page>
+                        <page string="Opportunity">
+                            <field name="benefit"/>
+                            <field name="opportunity_action"/>
+                        </page>
+                        <page string="Response Plan">
+                            <field name="mitigation_plan"/>
+                            <field name="closure_notes"/>
+                        </page>
+                        <page string="Relationships">
+                            <field name="related_control_instance_ids"/>
+                            <field name="related_document_ids"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_risk_search" model="ir.ui.view">
+        <field name="name">pm.qms.risk.search</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="owner_id"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <filter name="open_risks" string="Open Risks" domain="[('risk_type', '=', 'risk'), ('state', '!=', 'closed')]"/>
+                <filter name="opportunities" string="Opportunities" domain="[('risk_type', '=', 'opportunity')]"/>
+                <filter name="high_critical" string="High/Critical" domain="[('initial_level', 'in', ('high', 'critical'))]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_level" string="Level" context="{'group_by': 'initial_level'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+                <filter name="group_process" string="Process" context="{'group_by': 'process_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_risk_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.risk.pivot</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="state" type="row"/>
+                <field name="initial_level" type="col"/>
+                <field name="initial_score" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_risk_graph" model="ir.ui.view">
+        <field name="name">pm.qms.risk.graph</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="arch" type="xml">
+            <graph string="Risk Levels">
+                <field name="initial_level" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_risk" model="ir.actions.act_window">
+        <field name="name">Risks &amp; Opportunities</field>
+        <field name="res_model">pm.qms.risk</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_risk_search"/>
+    </record>
+</odoo>

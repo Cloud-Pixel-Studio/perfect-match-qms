@@ -130,6 +130,10 @@ class TestPmQmsEvidence(TransactionCase):
         self.assertEqual(evidence.state, "accepted")
         self.assertEqual(evidence.reviewer_id, manager)
         self.assertTrue(evidence.reviewed_on)
+        events = self.env["pm.qms.event"].search(
+            [("res_model", "=", "pm.qms.evidence"), ("res_id", "=", evidence.id)]
+        )
+        self.assertIn("accepted", events.mapped("new_state"))
 
     def test_rejected_evidence_retains_review_history_and_allows_replacement(self):
         manager = self._create_test_user("pmqms.evidence.manager2", self.qms_manager_group)

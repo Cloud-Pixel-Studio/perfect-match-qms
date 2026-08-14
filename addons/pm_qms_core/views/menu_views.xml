@@ -79,4 +79,11 @@
         parent="menu_pm_qms_configuration"
         action="action_pm_qms_external_mapping"
         sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_operational_events"
+        name="Operational Events"
+        parent="menu_pm_qms_configuration"
+        action="action_pm_qms_event"
+        sequence="80"/>
 </odoo>

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pm_qms_risk_user,pm.qms.risk user,model_pm_qms_risk,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_risk_manager,pm.qms.risk manager,model_pm_qms_risk,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_risk_admin,pm.qms.risk admin,model_pm_qms_risk,pm_qms_core.group_pm_qms_administrator,1,1,1,1

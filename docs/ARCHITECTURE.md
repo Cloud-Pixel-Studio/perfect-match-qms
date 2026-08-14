@@ -127,3 +127,45 @@ Status" and "Evidence Completion"; it does not claim certification readiness.
 
 Files are linked through Odoo `ir.attachment`. The QMS models reference
 attachments instead of duplicating binary content in custom tables.
+
+## Mission 04 Operational Hardening Layer
+
+```text
+PERFECT MATCH FRAMEWORK
+
+pm.qms.control
+        |
+        v
+
+CLIENT IMPLEMENTATION
+
+pm.qms.control.instance
+        |
+        |-- Evidence
+        |-- Documents
+        |       `-- Revisions
+        |-- Risks and Opportunities
+        |-- Nonconformities
+        `-- CAPA
+```
+
+Risk, NCR, and CAPA are client operational records. They relate to
+`pm.qms.control.instance`, not to reusable framework definitions as mutable
+client state. `pm.qms.control` remains reusable Perfect Match methodology.
+
+Mission 04 adds:
+
+- `pm_qms_risk` with `pm.qms.risk` for risks and opportunities.
+- `pm_qms_ncr` with `pm.qms.nonconformity` for detected deviations.
+- `pm_qms_capa` with `pm.qms.capa`, `pm.qms.capa.action`, and
+  `pm.qms.capa.why` for corrective/preventive actions.
+- `pm.qms.event` as a lightweight append-only operational event log for
+  compliance-sensitive workflow transitions.
+
+Risk scoring uses a simple Perfect Match methodology: likelihood times impact,
+with configurable threshold parameters for Low, Moderate, High, and Critical.
+The scoring model is not external-standard content.
+
+CAPA effectiveness is intentionally separate from implementation completion.
+A CAPA moves through implementation, effectiveness review, effective or
+ineffective decision, and only then closure.

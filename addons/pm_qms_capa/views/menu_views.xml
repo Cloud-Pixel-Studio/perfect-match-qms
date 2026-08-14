@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_capa"
+        name="CAPA"
+        parent="pm_qms_risk.menu_pm_qms_risk_improvement"
+        action="action_pm_qms_capa"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_capa_actions"
+        name="CAPA Actions"
+        parent="pm_qms_risk.menu_pm_qms_risk_improvement"
+        action="action_pm_qms_capa_action"
+        sequence="40"/>
+</odoo>

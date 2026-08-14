@@ -1,11 +1,11 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 
 class PmQmsControlInstance(models.Model):
     _name = "pm.qms.control.instance"
     _description = "Perfect Match QMS Control Instance"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "pm.qms.event.mixin"]
     _order = "organization_id, code, id"
     _rec_name = "code"
 
@@ -88,17 +88,59 @@ class PmQmsControlInstance(models.Model):
             if record.process_id.organization_id and record.process_id.organization_id != record.organization_id:
                 raise ValidationError("Control instance process must belong to the selected organization.")
 
+    def _write_implementation_status(self, status, decision, event_type="workflow"):
+        for record in self:
+            previous = record.implementation_status
+            record.with_context(pm_qms_control_instance_workflow=True).write({"implementation_status": status})
+            record._log_qms_event(
+                event_type=event_type,
+                previous_state=previous,
+                new_state=status,
+                decision=decision,
+                approver=self.env.user if event_type == "closure" else None,
+            )
+
     def action_mark_in_progress(self):
-        self.write({"implementation_status": "in_progress"})
+        self._write_implementation_status("in_progress", "Implementation started")
 
     def action_request_evidence(self):
-        self.write({"implementation_status": "evidence_required"})
+        self._write_implementation_status("evidence_required", "Evidence requested")
 
     def action_submit_for_review(self):
-        self.write({"implementation_status": "under_review"})
+        self._write_implementation_status("under_review", "Implementation submitted for review")
 
     def action_mark_implemented(self):
-        self.write({"implementation_status": "implemented", "implementation_date": fields.Date.context_today(self)})
+        for record in self:
+            previous = record.implementation_status
+            record.with_context(pm_qms_control_instance_workflow=True).write(
+                {
+                    "implementation_status": "implemented",
+                    "implementation_date": fields.Date.context_today(record),
+                }
+            )
+            record._log_qms_event(
+                event_type="closure",
+                previous_state=previous,
+                new_state="implemented",
+                approver=self.env.user,
+                decision="Implementation marked complete",
+            )
 
     def action_mark_not_applicable(self):
-        self.write({"implementation_status": "not_applicable", "applicability": "not_applicable"})
+        for record in self:
+            previous = record.implementation_status
+            record.with_context(pm_qms_control_instance_workflow=True).write(
+                {"implementation_status": "not_applicable", "applicability": "not_applicable"}
+            )
+            record._log_qms_event(
+                event_type="workflow",
+                previous_state=previous,
+                new_state="not_applicable",
+                decision="Implementation marked not applicable",
+                notes=record.justification,
+            )
+
+    def write(self, vals):
+        if "implementation_status" in vals and not self.env.context.get("pm_qms_control_instance_workflow"):
+            raise AccessError("Use control instance workflow actions to change implementation status.")
+        return super().write(vals)

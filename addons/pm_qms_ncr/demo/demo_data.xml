@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_ncr_organization" model="pm.qms.organization">
+        <field name="name">Perfect Match NCR Demo Organization</field>
+        <field name="code">PM-NCR-DEMO-ORG</field>
+    </record>
+
+    <record id="demo_ncr_process" model="pm.qms.process">
+        <field name="name">Document Use Verification</field>
+        <field name="code">PM-NCR-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_ncr_organization"/>
+    </record>
+
+    <record id="demo_ncr_control" model="pm.qms.control">
+        <field name="name">Controlled Information Use Check</field>
+        <field name="code">PM-QMS-NCR-DEMO-001</field>
+        <field name="objective">Verify that teams use the current controlled information in daily work.</field>
+        <field name="process_id" ref="demo_ncr_process"/>
+    </record>
+
+    <record id="demo_ncr_control_instance" model="pm.qms.control.instance">
+        <field name="name">Demo controlled information use check</field>
+        <field name="code">DEMO-PM-QMS-NCR-001</field>
+        <field name="control_id" ref="demo_ncr_control"/>
+        <field name="organization_id" ref="demo_ncr_organization"/>
+        <field name="process_id" ref="demo_ncr_process"/>
+    </record>
+
+    <record id="demo_ncr_superseded_instruction" model="pm.qms.nonconformity">
+        <field name="name">Superseded work instruction found at demo workstation</field>
+        <field name="organization_id" ref="demo_ncr_organization"/>
+        <field name="process_id" ref="demo_ncr_process"/>
+        <field name="source_type">document</field>
+        <field name="severity">major</field>
+        <field name="description">A superseded work instruction was identified at a demo workstation.</field>
+        <field name="containment_required">True</field>
+        <field name="containment_action">Remove the superseded copy and verify distribution points.</field>
+        <field name="target_date">2026-09-30</field>
+        <field name="related_control_instance_ids" eval="[Command.link(ref('demo_ncr_control_instance'))]"/>
+    </record>
+</odoo>

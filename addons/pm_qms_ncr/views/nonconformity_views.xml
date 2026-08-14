@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_nonconformity_list" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.list</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="source_type"/>
+                <field name="severity"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <field name="detected_date"/>
+                <field name="target_date"/>
+                <field name="is_overdue"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_nonconformity_form" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.form</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open" type="object" string="Open" invisible="state != 'draft'"/>
+                    <button name="action_start_containment" type="object" string="Containment" invisible="state != 'open'"/>
+                    <button name="action_start_investigation" type="object" string="Investigate" invisible="state not in ('open', 'containment')"/>
+                    <button name="action_require_action" type="object" string="Require Action" invisible="state != 'investigation'"/>
+                    <button name="action_start_verification" type="object" string="Verify" invisible="state != 'action_required'"/>
+                    <button name="action_close" type="object" string="Close" invisible="state not in ('verification', 'action_required')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('closed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,containment,investigation,action_required,verification,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="source_type"/>
+                            <field name="severity"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="owner_id"/>
+                        </group>
+                        <group string="Detection">
+                            <field name="detected_date"/>
+                            <field name="detected_by_id"/>
+                            <field name="target_date"/>
+                            <field name="is_overdue"/>
+                            <field name="days_overdue"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Details">
+                            <field name="description"/>
+                        </page>
+                        <page string="Containment">
+                            <field name="containment_required"/>
+                            <field name="containment_action"/>
+                            <field name="containment_owner_id"/>
+                            <field name="containment_date"/>
+                            <field name="containment_completed"/>
+                        </page>
+                        <page string="Disposition">
+                            <field name="disposition"/>
+                            <field name="disposition_notes"/>
+                            <field name="root_cause_summary"/>
+                        </page>
+                        <page string="Closure">
+                            <field name="opened_by_id"/>
+                            <field name="opened_on"/>
+                            <field name="reviewed_by_id"/>
+                            <field name="reviewed_on"/>
+                            <field name="closed_by_id"/>
+                            <field name="closed_on"/>
+                            <field name="closure_notes"/>
+                        </page>
+                        <page string="Relationships">
+                            <field name="related_control_instance_ids"/>
+                            <field name="related_document_ids"/>
+                            <field name="related_evidence_ids"/>
+                            <field name="related_risk_ids"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_nonconformity_search" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.search</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="owner_id"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <filter name="open" string="Open NCRs" domain="[('state', 'not in', ('closed', 'cancelled'))]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="critical" string="Critical" domain="[('severity', '=', 'critical')]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_severity" string="Severity" context="{'group_by': 'severity'}"/>
+                <filter name="group_source" string="Source" context="{'group_by': 'source_type'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_nonconformity_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.pivot</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="state" type="row"/>
+                <field name="severity" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_nonconformity_graph" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.graph</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="arch" type="xml">
+            <graph string="NCR Status">
+                <field name="state" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_nonconformity" model="ir.actions.act_window">
+        <field name="name">Nonconformities</field>
+        <field name="res_model">pm.qms.nonconformity</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_nonconformity_search"/>
+    </record>
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_risk_form_ncr" model="ir.ui.view">
+        <field name="name">pm.qms.risk.form.ncr</field>
+        <field name="model">pm.qms.risk</field>
+        <field name="inherit_id" ref="pm_qms_risk.view_pm_qms_risk_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="NCRs">
+                    <field name="nonconformity_ids"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

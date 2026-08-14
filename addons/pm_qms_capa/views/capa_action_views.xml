@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_capa_action_list" model="ir.ui.view">
+        <field name="name">pm.qms.capa.action.list</field>
+        <field name="model">pm.qms.capa.action</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="capa_id"/>
+                <field name="owner_id"/>
+                <field name="target_date"/>
+                <field name="completion_date"/>
+                <field name="is_overdue"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_capa_action_form" model="ir.ui.view">
+        <field name="name">pm.qms.capa.action.form</field>
+        <field name="model">pm.qms.capa.action</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start" invisible="status != 'open'"/>
+                    <button name="action_complete" type="object" string="Complete" invisible="status not in ('open', 'in_progress')"/>
+                    <button name="action_verify" type="object" string="Verify" invisible="status != 'completed'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="status in ('verified', 'cancelled')"/>
+                    <field name="status" widget="statusbar" statusbar_visible="open,in_progress,completed,verified"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="capa_id"/>
+                            <field name="owner_id"/>
+                            <field name="target_date"/>
+                            <field name="completion_date"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="organization_id"/>
+                            <field name="is_overdue"/>
+                            <field name="days_overdue"/>
+                        </group>
+                    </group>
+                    <group string="Details">
+                        <field name="description"/>
+                        <field name="verification_notes"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_capa_action_search" model="ir.ui.view">
+        <field name="name">pm.qms.capa.action.search</field>
+        <field name="model">pm.qms.capa.action</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="capa_id"/>
+                <field name="owner_id"/>
+                <filter name="open" string="Open Actions" domain="[('status', 'not in', ('verified', 'cancelled'))]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_capa_action" model="ir.actions.act_window">
+        <field name="name">CAPA Actions</field>
+        <field name="res_model">pm.qms.capa.action</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_capa_action_search"/>
+    </record>
+</odoo>

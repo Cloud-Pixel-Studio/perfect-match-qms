@@ -24,6 +24,7 @@ separate from reusable framework controls.
         "views/activity_views.xml",
         "views/evidence_views.xml",
         "views/external_mapping_views.xml",
+        "views/event_views.xml",
         "views/menu_views.xml",
     ],
     "application": True,

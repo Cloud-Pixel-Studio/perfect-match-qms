@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pm_qms_capa_user,pm.qms.capa user,model_pm_qms_capa,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_capa_manager,pm.qms.capa manager,model_pm_qms_capa,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_capa_admin,pm.qms.capa admin,model_pm_qms_capa,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_capa_action_user,pm.qms.capa.action user,model_pm_qms_capa_action,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_capa_action_manager,pm.qms.capa.action manager,model_pm_qms_capa_action,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_capa_action_admin,pm.qms.capa.action admin,model_pm_qms_capa_action,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_capa_why_user,pm.qms.capa.why user,model_pm_qms_capa_why,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_capa_why_manager,pm.qms.capa.why manager,model_pm_qms_capa_why,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_capa_why_admin,pm.qms.capa.why admin,model_pm_qms_capa_why,pm_qms_core.group_pm_qms_administrator,1,1,1,1

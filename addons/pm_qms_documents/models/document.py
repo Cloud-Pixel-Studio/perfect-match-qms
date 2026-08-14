@@ -5,7 +5,7 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 class PmQmsDocument(models.Model):
     _name = "pm.qms.document"
     _description = "Perfect Match QMS Controlled Document"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "pm.qms.event.mixin"]
     _order = "code, name"
 
     name = fields.Char(string="Title", required=True, tracking=True)
@@ -109,20 +109,44 @@ class PmQmsDocument(models.Model):
 
     def action_submit_for_review(self):
         self._check_manager_permission()
+        previous = {document.id: document.state for document in self}
         self.with_context(pm_qms_document_workflow=True).write({"state": "under_review"})
         for document in self:
+            document._log_qms_event(
+                event_type="workflow",
+                previous_state=previous[document.id],
+                new_state="under_review",
+                reviewer=self.env.user,
+                decision="Document submitted for review",
+            )
             document.revision_ids.filtered(lambda revision: revision.state == "draft").action_submit_for_review()
 
     def action_approve(self):
         self._check_manager_permission()
+        previous = {document.id: document.state for document in self}
         self.with_context(pm_qms_document_workflow=True).write({"state": "approved"})
         for document in self:
+            document._log_qms_event(
+                event_type="approval",
+                previous_state=previous[document.id],
+                new_state="approved",
+                approver=self.env.user,
+                decision="Document approved",
+            )
             document.revision_ids.filtered(lambda revision: revision.state == "under_review").action_approve()
 
     def action_reject(self):
         self._check_manager_permission()
+        previous = {document.id: document.state for document in self}
         self.with_context(pm_qms_document_workflow=True).write({"state": "draft"})
         for document in self:
+            document._log_qms_event(
+                event_type="review",
+                previous_state=previous[document.id],
+                new_state="draft",
+                reviewer=self.env.user,
+                decision="Document review rejected",
+            )
             document.revision_ids.filtered(lambda revision: revision.state == "under_review").action_reject()
 
     def action_activate(self):
@@ -135,7 +159,16 @@ class PmQmsDocument(models.Model):
 
     def action_obsolete(self):
         self._check_manager_permission()
+        previous = {document.id: document.state for document in self}
         self.with_context(pm_qms_document_workflow=True).write({"state": "obsolete", "active": False})
+        for document in self:
+            document._log_qms_event(
+                event_type="closure",
+                previous_state=previous[document.id],
+                new_state="obsolete",
+                approver=self.env.user,
+                decision="Document made obsolete",
+            )
 
     def action_create_new_revision(self):
         self._check_manager_permission()

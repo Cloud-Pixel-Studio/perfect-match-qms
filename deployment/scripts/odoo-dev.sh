@@ -10,6 +10,8 @@ PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
 MISSION03_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence"
 MISSION03_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence"
+MISSION04_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa"
+MISSION04_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -72,6 +74,13 @@ compose() {
   docker compose -f "$COMPOSE_FILE" "$@"
 }
 
+database_exists() {
+  local db_name="$1"
+  prepare_runtime_permissions
+  compose up -d postgres-dev >/dev/null
+  compose exec -T postgres-dev psql -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./deployment/scripts/odoo-dev.sh <command>
@@ -97,6 +106,12 @@ Commands:
                 Upgrade core, documents, and evidence addons in pmqms_dev.
   test-mission03
                 Run Mission 03 addon tests in pmqms_test.
+  install-mission04
+                Install core through Risk, NCR, and CAPA addons in pmqms_dev.
+  update-mission04
+                Upgrade core through Risk, NCR, and CAPA addons in pmqms_dev.
+  test-mission04
+                Run Mission 04 addon tests in pmqms_test.
 EOF
 }
 
@@ -191,6 +206,22 @@ case "$command" in
     ;;
   test-mission03)
     run_odoo_tests "$MISSION03_ADDONS" "$MISSION03_TEST_TAGS" "Mission 03"
+    ;;
+  install-mission04)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION03_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_risk,pm_qms_ncr,pm_qms_capa" --without-demo=all --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION04_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission04)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION04_ADDONS" --stop-after-init
+    ;;
+  test-mission04)
+    run_odoo_tests "$MISSION04_ADDONS" "$MISSION04_TEST_TAGS" "Mission 04"
     ;;
   ""|help|-h|--help)
     usage

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_pm_qms_nonconformity" model="ir.sequence">
+        <field name="name">Perfect Match QMS NCR</field>
+        <field name="code">pm.qms.nonconformity</field>
+        <field name="prefix">PM-NCR-</field>
+        <field name="padding">5</field>
+        <field name="number_next">1</field>
+    </record>
+</odoo>

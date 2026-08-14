@@ -79,4 +79,11 @@
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
     </record>
+
+    <record id="rule_pm_qms_event_company" model="ir.rule">
+        <field name="name">Perfect Match QMS event company boundary</field>
+        <field name="model_id" ref="model_pm_qms_event"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
 </odoo>

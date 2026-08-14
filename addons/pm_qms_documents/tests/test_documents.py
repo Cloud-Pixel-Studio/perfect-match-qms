@@ -113,6 +113,10 @@ class TestPmQmsDocuments(TransactionCase):
         self.assertEqual(revision.state, "active")
         self.assertEqual(document.current_revision_id, revision)
         self.assertEqual(document.state, "active")
+        events = self.env["pm.qms.event"].search(
+            [("res_model", "=", "pm.qms.document.revision"), ("res_id", "=", revision.id)]
+        )
+        self.assertIn("active", events.mapped("new_state"))
 
     def test_revision_uniqueness_and_history_preservation(self):
         manager = self._create_test_user("pmqms.doc.manager2", self.qms_manager_group)
@@ -168,6 +172,15 @@ class TestPmQmsDocuments(TransactionCase):
         with self.assertRaises(AccessError):
             self.env["pm.qms.document"].with_user(qms_user).create(
                 self._document_values(code="PM-DEMO-PROC-USER")
+            )
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.event"].with_user(qms_user).create(
+                {
+                    "name": "Manual event should fail",
+                    "user_id": qms_user.id,
+                    "res_model": "pm.qms.document",
+                    "res_id": document.id,
+                }
             )
 
     def test_document_multicompany_isolation(self):
