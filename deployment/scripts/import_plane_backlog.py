@@ -288,7 +288,15 @@ def ensure_states(api: Plane, project: dict[str, Any]) -> dict[str, dict[str, An
     project_id = project["id"]
     states = by_name(api.list_all(f"/api/v1/workspaces/{WORKSPACE_SLUG}/projects/{project_id}/states/"))
     for name, group, color, sequence, aliases in STATE_PLAN:
-        if name.casefold() in states:
+        existing = states.get(name.casefold())
+        if existing:
+            if existing.get("name") != name:
+                updated = api.patch(
+                    f"/api/v1/workspaces/{WORKSPACE_SLUG}/projects/{project_id}/states/{existing['id']}/",
+                    {"name": name, "group": group, "color": color, "sequence": sequence},
+                )
+                states[name.casefold()] = updated
+                print(f"state normalized: {project['name']} / {name}")
             continue
         alias = next((states.get(candidate.casefold()) for candidate in aliases if candidate.casefold() in states), None)
         payload = {"name": name, "group": group, "color": color, "sequence": sequence}
