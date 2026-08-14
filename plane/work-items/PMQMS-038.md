@@ -1,23 +1,26 @@
 # PMQMS-038 - Design n8n Integration Layer
 
 Priority: MEDIUM
-Project: PMQMS CORE
-Module: TBD during Plane module assignment
-Labels: architecture, documentation
-Dependencies: See roadmap and sprint sequencing.
+Project: PMQMS AUTOMATION
+Module: n8n Workflows
+Cycle: Backlog
+Labels: automation, api, architecture
+Dependencies: PMQMS-037
 
 ## Objective
 
-Create a verifiable engineering outcome for Design n8n Integration Layer.
+Design n8n responsibilities for notifications, reminders, and external integrations without moving QMS state logic out of Odoo.
 
 ## Description
 
-Keep work aligned with Odoo-first architecture, security-by-design, auditability, and the IP boundary separating Perfect Match proprietary controls from external standard references.
+Deliver a verifiable engineering outcome for `Design n8n Integration Layer` while preserving the Odoo-first architecture, least-privilege security model, auditability, and the separation between Perfect Match proprietary controls and external standard references.
 
 ## Acceptance Criteria
 
-- Objective is implemented or documented as appropriate.
-- Security implications are reviewed.
-- Tests or verification steps are documented.
-- Documentation is updated when architecture or behavior changes.
-- No copyrighted external standard text is added.
+- The n8n Workflows decision or design artifact exists in the repository and names open questions explicitly.
+- Affected Odoo addons, data models, integrations, and deployment components are identified.
+- Dependencies and sequencing constraints are clear enough for implementation planning.
+- Security and IP constraints are reviewed before completion.
+- Documentation is updated when architecture, behavior, or operating procedure changes.
+- Verification evidence is recorded in the work item before closing.
+- No copyrighted external standard text is added to seed/demo/configuration data.

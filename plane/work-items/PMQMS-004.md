@@ -2,22 +2,25 @@
 
 Priority: HIGH
 Project: PMQMS INFRASTRUCTURE
-Module: TBD during Plane module assignment
-Labels: architecture, documentation
-Dependencies: See roadmap and sprint sequencing.
+Module: DEV
+Cycle: SPRINT 01 - Foundation
+Labels: docker, postgresql, infrastructure
+Dependencies: PMQMS-001
 
 ## Objective
 
-Create a verifiable engineering outcome for Create DEV Environment Architecture.
+Design the local DEV topology for Odoo, PostgreSQL, addons, seed data, logs, and developer workflow.
 
 ## Description
 
-Keep work aligned with Odoo-first architecture, security-by-design, auditability, and the IP boundary separating Perfect Match proprietary controls from external standard references.
+Deliver a verifiable engineering outcome for `Create DEV Environment Architecture` while preserving the Odoo-first architecture, least-privilege security model, auditability, and the separation between Perfect Match proprietary controls and external standard references.
 
 ## Acceptance Criteria
 
-- Objective is implemented or documented as appropriate.
-- Security implications are reviewed.
-- Tests or verification steps are documented.
-- Documentation is updated when architecture or behavior changes.
-- No copyrighted external standard text is added.
+- The DEV decision or design artifact exists in the repository and names open questions explicitly.
+- Affected Odoo addons, data models, integrations, and deployment components are identified.
+- Dependencies and sequencing constraints are clear enough for implementation planning.
+- Security and IP constraints are reviewed before completion.
+- Documentation is updated when architecture, behavior, or operating procedure changes.
+- Verification evidence is recorded in the work item before closing.
+- No copyrighted external standard text is added to seed/demo/configuration data.

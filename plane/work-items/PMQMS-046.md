@@ -2,22 +2,25 @@
 
 Priority: MEDIUM
 Project: PMQMS PLATFORM
-Module: TBD during Plane module assignment
-Labels: odoo, python, testing
-Dependencies: See roadmap and sprint sequencing.
+Module: Odoo Architecture
+Cycle: Backlog
+Labels: odoo, python, testing, feature
+Dependencies: PMQMS-045
 
 ## Objective
 
-Create a verifiable engineering outcome for Implement Project Generator Foundation.
+Implement initial project-generator models and service boundaries.
 
 ## Description
 
-Keep work aligned with Odoo-first architecture, security-by-design, auditability, and the IP boundary separating Perfect Match proprietary controls from external standard references.
+Deliver a verifiable engineering outcome for `Implement Project Generator Foundation` while preserving the Odoo-first architecture, least-privilege security model, auditability, and the separation between Perfect Match proprietary controls and external standard references.
 
 ## Acceptance Criteria
 
-- Objective is implemented or documented as appropriate.
-- Security implications are reviewed.
-- Tests or verification steps are documented.
-- Documentation is updated when architecture or behavior changes.
-- No copyrighted external standard text is added.
+- The initial Odoo Architecture implementation is added in the correct addon or deployment area.
+- Odoo access rights, record rules, and data constraints are included where applicable.
+- Automated tests or repeatable verification commands pass locally.
+- Security and IP constraints are reviewed before completion.
+- Documentation is updated when architecture, behavior, or operating procedure changes.
+- Verification evidence is recorded in the work item before closing.
+- No copyrighted external standard text is added to seed/demo/configuration data.
