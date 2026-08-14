@@ -23,14 +23,16 @@ Perfect Match proprietary controls are stored separately from external standard 
 
 ## Current Status
 
-Mission 02 established the Odoo DEV environment and the initial `pm_qms_core` addon scaffold.
+Mission 02 establishes the isolated Odoo DEV environment and the first installable
+`pm_qms_core` addon.
 
 Core paths:
 
-- `deployment/docker/odoo-dev.compose.yml`
+- `deployment/docker/dev/compose.yml`
 - `deployment/scripts/odoo-dev.sh`
 - `docs/DEV_ENVIRONMENT.md`
 - `docs/TESTING.md`
+- `docs/ARCHITECTURE.md`
 - `addons/pm_qms_core/`
 
 ## DEV Quick Start
@@ -43,3 +45,14 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh install-core
 ./deployment/scripts/odoo-dev.sh test-core
 ```
+
+Raw Docker Compose commands use the same compose file:
+
+```bash
+docker compose -f deployment/docker/dev/compose.yml up -d
+docker compose -f deployment/docker/dev/compose.yml logs -f odoo-dev
+docker compose -f deployment/docker/dev/compose.yml down
+```
+
+The DEV stack uses `pmqms_dev_network`, `pmqms_dev_postgres`, and
+`pmqms_dev_odoo_data`. It is intentionally separate from Plane.

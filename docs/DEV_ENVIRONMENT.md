@@ -8,6 +8,9 @@ Mission 02 establishes a local-only Odoo 19 development environment for Perfect 
 - PostgreSQL runs from `postgres:15`.
 - Custom addons are mounted from `addons/` into `/mnt/extra-addons`.
 - Odoo HTTP and longpolling ports bind to `127.0.0.1` by default.
+- Docker network: `pmqms_dev_network`.
+- PostgreSQL volume: `pmqms_dev_postgres`.
+- Odoo filestore volume: `pmqms_dev_odoo_data`.
 - Runtime secrets and generated `odoo.conf` live outside Git under `/opt/perfect-match/secrets/odoo-dev/`.
 
 This stack is separate from the production-like Plane deployment. It does not share Plane volumes, networks, ports, databases, or environment files.
@@ -20,6 +23,14 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh config
 ./deployment/scripts/odoo-dev.sh up
 ./deployment/scripts/odoo-dev.sh install-core
+```
+
+Equivalent raw Docker Compose commands:
+
+```bash
+docker compose -f deployment/docker/dev/compose.yml up -d
+docker compose -f deployment/docker/dev/compose.yml logs -f odoo-dev
+docker compose -f deployment/docker/dev/compose.yml down
 ```
 
 Open Odoo through an SSH tunnel:
@@ -37,6 +48,33 @@ Then open `http://127.0.0.1:8069` on your workstation.
 ```
 
 The command installs `pm_qms_core` into the `pmqms_test` database with demo data disabled and Odoo tests enabled.
+
+## Odoo Shell
+
+```bash
+./deployment/scripts/odoo-dev.sh shell
+```
+
+Open an Odoo shell against the DEV database:
+
+```bash
+docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo shell -d pmqms_dev
+```
+
+## Module Install and Upgrade
+
+```bash
+./deployment/scripts/odoo-dev.sh install-core
+./deployment/scripts/odoo-dev.sh update-core
+```
+
+## Health Checks
+
+```bash
+./deployment/scripts/odoo-dev.sh ps
+docker inspect --format '{{.State.Health.Status}}' pmqms-postgres-dev
+docker compose -f deployment/docker/dev/compose.yml logs --tail=100 odoo-dev
+```
 
 ## Safety Rules
 

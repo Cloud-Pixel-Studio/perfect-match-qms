@@ -1,18 +1,87 @@
 # Architecture
 
-Odoo is the platform. Perfect Match Digital QMS is the product.
+Perfect Match Digital QMS is implemented as a modular Odoo 19 application.
+Odoo owns core QMS state, users, access control, workflow data, and business
+rules. PostgreSQL persists Odoo data. Docker Compose provides the local DEV
+runtime.
 
-The system starts as a modular Odoo 19 application using a modular monolith architecture. Core business logic belongs in Odoo modules. External automation belongs in n8n. AI behavior must use controlled application functions and must not have unrestricted database access.
+## Mission 02 Scope
 
-## Initial Addon Boundaries
+```text
+Odoo
+`-- pm_qms_core
+    |-- Organizations
+    |-- Processes
+    |-- Controls
+    |-- Activities
+    |-- Evidence Requirements
+    `-- External Mappings
+```
 
-- `pm_qms_core`: core entities, processes, controls, ownership, and state framework.
-- `pm_qms_documents`: document control and controlled templates.
-- `pm_qms_risk`: risk management.
-- `pm_qms_ncr`: nonconformance workflows.
-- `pm_qms_capa`: corrective and preventive action workflows.
-- `pm_qms_audit`: internal audits.
-- `pm_qms_kpi`: objectives and KPI tracking.
-- `pm_qms_management_review`: management review packages.
-- `pm_qms_portal`: customer portal experience.
-- `pm_qms_ai`: controlled AI integration and audit logging.
+The first addon, `pm_qms_core`, defines the reusable foundation only. It does
+not implement standard packs, AI, customer portals, audits, CAPA, risk, NCR,
+KPIs, or production hosting.
+
+## Control Model
+
+The central object is the Perfect Match Control:
+
+```text
+pm.qms.control
+```
+
+A control is a proprietary reusable implementation object. It is not an ISO
+clause, not an external requirement, and not copied standard text.
+
+```text
+Framework Definition
+        |
+        v
+Perfect Match Controls
+        |
+        v
+Implementation Activities
+        |
+        v
+Evidence Requirements
+
+External Standards
+        |
+        v
+External Mappings
+        |
+        v
+Perfect Match Controls
+```
+
+The standard does not define the internal data object. Perfect Match does.
+
+## Core Relationships
+
+- `pm.qms.organization` groups processes by company context.
+- `pm.qms.process` represents management-system processes and can have parent and child processes.
+- `pm.qms.control` belongs to one process and can be manually coded or sequence-coded.
+- `pm.qms.activity` defines reusable implementation activities for one control.
+- `pm.qms.evidence.requirement` defines expected evidence for one control.
+- `pm.qms.external.mapping` references external frameworks by name, edition, and reference identifier only.
+
+## DEV Runtime
+
+```text
+PMQMS DEV
+
+Docker Compose
+|-- odoo-dev
+`-- postgres-dev
+```
+
+The DEV stack uses:
+
+- `deployment/docker/dev/compose.yml`
+- network `pmqms_dev_network`
+- volume `pmqms_dev_postgres`
+- volume `pmqms_dev_odoo_data`
+- addon mount `/mnt/extra-addons`
+
+It is isolated from Plane and must not reuse Plane PostgreSQL, Docker networks,
+volumes, or secrets.

@@ -2,13 +2,14 @@
 
 ## 0.1.0 - 2026-08-14
 
-- Added isolated Odoo 19 DEV Docker Compose stack with PostgreSQL 15.
+- Added isolated Odoo 19 DEV Docker Compose stack with PostgreSQL 15 under `deployment/docker/dev/`.
 - Added `deployment/scripts/odoo-dev.sh` for secrets, config validation, startup, install, and tests.
 - Generated DEV runtime secrets outside Git under `/opt/perfect-match/secrets/odoo-dev/`.
 - Scaffolded `pm_qms_core` as the first Odoo addon.
-- Added QMS process, proprietary control, implementation activity, evidence requirement, and external mapping models.
-- Added Odoo groups, access rights, company-boundary record rules, sequence data, menus, views, and tests.
-- Added DEV environment and testing documentation.
+- Added QMS organization, process, proprietary control, implementation activity, evidence requirement, and external mapping models.
+- Added QMS User, QMS Manager, and QMS Administrator groups with access rights and company-boundary record rules.
+- Added sequence data, menus, native Odoo views, and post-install tests.
+- Added DEV environment, architecture, testing documentation, and ADR-010.
 - Validated `pm_qms_core` install and tests on Odoo 19.
 
 ## 0.0.1 - 2026-08-14

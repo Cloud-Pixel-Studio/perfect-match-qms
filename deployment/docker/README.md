@@ -1,39 +1,15 @@
-# Docker Development Environment
+# Docker
 
-This directory contains the local Odoo development Compose stack for Perfect Match Digital QMS.
+Docker artifacts live under `deployment/docker/`.
 
-## Services
+The Odoo development stack for Mission 02 is in:
 
-- `odoo`: Odoo 19 Community, bound to `127.0.0.1:8069` by default.
-- `db`: PostgreSQL 15, private to the Docker network.
-- Named volumes: `pmqms_odoo_dev_data` and `pmqms_odoo_dev_db`.
+`deployment/docker/dev/`
 
-The stack is intentionally isolated from the existing Plane deployment. It does not reuse Plane containers, volumes, networks, ports, or credentials.
-
-## Secrets
+It uses Odoo 19, PostgreSQL 15, a dedicated Docker network, and dedicated named volumes. It does not reuse Plane containers, networks, volumes, databases, or credentials.
 
 Runtime secrets are generated outside Git under:
 
 `/opt/perfect-match/secrets/odoo-dev/`
 
-Do not commit generated `odoo.conf`, Postgres passwords, database dumps, or filestore data.
-
-## Commands
-
-Run from the repository root:
-
-```bash
-./deployment/scripts/odoo-dev.sh init-secrets
-./deployment/scripts/odoo-dev.sh config
-./deployment/scripts/odoo-dev.sh up
-./deployment/scripts/odoo-dev.sh install-core
-./deployment/scripts/odoo-dev.sh test-core
-./deployment/scripts/odoo-dev.sh logs
-./deployment/scripts/odoo-dev.sh down
-```
-
-Access is local-only by default. Use an SSH tunnel if you need browser access from another machine:
-
-```bash
-ssh -L 8069:127.0.0.1:8069 administrator-plane@192.168.68.151
-```
+See `deployment/docker/dev/README.md` for commands.

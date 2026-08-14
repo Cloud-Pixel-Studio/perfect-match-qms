@@ -3,8 +3,8 @@
     <record id="seq_pm_qms_control" model="ir.sequence">
         <field name="name">Perfect Match QMS Control</field>
         <field name="code">pm.qms.control</field>
-        <field name="prefix">PM-QMS-CTRL-</field>
-        <field name="padding">4</field>
+        <field name="prefix">PM-QMS-</field>
+        <field name="padding">5</field>
         <field name="company_id" eval="False"/>
     </record>
 </odoo>

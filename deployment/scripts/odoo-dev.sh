@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-COMPOSE_FILE="$REPO_ROOT/deployment/docker/odoo-dev.compose.yml"
+COMPOSE_FILE="$REPO_ROOT/deployment/docker/dev/compose.yml"
 SECRETS_DIR="${PMQMS_ODOO_DEV_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-dev}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
@@ -86,7 +86,8 @@ Commands:
   shell          Open a shell in the Odoo container.
   db-shell       Open psql in the Postgres container.
   init-db        Initialize the pmqms_dev database with base only.
-  install-core   Install or update pm_qms_core in pmqms_dev.
+  install-core   Install pm_qms_core in pmqms_dev.
+  update-core    Upgrade pm_qms_core in pmqms_dev.
   test-core      Run pm_qms_core Odoo tests in pmqms_test.
 EOF
 }
@@ -125,29 +126,44 @@ case "$command" in
     ;;
   logs)
     init_secrets
-    compose logs -f odoo
+    compose logs -f odoo-dev
     ;;
   shell)
     prepare_runtime_permissions
-    compose exec odoo bash
+    compose exec odoo-dev bash
     ;;
   db-shell)
     prepare_runtime_permissions
-    compose exec db psql -U odoo -d postgres
+    compose exec postgres-dev psql -U odoo -d postgres
     ;;
   init-db)
     prepare_runtime_permissions
-    compose run --rm odoo odoo -d pmqms_dev --init base --without-demo=all --stop-after-init
+    compose run --rm odoo-dev odoo -d pmqms_dev --init base --without-demo=all --stop-after-init
     ;;
   install-core)
     prepare_runtime_permissions
-    compose run --rm odoo odoo -d pmqms_dev --init pm_qms_core --without-demo=all --stop-after-init
+    compose run --rm odoo-dev odoo -d pmqms_dev --init pm_qms_core --without-demo=all --stop-after-init
+    ;;
+  update-core)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update pm_qms_core --stop-after-init
     ;;
   test-core)
     prepare_runtime_permissions
-    compose up -d db
-    compose exec -T db dropdb -U odoo --if-exists pmqms_test
-    compose run --rm odoo odoo -d pmqms_test --init pm_qms_core --test-enable --test-tags /pm_qms_core --stop-after-init --without-demo=all --log-level=test
+    compose up -d postgres-dev
+    compose exec -T postgres-dev dropdb -U odoo --if-exists pmqms_test
+    test_log="$(mktemp)"
+    set +e
+    compose run --rm odoo-dev odoo -d pmqms_test --init pm_qms_core --test-enable --test-tags /pm_qms_core --stop-after-init --without-demo=all --log-level=test 2>&1 | tee "$test_log"
+    odoo_rc="${PIPESTATUS[0]}"
+    set -e
+    if grep -Eq "odoo\\.tests\\.result: .*([1-9][0-9]* failed|[1-9][0-9]* error\\(s\\))" "$test_log"; then
+      rm -f "$test_log"
+      echo "pm_qms_core tests reported failures." >&2
+      exit 1
+    fi
+    rm -f "$test_log"
+    exit "$odoo_rc"
     ;;
   ""|help|-h|--help)
     usage

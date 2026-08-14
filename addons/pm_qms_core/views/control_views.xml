@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_pm_qms_control_tree" model="ir.ui.view">
-        <field name="name">pm.qms.control.tree</field>
+    <record id="view_pm_qms_control_list" model="ir.ui.view">
+        <field name="name">pm.qms.control.list</field>
         <field name="model">pm.qms.control</field>
         <field name="arch" type="xml">
             <list>
                 <field name="code"/>
                 <field name="name"/>
+                <field name="category"/>
                 <field name="process_id"/>
                 <field name="owner_id"/>
                 <field name="state"/>
                 <field name="external_mapping_count"/>
+                <field name="active"/>
             </list>
         </field>
     </record>
@@ -30,51 +32,59 @@
                     <div class="oe_title">
                         <label for="name"/>
                         <h1>
-                            <field name="name"/>
+                            <field name="name" placeholder="Perfect Match control title"/>
                         </h1>
                     </div>
                     <group>
-                        <group>
+                        <group string="Identification">
                             <field name="code"/>
+                            <field name="category"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Implementation">
                             <field name="process_id"/>
                             <field name="owner_id"/>
-                        </group>
-                        <group>
                             <field name="company_id" groups="base.group_multi_company"/>
-                            <field name="active"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Objective">
                             <field name="objective"/>
                         </page>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
                         <page string="Activities">
                             <field name="implementation_activity_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
-                                    <field name="responsible_id"/>
-                                    <field name="description"/>
+                                    <field name="responsible_role"/>
+                                    <field name="responsible_user_id"/>
+                                    <field name="expected_output"/>
+                                    <field name="active"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="Evidence Requirements">
+                        <page string="Evidence">
                             <field name="evidence_requirement_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="evidence_type"/>
-                                    <field name="required"/>
-                                    <field name="description"/>
+                                    <field name="mandatory"/>
+                                    <field name="active"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="External Mappings">
+                        <page string="External References">
                             <field name="external_mapping_ids">
                                 <list editable="bottom">
-                                    <field name="framework"/>
+                                    <field name="standard_name"/>
+                                    <field name="edition"/>
                                     <field name="reference"/>
-                                    <field name="notes"/>
+                                    <field name="note"/>
+                                    <field name="active"/>
                                 </list>
                             </field>
                         </page>
@@ -86,7 +96,7 @@
     </record>
 
     <record id="action_pm_qms_control" model="ir.actions.act_window">
-        <field name="name">Perfect Match Controls</field>
+        <field name="name">Controls</field>
         <field name="res_model">pm.qms.control</field>
         <field name="view_mode">list,form</field>
     </record>

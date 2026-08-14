@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_root"
+        name="Perfect Match QMS"
+        sequence="60"
+        groups="pm_qms_core.group_pm_qms_user"/>
+
+    <menuitem
+        id="menu_pm_qms_framework"
+        name="Framework"
+        parent="menu_pm_qms_root"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_controls"
+        name="Controls"
+        parent="menu_pm_qms_framework"
+        action="action_pm_qms_control"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_activities"
+        name="Activities"
+        parent="menu_pm_qms_framework"
+        action="action_pm_qms_activity"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_evidence_requirements"
+        name="Evidence Requirements"
+        parent="menu_pm_qms_framework"
+        action="action_pm_qms_evidence_requirement"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_organization"
+        name="Organization"
+        parent="menu_pm_qms_root"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_organizations"
+        name="Organizations"
+        parent="menu_pm_qms_organization"
+        action="action_pm_qms_organization"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_processes"
+        name="Processes"
+        parent="menu_pm_qms_organization"
+        action="action_pm_qms_process"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_configuration"
+        name="Configuration"
+        parent="menu_pm_qms_root"
+        sequence="90"
+        groups="pm_qms_core.group_pm_qms_manager"/>
+
+    <menuitem
+        id="menu_pm_qms_external_mappings"
+        name="External Mappings"
+        parent="menu_pm_qms_configuration"
+        action="action_pm_qms_external_mapping"
+        sequence="10"/>
+</odoo>
