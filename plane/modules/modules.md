@@ -69,7 +69,7 @@ These module names are the source-of-truth candidates for Plane. Names intention
 - PRODUCTION
 - CI/CD
 
-## PMQMS MULTI-STANDARD
+## PMQMS MULTI STANDARD
 
 - Shared Controls
 - Framework Extensions

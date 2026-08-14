@@ -53,6 +53,6 @@ These files are Plane source artifacts for the initial Perfect Match Digital QMS
 | PMQMS-047 | Create Oliva Torras Pilot Plan | PMQMS OLIVA TORRAS PILOT | Pilot Planning | MEDIUM | Backlog | PMQMS-022, PMQMS-045 |
 | PMQMS-048 | Design AI Copilot Architecture | PMQMS AI COPILOT | AI Architecture | LOW | Backlog | PMQMS-037 |
 | PMQMS-049 | Design AI Audit Logging | PMQMS AI COPILOT | AI Audit Logging | LOW | Backlog | PMQMS-048 |
-| PMQMS-050 | Design Multi-Standard Control Engine | PMQMS MULTI-STANDARD | Mapping Engine | LOW | Backlog | PMQMS-016, PMQMS-022 |
+| PMQMS-050 | Design Multi-Standard Control Engine | PMQMS MULTI STANDARD | Mapping Engine | LOW | Backlog | PMQMS-016, PMQMS-022 |
 | PMQMS-051 | Design CMMC Boundary | PMQMS DEFENSE | CUI Boundary | LOW | Backlog | PMQMS-008 |
 | PMQMS-052 | Create Documentation Quality Gate | PMQMS PLATFORM | Odoo Architecture | MEDIUM | Backlog | PMQMS-006 |

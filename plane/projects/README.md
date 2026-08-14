@@ -11,5 +11,5 @@ Plane source artifacts for the Perfect Match Digital QMS workspace. Create or up
 | PMQMS AUTOMATION | AUTO | n8n, integrations, notifications, APIs and workflow automation. |
 | PMQMS AI COPILOT | AICP | Perfect Match QMS Copilot and OpenAI API integration. |
 | PMQMS INFRASTRUCTURE | INFR | Docker, PostgreSQL, reverse proxy, backups, monitoring and deployment. |
-| PMQMS MULTI-STANDARD | MULT | Integrated management system engine and future standard packs. |
+| PMQMS MULTI STANDARD | MULT | Integrated management system engine and future standard packs. |
 | PMQMS DEFENSE | DEF | CMMC Level 1, CMMC Level 2 and defense compliance functionality. CUI must not be stored in the standard development platform. |

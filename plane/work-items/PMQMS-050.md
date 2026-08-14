@@ -1,7 +1,7 @@
 # PMQMS-050 - Design Multi-Standard Control Engine
 
 Priority: LOW
-Project: PMQMS MULTI-STANDARD
+Project: PMQMS MULTI STANDARD
 Module: Mapping Engine
 Cycle: Backlog
 Labels: compliance, architecture, enhancement
