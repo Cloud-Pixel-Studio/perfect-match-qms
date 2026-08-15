@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_nonconformity_form_audit" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.form.audit</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="inherit_id" ref="pm_qms_ncr.view_pm_qms_nonconformity_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='source_type']" position="after">
+                <field name="source_audit_id" invisible="source_type != 'audit'"/>
+                <field name="source_audit_finding_id" invisible="source_type != 'audit'"/>
+            </xpath>
+            <xpath expr="//field[@name='related_risk_ids']" position="after">
+                <group string="Audit Source">
+                    <field name="source_audit_evidence_ids"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

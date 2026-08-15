@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_audit_organization" model="pm.qms.organization">
+        <field name="name">Perfect Match Audit Demo Organization</field>
+        <field name="code">PM-AUD-DEMO-ORG</field>
+    </record>
+
+    <record id="demo_audit_process" model="pm.qms.process">
+        <field name="name">Controlled Document Operations</field>
+        <field name="code">PM-AUD-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_audit_organization"/>
+    </record>
+
+    <record id="demo_audit_control" model="pm.qms.control">
+        <field name="name">Controlled Operational Instructions</field>
+        <field name="code">PM-QMS-DOC-001</field>
+        <field name="objective">Keep operational instructions identified, current, and available where work is performed.</field>
+        <field name="process_id" ref="demo_audit_process"/>
+    </record>
+
+    <record id="demo_audit_control_instance" model="pm.qms.control.instance">
+        <field name="name">Demo controlled instruction implementation</field>
+        <field name="code">AUD-DEMO-PM-QMS-DOC-001</field>
+        <field name="control_id" ref="demo_audit_control"/>
+        <field name="organization_id" ref="demo_audit_organization"/>
+        <field name="process_id" ref="demo_audit_process"/>
+    </record>
+
+    <record id="demo_audit_program" model="pm.qms.audit.program">
+        <field name="name">2026 Internal Audit Program</field>
+        <field name="code">PM-DEMO-AUDPROG-001</field>
+        <field name="organization_id" ref="demo_audit_organization"/>
+        <field name="owner_id" ref="base.user_admin"/>
+        <field name="date_start">2026-08-01</field>
+        <field name="date_end">2026-12-31</field>
+        <field name="objective">Plan internal audits using Perfect Match methodology and preserve follow-up accountability.</field>
+    </record>
+
+    <record id="demo_audit" model="pm.qms.audit">
+        <field name="name">Controlled Document Process Internal Audit</field>
+        <field name="code">PM-DEMO-AUD-001</field>
+        <field name="program_id" ref="demo_audit_program"/>
+        <field name="organization_id" ref="demo_audit_organization"/>
+        <field name="planned_start">2026-09-15</field>
+        <field name="planned_end">2026-09-16</field>
+        <field name="audit_type">process</field>
+        <field name="objective">Evaluate whether the demo organization's controlled document process is being implemented as defined internally.</field>
+        <field name="scope_summary">Controlled operational instructions used in the demo work area.</field>
+        <field name="lead_auditor_id" ref="base.user_admin"/>
+        <field name="auditor_ids" eval="[Command.link(ref('base.user_admin'))]"/>
+        <field name="independence_confirmed">1</field>
+        <field name="independence_reviewed_by_id" ref="base.user_admin"/>
+        <field name="independence_review_date">2026-09-01</field>
+        <field name="independence_notes">Demo auditor independence reviewed for the fictional audit.</field>
+    </record>
+
+    <record id="demo_audit_scope" model="pm.qms.audit.scope">
+        <field name="audit_id" ref="demo_audit"/>
+        <field name="organization_id" ref="demo_audit_organization"/>
+        <field name="process_id" ref="demo_audit_process"/>
+        <field name="control_instance_ids" eval="[Command.link(ref('demo_audit_control_instance'))]"/>
+        <field name="description">Review selected controlled instruction use in the demo process.</field>
+    </record>
+
+    <record id="demo_audit_criterion" model="pm.qms.audit.criterion">
+        <field name="audit_id" ref="demo_audit"/>
+        <field name="name">Controlled instruction availability</field>
+        <field name="criterion_type">perfect_match_control</field>
+        <field name="control_id" ref="demo_audit_control"/>
+        <field name="control_instance_id" ref="demo_audit_control_instance"/>
+        <field name="reference">PM-QMS-DOC-001</field>
+        <field name="description">Perfect Match internal control reference only.</field>
+    </record>
+
+    <record id="demo_audit_evidence" model="pm.qms.audit.evidence">
+        <field name="name">Workstation instruction sample</field>
+        <field name="audit_id" ref="demo_audit"/>
+        <field name="criterion_id" ref="demo_audit_criterion"/>
+        <field name="source">observation</field>
+        <field name="description">A sample workstation instruction was compared to the current internal register.</field>
+        <field name="control_instance_id" ref="demo_audit_control_instance"/>
+        <field name="collected_by_id" ref="base.user_admin"/>
+        <field name="collected_date">2026-09-15</field>
+    </record>
+
+    <record id="demo_audit_finding" model="pm.qms.audit.finding">
+        <field name="name">Superseded instruction found</field>
+        <field name="title">One workstation contained a superseded operational instruction.</field>
+        <field name="audit_id" ref="demo_audit"/>
+        <field name="classification">nonconformity</field>
+        <field name="severity">minor</field>
+        <field name="description">The demo work area had one obsolete instruction available for use.</field>
+        <field name="objective_evidence">The instruction identifier did not match the current internal register.</field>
+        <field name="criterion_id" ref="demo_audit_criterion"/>
+        <field name="process_id" ref="demo_audit_process"/>
+        <field name="control_instance_id" ref="demo_audit_control_instance"/>
+        <field name="audit_evidence_ids" eval="[Command.link(ref('demo_audit_evidence'))]"/>
+        <field name="owner_id" ref="base.user_admin"/>
+        <field name="due_date">2026-09-30</field>
+    </record>
+</odoo>

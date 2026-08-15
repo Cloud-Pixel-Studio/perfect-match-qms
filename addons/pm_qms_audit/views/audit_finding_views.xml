@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_audit_finding_list" model="ir.ui.view">
+        <field name="name">pm.qms.audit.finding.list</field>
+        <field name="model">pm.qms.audit.finding</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="title"/>
+                <field name="audit_id"/>
+                <field name="classification"/>
+                <field name="severity"/>
+                <field name="process_id"/>
+                <field name="control_instance_id"/>
+                <field name="owner_id"/>
+                <field name="due_date"/>
+                <field name="follow_up_date"/>
+                <field name="ncr_count"/>
+                <field name="is_overdue"/>
+                <field name="follow_up_is_overdue"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_audit_finding_form" model="ir.ui.view">
+        <field name="name">pm.qms.audit.finding.form</field>
+        <field name="model">pm.qms.audit.finding</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_issue" type="object" string="Issue" invisible="state != 'draft'"/>
+                    <button name="action_accept" type="object" string="Accept" invisible="state not in ('issued', 'action_required')"/>
+                    <button name="action_require_action" type="object" string="Require Action" invisible="state not in ('issued', 'accepted')"/>
+                    <button name="action_create_ncr" type="object" string="Create NCR" invisible="classification != 'nonconformity' or state == 'draft'"/>
+                    <button name="action_close" type="object" string="Close" invisible="state not in ('issued', 'accepted', 'action_required')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('closed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,issued,accepted,action_required,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="title"/>
+                        <h1><field name="title"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="audit_id"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="classification"/>
+                            <field name="severity" invisible="classification != 'nonconformity'"/>
+                        </group>
+                        <group string="Ownership">
+                            <field name="owner_id"/>
+                            <field name="process_id"/>
+                            <field name="control_instance_id"/>
+                            <field name="criterion_id"/>
+                            <field name="due_date"/>
+                            <field name="follow_up_date"/>
+                            <field name="is_overdue"/>
+                            <field name="follow_up_is_overdue"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Finding">
+                            <field name="description"/>
+                        </page>
+                        <page string="Objective Evidence">
+                            <field name="objective_evidence"/>
+                        </page>
+                        <page string="Evidence">
+                            <field name="audit_evidence_ids"/>
+                        </page>
+                        <page string="NCRs">
+                            <field name="ncr_ids">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="severity"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Closure">
+                            <field name="issued_by_id"/>
+                            <field name="issued_on"/>
+                            <field name="closed_by_id"/>
+                            <field name="closed_on"/>
+                            <field name="closure_notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_audit_finding_search" model="ir.ui.view">
+        <field name="name">pm.qms.audit.finding.search</field>
+        <field name="model">pm.qms.audit.finding</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="title"/>
+                <field name="code"/>
+                <field name="audit_id"/>
+                <field name="classification"/>
+                <field name="owner_id"/>
+                <field name="process_id"/>
+                <filter name="open" string="Open Findings" domain="[('state', 'not in', ('closed', 'cancelled'))]"/>
+                <filter name="internal_nonconformities" string="Internal Nonconformities" domain="[('classification', '=', 'nonconformity')]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="follow_up_overdue" string="Follow-up Overdue" domain="[('follow_up_is_overdue', '=', True)]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_classification" string="Classification" context="{'group_by': 'classification'}"/>
+                <filter name="group_process" string="Process" context="{'group_by': 'process_id'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_audit_finding_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.audit.finding.pivot</field>
+        <field name="model">pm.qms.audit.finding</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="classification" type="row"/>
+                <field name="state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_audit_finding_graph" model="ir.ui.view">
+        <field name="name">pm.qms.audit.finding.graph</field>
+        <field name="model">pm.qms.audit.finding</field>
+        <field name="arch" type="xml">
+            <graph string="Findings by Classification">
+                <field name="classification" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_audit_finding" model="ir.actions.act_window">
+        <field name="name">Findings</field>
+        <field name="res_model">pm.qms.audit.finding</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_audit_finding_search"/>
+    </record>
+</odoo>

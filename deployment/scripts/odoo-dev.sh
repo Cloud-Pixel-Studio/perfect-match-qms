@@ -12,6 +12,8 @@ MISSION03_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence"
 MISSION03_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence"
 MISSION04_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa"
 MISSION04_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa"
+MISSION05_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit"
+MISSION05_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -112,6 +114,12 @@ Commands:
                 Upgrade core through Risk, NCR, and CAPA addons in pmqms_dev.
   test-mission04
                 Run Mission 04 addon tests in pmqms_test.
+  install-mission05
+                Install core through Internal Audit addons in pmqms_dev.
+  update-mission05
+                Upgrade core through Internal Audit addons in pmqms_dev.
+  test-mission05
+                Run Mission 05 addon tests in pmqms_test.
 EOF
 }
 
@@ -222,6 +230,22 @@ case "$command" in
     ;;
   test-mission04)
     run_odoo_tests "$MISSION04_ADDONS" "$MISSION04_TEST_TAGS" "Mission 04"
+    ;;
+  install-mission05)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION04_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_audit" --without-demo=all --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION05_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission05)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION05_ADDONS" --stop-after-init
+    ;;
+  test-mission05)
+    run_odoo_tests "$MISSION05_ADDONS" "$MISSION05_TEST_TAGS" "Mission 05"
     ;;
   ""|help|-h|--help)
     usage

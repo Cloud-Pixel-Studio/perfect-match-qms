@@ -169,3 +169,62 @@ The scoring model is not external-standard content.
 CAPA effectiveness is intentionally separate from implementation completion.
 A CAPA moves through implementation, effectiveness review, effective or
 ineffective decision, and only then closure.
+
+## Mission 05 Internal Audit Foundation
+
+```text
+Audit Program
+        |
+        v
+Audit
+ |-- Scope
+ |-- Criteria
+ |-- Team and independence review
+ |-- Plan Lines
+ |-- Audit Evidence
+ `-- Findings
+        |
+        v
+      NCR
+        |
+        v
+      CAPA
+```
+
+Mission 05 adds `pm_qms_audit` as a client operational addon. It depends on
+`pm_qms_capa` so it can reuse the existing NCR and CAPA chain without adding
+direct CAPA coupling to every finding.
+
+The audit layer includes:
+
+- `pm.qms.audit.program` for planned audit programs by organization and period.
+- `pm.qms.audit` for individual audits with type, dates, team, objective,
+  scope summary, independence metadata, conclusion, lifecycle, and summary
+  counts.
+- `pm.qms.audit.scope` for normalized process, organization, and control
+  instance scope.
+- `pm.qms.audit.criterion` for criteria using Perfect Match controls, company
+  procedures, customer/regulatory references, external standard reference
+  metadata, or other internal references.
+- `pm.qms.audit.plan.line` for lightweight agenda and interview planning.
+- `pm.qms.audit.evidence` for evidence collected during an audit.
+- `pm.qms.audit.finding` for conformities, observations, opportunities for
+  improvement, and internal nonconformities.
+
+Audit records relate to `pm.qms.control.instance` and `pm.qms.process`, not to
+`pm.qms.control` as mutable client state. External standards remain references
+only; no external standard requirement text is stored in criteria, demo data,
+tests, or documentation.
+
+Audit completion is separate from finding, NCR, and CAPA closure. A valid state
+is:
+
+```text
+Audit = Completed
+Finding = Action Required
+NCR = Open
+CAPA = In Progress
+```
+
+This allows audit reporting to finish while corrective action remains managed
+through NCR and CAPA workflows.

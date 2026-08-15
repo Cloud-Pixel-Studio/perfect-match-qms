@@ -3,7 +3,7 @@
 ## Scope
 
 This document defines the QMS security model for internal Odoo users through
-Mission 04.
+Mission 05.
 It does not implement customer portal access.
 
 ## Roles
@@ -15,6 +15,10 @@ It does not implement customer portal access.
 - Report operational risk, NCR, and CAPA records where justified.
 - Cannot approve documents, accept/reject evidence, close NCRs, close risks, or
   close CAPAs.
+- Can read audit records in allowed companies and submit audit evidence where
+  evidence collection is requested.
+- Cannot plan, start, complete, or cancel audits; issue findings; create NCRs
+  from findings; or close findings.
 
 `QMS Manager`
 
@@ -22,6 +26,8 @@ It does not implement customer portal access.
 - Manage controlled documents and revisions.
 - Review, accept, reject, and expire evidence.
 - Assess, review, verify, and close risk, NCR, and CAPA records.
+- Create and manage audit programs, audits, scope, criteria, plan lines, audit
+  evidence, findings, auditor independence review, and finding-to-NCR handoff.
 - Cannot bypass company record rules.
 
 `QMS Administrator`
@@ -57,6 +63,16 @@ Mission 04 extends this to:
 - CAPA actions;
 - CAPA 5 Why entries.
 
+Mission 05 extends this to:
+
+- audit programs;
+- audits;
+- audit scope;
+- audit criteria;
+- audit plan lines;
+- audit evidence;
+- audit findings.
+
 Organization isolation is enforced by model constraints where relationships
 must belong to the selected organization. Documents, evidence, and control
 instances reject mismatched process, organization, or company relationships.
@@ -71,6 +87,10 @@ evaluate access through the protected record.
 Tests verify that a user from another company cannot retrieve a protected risk
 attachment through a direct attachment read.
 
+Mission 05 extends attachment linkage and tests to audit evidence attachments.
+A user from another company cannot retrieve an audit evidence attachment through
+a direct attachment read.
+
 ## Administrative Boundaries
 
 Workflow state changes use model actions:
@@ -83,9 +103,14 @@ Workflow state changes use model actions:
 - CAPA analysis, action planning, implementation, effectiveness review,
   effective/ineffective decision, reopen, close;
 - CAPA action start, complete, verify, cancel.
+- audit program approve, activate, complete, cancel;
+- audit plan, ready, start, reporting, complete, cancel;
+- auditor independence confirmation or documented override;
+- audit finding issue, accept, require action, create NCR, close, cancel.
 
 Direct state writes are blocked for controlled implementation, document,
-revision, evidence, risk, NCR, CAPA, and CAPA action states.
+revision, evidence, risk, NCR, CAPA, CAPA action, audit program, audit, and
+audit finding states.
 
 `pm.qms.event` is append-only at the ORM level for normal QMS groups. Workflow
 methods append events with the acting user, timestamp, previous state, new
@@ -116,3 +141,7 @@ Mission 03 and Mission 04 tests validate:
 - unauthorized closure prevention;
 - protected attachment access;
 - workflow event history for critical transitions.
+- audit workflow authority, auditor independence requirements, finding
+  workflow authority, finding-to-NCR rules, audit/NCR/CAPA lifecycle
+  independence, multi-company audit isolation, relationship constraints, and
+  protected audit attachment access.

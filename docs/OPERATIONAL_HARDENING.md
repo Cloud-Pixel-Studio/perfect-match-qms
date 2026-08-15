@@ -20,15 +20,19 @@ Operational records use Odoo sequences:
 - Risk and opportunity: `PM-RISK-00001`
 - Nonconformity: `PM-NCR-00001`
 - CAPA: `PM-CAPA-00001`
+- Audit program: `PM-AUDPROG-00001`
+- Audit: `PM-AUD-00001`
+- Audit finding: `PM-AUDF-00001`
 
 ## Client Operational Layer
 
-Risk, NCR, and CAPA belong to the client operational layer. They relate to
-`pm.qms.control.instance`, documents, and evidence. They do not add client
-implementation data to reusable `pm.qms.control` definitions.
+Risk, NCR, CAPA, and internal audit belong to the client operational layer.
+They relate to `pm.qms.control.instance`, documents, evidence, processes, and
+organizations. They do not add client implementation data to reusable
+`pm.qms.control` definitions.
 
 ## Due Dates
 
-Risk, NCR, CAPA, CAPA action, and CAPA effectiveness records expose computed
-overdue indicators and days overdue. Notifications are intentionally not added
-yet.
+Risk, NCR, CAPA, CAPA action, CAPA effectiveness, audits, findings, and finding
+follow-up records expose computed overdue indicators and days overdue.
+Notifications are intentionally not added yet.

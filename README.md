@@ -33,6 +33,11 @@ Mission 04 adds operational hardening, risk and opportunity management,
 nonconformity management, CAPA, CI quality gates, and DEV backup/restore
 validation.
 
+Mission 05 adds the internal audit foundation: audit programs, individual
+audits, normalized scope and criteria, audit team and independence metadata,
+planning lines, audit evidence, findings, and controlled finding-to-NCR
+integration while preserving NCR-to-CAPA separation.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -46,6 +51,7 @@ Core paths:
 - `addons/pm_qms_risk/`
 - `addons/pm_qms_ncr/`
 - `addons/pm_qms_capa/`
+- `addons/pm_qms_audit/`
 - `.github/workflows/qms-ci.yml`
 
 ## DEV Quick Start
@@ -61,6 +67,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission03
 ./deployment/scripts/odoo-dev.sh install-mission04
 ./deployment/scripts/odoo-dev.sh test-mission04
+./deployment/scripts/odoo-dev.sh install-mission05
+./deployment/scripts/odoo-dev.sh test-mission05
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -86,3 +94,8 @@ not to copied external standard text.
 Risk, NCR, and CAPA records are also client operational records. They relate to
 control instances and client evidence/documents without mutating reusable
 framework controls.
+
+Internal audit records are also operational records. Audit findings relate to
+audits, criteria, evidence, processes, and control instances. Internal
+nonconformity findings can create NCR records through a controlled action; CAPA
+continues through the existing NCR-to-CAPA pathway.

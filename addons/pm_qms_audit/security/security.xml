@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_audit_program_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit program company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit_program"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_audit_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_audit_scope_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit scope company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit_scope"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_audit_criterion_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit criterion company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit_criterion"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_audit_plan_line_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit plan line company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit_plan_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_audit_evidence_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit evidence company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit_evidence"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_audit_finding_company" model="ir.rule">
+        <field name="name">Perfect Match QMS audit finding company boundary</field>
+        <field name="model_id" ref="model_pm_qms_audit_finding"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>

@@ -48,6 +48,27 @@ Mission 04 adds tests covering:
   the integration chain from control instance through evidence, NCR, CAPA,
   effectiveness review, and closure.
 
+Mission 05 adds tests covering:
+
+- Audit program creation, sequence generation, workflow history, and controlled
+  program transitions.
+- Audit creation, normalized scope, criteria, plan lines, team assignment,
+  auditor independence confirmation, documented independence override, invalid
+  transition blocking, completion requirements, overdue audit indicators, and
+  event history.
+- Audit evidence creation, document/control-instance alignment, and protected
+  attachment access.
+- Audit finding classifications: conformity, observation, opportunity for
+  improvement, and internal nonconformity.
+- Finding workflow, severity constraints, overdue finding and follow-up logic,
+  and the rule that only internal nonconformity findings create NCRs.
+- Audit finding to NCR source references, source audit evidence preservation,
+  and downstream NCR-to-CAPA integration.
+- The valid independent lifecycle state where Audit is completed while Finding
+  remains action required, NCR remains open, and CAPA remains in progress.
+- Multi-company isolation for audit programs, audits, scope, criteria, evidence,
+  findings, and audit attachments.
+
 ## Run Tests
 
 ```bash
@@ -55,6 +76,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-core
 ./deployment/scripts/odoo-dev.sh test-mission03
 ./deployment/scripts/odoo-dev.sh test-mission04
+./deployment/scripts/odoo-dev.sh test-mission05
 ```
 
 ## Rules

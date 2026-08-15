@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0 - 2026-08-14
+
+- Added `pm_qms_audit` with audit programs, audits, scope, criteria, planning,
+  audit evidence, findings, controlled workflows, overdue indicators, and tests.
+- Added auditor independence metadata with confirmation and documented override
+  handling before an audit can move to ready.
+- Added audit finding classifications for conformity, observation, opportunity
+  for improvement, and internal nonconformity.
+- Added controlled audit finding to NCR integration with source audit, source
+  finding, audit evidence, and downstream NCR-to-CAPA continuity.
+- Extended control instance and process views with audit/finding relationships
+  and open finding metrics.
+- Updated CI and DEV script targets for Mission 05 validation.
+- Added Mission 05 architecture, security, testing, plan, and ADR documentation.
+
 ## 0.3.0 - 2026-08-14
 
 - Added `pm_qms_risk` with risk/opportunity records, configurable scoring thresholds, workflow actions, overdue logic, attachments, and tests.

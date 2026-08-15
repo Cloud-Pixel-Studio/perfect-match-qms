@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_audit_program_list" model="ir.ui.view">
+        <field name="name">pm.qms.audit.program.list</field>
+        <field name="model">pm.qms.audit.program</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="organization_id"/>
+                <field name="owner_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_audit_program_form" model="ir.ui.view">
+        <field name="name">pm.qms.audit.program.form</field>
+        <field name="model">pm.qms.audit.program</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" type="object" string="Approve" invisible="state != 'draft'"/>
+                    <button name="action_activate" type="object" string="Activate" invisible="state != 'approved'"/>
+                    <button name="action_complete" type="object" string="Complete" invisible="state != 'active'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('completed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,active,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="owner_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Period">
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Objective">
+                            <field name="objective"/>
+                        </page>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
+                        <page string="Audits">
+                            <field name="audit_ids">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="audit_type"/>
+                                    <field name="planned_start"/>
+                                    <field name="planned_end"/>
+                                    <field name="lead_auditor_id"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_audit_program_search" model="ir.ui.view">
+        <field name="name">pm.qms.audit.program.search</field>
+        <field name="model">pm.qms.audit.program</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="organization_id"/>
+                <field name="owner_id"/>
+                <filter name="active_programs" string="Active Programs" domain="[('state', '=', 'active')]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_audit_program" model="ir.actions.act_window">
+        <field name="name">Audit Programs</field>
+        <field name="res_model">pm.qms.audit.program</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_audit_program_search"/>
+    </record>
+</odoo>

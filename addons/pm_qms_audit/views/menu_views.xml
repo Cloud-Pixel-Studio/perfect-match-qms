@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_audit"
+        name="Audit"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="15"/>
+
+    <menuitem
+        id="menu_pm_qms_audit_programs"
+        name="Audit Programs"
+        parent="menu_pm_qms_audit"
+        action="action_pm_qms_audit_program"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_audits"
+        name="Audits"
+        parent="menu_pm_qms_audit"
+        action="action_pm_qms_audit"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_audit_findings"
+        name="Findings"
+        parent="menu_pm_qms_audit"
+        action="action_pm_qms_audit_finding"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_audit_evidence"
+        name="Audit Evidence"
+        parent="menu_pm_qms_audit"
+        action="action_pm_qms_audit_evidence"
+        sequence="40"/>
+</odoo>

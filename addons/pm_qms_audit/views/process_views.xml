@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_process_form_audit" model="ir.ui.view">
+        <field name="name">pm.qms.process.form.audit</field>
+        <field name="model">pm.qms.process</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_process_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Audits">
+                    <group>
+                        <field name="audit_count"/>
+                        <field name="audit_finding_count"/>
+                        <field name="open_audit_finding_count"/>
+                        <field name="open_ncr_count"/>
+                    </group>
+                    <field name="audit_ids">
+                        <list>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="audit_type"/>
+                            <field name="planned_start"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <field name="audit_finding_ids">
+                        <list>
+                            <field name="code"/>
+                            <field name="title"/>
+                            <field name="classification"/>
+                            <field name="severity"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
