@@ -90,7 +90,7 @@ database_exists() {
   local db_name="$1"
   prepare_runtime_permissions
   compose up -d postgres-dev >/dev/null
-  compose exec -T postgres-dev psql -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
+  compose exec -T postgres-dev psql -h 127.0.0.1 -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
 }
 
 health() {
@@ -185,8 +185,8 @@ run_odoo_tests() {
   local label="$3"
   prepare_runtime_permissions
   compose up -d postgres-dev
-  compose exec -T postgres-dev psql -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null
-  compose exec -T postgres-dev dropdb -U odoo --maintenance-db=postgres --if-exists pmqms_test
+  compose exec -T postgres-dev psql -h 127.0.0.1 -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null
+  compose exec -T postgres-dev dropdb -h 127.0.0.1 -U odoo --maintenance-db=postgres --if-exists pmqms_test
   local test_log
   test_log="$(mktemp)"
   set +e
@@ -247,7 +247,7 @@ case "$command" in
     ;;
   db-shell)
     prepare_runtime_permissions
-    compose exec postgres-dev psql -U odoo -d postgres
+    compose exec postgres-dev psql -h 127.0.0.1 -U odoo -d postgres
     ;;
   init-db)
     prepare_runtime_permissions
