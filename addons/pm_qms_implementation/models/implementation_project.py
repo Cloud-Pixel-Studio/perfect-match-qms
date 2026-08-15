@@ -24,6 +24,20 @@ class PmQmsImplementationProject(models.Model):
     project_manager_id = fields.Many2one("res.users", string="Project Manager", tracking=True)
     date_start = fields.Date(required=True, default=fields.Date.context_today, tracking=True)
     target_date = fields.Date(required=True, tracking=True)
+    assessment_goal_type = fields.Selection(
+        [
+            ("internal_readiness", "Internal Readiness"),
+            ("certification", "Certification"),
+            ("surveillance", "Surveillance"),
+            ("customer_audit", "Customer Audit"),
+            ("regulatory_assessment", "Regulatory Assessment"),
+            ("other", "Other"),
+        ],
+        default="internal_readiness",
+        required=True,
+        tracking=True,
+    )
+    target_assessment_date = fields.Date(tracking=True)
     actual_completion_date = fields.Date(tracking=True)
     completion_justification = fields.Text()
     implementation_type = fields.Selection(
@@ -119,7 +133,7 @@ class PmQmsImplementationProject(models.Model):
                 vals["code"] = self.env["ir.sequence"].next_by_code("pm.qms.implementation.project") or "PM-IMP-00000"
         return super().create(vals_list)
 
-    @api.constrains("company_id", "organization_id", "pack_ids", "date_start", "target_date", "actual_completion_date")
+    @api.constrains("company_id", "organization_id", "pack_ids", "date_start", "target_date", "target_assessment_date", "actual_completion_date")
     def _check_project_constraints(self):
         for project in self:
             if project.organization_id.company_id != project.company_id:
@@ -128,6 +142,8 @@ class PmQmsImplementationProject(models.Model):
                 raise ValidationError("All framework packs must belong to the implementation project company.")
             if project.date_start and project.target_date and project.target_date < project.date_start:
                 raise ValidationError("Target date cannot be before the implementation start date.")
+            if project.target_assessment_date and project.date_start and project.target_assessment_date < project.date_start:
+                raise ValidationError("Target assessment date cannot be before the implementation start date.")
             if project.actual_completion_date and project.date_start and project.actual_completion_date < project.date_start:
                 raise ValidationError("Completion date cannot be before the implementation start date.")
 
@@ -194,6 +210,8 @@ class PmQmsImplementationProject(models.Model):
             )
 
     def _check_manager_permission(self):
+        if self.env.context.get("install_mode") or self.env.context.get("module"):
+            return
         if not self.env.user.has_group("pm_qms_core.group_pm_qms_manager"):
             raise AccessError("Only QMS Managers or Administrators can manage implementation projects.")
 
@@ -261,10 +279,13 @@ class PmQmsImplementationProject(models.Model):
                     "sequence": line.sequence,
                     "required": line.required,
                     "pack_ids": set(),
+                    "area_ids": set(),
                 }
             resolved[control_id]["sequence"] = min(resolved[control_id]["sequence"], line.sequence)
             resolved[control_id]["required"] = bool(resolved[control_id]["required"] or line.required)
             resolved[control_id]["pack_ids"].add(line.pack_id.id)
+            if line.area_id:
+                resolved[control_id]["area_ids"].add(line.area_id.id)
         return resolved
 
     def _find_or_create_control_instance(self, control):
@@ -391,11 +412,13 @@ class PmQmsImplementationProject(models.Model):
                     limit=1,
                 )
                 pack_ids = list(info["pack_ids"])
+                area_ids = list(info["area_ids"])
                 if line:
                     line.write(
                         {
                             "control_instance_id": instance.id,
                             "pack_ids": [Command.set(sorted(set(line.pack_ids.ids + pack_ids)))],
+                            "area_ids": [Command.set(sorted(set(line.area_ids.ids + area_ids)))],
                             "required": bool(line.required or info["required"]),
                             "sequence": min(line.sequence, info["sequence"]),
                             "active": True,
@@ -408,6 +431,7 @@ class PmQmsImplementationProject(models.Model):
                             "control_id": control.id,
                             "control_instance_id": instance.id,
                             "pack_ids": [Command.set(pack_ids)],
+                            "area_ids": [Command.set(area_ids)],
                             "required": info["required"],
                             "sequence": info["sequence"],
                         }
@@ -441,6 +465,8 @@ class PmQmsImplementationProject(models.Model):
                 "project_manager_id": values.get("project_manager_id") or False,
                 "date_start": values["date_start"],
                 "target_date": values["target_date"],
+                "assessment_goal_type": values.get("assessment_goal_type") or "internal_readiness",
+                "target_assessment_date": values.get("target_assessment_date") or False,
                 "implementation_type": values["implementation_type"],
                 "pack_ids": [Command.set(values["pack_ids"])],
                 "notes": values.get("notes") or False,
@@ -498,6 +524,78 @@ class PmQmsImplementationProject(models.Model):
             if project.state == "completed":
                 raise UserError("Completed implementation projects cannot be cancelled.")
         self._write_state("cancelled", "Implementation project cancelled")
+
+    def _area_progress_values(self):
+        self.ensure_one()
+        controls = self.implementation_control_ids.filtered("active")
+        values = []
+        areas = controls.mapped("area_ids").sorted(lambda area: (area.sequence, area.code or "", area.id))
+        for area in areas:
+            lines = controls.filtered(lambda line, current=area: current in line.area_ids)
+            not_applicable = lines.filtered(lambda line: line.readiness_state == "not_applicable")
+            applicable = lines - not_applicable
+            ready = applicable.filtered(lambda line: line.readiness_state == "ready")
+            values.append(
+                {
+                    "area_id": area.id,
+                    "sequence": area.sequence,
+                    "name": area.name,
+                    "control_count": len(lines),
+                    "ready_controls": len(ready),
+                    "partial_controls": len(applicable.filtered(lambda line: line.readiness_state == "partial")),
+                    "gap_controls": len(applicable.filtered(lambda line: line.readiness_state == "gap")),
+                    "not_applicable_controls": len(not_applicable),
+                    "missing_evidence": sum(lines.mapped("missing_evidence_count")),
+                    "open_tasks": sum(lines.mapped("open_activity_count")),
+                    "overdue_tasks": sum(lines.mapped("overdue_activity_count")),
+                    "readiness_percent": (len(ready) / len(applicable) * 100.0) if applicable else 0.0,
+                }
+            )
+        return values
+
+    def _recommended_next_action_values(self, limit=12):
+        self.ensure_one()
+        actions = []
+        controls = self.implementation_control_ids.filtered(
+            lambda line: line.active and line.readiness_state in {"gap", "partial"}
+        ).sorted(lambda line: (0 if line.readiness_state == "gap" else 1, line.sequence, line.id))
+        for line in controls:
+            area = line.area_ids.sorted(lambda item: (item.sequence, item.code or "", item.id))[:1]
+            values = {
+                "sequence": len(actions) + 1,
+                "priority": "high" if line.readiness_state == "gap" else "normal",
+                "area_id": area.id if area else False,
+                "implementation_control_id": line.id,
+                "res_model": "pm.qms.implementation.control",
+                "res_id": line.id,
+            }
+            if line.gap_reason == "implementation_not_started":
+                values.update({"action_type": "start_control", "name": f"Start {line.control_code}", "reason": "Implementation has not started."})
+            elif line.gap_reason == "missing_evidence":
+                values.update({"action_type": "evidence", "name": f"Add evidence for {line.control_code}", "reason": f"{line.missing_evidence_count} mandatory evidence item(s) missing."})
+            elif line.gap_reason == "evidence_under_review":
+                values.update({"action_type": "review_evidence", "name": f"Review evidence for {line.control_code}", "reason": f"{line.evidence_under_review_count} evidence item(s) under review."})
+            elif line.gap_reason in {"open_required_activities", "overdue_activities"}:
+                task = line.task_ids.filtered(lambda task: task.pm_generated and task.pm_required and not task.is_closed).sorted(lambda task: (task.date_deadline or fields.Datetime.now(), task.id))[:1]
+                values.update({"action_type": "activity", "name": f"Complete activity for {line.control_code}", "reason": f"{line.open_activity_count} required activity item(s) open.", "task_id": task.id if task else False, "res_model": "project.task" if task else "pm.qms.implementation.control", "res_id": task.id if task else line.id})
+            else:
+                values.update({"action_type": "implementation", "name": f"Review {line.control_code}", "reason": "Implementation status needs review."})
+            actions.append(values)
+            if len(actions) >= limit:
+                break
+        return actions
+
+    def action_open_readiness_center(self):
+        self.ensure_one()
+        center = self.env["pm.qms.readiness.center"].create({"implementation_project_id": self.id})
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Readiness Center",
+            "res_model": "pm.qms.readiness.center",
+            "view_mode": "form",
+            "res_id": center.id,
+            "target": "current",
+        }
 
     def action_run_readiness_assessment(self):
         self._check_manager_permission()

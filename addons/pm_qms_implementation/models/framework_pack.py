@@ -50,6 +50,12 @@ class PmQmsFrameworkPack(models.Model):
         string="Pack Controls",
         copy=True,
     )
+    area_ids = fields.One2many(
+        "pm.qms.framework.area",
+        "pack_id",
+        string="Implementation Areas",
+        copy=True,
+    )
     implementation_project_ids = fields.Many2many(
         "pm.qms.implementation.project",
         "pm_qms_implementation_project_pack_rel",
@@ -59,6 +65,7 @@ class PmQmsFrameworkPack(models.Model):
         readonly=True,
     )
     control_count = fields.Integer(compute="_compute_counts")
+    area_count = fields.Integer(compute="_compute_counts")
     implementation_project_count = fields.Integer(compute="_compute_counts")
 
     _code_version_company_uniq = models.Constraint(
@@ -66,10 +73,11 @@ class PmQmsFrameworkPack(models.Model):
         "Framework pack code and version must be unique per company.",
     )
 
-    @api.depends("control_line_ids", "implementation_project_ids")
+    @api.depends("control_line_ids.active", "area_ids.active", "implementation_project_ids")
     def _compute_counts(self):
         for pack in self:
             pack.control_count = len(pack.control_line_ids.filtered("active"))
+            pack.area_count = len(pack.area_ids.filtered("active"))
             pack.implementation_project_count = len(pack.implementation_project_ids)
 
     @api.constrains("effective_date", "retirement_date")
@@ -134,7 +142,7 @@ class PmQmsFrameworkPack(models.Model):
             )
 
     def write(self, vals):
-        definition_fields = {"code", "version", "company_id", "control_line_ids"}
+        definition_fields = {"code", "version", "company_id", "control_line_ids", "area_ids"}
         if "state" in vals and not self.env.context.get("pm_qms_pack_workflow"):
             raise UserError("Use framework pack workflow actions to change status.")
         if definition_fields.intersection(vals):
@@ -147,6 +155,63 @@ class PmQmsFrameworkPack(models.Model):
         return super().unlink()
 
 
+class PmQmsFrameworkArea(models.Model):
+    _name = "pm.qms.framework.area"
+    _description = "Perfect Match QMS Framework Implementation Area"
+    _order = "pack_id, sequence, code, id"
+
+    name = fields.Char(required=True)
+    code = fields.Char(required=True)
+    pack_id = fields.Many2one("pm.qms.framework.pack", required=True, ondelete="cascade", index=True)
+    company_id = fields.Many2one(related="pack_id.company_id", store=True, readonly=True, index=True)
+    sequence = fields.Integer(default=10)
+    description = fields.Text()
+    control_line_ids = fields.One2many(
+        "pm.qms.framework.pack.control",
+        "area_id",
+        string="Pack Control Lines",
+        readonly=True,
+    )
+    control_count = fields.Integer(compute="_compute_control_count")
+    active = fields.Boolean(default=True)
+
+    _pack_area_code_uniq = models.Constraint(
+        "UNIQUE(pack_id, code)",
+        "Implementation area code must be unique per framework pack.",
+    )
+
+    def _is_module_loading(self):
+        return bool(self.env.context.get("install_mode") or self.env.context.get("module"))
+
+    @api.depends("control_line_ids.active")
+    def _compute_control_count(self):
+        for area in self:
+            area.control_count = len(area.control_line_ids.filtered("active"))
+
+    def _ensure_pack_mutable(self):
+        if self._is_module_loading():
+            return
+        if any(area.pack_id.state != "draft" for area in self):
+            raise UserError("Create a new pack version instead of modifying areas on an active or retired pack.")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        pack_ids = [vals.get("pack_id") for vals in vals_list if vals.get("pack_id")]
+        packs = self.env["pm.qms.framework.pack"].browse(pack_ids)
+        if any(pack.state != "draft" for pack in packs) and not self._is_module_loading():
+            raise UserError("Areas can only be added to draft framework packs.")
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if {"name", "code", "pack_id", "sequence", "description", "active"}.intersection(vals):
+            self._ensure_pack_mutable()
+        return super().write(vals)
+
+    def unlink(self):
+        self._ensure_pack_mutable()
+        return super().unlink()
+
+
 class PmQmsFrameworkPackControl(models.Model):
     _name = "pm.qms.framework.pack.control"
     _description = "Perfect Match QMS Framework Pack Control"
@@ -155,6 +220,12 @@ class PmQmsFrameworkPackControl(models.Model):
     pack_id = fields.Many2one("pm.qms.framework.pack", required=True, ondelete="cascade", index=True)
     company_id = fields.Many2one(related="pack_id.company_id", store=True, readonly=True, index=True)
     control_id = fields.Many2one("pm.qms.control", required=True, ondelete="restrict", index=True)
+    area_id = fields.Many2one(
+        "pm.qms.framework.area",
+        string="Implementation Area",
+        ondelete="restrict",
+        index=True,
+    )
     sequence = fields.Integer(default=10)
     required = fields.Boolean(default=True)
     notes = fields.Text()
@@ -168,11 +239,13 @@ class PmQmsFrameworkPackControl(models.Model):
     def _is_module_loading(self):
         return bool(self.env.context.get("install_mode") or self.env.context.get("module"))
 
-    @api.constrains("pack_id", "control_id")
+    @api.constrains("pack_id", "control_id", "area_id")
     def _check_company_alignment(self):
         for line in self:
             if line.control_id.company_id != line.pack_id.company_id:
                 raise ValidationError("Pack controls must belong to the same company as the framework pack.")
+            if line.area_id and line.area_id.pack_id != line.pack_id:
+                raise ValidationError("Implementation area must belong to the same framework pack as the control line.")
 
     def _ensure_pack_mutable(self):
         if self._is_module_loading():
@@ -189,7 +262,7 @@ class PmQmsFrameworkPackControl(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        if {"pack_id", "control_id", "sequence", "required", "active", "notes"}.intersection(vals):
+        if {"pack_id", "control_id", "area_id", "sequence", "required", "active", "notes"}.intersection(vals):
             self._ensure_pack_mutable()
         return super().write(vals)
 

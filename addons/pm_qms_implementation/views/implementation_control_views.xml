@@ -9,6 +9,7 @@
                 <field name="control_id"/>
                 <field name="control_instance_id"/>
                 <field name="pack_ids" widget="many2many_tags"/>
+                <field name="area_display"/>
                 <field name="required"/>
                 <field name="implementation_status"/>
                 <field name="applicability"/>
@@ -25,6 +26,8 @@
             <form>
                 <header>
                     <button name="action_generate_missing_tasks" type="object" string="Generate Missing Tasks"/>
+                    <button name="action_open_tasks" type="object" string="Open Tasks"/>
+                    <button name="action_open_control_instance" type="object" string="Open Instance"/>
                 </header>
                 <sheet>
                     <group>
@@ -33,6 +36,7 @@
                             <field name="control_id"/>
                             <field name="control_instance_id"/>
                             <field name="pack_ids" widget="many2many_tags"/>
+                            <field name="area_ids" widget="many2many_tags" readonly="1"/>
                             <field name="required"/>
                         </group>
                         <group>
@@ -43,6 +47,24 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Guidance">
+                            <group>
+                                <field name="guidance_purpose" readonly="1"/>
+                                <field name="guidance_why" readonly="1"/>
+                                <field name="implementation_guidance" readonly="1"/>
+                                <field name="recommended_steps" readonly="1"/>
+                                <field name="recommended_tools" readonly="1"/>
+                                <field name="evidence_guidance" readonly="1"/>
+                                <field name="practical_notes" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Readiness Gaps">
+                            <group>
+                                <field name="readiness_state"/>
+                                <field name="gap_reason"/>
+                                <field name="external_alignment_summary" readonly="1"/>
+                            </group>
+                        </page>
                         <page string="Evidence">
                             <group>
                                 <field name="required_evidence_count"/>
@@ -85,6 +107,7 @@
                 <filter name="ready" string="Ready" domain="[('readiness_state', '=', 'ready')]"/>
                 <filter name="gap" string="Gap" domain="[('readiness_state', '=', 'gap')]"/>
                 <filter name="group_project" string="Project" context="{'group_by': 'implementation_project_id'}"/>
+                <filter name="group_area" string="Area" context="{'group_by': 'area_ids'}"/>
                 <filter name="group_readiness" string="Readiness" context="{'group_by': 'readiness_state'}"/>
             </search>
         </field>

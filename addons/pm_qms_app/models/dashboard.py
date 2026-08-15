@@ -298,6 +298,6 @@ class PmQmsDashboard(models.TransientModel):
     def action_run_readiness_assessment(self):
         self.ensure_one()
         if self.implementation_project_id:
-            return self.implementation_project_id.action_run_readiness_assessment()
+            return self.implementation_project_id.action_open_readiness_center()
         domain = [("organization_id", "=", self.organization_id.id)] if self.organization_id else [("id", "=", 0)]
         return self._action_for_xmlid("pm_qms_implementation.action_pm_qms_readiness_assessment", domain=domain)

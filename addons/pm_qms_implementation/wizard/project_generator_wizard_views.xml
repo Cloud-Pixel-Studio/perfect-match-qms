@@ -17,6 +17,8 @@
                             <field name="implementation_type"/>
                             <field name="date_start"/>
                             <field name="target_date"/>
+                            <field name="assessment_goal_type"/>
+                            <field name="target_assessment_date"/>
                             <field name="create_odoo_project"/>
                         </group>
                     </group>

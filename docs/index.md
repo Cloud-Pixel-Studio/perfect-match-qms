@@ -22,3 +22,6 @@
 - [Mission 09 Plan](PLANS/MISSION-09-quality-management-pack.md)
 - [Mission 10 Plan](PLANS/MISSION-10-oliva-torras-pilot.md)
 - [Architecture Decision Records](DECISIONS/)
+
+- [Guided Implementation and Readiness Center](GUIDED_IMPLEMENTATION_READINESS.md)
+- [ADR-047: Guided Implementation and Readiness Center](DECISIONS/ADR-047-guided-implementation-readiness-center.md)

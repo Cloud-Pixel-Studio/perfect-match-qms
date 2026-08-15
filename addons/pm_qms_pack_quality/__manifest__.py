@@ -8,7 +8,7 @@ requirements, framework pack composition, and external reference mapping
 metadata workflow. External mappings are reference metadata only and do not
 include or replace official standard publications.
     """,
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
@@ -17,6 +17,7 @@ include or replace official standard publications.
     "data": [
         "security/security.xml",
         "security/ir.model.access.csv",
+        "data/quality_guided_readiness_data.xml",
         "views/control_views.xml",
         "views/external_mapping_views.xml",
         "views/mapping_profile_views.xml",

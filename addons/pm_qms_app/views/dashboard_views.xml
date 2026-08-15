@@ -101,7 +101,7 @@
                         <button name="action_continue_implementation" type="object" string="Continue Implementation" class="btn-primary"/>
                         <button name="action_review_gaps" type="object" string="Review Gaps"/>
                         <button name="action_review_evidence" type="object" string="Review Evidence"/>
-                        <button name="action_run_readiness_assessment" type="object" string="Run / View Readiness Assessment"/>
+                        <button name="action_run_readiness_assessment" type="object" string="Open Readiness Center"/>
                     </footer>
                 </sheet>
             </form>

@@ -12,6 +12,19 @@ class PmQmsProjectGeneratorWizard(models.TransientModel):
     project_manager_id = fields.Many2one("res.users", default=lambda self: self.env.user)
     date_start = fields.Date(required=True, default=fields.Date.context_today)
     target_date = fields.Date(required=True)
+    assessment_goal_type = fields.Selection(
+        [
+            ("internal_readiness", "Internal Readiness"),
+            ("certification", "Certification"),
+            ("surveillance", "Surveillance"),
+            ("customer_audit", "Customer Audit"),
+            ("regulatory_assessment", "Regulatory Assessment"),
+            ("other", "Other"),
+        ],
+        default="internal_readiness",
+        required=True,
+    )
+    target_assessment_date = fields.Date()
     implementation_type = fields.Selection(
         [
             ("new_implementation", "New Implementation"),
@@ -46,6 +59,8 @@ class PmQmsProjectGeneratorWizard(models.TransientModel):
                 "project_manager_id": self.project_manager_id.id,
                 "date_start": self.date_start,
                 "target_date": self.target_date,
+                "assessment_goal_type": self.assessment_goal_type,
+                "target_assessment_date": self.target_assessment_date,
                 "implementation_type": self.implementation_type,
                 "pack_ids": self.pack_ids.ids,
                 "create_odoo_project": self.create_odoo_project,

@@ -15,6 +15,13 @@
         <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
     </record>
 
+    <record id="rule_pm_qms_framework_area_company" model="ir.rule">
+        <field name="name">Perfect Match QMS framework area company boundary</field>
+        <field name="model_id" ref="model_pm_qms_framework_area"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
     <record id="rule_pm_qms_framework_pack_control_company" model="ir.rule">
         <field name="name">Perfect Match QMS framework pack control company boundary</field>
         <field name="model_id" ref="model_pm_qms_framework_pack_control"/>
@@ -46,6 +53,27 @@
     <record id="rule_pm_qms_readiness_assessment_item_company" model="ir.rule">
         <field name="name">Perfect Match QMS readiness assessment item company boundary</field>
         <field name="model_id" ref="model_pm_qms_readiness_assessment_item"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_readiness_center_company" model="ir.rule">
+        <field name="name">Perfect Match QMS readiness center company boundary</field>
+        <field name="model_id" ref="model_pm_qms_readiness_center"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_readiness_center_area_company" model="ir.rule">
+        <field name="name">Perfect Match QMS readiness center area company boundary</field>
+        <field name="model_id" ref="model_pm_qms_readiness_center_area"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_readiness_center_action_company" model="ir.rule">
+        <field name="name">Perfect Match QMS readiness center action company boundary</field>
+        <field name="model_id" ref="model_pm_qms_readiness_center_action"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
     </record>

@@ -54,6 +54,17 @@
                         <page string="Description">
                             <field name="description"/>
                         </page>
+                        <page string="Guidance">
+                            <group>
+                                <field name="guidance_purpose"/>
+                                <field name="guidance_why"/>
+                                <field name="implementation_guidance"/>
+                                <field name="recommended_steps"/>
+                                <field name="recommended_tools"/>
+                                <field name="evidence_guidance"/>
+                                <field name="practical_notes"/>
+                            </group>
+                        </page>
                         <page string="Activities">
                             <field name="implementation_activity_ids">
                                 <list editable="bottom">

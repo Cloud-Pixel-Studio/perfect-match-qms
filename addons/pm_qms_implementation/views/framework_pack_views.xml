@@ -11,6 +11,7 @@
                 <field name="pack_type"/>
                 <field name="state"/>
                 <field name="control_count"/>
+                <field name="area_count"/>
                 <field name="implementation_project_count"/>
                 <field name="company_id" groups="base.group_multi_company"/>
             </list>
@@ -44,11 +45,24 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Areas">
+                            <field name="area_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="description"/>
+                                    <field name="control_count"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Controls">
                             <field name="control_line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
                                     <field name="sequence"/>
                                     <field name="control_id"/>
+                                    <field name="area_id" domain="[('pack_id', '=', parent.id)]"/>
                                     <field name="required"/>
                                     <field name="notes"/>
                                     <field name="active"/>
