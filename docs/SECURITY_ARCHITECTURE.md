@@ -3,7 +3,7 @@
 ## Scope
 
 This document defines the QMS security model for internal Odoo users through
-Mission 07.
+Mission 08.
 It does not implement customer portal access.
 
 ## Roles
@@ -25,6 +25,8 @@ It does not implement customer portal access.
   performance configuration.
 - Can read permitted management reviews and update management review actions
   assigned to them where the action workflow allows owner updates.
+- Can read implementation packs, generated implementation projects,
+  implementation controls, and readiness assessments inside allowed companies.
 
 `QMS Manager`
 
@@ -40,11 +42,15 @@ It does not implement customer portal access.
 - Create and manage management reviews, generate snapshots, record decisions,
   create follow-up actions, complete reviews, and verify management review
   actions.
+- Generate implementation projects, synchronize active framework packs, manage
+  implementation execution, create native Odoo project work through the
+  generator, and run readiness assessments.
 - Cannot bypass company record rules.
 
 `QMS Administrator`
 
 - Full QMS configuration permissions.
+- Configure framework packs and pack-control membership.
 - Can delete draft/configuration records where model constraints allow it.
 - Still operates through Odoo access controls and record rules.
 
@@ -102,6 +108,15 @@ Mission 07 extends this to:
 - management review decisions;
 - management review actions.
 
+Mission 08 extends this to:
+
+- framework packs;
+- framework pack controls;
+- implementation projects;
+- implementation controls;
+- readiness assessments;
+- readiness assessment items.
+
 Organization isolation is enforced by model constraints where relationships
 must belong to the selected organization. Documents, evidence, and control
 instances reject mismatched process, organization, or company relationships.
@@ -152,6 +167,20 @@ completed, or cancelled for normal users. Completed review history is corrected
 only by QMS Administrators. Management review actions remain operational
 follow-up records and may stay open after the meeting is completed.
 
+Mission 08 adds framework pack, implementation project, and readiness
+assessment controls:
+
+- framework pack status changes use workflow actions;
+- active and retired pack definitions cannot be edited in place;
+- implementation project status changes use workflow actions;
+- generated implementation controls preserve deployment traceability and cannot
+  be deleted;
+- completed readiness assessments and completed assessment items are immutable
+  historical snapshots for normal application users.
+
+QMS Managers inherit the native Odoo project manager group so generated Odoo
+projects and tasks are created through supported Odoo access controls.
+
 `pm.qms.event` is append-only at the ORM level for normal QMS groups. Workflow
 methods append events with the acting user, timestamp, previous state, new
 state, decision, reviewer/approver where relevant, and notes where useful.
@@ -195,3 +224,8 @@ Mission 03 and Mission 04 tests validate:
   management review action verification authority, multi-company review/input/
   decision/action isolation, and snapshot generation that excludes other
   companies and organizations.
+- framework pack version locking, implementation project generation authority,
+  source pack deduplication, control instance reuse, generated task company
+  boundaries, readiness snapshot immutability, project completion justification,
+  and multi-company isolation for implementation projects, controls,
+  assessments, assessment items, and generated tasks.

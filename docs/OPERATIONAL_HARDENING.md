@@ -25,6 +25,8 @@ Operational records use Odoo sequences:
 - Audit finding: `PM-AUDF-00001`
 - Objective: `PM-OBJ-00001`
 - KPI: `PM-KPI-00001`
+- Implementation project: `PM-IMP-00001`
+- Readiness assessment: `PM-RA-00001`
 
 ## Client Operational Layer
 
@@ -66,3 +68,17 @@ history requires administrative correction authority.
 Management review actions are separate follow-up records. Completing a meeting
 does not require closing every action, and action verification remains a later
 manager-controlled workflow step.
+
+## Implementation Readiness
+
+Framework packs are versioned and locked after activation so implementation
+history can be traced back to the pack version used to generate it.
+
+The project generator is additive and preservation-oriented. Synchronization
+creates missing implementation controls and generated tasks, updates source
+pack links, and reuses the existing organization/control instance. It does not
+delete operational records or completed readiness assessments.
+
+Readiness assessments preserve a historical snapshot of control readiness,
+evidence counts, activity counts, gap reason, and source packs. Completed
+assessments and their items are locked against normal mutation.

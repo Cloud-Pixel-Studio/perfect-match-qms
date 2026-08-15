@@ -27,6 +27,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh install-mission04
 ./deployment/scripts/odoo-dev.sh install-mission05
 ./deployment/scripts/odoo-dev.sh install-mission06
+./deployment/scripts/odoo-dev.sh install-mission07
+./deployment/scripts/odoo-dev.sh install-mission08
 ```
 
 Equivalent raw Docker Compose commands:
@@ -54,6 +56,7 @@ Then open `http://127.0.0.1:8069` on your workstation.
 ./deployment/scripts/odoo-dev.sh test-mission05
 ./deployment/scripts/odoo-dev.sh test-mission06
 ./deployment/scripts/odoo-dev.sh test-mission07
+./deployment/scripts/odoo-dev.sh test-mission08
 ```
 
 The command installs `pm_qms_core` into the `pmqms_test` database with demo data disabled and Odoo tests enabled.
@@ -83,6 +86,10 @@ docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo shell
 ./deployment/scripts/odoo-dev.sh update-mission05
 ./deployment/scripts/odoo-dev.sh install-mission06
 ./deployment/scripts/odoo-dev.sh update-mission06
+./deployment/scripts/odoo-dev.sh install-mission07
+./deployment/scripts/odoo-dev.sh update-mission07
+./deployment/scripts/odoo-dev.sh install-mission08
+./deployment/scripts/odoo-dev.sh update-mission08
 ```
 
 ## Health Checks

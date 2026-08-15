@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pm_qms_core.group_pm_qms_user" model="res.groups">
+        <field name="implied_ids" eval="[Command.link(ref('project.group_project_user'))]"/>
+    </record>
+
+    <record id="pm_qms_core.group_pm_qms_manager" model="res.groups">
+        <field name="implied_ids" eval="[Command.link(ref('project.group_project_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_framework_pack_company" model="ir.rule">
+        <field name="name">Perfect Match QMS framework pack company boundary</field>
+        <field name="model_id" ref="model_pm_qms_framework_pack"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_framework_pack_control_company" model="ir.rule">
+        <field name="name">Perfect Match QMS framework pack control company boundary</field>
+        <field name="model_id" ref="model_pm_qms_framework_pack_control"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_implementation_project_company" model="ir.rule">
+        <field name="name">Perfect Match QMS implementation project company boundary</field>
+        <field name="model_id" ref="model_pm_qms_implementation_project"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_implementation_control_company" model="ir.rule">
+        <field name="name">Perfect Match QMS implementation control company boundary</field>
+        <field name="model_id" ref="model_pm_qms_implementation_control"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_readiness_assessment_company" model="ir.rule">
+        <field name="name">Perfect Match QMS readiness assessment company boundary</field>
+        <field name="model_id" ref="model_pm_qms_readiness_assessment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_readiness_assessment_item_company" model="ir.rule">
+        <field name="name">Perfect Match QMS readiness assessment item company boundary</field>
+        <field name="model_id" ref="model_pm_qms_readiness_assessment_item"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>

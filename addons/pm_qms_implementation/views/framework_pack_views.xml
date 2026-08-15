@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_framework_pack_list" model="ir.ui.view">
+        <field name="name">pm.qms.framework.pack.list</field>
+        <field name="model">pm.qms.framework.pack</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="version"/>
+                <field name="pack_type"/>
+                <field name="state"/>
+                <field name="control_count"/>
+                <field name="implementation_project_count"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_framework_pack_form" model="ir.ui.view">
+        <field name="name">pm.qms.framework.pack.form</field>
+        <field name="model">pm.qms.framework.pack</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_activate" type="object" string="Activate" invisible="state != 'draft'"/>
+                    <button name="action_retire" type="object" string="Retire" invisible="state != 'active'"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" invisible="state != 'retired'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,retired"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="version"/>
+                            <field name="pack_type"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="effective_date"/>
+                            <field name="retirement_date"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Controls">
+                            <field name="control_line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="control_id"/>
+                                    <field name="required"/>
+                                    <field name="notes"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Description">
+                            <field name="description"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_framework_pack_search" model="ir.ui.view">
+        <field name="name">pm.qms.framework.pack.search</field>
+        <field name="model">pm.qms.framework.pack</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="active_packs" string="Active Packs" domain="[('state', '=', 'active')]"/>
+                <filter name="draft_packs" string="Draft Packs" domain="[('state', '=', 'draft')]"/>
+                <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                <filter name="group_type" string="Type" context="{'group_by': 'pack_type'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_framework_pack" model="ir.actions.act_window">
+        <field name="name">Framework Packs</field>
+        <field name="res_model">pm.qms.framework.pack</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_framework_pack_search"/>
+    </record>
+</odoo>

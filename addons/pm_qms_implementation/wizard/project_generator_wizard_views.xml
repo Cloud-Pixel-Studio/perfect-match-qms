@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_project_generator_wizard_form" model="ir.ui.view">
+        <field name="name">pm.qms.project.generator.wizard.form</field>
+        <field name="model">pm.qms.project.generator.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="organization_id"/>
+                            <field name="project_manager_id"/>
+                        </group>
+                        <group>
+                            <field name="implementation_type"/>
+                            <field name="date_start"/>
+                            <field name="target_date"/>
+                            <field name="create_odoo_project"/>
+                        </group>
+                    </group>
+                    <group string="Framework Packs">
+                        <field name="pack_ids" widget="many2many_tags"/>
+                    </group>
+                    <field name="notes"/>
+                </sheet>
+                <footer>
+                    <button name="action_generate_implementation" type="object" string="Generate Implementation" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_project_generator_wizard" model="ir.actions.act_window">
+        <field name="name">Generate Implementation</field>
+        <field name="res_model">pm.qms.project.generator.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

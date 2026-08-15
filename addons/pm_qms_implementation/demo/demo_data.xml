@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_pm_qms_implementation_org" model="pm.qms.organization">
+        <field name="name">Demo Implementation Organization</field>
+        <field name="code">PM-IMP-DEMO-ORG</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="demo_pm_qms_implementation_process" model="pm.qms.process">
+        <field name="name">Demo Implementation Process</field>
+        <field name="code">PM-IMP-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_pm_qms_implementation_org"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="process_type">support</field>
+    </record>
+
+    <record id="demo_pm_qms_control_doc_auth" model="pm.qms.control">
+        <field name="name">Controlled Document Authorization</field>
+        <field name="code">PM-QMS-DOC-001</field>
+        <field name="objective">Define how the organization authorizes controlled QMS information.</field>
+        <field name="description">Original Perfect Match demo control for document authorization.</field>
+        <field name="process_id" ref="demo_pm_qms_implementation_process"/>
+        <field name="category">document_control</field>
+        <field name="state">active</field>
+    </record>
+
+    <record id="demo_pm_qms_control_evidence_review" model="pm.qms.control">
+        <field name="name">Implementation Evidence Review</field>
+        <field name="code">PM-QMS-EVD-001</field>
+        <field name="objective">Define how implementation evidence is submitted and reviewed.</field>
+        <field name="description">Original Perfect Match demo control for evidence review.</field>
+        <field name="process_id" ref="demo_pm_qms_implementation_process"/>
+        <field name="category">evidence</field>
+        <field name="state">active</field>
+    </record>
+
+    <record id="demo_pm_qms_control_responsibility" model="pm.qms.control">
+        <field name="name">Implementation Responsibility Assignment</field>
+        <field name="code">PM-QMS-IMP-001</field>
+        <field name="objective">Assign clear responsibility for implementation work.</field>
+        <field name="description">Original Perfect Match demo control for implementation ownership.</field>
+        <field name="process_id" ref="demo_pm_qms_implementation_process"/>
+        <field name="category">governance</field>
+        <field name="state">active</field>
+    </record>
+
+    <record id="demo_pm_qms_activity_doc_auth" model="pm.qms.activity">
+        <field name="control_id" ref="demo_pm_qms_control_doc_auth"/>
+        <field name="name">Confirm document authorization responsibilities</field>
+        <field name="expected_output">Authorization responsibility confirmed.</field>
+    </record>
+
+    <record id="demo_pm_qms_activity_evidence_review" model="pm.qms.activity">
+        <field name="control_id" ref="demo_pm_qms_control_evidence_review"/>
+        <field name="name">Review implementation evidence workflow</field>
+        <field name="expected_output">Evidence workflow reviewed.</field>
+    </record>
+
+    <record id="demo_pm_qms_evidence_doc_auth" model="pm.qms.evidence.requirement">
+        <field name="control_id" ref="demo_pm_qms_control_doc_auth"/>
+        <field name="name">Document authorization role record</field>
+        <field name="evidence_type">record</field>
+        <field name="mandatory" eval="True"/>
+    </record>
+
+    <record id="demo_pm_qms_framework_pack" model="pm.qms.framework.pack">
+        <field name="name">Perfect Match Demo QMS Pack</field>
+        <field name="code">PM-DEMO-QMS</field>
+        <field name="version">1.0</field>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="description">Fictional proprietary demo pack for the generic implementation engine.</field>
+        <field name="pack_type">core</field>
+        <field name="state">active</field>
+        <field name="effective_date">2026-08-15</field>
+    </record>
+
+    <record id="demo_pm_qms_framework_pack_line_doc" model="pm.qms.framework.pack.control">
+        <field name="pack_id" ref="demo_pm_qms_framework_pack"/>
+        <field name="control_id" ref="demo_pm_qms_control_doc_auth"/>
+        <field name="sequence">10</field>
+        <field name="required" eval="True"/>
+    </record>
+
+    <record id="demo_pm_qms_framework_pack_line_evidence" model="pm.qms.framework.pack.control">
+        <field name="pack_id" ref="demo_pm_qms_framework_pack"/>
+        <field name="control_id" ref="demo_pm_qms_control_evidence_review"/>
+        <field name="sequence">20</field>
+        <field name="required" eval="True"/>
+    </record>
+
+    <record id="demo_pm_qms_framework_pack_line_responsibility" model="pm.qms.framework.pack.control">
+        <field name="pack_id" ref="demo_pm_qms_framework_pack"/>
+        <field name="control_id" ref="demo_pm_qms_control_responsibility"/>
+        <field name="sequence">30</field>
+        <field name="required" eval="False"/>
+    </record>
+</odoo>

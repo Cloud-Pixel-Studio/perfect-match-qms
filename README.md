@@ -48,6 +48,11 @@ historical input snapshots, management decisions, and follow-up actions. It
 consolidates operational QMS data for management review without turning the
 review into a live dashboard or copying operational attachments.
 
+Mission 08 adds the generic implementation engine: versioned framework packs,
+project generation, multi-pack control deduplication, Odoo project/task
+execution, live implementation readiness metrics, and historical readiness
+assessments.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -64,6 +69,7 @@ Core paths:
 - `addons/pm_qms_audit/`
 - `addons/pm_qms_kpi/`
 - `addons/pm_qms_management_review/`
+- `addons/pm_qms_implementation/`
 - `.github/workflows/qms-ci.yml`
 
 ## DEV Quick Start
@@ -85,6 +91,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission06
 ./deployment/scripts/odoo-dev.sh install-mission07
 ./deployment/scripts/odoo-dev.sh test-mission07
+./deployment/scripts/odoo-dev.sh install-mission08
+./deployment/scripts/odoo-dev.sh test-mission08
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -127,3 +135,10 @@ snapshots stored on `pm.qms.management.review.input` so completed reviews show
 what management actually reviewed at that time. Decisions and follow-up actions
 remain separate from the meeting closure, so a review can be completed while
 its actions remain open.
+
+Implementation projects are client deployment records. Framework packs group
+Perfect Match-authored controls by version, the generator deduplicates shared
+controls across selected packs, and each organization/control pair reuses a
+single `pm.qms.control.instance`. Readiness is an internal implementation
+metric based on applicable controls; evidence completion and generated task
+completion are tracked separately.

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_readiness_assessment_list" model="ir.ui.view">
+        <field name="name">pm.qms.readiness.assessment.list</field>
+        <field name="model">pm.qms.readiness.assessment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="implementation_project_id"/>
+                <field name="assessment_date"/>
+                <field name="assessor_id"/>
+                <field name="readiness_percent"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_readiness_assessment_form" model="ir.ui.view">
+        <field name="name">pm.qms.readiness.assessment.form</field>
+        <field name="model">pm.qms.readiness.assessment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_complete_assessment" type="object" string="Complete Assessment" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,completed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="implementation_project_id"/>
+                            <field name="assessment_date"/>
+                            <field name="assessor_id"/>
+                        </group>
+                        <group>
+                            <field name="readiness_percent"/>
+                            <field name="evidence_completion_percent"/>
+                            <field name="activity_completion_percent"/>
+                        </group>
+                    </group>
+                    <group string="Snapshot Counts">
+                        <field name="total_controls"/>
+                        <field name="applicable_controls"/>
+                        <field name="ready_controls"/>
+                        <field name="partial_controls"/>
+                        <field name="gap_controls"/>
+                        <field name="not_applicable_controls"/>
+                    </group>
+                    <notebook>
+                        <page string="Items">
+                            <field name="item_ids">
+                                <list>
+                                    <field name="control_code_snapshot"/>
+                                    <field name="control_name_snapshot"/>
+                                    <field name="readiness_state_snapshot"/>
+                                    <field name="gap_reason_snapshot"/>
+                                    <field name="required_evidence_snapshot"/>
+                                    <field name="accepted_evidence_snapshot"/>
+                                    <field name="required_activity_snapshot"/>
+                                    <field name="completed_activity_snapshot"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_readiness_assessment_item_list" model="ir.ui.view">
+        <field name="name">pm.qms.readiness.assessment.item.list</field>
+        <field name="model">pm.qms.readiness.assessment.item</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="assessment_id"/>
+                <field name="control_code_snapshot"/>
+                <field name="control_name_snapshot"/>
+                <field name="readiness_state_snapshot"/>
+                <field name="gap_reason_snapshot"/>
+                <field name="source_pack_snapshot"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_readiness_assessment" model="ir.actions.act_window">
+        <field name="name">Readiness Assessments</field>
+        <field name="res_model">pm.qms.readiness.assessment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_pm_qms_readiness_assessment_item" model="ir.actions.act_window">
+        <field name="name">Readiness Items</field>
+        <field name="res_model">pm.qms.readiness.assessment.item</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

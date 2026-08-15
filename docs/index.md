@@ -12,4 +12,5 @@
 - [IP And Standards Policy](IP_AND_STANDARDS_POLICY.md)
 - [Development Workflow](DEVELOPMENT_WORKFLOW.md)
 - [Deployment](DEPLOYMENT.md)
+- [Mission 08 Plan](PLANS/MISSION-08-project-generator-readiness.md)
 - [Architecture Decision Records](DECISIONS/)

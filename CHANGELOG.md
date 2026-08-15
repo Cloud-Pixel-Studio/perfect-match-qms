@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0 - 2026-08-15
+
+- Added `pm_qms_implementation` with versioned framework packs,
+  pack-control relationships, implementation projects, implementation controls,
+  Odoo project/task generation, readiness assessments, and generator wizard.
+- Added multi-pack control deduplication and organization/control
+  `pm.qms.control.instance` reuse.
+- Added live readiness, evidence completion, and activity completion metrics,
+  with not-applicable controls excluded from the readiness denominator.
+- Added historical readiness assessment snapshots with immutable completed
+  assessment items.
+- Extended DEV scripts and CI quality gate for Mission 08 validation.
+- Added Mission 08 architecture, security, testing, plan, addon README, and
+  ADR documentation.
+
 ## 0.6.0 - 2026-08-15
 
 - Added `pm_qms_management_review` with management review records, workflow,

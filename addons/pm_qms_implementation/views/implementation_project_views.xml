@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_implementation_project_list" model="ir.ui.view">
+        <field name="name">pm.qms.implementation.project.list</field>
+        <field name="model">pm.qms.implementation.project</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="organization_id"/>
+                <field name="implementation_type"/>
+                <field name="state"/>
+                <field name="target_date"/>
+                <field name="readiness_percent"/>
+                <field name="open_tasks"/>
+                <field name="overdue_tasks"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_implementation_project_form" model="ir.ui.view">
+        <field name="name">pm.qms.implementation.project.form</field>
+        <field name="model">pm.qms.implementation.project</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_sync_framework" type="object" string="Sync Framework" invisible="state in ('completed', 'cancelled')"/>
+                    <button name="action_start_implementation" type="object" string="Start Implementation" invisible="state not in ('generated', 'readiness_review')"/>
+                    <button name="action_move_readiness_review" type="object" string="Readiness Review" invisible="state not in ('generated', 'in_progress')"/>
+                    <button name="action_run_readiness_assessment" type="object" string="Run Readiness Assessment" invisible="state in ('draft', 'cancelled')"/>
+                    <button name="action_complete" type="object" string="Complete" invisible="state not in ('generated', 'in_progress', 'readiness_review')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('completed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,generated,in_progress,readiness_review,completed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="project_manager_id"/>
+                        </group>
+                        <group>
+                            <field name="implementation_type"/>
+                            <field name="date_start"/>
+                            <field name="target_date"/>
+                            <field name="actual_completion_date"/>
+                            <field name="odoo_project_id"/>
+                        </group>
+                    </group>
+                    <group string="Implementation Readiness">
+                        <field name="readiness_percent"/>
+                        <field name="evidence_completion_percent"/>
+                        <field name="activity_completion_percent"/>
+                        <field name="latest_assessment_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Packs">
+                            <field name="pack_ids" widget="many2many_tags" readonly="state in ('completed', 'cancelled')"/>
+                        </page>
+                        <page string="Controls">
+                            <field name="implementation_control_ids">
+                                <list>
+                                    <field name="sequence"/>
+                                    <field name="control_id"/>
+                                    <field name="control_instance_id"/>
+                                    <field name="required"/>
+                                    <field name="pack_ids" widget="many2many_tags"/>
+                                    <field name="implementation_status"/>
+                                    <field name="readiness_state"/>
+                                    <field name="gap_reason"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Activities / Tasks">
+                            <field name="generated_task_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="pm_implementation_control_id"/>
+                                    <field name="pm_activity_id"/>
+                                    <field name="user_ids" widget="many2many_tags"/>
+                                    <field name="state"/>
+                                    <field name="date_deadline"/>
+                                    <field name="pm_required"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Evidence Summary">
+                            <group>
+                                <field name="required_evidence"/>
+                                <field name="accepted_evidence"/>
+                                <field name="missing_evidence"/>
+                            </group>
+                        </page>
+                        <page string="Readiness">
+                            <group>
+                                <field name="total_controls"/>
+                                <field name="applicable_controls"/>
+                                <field name="ready_controls"/>
+                                <field name="partial_controls"/>
+                                <field name="gap_controls"/>
+                                <field name="not_applicable_controls"/>
+                                <field name="total_generated_tasks"/>
+                                <field name="completed_tasks"/>
+                                <field name="open_tasks"/>
+                                <field name="overdue_tasks"/>
+                            </group>
+                        </page>
+                        <page string="Assessments">
+                            <field name="assessment_ids">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="assessment_date"/>
+                                    <field name="assessor_id"/>
+                                    <field name="readiness_percent"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="History">
+                            <field name="generation_date"/>
+                            <field name="last_sync_date"/>
+                            <field name="completion_justification"/>
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_implementation_project_search" model="ir.ui.view">
+        <field name="name">pm.qms.implementation.project.search</field>
+        <field name="model">pm.qms.implementation.project</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="organization_id"/>
+                <filter name="open_projects" string="Open" domain="[('state', 'not in', ('completed', 'cancelled'))]"/>
+                <filter name="readiness_review" string="Readiness Review" domain="[('state', '=', 'readiness_review')]"/>
+                <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                <filter name="group_organization" string="Organization" context="{'group_by': 'organization_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_implementation_project" model="ir.actions.act_window">
+        <field name="name">Implementation Projects</field>
+        <field name="res_model">pm.qms.implementation.project</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_implementation_project_search"/>
+    </record>
+</odoo>

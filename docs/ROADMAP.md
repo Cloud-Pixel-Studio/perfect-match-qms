@@ -4,8 +4,8 @@
 - Phase 1: Technical Foundation.
 - Phase 2: Perfect Match QMS Core.
 - Phase 3: Quality Management Modules.
-- Phase 4: ISO 9001 Implementation Pack.
-- Phase 5: Project Generator.
+- Phase 4: Generic Project Generator And Readiness Engine.
+- Phase 5: First Standard Mapping Pack.
 - Phase 6: Oliva Torras Pilot.
 - Phase 7: Customer Portal.
 - Phase 8: Automation.

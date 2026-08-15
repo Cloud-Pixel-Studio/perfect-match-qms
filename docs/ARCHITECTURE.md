@@ -341,3 +341,73 @@ Management Review
 ```
 
 No management review state is stored on reusable `pm.qms.control` definitions.
+
+## Mission 08 Project Generator And Readiness Engine
+
+```text
+FRAMEWORK
+    |
+    v
+PACK
+    |
+    v
+PROJECT GENERATOR
+    |
+    v
+IMPLEMENTATION PROJECT
+    |
+    v
+IMPLEMENTATION CONTROL
+    |
+    v
+CONTROL INSTANCE
+    |
+    v
+TASKS + EVIDENCE
+    |
+    v
+READINESS
+```
+
+Mission 08 adds `pm_qms_implementation` as the generic deployment engine for
+future framework packs. It depends on `pm_qms_core`, `pm_qms_evidence`, and
+Odoo `project`.
+
+The implementation layer includes:
+
+- `pm.qms.framework.pack` for versioned deployment packs.
+- `pm.qms.framework.pack.control` for ordered pack-to-control membership.
+- `pm.qms.implementation.project` for client implementation projects.
+- `pm.qms.implementation.control` for one deduplicated implementation line per
+  unique control in the selected pack set.
+- `pm.qms.readiness.assessment` for historical readiness reports.
+- `pm.qms.readiness.assessment.item` for immutable completed assessment lines.
+- `pm.qms.project.generator.wizard` for project generation.
+
+Framework packs are company-scoped and protected after activation. A changed
+pack definition requires a new version instead of editing an active or retired
+pack in place.
+
+The generator resolves all active controls from selected packs, deduplicates
+controls that appear in multiple packs, and preserves all source pack
+references. Required status is merged across packs. The engine reuses the
+existing `pm.qms.control.instance` for the selected organization and reusable
+control; if none exists, it creates one.
+
+Reusable `pm.qms.activity` records generate native Odoo `project.task` records.
+Task completion is evaluated through Odoo's native task closure state via
+`project.task.is_closed`, not by fragile stage-name inference.
+
+Readiness is calculated as:
+
+```text
+ready applicable controls / total applicable controls * 100
+```
+
+Not-applicable controls are excluded from the denominator. Evidence completion
+and generated activity completion are separate metrics. Readiness is an
+internal implementation metric and does not claim external approval.
+
+Completed readiness assessments copy the current implementation state into
+assessment item snapshots. Later changes to evidence, tasks, or control
+instance status do not rewrite completed readiness history.

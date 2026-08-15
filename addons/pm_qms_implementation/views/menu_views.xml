@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_framework_packs"
+        name="Framework Packs"
+        parent="pm_qms_core.menu_pm_qms_framework"
+        action="action_pm_qms_framework_pack"
+        sequence="5"/>
+
+    <menuitem
+        id="menu_pm_qms_project_generator"
+        name="Generate Implementation"
+        parent="pm_qms_core.menu_pm_qms_implementation"
+        action="action_pm_qms_project_generator_wizard"
+        sequence="5"
+        groups="pm_qms_core.group_pm_qms_manager"/>
+
+    <menuitem
+        id="menu_pm_qms_implementation_projects"
+        name="Implementation Projects"
+        parent="pm_qms_core.menu_pm_qms_implementation"
+        action="action_pm_qms_implementation_project"
+        sequence="7"/>
+
+    <menuitem
+        id="menu_pm_qms_implementation_controls"
+        name="Implementation Controls"
+        parent="pm_qms_core.menu_pm_qms_implementation"
+        action="action_pm_qms_implementation_control"
+        sequence="8"/>
+
+    <menuitem
+        id="menu_pm_qms_implementation_tasks"
+        name="Implementation Tasks"
+        parent="pm_qms_core.menu_pm_qms_implementation"
+        action="action_pm_qms_generated_task"
+        sequence="9"/>
+
+    <menuitem
+        id="menu_pm_qms_readiness_assessments"
+        name="Readiness Assessments"
+        parent="pm_qms_core.menu_pm_qms_implementation"
+        action="action_pm_qms_readiness_assessment"
+        sequence="30"/>
+</odoo>

@@ -15,6 +15,10 @@
   supplier, audit, risk, NCR, or CAPA summaries.
 - Do not allow normal users to silently regenerate or modify completed
   management review inputs.
+- Do not allow active or retired framework pack definitions to be silently
+  changed; create a new pack version instead.
+- Do not allow completed readiness assessments to be modified as if they were
+  live dashboards.
 - Do not allow arbitrary SQL, Python, or executable formulas for performance
   measurement calculations.
 

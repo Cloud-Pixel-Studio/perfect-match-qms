@@ -109,6 +109,25 @@ Mission 07 adds tests covering:
 - Multi-company isolation for reviews, inputs, decisions, and actions, plus
   snapshot generation that excludes other companies and other organizations.
 
+Mission 08 adds tests covering:
+
+- Framework pack creation, code/version/company uniqueness, workflow actions,
+  and active pack definition locking.
+- Project generator behavior across one or more active framework packs.
+- Multi-pack control deduplication, source pack preservation, and required flag
+  merging.
+- Reuse of existing organization/control instances and rejection of duplicate
+  control instances.
+- Odoo project/task generation from reusable implementation activities.
+- Task completion metrics using Odoo native task closure state.
+- Evidence-driven readiness and separate activity completion metrics.
+- Exclusion of not-applicable controls from the readiness denominator.
+- Historical readiness assessments that remain unchanged after live
+  implementation improves.
+- Multi-company isolation for implementation projects, controls, readiness
+  assessments, readiness items, and generated tasks.
+- Project completion below full readiness requiring documented justification.
+
 ## Run Tests
 
 ```bash
@@ -119,6 +138,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission05
 ./deployment/scripts/odoo-dev.sh test-mission06
 ./deployment/scripts/odoo-dev.sh test-mission07
+./deployment/scripts/odoo-dev.sh test-mission08
 ```
 
 ## Rules
