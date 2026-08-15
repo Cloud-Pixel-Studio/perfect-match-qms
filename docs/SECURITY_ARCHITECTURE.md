@@ -197,6 +197,19 @@ Mission 09 adds quality-pack mapping controls:
 - approved mappings cannot be silently edited or deleted;
 - mapping imports validate metadata before creating records.
 
+Mission 10 adds pilot and migration controls:
+
+- Oliva pilot Odoo ports bind to localhost on the VM by default.
+- Pilot secrets, generated Odoo configuration, backups, database dumps, and
+  filestore archives stay outside Git.
+- Document and evidence migration wizards require QMS Manager authority.
+- Evidence migration rejects `accepted` state so review approval cannot be
+  bypassed by CSV import.
+- Pilot validation records must be labeled `PILOT VALIDATION` unless authorized
+  customer data is supplied.
+- Other-company access and attachment isolation are validated in the pilot
+  database.
+
 QMS Managers inherit the native Odoo project manager group so generated Odoo
 projects and tasks are created through supported Odoo access controls.
 
@@ -251,3 +264,6 @@ Mission 03 and Mission 04 tests validate:
 - quality pack seed integrity, mapping profile workflow authority, metadata
   import validation, approved mapping locking, content-safety expectations,
   generator compatibility, and multi-company mapping isolation.
+- migration wizard authorization, accepted-evidence import blocking, Oliva
+  pilot attachment isolation, and the requirement that approved mapping coverage
+  remains zero without human-approved metadata.

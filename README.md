@@ -58,6 +58,12 @@ Perfect Match quality controls, implementation activities, evidence
 expectations, external reference mapping profiles, metadata-only CSV mapping
 import, and a content-safety scan for external standard material.
 
+Mission 10 validates a customer-specific technical pilot for `Oliva Torras USA,
+Inc.` with an isolated Odoo pilot stack, generated Quality Pack implementation
+project, controlled migration import wizards, backup/restore tooling, and
+release-candidate documentation. Pilot validation data is labeled
+`PILOT VALIDATION` and is not real Oliva production data.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -76,6 +82,9 @@ Core paths:
 - `addons/pm_qms_management_review/`
 - `addons/pm_qms_implementation/`
 - `addons/pm_qms_pack_quality/`
+- `addons/pm_qms_migration/`
+- `deployment/docker/pilot/compose.yml`
+- `deployment/scripts/odoo-pilot.sh`
 - `framework/mappings/iso9001-approved-mapping.csv.example`
 - `.github/workflows/qms-ci.yml`
 
@@ -102,6 +111,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission08
 ./deployment/scripts/odoo-dev.sh install-mission09
 ./deployment/scripts/odoo-dev.sh test-mission09
+./deployment/scripts/odoo-dev.sh install-mission10
+./deployment/scripts/odoo-dev.sh test-mission10
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -114,6 +125,21 @@ docker compose -f deployment/docker/dev/compose.yml down
 
 The DEV stack uses `pmqms_dev_network`, `pmqms_dev_postgres`, and
 `pmqms_dev_odoo_data`. It is intentionally separate from Plane.
+
+## Oliva Pilot Quick Start
+
+```bash
+cd /opt/perfect-match/perfect-match-qms
+./deployment/scripts/odoo-pilot.sh init-secrets
+./deployment/scripts/odoo-pilot.sh config
+./deployment/scripts/odoo-pilot.sh install
+./deployment/scripts/odoo-pilot.sh configure-client
+./deployment/scripts/odoo-pilot.sh run-readiness
+./deployment/scripts/odoo-pilot.sh health
+```
+
+The Oliva pilot binds Odoo to `127.0.0.1:8169` on the VM. Public DNS and TLS
+routing require a separate controlled reverse-proxy change.
 
 ## Framework vs Client Implementation
 
@@ -157,3 +183,9 @@ engine. It stores Perfect Match-authored controls, activities, and evidence
 expectations. Its external mapping profile stores reference metadata only; it
 does not include external standard text and does not replace authorized access
 to official publications.
+
+Mission 10 adds controlled migration wizards for customer-authorized document
+and evidence inventories. Evidence imports cannot create accepted evidence;
+acceptance must pass through QMS review workflow. Oliva pilot readiness remains
+an internal implementation metric and does not represent certification,
+external compliance, or customer production approval.

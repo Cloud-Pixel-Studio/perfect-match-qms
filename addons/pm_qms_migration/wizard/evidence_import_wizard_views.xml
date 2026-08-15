@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_evidence_import_wizard_form" model="ir.ui.view">
+        <field name="name">pm.qms.evidence.import.wizard.form</field>
+        <field name="model">pm.qms.evidence.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Evidence">
+                <sheet>
+                    <group>
+                        <field name="company_id"/>
+                        <field name="organization_id"/>
+                        <field name="filename" invisible="1"/>
+                        <field name="csv_file" filename="filename"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_import" type="object" string="Import" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_evidence_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import Evidence</field>
+        <field name="res_model">pm.qms.evidence.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

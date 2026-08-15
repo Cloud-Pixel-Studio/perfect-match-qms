@@ -146,6 +146,16 @@ Mission 09 adds tests covering:
   readiness, not-applicable handling, shared-control deduplication, and
   historical readiness immutability.
 
+Mission 10 adds tests covering:
+
+- `pm_qms_migration` document import validation, scope checks, current revision
+  creation, attachment handling, active document workflow, and migration notes.
+- Evidence import validation, document linkage, attachment handling,
+  under-review import state, and explicit rejection of direct `accepted` state.
+- Manager-only import permissions.
+- Mission 10 stack installation through the complete Quality Pack dependency
+  chain.
+
 ## Run Tests
 
 ```bash
@@ -158,6 +168,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission07
 ./deployment/scripts/odoo-dev.sh test-mission08
 ./deployment/scripts/odoo-dev.sh test-mission09
+./deployment/scripts/odoo-dev.sh test-mission10
 ```
 
 ## Rules
@@ -168,3 +179,5 @@ cd /opt/perfect-match/perfect-match-qms
 - Do not copy external standard text into tests. Use generic examples such as `Example Standard` and `X.X`.
 - External mapping tests may use metadata examples only. They must not use
   copied external requirement text as assertions or fixtures.
+- Mission 10 customer-pilot tests and validation data must use
+  `PILOT VALIDATION` labels unless authorized real customer data is supplied.

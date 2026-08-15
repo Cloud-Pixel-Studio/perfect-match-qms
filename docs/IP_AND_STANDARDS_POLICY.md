@@ -25,6 +25,12 @@ The example mapping CSV under `framework/mappings/` is header-only by design.
 Real mapping files that contain customer or licensed-reference work should be
 handled as controlled inputs and reviewed before import.
 
+Mission 10 pilot records use `PILOT VALIDATION` labels for artificial data.
+Those records must not be described as real Oliva Torras operational data.
+Approved external mapping coverage remains zero until a human-approved metadata
+CSV is supplied. Do not infer standard compliance from generated controls,
+tasks, evidence requirements, or readiness percentages.
+
 Run `deployment/scripts/qms-content-safety.py` before committing standard-pack
 or mapping work. The script is a hygiene check for obvious mistakes, not a
 legal opinion.

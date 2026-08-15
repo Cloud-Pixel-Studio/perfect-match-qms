@@ -455,3 +455,42 @@ The project generator remains generic. When a quality pack control belongs to
 a framework-owned process, generation creates or reuses an equivalent process
 inside the selected client organization so operational control instances,
 documents, evidence, tasks, and readiness remain client-scoped.
+
+## Mission 10 Oliva Pilot And Migration Layer
+
+Mission 10 adds a customer-specific technical pilot without changing the core
+Odoo architecture.
+
+The pilot stack is isolated from DEV and Plane:
+
+- Odoo service: `pmqms-odoo-oliva-pilot`
+- PostgreSQL service: `pmqms-postgres-oliva-pilot`
+- Database: `pmqms_oliva_pilot`
+- Network: `pmqms_oliva_pilot_network`
+- Ports: `127.0.0.1:8169` and `127.0.0.1:8172`
+- Secrets: `/opt/perfect-match/secrets/odoo-oliva-pilot`
+
+The pilot contains only known customer identity information:
+
+- Company: `Oliva Torras USA, Inc.`
+- QMS organization code: `OTUS`
+
+Other records created by validation are labeled `PILOT VALIDATION` and are not
+production customer data.
+
+Mission 10 also adds `pm_qms_migration`. This addon provides controlled Odoo
+wizard entry points for customer-authorized inventories:
+
+- `pm.qms.document.import.wizard`
+- `pm.qms.evidence.import.wizard`
+
+The migration layer validates company, organization, process, owner,
+control-instance, document, evidence requirement, attachment filename, and
+base64 payload boundaries before creating records. It imports current document
+revisions only. Evidence import cannot create `accepted` evidence; accepted
+evidence must pass through QMS review workflow.
+
+The Oliva technical pilot generated the Quality Pack v1.0 into project
+`PM-IMP-00002` with 37 controls, 74 tasks, and 37 evidence requirements. Its
+readiness and management review snapshots remain historical implementation
+records, not certification or compliance claims.

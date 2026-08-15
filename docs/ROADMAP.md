@@ -13,3 +13,25 @@
 - Phase 10: Multi-Standard Engine.
 - Phase 11: Defense / CMMC.
 - Phase 12: Commercial Productization.
+
+## Current Phase Status
+
+Phase 6 is validated as a technical pilot in `v1.0.0-rc1`.
+
+Completed:
+
+- Isolated Oliva pilot stack.
+- Quality Pack v1.0 generated project.
+- Controlled migration import foundation.
+- Pilot backup and restore tooling.
+- Pilot validation records labeled `PILOT VALIDATION`.
+
+Not complete:
+
+- Customer production go-live.
+- Public DNS/TLS routing for pilot Odoo.
+- Customer portal.
+- Production n8n automation.
+- AI assistant workflow.
+- Multi-standard pack engine.
+- Human-approved external mapping coverage.

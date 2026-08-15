@@ -22,6 +22,8 @@ MISSION08_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION08_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation"
 MISSION09_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality"
 MISSION09_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality"
+MISSION10_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration"
+MISSION10_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -91,6 +93,21 @@ database_exists() {
   compose exec -T postgres-dev psql -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
 }
 
+health() {
+  prepare_runtime_permissions
+  compose up -d >/dev/null
+  local code="000"
+  for _ in {1..60}; do
+    code="$(curl -s -o /tmp/pmqms-dev-health.html -w '%{http_code}' "http://127.0.0.1:${ODOO_DEV_HTTP_PORT}/web/login?db=pmqms_dev" || true)"
+    if [[ "$code" =~ ^(200|303|302)$ ]]; then
+      break
+    fi
+    sleep 1
+  done
+  echo "odoo_dev_http=$code"
+  compose ps
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./deployment/scripts/odoo-dev.sh <command>
@@ -103,6 +120,7 @@ Commands:
   down           Stop the Odoo DEV stack without removing volumes.
   restart        Restart the Odoo DEV stack.
   ps             Show stack containers.
+  health         Validate DEV HTTP and container status.
   logs           Follow Odoo logs.
   shell          Open a shell in the Odoo container.
   db-shell       Open psql in the Postgres container.
@@ -152,6 +170,12 @@ Commands:
                 Upgrade core through Quality Management Pack addons in pmqms_dev.
   test-mission09
                 Run Mission 09 addon tests in pmqms_test.
+  install-mission10
+                Install core through migration/pilot validation addons in pmqms_dev.
+  update-mission10
+                Upgrade core through migration/pilot validation addons in pmqms_dev.
+  test-mission10
+                Run Mission 10 addon tests in pmqms_test.
 EOF
 }
 
@@ -209,6 +233,9 @@ case "$command" in
   ps)
     init_secrets
     compose ps
+    ;;
+  health)
+    health
     ;;
   logs)
     init_secrets
@@ -343,6 +370,22 @@ case "$command" in
     ;;
   test-mission09)
     run_odoo_tests "$MISSION09_ADDONS" "$MISSION09_TEST_TAGS" "Mission 09"
+    ;;
+  install-mission10)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION09_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_migration" --without-demo=all --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION10_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission10)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION10_ADDONS" --stop-after-init
+    ;;
+  test-mission10)
+    run_odoo_tests "$MISSION10_ADDONS" "$MISSION10_TEST_TAGS" "Mission 10"
     ;;
   ""|help|-h|--help)
     usage

@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.0-rc1 - 2026-08-15
+
+- Added isolated Oliva Torras technical pilot deployment under
+  `deployment/docker/pilot/` with dedicated database, network, volumes, secrets,
+  localhost-only ports, and operational script `deployment/scripts/odoo-pilot.sh`.
+- Added pilot backup and restore scripts for
+  `/opt/perfect-match/backups/odoo-oliva-pilot`.
+- Added `pm_qms_migration` with controlled manager-only document and evidence
+  CSV import wizards.
+- Blocked evidence migration from directly creating `accepted` evidence; review
+  acceptance must use the QMS evidence workflow.
+- Added Mission 10 DEV test target and CI coverage through `test-mission10`.
+- Generated and validated the Oliva technical pilot project with 37 controls,
+  74 generated tasks, and 37 required evidence expectations.
+- Validated one labeled `PILOT VALIDATION` control end to end, improving
+  readiness from 0.0000 percent to 2.7027 percent while preserving the earlier
+  readiness snapshot.
+- Added Oliva runbook, implementation guide, onboarding checklist, migration
+  inventory template, release notes, plan, and ADRs.
+- Documented explicit non-claims: no customer production go-live, no invented
+  Oliva operational data, no certification claim, and zero approved external
+  mapping coverage without a human-approved CSV.
+
 ## 0.8.0 - 2026-08-15
 
 - Added `pm_qms_pack_quality` with the first commercial Perfect Match Quality
