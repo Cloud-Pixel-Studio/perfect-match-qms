@@ -1,19 +1,23 @@
 name: QMS CI
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
       - main
       - master
       - "feature/**"
+      - "fix/**"
+      - "chore/**"
+      - "hotfix/**"
 
 jobs:
   qms-quality-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
-      PMQMS_ODOO_DEV_SECRETS_DIR: ${{ runner.temp }}/pmqms-odoo-dev
+      PMQMS_ODOO_DEV_SECRETS_DIR: /tmp/pmqms-odoo-dev
 
     steps:
       - name: Checkout
