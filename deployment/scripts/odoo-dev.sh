@@ -86,11 +86,32 @@ compose() {
   docker compose -f "$COMPOSE_FILE" "$@"
 }
 
+postgres_exec() {
+  compose exec -T postgres-dev "$@"
+}
+
+postgres_exec_interactive() {
+  compose exec postgres-dev "$@"
+}
+
+wait_for_postgres() {
+  for _ in {1..60}; do
+    if postgres_exec pg_isready -U odoo -d postgres >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  compose logs postgres-dev >&2 || true
+  echo "PostgreSQL did not become ready in time." >&2
+  return 1
+}
+
 database_exists() {
   local db_name="$1"
   prepare_runtime_permissions
   compose up -d postgres-dev >/dev/null
-  compose exec -T postgres-dev psql -h 127.0.0.1 -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
+  wait_for_postgres
+  postgres_exec psql -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
 }
 
 health() {
@@ -185,8 +206,9 @@ run_odoo_tests() {
   local label="$3"
   prepare_runtime_permissions
   compose up -d postgres-dev
-  compose exec -T postgres-dev psql -h 127.0.0.1 -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null
-  compose exec -T postgres-dev dropdb -h 127.0.0.1 -U odoo --maintenance-db=postgres --if-exists pmqms_test
+  wait_for_postgres
+  postgres_exec psql -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null
+  postgres_exec dropdb -U odoo --maintenance-db=postgres --if-exists pmqms_test
   local test_log
   test_log="$(mktemp)"
   set +e
@@ -247,7 +269,7 @@ case "$command" in
     ;;
   db-shell)
     prepare_runtime_permissions
-    compose exec postgres-dev psql -h 127.0.0.1 -U odoo -d postgres
+    postgres_exec_interactive psql -U odoo -d postgres
     ;;
   init-db)
     prepare_runtime_permissions
