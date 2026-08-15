@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.8.0 - 2026-08-15
+
+- Added `pm_qms_pack_quality` with the first commercial Perfect Match Quality
+  Management Pack, code `PM-QMS-QUALITY`, version `1.0`.
+- Seeded 37 proprietary quality-management controls, 74 implementation
+  activities, and 37 mandatory evidence expectations.
+- Added mapping profiles for external reference metadata, including the active
+  `PM-QMS-QUALITY-ISO9001` profile for ISO 9001 edition metadata.
+- Added CSV mapping import with all-row validation, approval metadata,
+  duplicate protection, and rejection of external requirement text columns.
+- Locked approved profile mappings against silent definition edits or deletion.
+- Extended project generation so framework-pack controls can create equivalent
+  client organization processes before creating control instances.
+- Added external-standard content-safety scanning to CI and local validation.
+- Extended DEV scripts and CI quality gate for Mission 09 validation.
+- Added Mission 09 architecture, security, testing, plan, addon README, and
+  ADR documentation.
+
 ## 0.7.0 - 2026-08-15
 
 - Added `pm_qms_implementation` with versioned framework packs,

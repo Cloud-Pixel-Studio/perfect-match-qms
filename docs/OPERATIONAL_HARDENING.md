@@ -82,3 +82,17 @@ delete operational records or completed readiness assessments.
 Readiness assessments preserve a historical snapshot of control readiness,
 evidence counts, activity counts, gap reason, and source packs. Completed
 assessments and their items are locked against normal mutation.
+
+## Quality Pack And Mapping Controls
+
+Mission 09 adds the first commercial quality pack and keeps it versioned
+through the Mission 08 framework-pack lifecycle. Active quality pack definitions
+are not edited in place.
+
+External reference mappings have an explicit review workflow. Draft and
+reviewed mappings do not count as approved coverage. Approved mappings require
+review metadata and are locked against silent edits or deletion.
+
+The mapping layer is deliberately separate from operational execution. Mapping
+coverage changes do not create Odoo tasks, submit evidence, close gaps, or
+rewrite completed readiness assessments.

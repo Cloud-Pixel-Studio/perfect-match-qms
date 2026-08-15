@@ -128,6 +128,24 @@ Mission 08 adds tests covering:
   assessments, readiness items, and generated tasks.
 - Project completion below full readiness requiring documented justification.
 
+Mission 09 adds tests covering:
+
+- Quality Management Pack seeding, activation, unique proprietary control
+  codes, implementation activities, and mandatory evidence requirements.
+- Content-quality checks proving seeded control content does not include
+  external standard requirement text or certification outcome promises.
+- Mapping profile metadata for standard name, edition, publisher, active state,
+  incomplete starting coverage, pending mapping counts, and coverage percent.
+- CSV mapping import validation, approval metadata, duplicate protection,
+  missing-reference handling, and rejection of external requirement text
+  columns.
+- Mapping approval workflow, approved mapping lock behavior, and QMS
+  Administrator-only profile-bound mapping creation.
+- Mapping profile and pack multi-company isolation.
+- Quality pack project generation, task creation, readiness, evidence
+  readiness, not-applicable handling, shared-control deduplication, and
+  historical readiness immutability.
+
 ## Run Tests
 
 ```bash
@@ -139,6 +157,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission06
 ./deployment/scripts/odoo-dev.sh test-mission07
 ./deployment/scripts/odoo-dev.sh test-mission08
+./deployment/scripts/odoo-dev.sh test-mission09
 ```
 
 ## Rules
@@ -147,3 +166,5 @@ cd /opt/perfect-match/perfect-match-qms
 - Standard-pack tests must verify that seed/demo data contains Perfect Match proprietary wording only.
 - Do not mark Plane work items done until a repeatable verification command exists.
 - Do not copy external standard text into tests. Use generic examples such as `Example Standard` and `X.X`.
+- External mapping tests may use metadata examples only. They must not use
+  copied external requirement text as assertions or fixtures.

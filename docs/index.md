@@ -13,4 +13,5 @@
 - [Development Workflow](DEVELOPMENT_WORKFLOW.md)
 - [Deployment](DEPLOYMENT.md)
 - [Mission 08 Plan](PLANS/MISSION-08-project-generator-readiness.md)
+- [Mission 09 Plan](PLANS/MISSION-09-quality-management-pack.md)
 - [Architecture Decision Records](DECISIONS/)

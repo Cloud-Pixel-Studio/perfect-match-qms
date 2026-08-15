@@ -29,6 +29,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh install-mission06
 ./deployment/scripts/odoo-dev.sh install-mission07
 ./deployment/scripts/odoo-dev.sh install-mission08
+./deployment/scripts/odoo-dev.sh install-mission09
 ```
 
 Equivalent raw Docker Compose commands:
@@ -57,6 +58,7 @@ Then open `http://127.0.0.1:8069` on your workstation.
 ./deployment/scripts/odoo-dev.sh test-mission06
 ./deployment/scripts/odoo-dev.sh test-mission07
 ./deployment/scripts/odoo-dev.sh test-mission08
+./deployment/scripts/odoo-dev.sh test-mission09
 ```
 
 The command installs `pm_qms_core` into the `pmqms_test` database with demo data disabled and Odoo tests enabled.
@@ -90,6 +92,8 @@ docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo shell
 ./deployment/scripts/odoo-dev.sh update-mission07
 ./deployment/scripts/odoo-dev.sh install-mission08
 ./deployment/scripts/odoo-dev.sh update-mission08
+./deployment/scripts/odoo-dev.sh install-mission09
+./deployment/scripts/odoo-dev.sh update-mission09
 ```
 
 ## Health Checks
@@ -106,3 +110,5 @@ docker compose -f deployment/docker/dev/compose.yml logs --tail=100 odoo-dev
 - Do not use production credentials in the DEV stack.
 - Do not connect DEV Odoo to the Plane database.
 - Do not commit generated config, database dumps, filestore content, or secrets.
+- Do not commit licensed external standard publications or copied external
+  requirement text.

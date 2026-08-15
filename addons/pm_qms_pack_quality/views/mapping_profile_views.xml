@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_mapping_profile_list" model="ir.ui.view">
+        <field name="name">pm.qms.mapping.profile.list</field>
+        <field name="model">pm.qms.mapping.profile</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="pack_id"/>
+                <field name="standard_name"/>
+                <field name="edition"/>
+                <field name="state"/>
+                <field name="total_control_count"/>
+                <field name="mapped_control_count"/>
+                <field name="unmapped_control_count"/>
+                <field name="pending_mapping_count"/>
+                <field name="mapping_completeness_percent"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_mapping_profile_form" model="ir.ui.view">
+        <field name="name">pm.qms.mapping.profile.form</field>
+        <field name="model">pm.qms.mapping.profile</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_activate" type="object" string="Activate" invisible="state != 'draft'"/>
+                    <button name="action_retire" type="object" string="Retire" invisible="state != 'active'"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" invisible="state != 'retired'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,retired"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="pack_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="standard_name"/>
+                            <field name="edition"/>
+                            <field name="publisher"/>
+                            <field name="effective_date"/>
+                            <field name="retirement_date"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Completeness">
+                        <field name="total_control_count"/>
+                        <field name="mapped_control_count"/>
+                        <field name="unmapped_control_count"/>
+                        <field name="pending_mapping_count"/>
+                        <field name="rejected_mapping_count"/>
+                        <field name="mapping_completeness_percent"/>
+                    </group>
+                    <notebook>
+                        <page string="Mappings">
+                            <field name="mapping_ids">
+                                <list>
+                                    <field name="control_id"/>
+                                    <field name="reference"/>
+                                    <field name="mapping_type"/>
+                                    <field name="review_status"/>
+                                    <field name="reviewed_by_id"/>
+                                    <field name="review_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_mapping_profile_search" model="ir.ui.view">
+        <field name="name">pm.qms.mapping.profile.search</field>
+        <field name="model">pm.qms.mapping.profile</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="standard_name"/>
+                <field name="edition"/>
+                <filter name="active_profiles" string="Active Profiles" domain="[('state', '=', 'active')]"/>
+                <filter name="draft_profiles" string="Draft Profiles" domain="[('state', '=', 'draft')]"/>
+                <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                <filter name="group_standard" string="Standard" context="{'group_by': 'standard_name'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_mapping_profile" model="ir.actions.act_window">
+        <field name="name">Mapping Profiles</field>
+        <field name="res_model">pm.qms.mapping.profile</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_mapping_profile_search"/>
+    </record>
+</odoo>

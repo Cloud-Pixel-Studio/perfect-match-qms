@@ -53,6 +53,11 @@ project generation, multi-pack control deduplication, Odoo project/task
 execution, live implementation readiness metrics, and historical readiness
 assessments.
 
+Mission 09 adds the first commercial Quality Management Pack: proprietary
+Perfect Match quality controls, implementation activities, evidence
+expectations, external reference mapping profiles, metadata-only CSV mapping
+import, and a content-safety scan for external standard material.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -70,6 +75,8 @@ Core paths:
 - `addons/pm_qms_kpi/`
 - `addons/pm_qms_management_review/`
 - `addons/pm_qms_implementation/`
+- `addons/pm_qms_pack_quality/`
+- `framework/mappings/iso9001-approved-mapping.csv.example`
 - `.github/workflows/qms-ci.yml`
 
 ## DEV Quick Start
@@ -93,6 +100,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission07
 ./deployment/scripts/odoo-dev.sh install-mission08
 ./deployment/scripts/odoo-dev.sh test-mission08
+./deployment/scripts/odoo-dev.sh install-mission09
+./deployment/scripts/odoo-dev.sh test-mission09
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -142,3 +151,9 @@ controls across selected packs, and each organization/control pair reuses a
 single `pm.qms.control.instance`. Readiness is an internal implementation
 metric based on applicable controls; evidence completion and generated task
 completion are tracked separately.
+
+The Quality Management Pack is the first commercial pack built on that generic
+engine. It stores Perfect Match-authored controls, activities, and evidence
+expectations. Its external mapping profile stores reference metadata only; it
+does not include external standard text and does not replace authorized access
+to official publications.

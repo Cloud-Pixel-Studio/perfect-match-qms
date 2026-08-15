@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_external_mapping_list_quality_inherit" model="ir.ui.view">
+        <field name="name">pm.qms.external.mapping.list.quality.inherit</field>
+        <field name="model">pm.qms.external.mapping</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_external_mapping_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='control_id']" position="after">
+                <field name="mapping_profile_id"/>
+            </xpath>
+            <xpath expr="//field[@name='reference']" position="after">
+                <field name="mapping_type"/>
+                <field name="review_status"/>
+                <field name="reviewed_by_id"/>
+                <field name="review_date"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_external_mapping_form_quality_inherit" model="ir.ui.view">
+        <field name="name">pm.qms.external.mapping.form.quality.inherit</field>
+        <field name="model">pm.qms.external.mapping</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_external_mapping_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_mark_reviewed" type="object" string="Mark Reviewed" invisible="review_status not in ('draft', 'rejected')"/>
+                    <button name="action_approve" type="object" string="Approve" invisible="review_status == 'approved'"/>
+                    <button name="action_reject" type="object" string="Reject" invisible="review_status == 'rejected'"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft" invisible="review_status == 'draft'"/>
+                    <field name="review_status" widget="statusbar" statusbar_visible="draft,reviewed,approved,rejected"/>
+                </header>
+            </xpath>
+            <xpath expr="//field[@name='control_id']" position="after">
+                <field name="mapping_profile_id"/>
+            </xpath>
+            <xpath expr="//field[@name='reference']" position="after">
+                <field name="mapping_type"/>
+                <field name="reviewed_by_id" readonly="1"/>
+                <field name="review_date" readonly="1"/>
+                <field name="imported_by_id" readonly="1"/>
+                <field name="import_batch" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_external_mapping_search_quality" model="ir.ui.view">
+        <field name="name">pm.qms.external.mapping.search.quality</field>
+        <field name="model">pm.qms.external.mapping</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="control_id"/>
+                <field name="mapping_profile_id"/>
+                <field name="standard_name"/>
+                <field name="edition"/>
+                <field name="reference"/>
+                <filter name="approved" string="Approved" domain="[('review_status', '=', 'approved')]"/>
+                <filter name="pending" string="Pending Review" domain="[('review_status', 'in', ('draft', 'reviewed'))]"/>
+                <filter name="group_profile" string="Profile" context="{'group_by': 'mapping_profile_id'}"/>
+                <filter name="group_status" string="Review Status" context="{'group_by': 'review_status'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_external_mapping_quality" model="ir.actions.act_window">
+        <field name="name">External Mapping Matrix</field>
+        <field name="res_model">pm.qms.external.mapping</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_external_mapping_search_quality"/>
+    </record>
+</odoo>

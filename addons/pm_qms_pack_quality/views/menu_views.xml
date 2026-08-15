@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_quality_pack_root"
+        name="Quality Pack"
+        parent="pm_qms_core.menu_pm_qms_framework"
+        sequence="6"/>
+
+    <menuitem
+        id="menu_pm_qms_quality_pack_profile"
+        name="Mapping Profiles"
+        parent="menu_pm_qms_quality_pack_root"
+        action="action_pm_qms_mapping_profile"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_quality_external_mappings"
+        name="External Mapping Matrix"
+        parent="menu_pm_qms_quality_pack_root"
+        action="action_pm_qms_external_mapping_quality"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_quality_mapping_import"
+        name="Import Mapping Metadata"
+        parent="menu_pm_qms_quality_pack_root"
+        action="action_pm_qms_mapping_import_wizard"
+        sequence="30"
+        groups="pm_qms_core.group_pm_qms_administrator"/>
+</odoo>

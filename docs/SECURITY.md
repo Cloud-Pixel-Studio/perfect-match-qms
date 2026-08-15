@@ -19,6 +19,10 @@
   changed; create a new pack version instead.
 - Do not allow completed readiness assessments to be modified as if they were
   live dashboards.
+- Do not allow approved external reference mappings to be silently changed or
+  deleted.
+- Do not allow external mapping imports to carry copied external requirement
+  text.
 - Do not allow arbitrary SQL, Python, or executable formulas for performance
   measurement calculations.
 

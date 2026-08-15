@@ -288,9 +288,38 @@ class PmQmsImplementationProject(models.Model):
                 "name": control.name,
                 "control_id": control.id,
                 "organization_id": self.organization_id.id,
-                "process_id": control.process_id.id,
+                "process_id": self._target_process_for_control(control).id,
                 "owner_id": self.project_manager_id.id or False,
                 "target_date": self.target_date,
+            }
+        )
+
+    def _target_process_for_control(self, control):
+        self.ensure_one()
+        source_process = control.process_id
+        if not source_process.organization_id or source_process.organization_id == self.organization_id:
+            return source_process
+        target_code = f"{self.organization_id.code}-{source_process.code}"
+        process = self.env["pm.qms.process"].search(
+            [
+                ("code", "=", target_code),
+                ("company_id", "=", self.company_id.id),
+            ],
+            limit=1,
+        )
+        if process:
+            return process
+        return self.env["pm.qms.process"].create(
+            {
+                "name": source_process.name,
+                "code": target_code,
+                "description": source_process.description,
+                "organization_id": self.organization_id.id,
+                "company_id": self.company_id.id,
+                "process_type": source_process.process_type,
+                "department": source_process.department,
+                "inputs": source_process.inputs,
+                "outputs": source_process.outputs,
             }
         )
 

@@ -411,3 +411,47 @@ internal implementation metric and does not claim external approval.
 Completed readiness assessments copy the current implementation state into
 assessment item snapshots. Later changes to evidence, tasks, or control
 instance status do not rewrite completed readiness history.
+
+## Mission 09 Quality Management Pack
+
+```text
+PERFECT MATCH METHODOLOGY
+        |
+        v
+QMS CONTROL LIBRARY
+        |
+        v
+QUALITY PACK v1.0
+        |
+        |-- Activities
+        |-- Evidence Requirements
+        `-- External Reference Mapping
+                    |
+                    v
+              metadata only
+```
+
+Mission 09 adds `pm_qms_pack_quality` as the first commercial pack on top of
+the Mission 08 implementation engine.
+
+The pack includes:
+
+- `PM-QMS-QUALITY` version `1.0`, activated as a framework pack.
+- 37 Perfect Match proprietary quality controls.
+- 74 reusable implementation activities.
+- 37 mandatory evidence requirements.
+- `pm.qms.mapping.profile` for reviewed external reference mapping profiles.
+- A CSV import wizard for metadata-only mapping loads.
+
+Quality pack controls are Perfect Match-authored implementation objects. They
+are not external clauses, external requirements, or copied publication text.
+
+The mapping layer relates an external standard name, edition, publisher, and
+reference identifier to a Perfect Match control. Mapping approval changes
+traceability coverage only; it does not create evidence, complete tasks, mark a
+control ready, or modify completed readiness snapshots.
+
+The project generator remains generic. When a quality pack control belongs to
+a framework-owned process, generation creates or reuses an equivalent process
+inside the selected client organization so operational control instances,
+documents, evidence, tasks, and readiness remain client-scoped.

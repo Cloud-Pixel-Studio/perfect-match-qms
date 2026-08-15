@@ -3,7 +3,7 @@
 ## Scope
 
 This document defines the QMS security model for internal Odoo users through
-Mission 08.
+Mission 09.
 It does not implement customer portal access.
 
 ## Roles
@@ -27,6 +27,8 @@ It does not implement customer portal access.
   assigned to them where the action workflow allows owner updates.
 - Can read implementation packs, generated implementation projects,
   implementation controls, and readiness assessments inside allowed companies.
+- Can read quality pack controls and external mapping metadata inside allowed
+  companies.
 
 `QMS Manager`
 
@@ -45,12 +47,15 @@ It does not implement customer portal access.
 - Generate implementation projects, synchronize active framework packs, manage
   implementation execution, create native Odoo project work through the
   generator, and run readiness assessments.
+- Read quality pack mapping profiles and operational implementation records.
 - Cannot bypass company record rules.
 
 `QMS Administrator`
 
 - Full QMS configuration permissions.
 - Configure framework packs and pack-control membership.
+- Configure quality-pack mapping profiles and approve profile-bound external
+  reference mappings.
 - Can delete draft/configuration records where model constraints allow it.
 - Still operates through Odoo access controls and record rules.
 
@@ -117,6 +122,11 @@ Mission 08 extends this to:
 - readiness assessments;
 - readiness assessment items.
 
+Mission 09 extends this to:
+
+- mapping profiles;
+- profile-bound external mapping review metadata.
+
 Organization isolation is enforced by model constraints where relationships
 must belong to the selected organization. Documents, evidence, and control
 instances reject mismatched process, organization, or company relationships.
@@ -178,6 +188,15 @@ assessment controls:
 - completed readiness assessments and completed assessment items are immutable
   historical snapshots for normal application users.
 
+Mission 09 adds quality-pack mapping controls:
+
+- mapping profile status changes use workflow actions;
+- active and retired mapping profile definitions cannot be silently edited;
+- profile-bound mapping creation and approval require QMS Administrator
+  authority;
+- approved mappings cannot be silently edited or deleted;
+- mapping imports validate metadata before creating records.
+
 QMS Managers inherit the native Odoo project manager group so generated Odoo
 projects and tasks are created through supported Odoo access controls.
 
@@ -229,3 +248,6 @@ Mission 03 and Mission 04 tests validate:
   boundaries, readiness snapshot immutability, project completion justification,
   and multi-company isolation for implementation projects, controls,
   assessments, assessment items, and generated tasks.
+- quality pack seed integrity, mapping profile workflow authority, metadata
+  import validation, approved mapping locking, content-safety expectations,
+  generator compatibility, and multi-company mapping isolation.

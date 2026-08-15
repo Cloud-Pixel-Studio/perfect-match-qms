@@ -34,3 +34,7 @@ backups/
 *.sql
 *.tar
 *.tar.gz
+standards-private/
+licensed-standards/
+*ISO*9001*.pdf
+*iso*9001*.pdf

@@ -33,11 +33,14 @@ jobs:
       - name: Secret scan
         run: python deployment/scripts/secret-scan.py
 
+      - name: External-standard content safety scan
+        run: python deployment/scripts/qms-content-safety.py
+
       - name: Validate Docker Compose configuration
         run: bash deployment/scripts/odoo-dev.sh config
 
       - name: Pull DEV runtime images
         run: bash deployment/scripts/odoo-dev.sh pull
 
-      - name: Run Odoo Mission 08 tests
-        run: bash deployment/scripts/odoo-dev.sh test-mission08
+      - name: Run Odoo Mission 09 tests
+        run: bash deployment/scripts/odoo-dev.sh test-mission09

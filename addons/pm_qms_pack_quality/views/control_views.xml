@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_control_list_quality_inherit" model="ir.ui.view">
+        <field name="name">pm.qms.control.list.quality.inherit</field>
+        <field name="model">pm.qms.control</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_control_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category']" position="after">
+                <field name="pm_control_domain"/>
+                <field name="pm_supported_capability"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_control_form_quality_inherit" model="ir.ui.view">
+        <field name="name">pm.qms.control.form.quality.inherit</field>
+        <field name="model">pm.qms.control</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_control_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="(//field[@name='category'])[1]" position="after">
+                <field name="pm_control_domain"/>
+                <field name="pm_supported_capability"/>
+            </xpath>
+            <xpath expr="//field[@name='external_mapping_ids']/list/field[@name='reference']" position="after">
+                <field name="mapping_profile_id"/>
+                <field name="mapping_type"/>
+                <field name="review_status"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

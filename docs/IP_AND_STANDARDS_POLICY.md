@@ -9,3 +9,22 @@ Perfect Match controls may contain proprietary objective, activity, workflow, ev
 Framework packs may contain Perfect Match-authored control groupings, ordering,
 versioning, source-pack metadata, and implementation notes. They must not
 contain copied external standard requirement text.
+
+Quality packs may include Perfect Match-authored controls, implementation
+activities, evidence expectations, domains, roles, and operational guidance.
+They must not claim to reproduce, replace, or summarize an external
+publication.
+
+Mapping profiles and imports are allowed to store metadata such as standard
+name, edition, publisher, reference identifier, mapping type, review status,
+reviewer, review date, and Perfect Match-authored notes. A profile with zero
+approved mappings is valid and preferred until a human reviewer supplies
+authorized mapping metadata.
+
+The example mapping CSV under `framework/mappings/` is header-only by design.
+Real mapping files that contain customer or licensed-reference work should be
+handled as controlled inputs and reviewed before import.
+
+Run `deployment/scripts/qms-content-safety.py` before committing standard-pack
+or mapping work. The script is a hygiene check for obvious mistakes, not a
+legal opinion.
