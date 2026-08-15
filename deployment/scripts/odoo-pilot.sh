@@ -12,6 +12,7 @@ DB_NAME="${PMQMS_OLIVA_PILOT_DB:-pmqms_oliva_pilot}"
 OLIVA_COMPANY_NAME="${PMQMS_OLIVA_COMPANY_NAME:-Oliva Torras USA, Inc.}"
 OLIVA_ORG_CODE="${PMQMS_OLIVA_ORG_CODE:-OTUS}"
 MISSION10_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration"
+MISSION11_ADDONS="$MISSION10_ADDONS,pm_qms_app"
 
 export ODOO_OLIVA_PILOT_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_OLIVA_PILOT_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -92,6 +93,25 @@ database_exists() {
 run_odoo() {
   prepare_runtime_permissions
   compose run --rm odoo-oliva-pilot odoo "$@"
+}
+
+odoo_module_state() {
+  local module="$1"
+  run_odoo shell -d "$DB_NAME" --log-level=error <<PY | tail -n 1
+module = env["ir.module.module"].search([("name", "=", "$module")], limit=1)
+print(module.state if module else "missing")
+PY
+}
+
+update_qms_stack() {
+  run_odoo -d "$DB_NAME" --update "$MISSION10_ADDONS" --stop-after-init
+  local app_state
+  app_state="$(odoo_module_state pm_qms_app)"
+  if [[ "$app_state" == "installed" ]]; then
+    run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init
+  else
+    run_odoo -d "$DB_NAME" --init pm_qms_app --without-demo=all --stop-after-init
+  fi
 }
 
 configure_company() {
@@ -211,8 +231,8 @@ Commands:
   shell              Open bash in pilot Odoo container.
   init-db            Initialize pilot database with base.
   configure-company  Rename initial Odoo company to Oliva Torras USA, Inc.
-  install            Install full QMS stack into the pilot database.
-  update             Update full QMS stack in the pilot database.
+  install            Install full QMS stack including the application shell.
+  update             Update full QMS stack including the application shell.
   configure-client   Create/verify Oliva organization and generated project.
   run-readiness      Run a historical readiness assessment.
   health             Validate local pilot HTTP and container status.
@@ -267,15 +287,15 @@ case "${1:-}" in
   install)
     prepare_runtime_permissions
     if database_exists; then
-      run_odoo -d "$DB_NAME" --update "$MISSION10_ADDONS" --stop-after-init
+      update_qms_stack
     else
       run_odoo -d "$DB_NAME" --init base --without-demo=all --stop-after-init
       configure_company
-      run_odoo -d "$DB_NAME" --init "$MISSION10_ADDONS" --without-demo=all --stop-after-init
+      run_odoo -d "$DB_NAME" --init "$MISSION11_ADDONS" --without-demo=all --stop-after-init
     fi
     ;;
   update)
-    run_odoo -d "$DB_NAME" --update "$MISSION10_ADDONS" --stop-after-init
+    update_qms_stack
     ;;
   configure-client)
     configure_client

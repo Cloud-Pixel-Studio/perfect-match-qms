@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_dashboard_form" model="ir.ui.view">
+        <field name="name">pm.qms.dashboard.form</field>
+        <field name="model">pm.qms.dashboard</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <field name="organization_count" invisible="1"/>
+                    <field name="has_multiple_organizations" invisible="1"/>
+                    <div class="oe_title">
+                        <h1>Perfect Match QMS</h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="organization_id" options="{'no_create': True}"/>
+                            <field name="implementation_project_id" domain="[('organization_id', '=', organization_id)]" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="dashboard_timestamp"/>
+                            <field name="last_management_review_date"/>
+                        </group>
+                    </group>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_continue_implementation" type="object" class="oe_stat_button" icon="fa-play">
+                            <field name="readiness_percent" widget="statinfo" string="Readiness %"/>
+                        </button>
+                        <button name="action_review_gaps" type="object" class="oe_stat_button" icon="fa-exclamation-triangle">
+                            <field name="gap_controls" widget="statinfo" string="Gaps"/>
+                        </button>
+                        <button name="action_review_evidence" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="missing_evidence" widget="statinfo" string="Missing Evidence"/>
+                        </button>
+                        <button name="action_run_readiness_assessment" type="object" class="oe_stat_button" icon="fa-line-chart">
+                            <field name="total_controls" widget="statinfo" string="Controls"/>
+                        </button>
+                    </div>
+                    <group string="Implementation Readiness">
+                        <group string="Controls">
+                            <field name="total_controls"/>
+                            <field name="ready_controls"/>
+                            <field name="partial_controls"/>
+                            <field name="gap_controls"/>
+                            <field name="not_applicable_controls"/>
+                        </group>
+                        <group string="Activities">
+                            <field name="total_activities"/>
+                            <field name="completed_activities"/>
+                            <field name="open_activities"/>
+                            <field name="overdue_activities"/>
+                        </group>
+                        <group string="Evidence">
+                            <field name="required_evidence"/>
+                            <field name="accepted_evidence"/>
+                            <field name="missing_evidence"/>
+                            <field name="pending_review_evidence"/>
+                        </group>
+                    </group>
+                    <group string="QMS Health">
+                        <group>
+                            <field name="open_risks"/>
+                            <field name="high_open_risks"/>
+                            <field name="open_ncr"/>
+                            <field name="overdue_ncr"/>
+                        </group>
+                        <group>
+                            <field name="open_capa"/>
+                            <field name="overdue_capa"/>
+                            <field name="open_audit_findings"/>
+                            <field name="overdue_audit_findings"/>
+                        </group>
+                    </group>
+                    <group string="Performance">
+                        <group>
+                            <field name="active_objectives"/>
+                            <field name="objectives_on_target"/>
+                            <field name="active_kpis"/>
+                            <field name="kpis_on_target"/>
+                        </group>
+                        <group>
+                            <field name="customer_performance_issues"/>
+                            <field name="supplier_performance_issues"/>
+                        </group>
+                    </group>
+                    <group string="Management Review">
+                        <field name="last_management_review_id"/>
+                        <field name="open_management_review_actions"/>
+                    </group>
+                    <group string="Attention Required">
+                        <group>
+                            <field name="attention_overdue_activities"/>
+                            <field name="attention_missing_evidence"/>
+                            <field name="attention_high_risks"/>
+                        </group>
+                        <group>
+                            <field name="attention_overdue_capa"/>
+                            <field name="attention_open_findings"/>
+                        </group>
+                    </group>
+                    <footer>
+                        <button name="action_continue_implementation" type="object" string="Continue Implementation" class="btn-primary"/>
+                        <button name="action_review_gaps" type="object" string="Review Gaps"/>
+                        <button name="action_review_evidence" type="object" string="Review Evidence"/>
+                        <button name="action_run_readiness_assessment" type="object" string="Run / View Readiness Assessment"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_dashboard" model="ir.actions.act_window">
+        <field name="name">Perfect Match QMS</field>
+        <field name="res_model">pm.qms.dashboard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_pm_qms_dashboard_form"/>
+        <field name="target">current</field>
+        <field name="context">{}</field>
+    </record>
+</odoo>
