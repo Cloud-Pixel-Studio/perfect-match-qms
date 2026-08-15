@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_supplier_performance_list" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.performance.list</field>
+        <field name="model">pm.qms.supplier.performance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="supplier_id"/>
+                <field name="organization_id"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="quality_score"/>
+                <field name="delivery_score"/>
+                <field name="overall_score"/>
+                <field name="rejected_quantity"/>
+                <field name="late_delivery_count"/>
+                <field name="supplier_ncr_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_performance_form" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.performance.form</field>
+        <field name="model">pm.qms.supplier.performance</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Supplier">
+                            <field name="supplier_id"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Metrics">
+                            <field name="quality_score"/>
+                            <field name="delivery_score"/>
+                            <field name="overall_score"/>
+                            <field name="received_quantity"/>
+                            <field name="rejected_quantity"/>
+                            <field name="late_delivery_count"/>
+                            <field name="total_delivery_count"/>
+                            <field name="supplier_ncr_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_performance_search" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.performance.search</field>
+        <field name="model">pm.qms.supplier.performance</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="supplier_id"/>
+                <field name="organization_id"/>
+                <field name="period_end"/>
+                <filter name="group_supplier" string="Supplier" context="{'group_by': 'supplier_id'}"/>
+                <filter name="group_period" string="Period" context="{'group_by': 'period_end:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_performance_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.performance.pivot</field>
+        <field name="model">pm.qms.supplier.performance</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="supplier_id" type="row"/>
+                <field name="period_end" interval="month" type="col"/>
+                <field name="quality_score" type="measure"/>
+                <field name="delivery_score" type="measure"/>
+                <field name="overall_score" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_performance_graph" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.performance.graph</field>
+        <field name="model">pm.qms.supplier.performance</field>
+        <field name="arch" type="xml">
+            <graph string="Supplier Performance">
+                <field name="period_end" interval="month"/>
+                <field name="quality_score" type="measure"/>
+                <field name="delivery_score" type="measure"/>
+                <field name="supplier_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_supplier_performance" model="ir.actions.act_window">
+        <field name="name">Supplier Performance</field>
+        <field name="res_model">pm.qms.supplier.performance</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_supplier_performance_search"/>
+    </record>
+</odoo>

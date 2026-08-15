@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_performance"
+        name="Performance"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="25"/>
+
+    <menuitem
+        id="menu_pm_qms_objectives"
+        name="Objectives"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_objective"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_kpis"
+        name="KPIs"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_kpi"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_kpi_measurements"
+        name="KPI Measurements"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_kpi_measurement"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_customer_performance"
+        name="Customer Performance"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_customer_performance"
+        sequence="40"/>
+
+    <menuitem
+        id="menu_pm_qms_customer_satisfaction"
+        name="Customer Satisfaction"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_customer_satisfaction"
+        sequence="50"/>
+
+    <menuitem
+        id="menu_pm_qms_supplier_performance"
+        name="Supplier Performance"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_supplier_performance"
+        sequence="60"/>
+
+    <menuitem
+        id="menu_pm_qms_supplier_evaluations"
+        name="Supplier Evaluations"
+        parent="menu_pm_qms_performance"
+        action="action_pm_qms_supplier_evaluation"
+        sequence="70"/>
+</odoo>

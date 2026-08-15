@@ -228,3 +228,56 @@ CAPA = In Progress
 
 This allows audit reporting to finish while corrective action remains managed
 through NCR and CAPA workflows.
+
+## Mission 06 Performance Management Foundation
+
+```text
+CLIENT QMS
+
+Control Instance
+      |
+      +-- Objective
+      |      |
+      |      +-- KPI
+      |             |
+      |             +-- Measurements
+      |
+      +-- Customer Performance
+      |
+      +-- Supplier Performance
+
+Future:
+
+Performance Data
+      |
+      v
+Management Review
+```
+
+Mission 06 adds `pm_qms_kpi` as the reusable performance-management layer for
+future Management Review, readiness, dashboards, AI summaries, and automation.
+It does not implement Management Review.
+
+The layer includes:
+
+- `pm.qms.objective` for organization-specific measurable objectives.
+- `pm.qms.kpi` for KPI definitions.
+- `pm.qms.kpi.measurement` for historical KPI results.
+- `pm.qms.customer.performance` for customer performance by period.
+- `pm.qms.customer.satisfaction` for actual satisfaction measurements.
+- `pm.qms.supplier.performance` for supplier quality/delivery performance.
+- `pm.qms.supplier.evaluation` for supplier evaluation records with explicit
+  weights and internal status classifications.
+
+KPI definitions and KPI measurements are intentionally separate. KPI
+measurements preserve target, warning, and direction snapshots so future target
+changes do not rewrite historical results.
+
+Customers and suppliers remain Odoo `res.partner` records. Performance records
+reference partners and do not create duplicate customer or supplier master data.
+Customer and supplier NCR counts are derived from `pm.qms.nonconformity`
+records when structured `source_type` data exists.
+
+Performance records relate to `pm.qms.control.instance` and `pm.qms.process`.
+They do not attach mutable client objective, target, or result data to reusable
+`pm.qms.control` framework definitions.

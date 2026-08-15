@@ -3,7 +3,7 @@
 ## Scope
 
 This document defines the QMS security model for internal Odoo users through
-Mission 05.
+Mission 06.
 It does not implement customer portal access.
 
 ## Roles
@@ -19,6 +19,10 @@ It does not implement customer portal access.
   evidence collection is requested.
 - Cannot plan, start, complete, or cancel audits; issue findings; create NCRs
   from findings; or close findings.
+- Can read performance data in allowed companies and enter KPI measurements or
+  customer satisfaction measurements where operational entry is appropriate.
+- Cannot configure objectives, KPI targets, supplier evaluations, or privileged
+  performance configuration.
 
 `QMS Manager`
 
@@ -28,6 +32,9 @@ It does not implement customer portal access.
 - Assess, review, verify, and close risk, NCR, and CAPA records.
 - Create and manage audit programs, audits, scope, criteria, plan lines, audit
   evidence, findings, auditor independence review, and finding-to-NCR handoff.
+- Create and manage objectives, KPI definitions, KPI targets, customer
+  performance, supplier performance, and supplier evaluations.
+- Verify KPI measurements and complete supplier evaluations.
 - Cannot bypass company record rules.
 
 `QMS Administrator`
@@ -73,6 +80,16 @@ Mission 05 extends this to:
 - audit evidence;
 - audit findings.
 
+Mission 06 extends this to:
+
+- objectives;
+- KPIs;
+- KPI measurements;
+- customer performance;
+- customer satisfaction;
+- supplier performance;
+- supplier evaluations.
+
 Organization isolation is enforced by model constraints where relationships
 must belong to the selected organization. Documents, evidence, and control
 instances reject mismatched process, organization, or company relationships.
@@ -107,10 +124,15 @@ Workflow state changes use model actions:
 - audit plan, ready, start, reporting, complete, cancel;
 - auditor independence confirmation or documented override;
 - audit finding issue, accept, require action, create NCR, close, cancel.
+- objective activate, achieved, not achieved, KPI evaluation, close, cancel;
+- KPI activate, deactivate, reset;
+- KPI measurement verification;
+- supplier evaluation complete and cancel.
 
 Direct state writes are blocked for controlled implementation, document,
 revision, evidence, risk, NCR, CAPA, CAPA action, audit program, audit, and
-audit finding states.
+audit finding states. Mission 06 also blocks direct status/state writes for
+objectives, KPI definitions, and supplier evaluations.
 
 `pm.qms.event` is append-only at the ORM level for normal QMS groups. Workflow
 methods append events with the acting user, timestamp, previous state, new
@@ -145,3 +167,8 @@ Mission 03 and Mission 04 tests validate:
   workflow authority, finding-to-NCR rules, audit/NCR/CAPA lifecycle
   independence, multi-company audit isolation, relationship constraints, and
   protected audit attachment access.
+- objective/KPI workflow authority, KPI snapshot integrity, user measurement
+  entry, KPI verification authority, customer/supplier partner reuse,
+  supplier evaluation authority, multi-company performance isolation,
+  relationship constraints, and the rule that off-target KPI results do not
+  automatically create NCR or CAPA records.

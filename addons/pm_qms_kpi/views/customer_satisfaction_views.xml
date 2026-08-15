@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_customer_satisfaction_list" model="ir.ui.view">
+        <field name="name">pm.qms.customer.satisfaction.list</field>
+        <field name="model">pm.qms.customer.satisfaction</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="customer_id"/>
+                <field name="organization_id"/>
+                <field name="measurement_date"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="measurement_method"/>
+                <field name="score"/>
+                <field name="score_scale_max"/>
+                <field name="score_percent"/>
+                <field name="response_count"/>
+                <field name="owner_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_customer_satisfaction_form" model="ir.ui.view">
+        <field name="name">pm.qms.customer.satisfaction.form</field>
+        <field name="model">pm.qms.customer.satisfaction</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Customer">
+                            <field name="customer_id"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="owner_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Measurement">
+                            <field name="measurement_date"/>
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                            <field name="measurement_method"/>
+                            <field name="score"/>
+                            <field name="score_scale_max"/>
+                            <field name="score_percent"/>
+                            <field name="response_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_customer_satisfaction_search" model="ir.ui.view">
+        <field name="name">pm.qms.customer.satisfaction.search</field>
+        <field name="model">pm.qms.customer.satisfaction</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="customer_id"/>
+                <field name="organization_id"/>
+                <field name="measurement_method"/>
+                <filter name="group_customer" string="Customer" context="{'group_by': 'customer_id'}"/>
+                <filter name="group_method" string="Method" context="{'group_by': 'measurement_method'}"/>
+                <filter name="group_period" string="Period" context="{'group_by': 'period_end:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_customer_satisfaction_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.customer.satisfaction.pivot</field>
+        <field name="model">pm.qms.customer.satisfaction</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="customer_id" type="row"/>
+                <field name="measurement_method" type="col"/>
+                <field name="score_percent" type="measure"/>
+                <field name="response_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_customer_satisfaction_graph" model="ir.ui.view">
+        <field name="name">pm.qms.customer.satisfaction.graph</field>
+        <field name="model">pm.qms.customer.satisfaction</field>
+        <field name="arch" type="xml">
+            <graph string="Customer Satisfaction Trend">
+                <field name="measurement_date" interval="month"/>
+                <field name="score_percent" type="measure"/>
+                <field name="customer_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_customer_satisfaction" model="ir.actions.act_window">
+        <field name="name">Customer Satisfaction</field>
+        <field name="res_model">pm.qms.customer.satisfaction</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_customer_satisfaction_search"/>
+    </record>
+</odoo>

@@ -39,5 +39,5 @@ jobs:
       - name: Pull DEV runtime images
         run: bash deployment/scripts/odoo-dev.sh pull
 
-      - name: Run Odoo Mission 05 tests
-        run: bash deployment/scripts/odoo-dev.sh test-mission05
+      - name: Run Odoo Mission 06 tests
+        run: bash deployment/scripts/odoo-dev.sh test-mission06

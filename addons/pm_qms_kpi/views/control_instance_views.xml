@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_control_instance_form_performance" model="ir.ui.view">
+        <field name="name">pm.qms.control.instance.form.performance</field>
+        <field name="model">pm.qms.control.instance</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_control_instance_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Performance">
+                    <group>
+                        <field name="objective_count"/>
+                        <field name="active_objective_count"/>
+                        <field name="kpi_count"/>
+                        <field name="active_kpi_count"/>
+                        <field name="off_target_kpi_count"/>
+                        <field name="overdue_kpi_count"/>
+                    </group>
+                    <field name="objective_ids">
+                        <list>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="target_date"/>
+                            <field name="status"/>
+                        </list>
+                    </field>
+                    <field name="kpi_ids">
+                        <list>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="latest_status"/>
+                            <field name="trend_direction"/>
+                            <field name="measurement_overdue"/>
+                            <field name="status"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

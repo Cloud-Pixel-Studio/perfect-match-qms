@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_pm_qms_objective" model="ir.sequence">
+        <field name="name">Perfect Match QMS Objective</field>
+        <field name="code">pm.qms.objective</field>
+        <field name="prefix">PM-OBJ-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_pm_qms_kpi" model="ir.sequence">
+        <field name="name">Perfect Match QMS KPI</field>
+        <field name="code">pm.qms.kpi</field>
+        <field name="prefix">PM-KPI-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

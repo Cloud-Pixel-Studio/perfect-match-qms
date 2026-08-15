@@ -38,6 +38,13 @@ audits, normalized scope and criteria, audit team and independence metadata,
 planning lines, audit evidence, findings, and controlled finding-to-NCR
 integration while preserving NCR-to-CAPA separation.
 
+Mission 06 adds the performance-management foundation: objectives, KPI
+definitions, KPI measurements with historical snapshots, KPI trends and
+measurement schedules, customer performance, customer satisfaction, supplier
+performance, and supplier evaluations. This data is designed for future
+Management Review consumption; Management Review itself is not implemented in
+Mission 06.
+
 Core paths:
 
 - `deployment/docker/dev/compose.yml`
@@ -52,6 +59,7 @@ Core paths:
 - `addons/pm_qms_ncr/`
 - `addons/pm_qms_capa/`
 - `addons/pm_qms_audit/`
+- `addons/pm_qms_kpi/`
 - `.github/workflows/qms-ci.yml`
 
 ## DEV Quick Start
@@ -69,6 +77,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission04
 ./deployment/scripts/odoo-dev.sh install-mission05
 ./deployment/scripts/odoo-dev.sh test-mission05
+./deployment/scripts/odoo-dev.sh install-mission06
+./deployment/scripts/odoo-dev.sh test-mission06
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -99,3 +109,9 @@ Internal audit records are also operational records. Audit findings relate to
 audits, criteria, evidence, processes, and control instances. Internal
 nonconformity findings can create NCR records through a controlled action; CAPA
 continues through the existing NCR-to-CAPA pathway.
+
+Performance records are client operational records. Objectives and KPIs may
+relate to control instances and processes, but historical KPI measurements live
+on `pm.qms.kpi.measurement`, not on reusable `pm.qms.control`. Customer and
+supplier performance reuse Odoo `res.partner` as master data instead of
+duplicating customer or supplier databases.

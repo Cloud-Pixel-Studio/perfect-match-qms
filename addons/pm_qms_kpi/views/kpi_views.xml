@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_kpi_list" model="ir.ui.view">
+        <field name="name">pm.qms.kpi.list</field>
+        <field name="model">pm.qms.kpi</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="direction"/>
+                <field name="target_value"/>
+                <field name="unit_of_measure"/>
+                <field name="latest_value"/>
+                <field name="latest_status"/>
+                <field name="trend_direction"/>
+                <field name="next_measurement_date"/>
+                <field name="measurement_overdue"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_kpi_form" model="ir.ui.view">
+        <field name="name">pm.qms.kpi.form</field>
+        <field name="model">pm.qms.kpi</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_activate" type="object" string="Activate" invisible="status != 'draft'"/>
+                    <button name="action_deactivate" type="object" string="Deactivate" invisible="status != 'active'"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset" invisible="status != 'inactive'"/>
+                    <field name="status" widget="statusbar" statusbar_visible="draft,active,inactive"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="owner_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Measurement">
+                            <field name="unit_of_measure"/>
+                            <field name="direction"/>
+                            <field name="target_value"/>
+                            <field name="warning_value"/>
+                            <field name="frequency"/>
+                            <field name="start_date"/>
+                            <field name="next_measurement_date"/>
+                            <field name="source_type"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Latest Result">
+                            <field name="latest_value"/>
+                            <field name="latest_measurement_date"/>
+                            <field name="latest_status"/>
+                            <field name="previous_value"/>
+                            <field name="trend_direction"/>
+                        </group>
+                        <group string="Schedule">
+                            <field name="measurement_count"/>
+                            <field name="measurement_overdue"/>
+                            <field name="days_overdue"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                            <field name="calculation_description"/>
+                        </page>
+                        <page string="Measurements">
+                            <field name="measurement_ids">
+                                <list>
+                                    <field name="measurement_date"/>
+                                    <field name="period_start"/>
+                                    <field name="period_end"/>
+                                    <field name="value"/>
+                                    <field name="target_value_snapshot"/>
+                                    <field name="status"/>
+                                    <field name="verified_by_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Relationships">
+                            <field name="objective_ids"/>
+                            <field name="control_instance_ids"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_kpi_search" model="ir.ui.view">
+        <field name="name">pm.qms.kpi.search</field>
+        <field name="model">pm.qms.kpi</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <filter name="active_kpis" string="Active" domain="[('status', '=', 'active')]"/>
+                <filter name="on_target" string="On Target" domain="[('latest_status', '=', 'on_target')]"/>
+                <filter name="off_target" string="Off Target" domain="[('latest_status', '=', 'off_target')]"/>
+                <filter name="overdue" string="Overdue" domain="[('measurement_overdue', '=', True)]"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                <filter name="group_process" string="Process" context="{'group_by': 'process_id'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_kpi_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.kpi.pivot</field>
+        <field name="model">pm.qms.kpi</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="status" type="row"/>
+                <field name="process_id" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_kpi_graph" model="ir.ui.view">
+        <field name="name">pm.qms.kpi.graph</field>
+        <field name="model">pm.qms.kpi</field>
+        <field name="arch" type="xml">
+            <graph string="KPIs By Status">
+                <field name="status" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_kpi" model="ir.actions.act_window">
+        <field name="name">KPIs</field>
+        <field name="res_model">pm.qms.kpi</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_kpi_search"/>
+    </record>
+</odoo>

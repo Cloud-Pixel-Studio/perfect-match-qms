@@ -23,16 +23,30 @@ Operational records use Odoo sequences:
 - Audit program: `PM-AUDPROG-00001`
 - Audit: `PM-AUD-00001`
 - Audit finding: `PM-AUDF-00001`
+- Objective: `PM-OBJ-00001`
+- KPI: `PM-KPI-00001`
 
 ## Client Operational Layer
 
-Risk, NCR, CAPA, and internal audit belong to the client operational layer.
-They relate to `pm.qms.control.instance`, documents, evidence, processes, and
-organizations. They do not add client implementation data to reusable
-`pm.qms.control` definitions.
+Risk, NCR, CAPA, internal audit, objectives, KPIs, customer performance, and
+supplier performance belong to the client operational layer. They relate to
+`pm.qms.control.instance`, documents, evidence, processes, partners, and
+organizations where appropriate. They do not add client implementation data to
+reusable `pm.qms.control` definitions.
 
 ## Due Dates
 
 Risk, NCR, CAPA, CAPA action, CAPA effectiveness, audits, findings, and finding
-follow-up records expose computed overdue indicators and days overdue.
-Notifications are intentionally not added yet.
+follow-up records expose computed overdue indicators and days overdue. Mission
+06 adds overdue indicators for objective target dates and KPI measurement
+schedules. Notifications are intentionally not added yet.
+
+## Performance Snapshots
+
+KPI measurements preserve target, warning, and direction snapshots at the time
+the result is recorded. This protects historical performance evidence when KPI
+targets are changed later.
+
+Supplier evaluation scores preserve the weights used on the evaluation record.
+Future configuration may centralize default weights, but Mission 06 keeps the
+mechanism explicit and reviewable.

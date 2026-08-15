@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_supplier_evaluation_list" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.evaluation.list</field>
+        <field name="model">pm.qms.supplier.evaluation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="supplier_id"/>
+                <field name="organization_id"/>
+                <field name="evaluation_date"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="quality_score"/>
+                <field name="delivery_score"/>
+                <field name="service_score"/>
+                <field name="overall_score"/>
+                <field name="status"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_evaluation_form" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.evaluation.form</field>
+        <field name="model">pm.qms.supplier.evaluation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_complete" type="object" string="Complete" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,completed,cancelled"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Supplier">
+                            <field name="supplier_id"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="evaluation_date"/>
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                            <field name="evaluator_id"/>
+                            <field name="status"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Scores">
+                            <field name="quality_score"/>
+                            <field name="delivery_score"/>
+                            <field name="service_score"/>
+                            <field name="compliance_score"/>
+                            <field name="overall_score"/>
+                        </group>
+                    </group>
+                    <group string="Weights">
+                        <field name="quality_weight"/>
+                        <field name="delivery_weight"/>
+                        <field name="service_weight"/>
+                        <field name="compliance_weight"/>
+                        <field name="total_weight_snapshot"/>
+                    </group>
+                    <notebook>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_evaluation_search" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.evaluation.search</field>
+        <field name="model">pm.qms.supplier.evaluation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="supplier_id"/>
+                <field name="organization_id"/>
+                <field name="status"/>
+                <field name="state"/>
+                <filter name="monitor" string="Monitor" domain="[('status', '=', 'monitor')]"/>
+                <filter name="conditional" string="Conditional" domain="[('status', '=', 'conditional')]"/>
+                <filter name="completed" string="Completed" domain="[('state', '=', 'completed')]"/>
+                <filter name="group_supplier" string="Supplier" context="{'group_by': 'supplier_id'}"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                <filter name="group_period" string="Period" context="{'group_by': 'period_end:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_evaluation_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.evaluation.pivot</field>
+        <field name="model">pm.qms.supplier.evaluation</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="supplier_id" type="row"/>
+                <field name="status" type="col"/>
+                <field name="overall_score" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_supplier_evaluation_graph" model="ir.ui.view">
+        <field name="name">pm.qms.supplier.evaluation.graph</field>
+        <field name="model">pm.qms.supplier.evaluation</field>
+        <field name="arch" type="xml">
+            <graph string="Supplier Evaluation Scores">
+                <field name="evaluation_date" interval="month"/>
+                <field name="overall_score" type="measure"/>
+                <field name="supplier_id"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_supplier_evaluation" model="ir.actions.act_window">
+        <field name="name">Supplier Evaluations</field>
+        <field name="res_model">pm.qms.supplier.evaluation</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_supplier_evaluation_search"/>
+    </record>
+</odoo>

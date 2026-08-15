@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_objective_company" model="ir.rule">
+        <field name="name">Perfect Match QMS objective company boundary</field>
+        <field name="model_id" ref="model_pm_qms_objective"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_kpi_company" model="ir.rule">
+        <field name="name">Perfect Match QMS KPI company boundary</field>
+        <field name="model_id" ref="model_pm_qms_kpi"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_kpi_measurement_company" model="ir.rule">
+        <field name="name">Perfect Match QMS KPI measurement company boundary</field>
+        <field name="model_id" ref="model_pm_qms_kpi_measurement"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_customer_performance_company" model="ir.rule">
+        <field name="name">Perfect Match QMS customer performance company boundary</field>
+        <field name="model_id" ref="model_pm_qms_customer_performance"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_customer_satisfaction_company" model="ir.rule">
+        <field name="name">Perfect Match QMS customer satisfaction company boundary</field>
+        <field name="model_id" ref="model_pm_qms_customer_satisfaction"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_supplier_performance_company" model="ir.rule">
+        <field name="name">Perfect Match QMS supplier performance company boundary</field>
+        <field name="model_id" ref="model_pm_qms_supplier_performance"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_supplier_evaluation_company" model="ir.rule">
+        <field name="name">Perfect Match QMS supplier evaluation company boundary</field>
+        <field name="model_id" ref="model_pm_qms_supplier_evaluation"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>

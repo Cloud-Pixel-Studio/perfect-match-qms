@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="partner_pm_demo_customer" model="res.partner">
+        <field name="name">Perfect Match Demo Customer</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="partner_pm_demo_supplier" model="res.partner">
+        <field name="name">Perfect Match Demo Supplier</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="organization_pm_demo_performance" model="pm.qms.organization">
+        <field name="name">Perfect Match Demo Performance Organization</field>
+        <field name="code">PM-DEMO-PERF-ORG</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="process_pm_demo_delivery" model="pm.qms.process">
+        <field name="name">Demo Delivery Performance Process</field>
+        <field name="code">PM-DEMO-DELIVERY</field>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="process_type">core</field>
+    </record>
+
+    <record id="control_pm_demo_performance" model="pm.qms.control">
+        <field name="name">Performance Measurement Control</field>
+        <field name="code">PM-QMS-PERF-001</field>
+        <field name="objective">Define and review selected performance measures using Perfect Match internal methodology.</field>
+        <field name="description">Demo proprietary performance control for client implementations.</field>
+        <field name="process_id" ref="process_pm_demo_delivery"/>
+        <field name="category">performance</field>
+        <field name="state">active</field>
+    </record>
+
+    <record id="control_instance_pm_demo_performance" model="pm.qms.control.instance">
+        <field name="name">Demo Performance Measurement Implementation</field>
+        <field name="code">PM-DEMO-PERF-INS-001</field>
+        <field name="control_id" ref="control_pm_demo_performance"/>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="process_id" ref="process_pm_demo_delivery"/>
+    </record>
+
+    <record id="objective_pm_demo_otd" model="pm.qms.objective">
+        <field name="name">Improve On-Time Delivery Performance</field>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="process_id" ref="process_pm_demo_delivery"/>
+        <field name="owner_id" ref="base.user_admin"/>
+        <field name="description">Demo objective for delivery performance tracking.</field>
+        <field name="purpose">Improve on-time delivery performance to at least 95 percent by year-end.</field>
+        <field name="date_start">2026-01-01</field>
+        <field name="target_date">2026-12-31</field>
+        <field name="baseline_value">93.5</field>
+        <field name="baseline_date">2026-01-31</field>
+        <field name="target_value">95.0</field>
+        <field name="target_operator">ge</field>
+        <field name="unit_of_measure">%</field>
+        <field name="auto_evaluation">1</field>
+        <field name="related_control_instance_ids" eval="[(6, 0, [ref('control_instance_pm_demo_performance')])]"/>
+    </record>
+
+    <record id="kpi_pm_demo_otd" model="pm.qms.kpi">
+        <field name="name">On-Time Delivery</field>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="process_id" ref="process_pm_demo_delivery"/>
+        <field name="owner_id" ref="base.user_admin"/>
+        <field name="description">Demo KPI measuring on-time delivery performance.</field>
+        <field name="calculation_description">On-time deliveries divided by total deliveries for the period.</field>
+        <field name="unit_of_measure">%</field>
+        <field name="direction">higher_is_better</field>
+        <field name="target_value">95.0</field>
+        <field name="warning_value">93.0</field>
+        <field name="frequency">monthly</field>
+        <field name="start_date">2026-01-01</field>
+        <field name="source_type">manual</field>
+        <field name="objective_ids" eval="[(6, 0, [ref('objective_pm_demo_otd')])]"/>
+        <field name="control_instance_ids" eval="[(6, 0, [ref('control_instance_pm_demo_performance')])]"/>
+    </record>
+
+    <record id="measurement_pm_demo_otd_january" model="pm.qms.kpi.measurement">
+        <field name="kpi_id" ref="kpi_pm_demo_otd"/>
+        <field name="measurement_date">2026-01-31</field>
+        <field name="period_start">2026-01-01</field>
+        <field name="period_end">2026-01-31</field>
+        <field name="value">93.5</field>
+        <field name="notes">Demo January result.</field>
+    </record>
+
+    <record id="measurement_pm_demo_otd_february" model="pm.qms.kpi.measurement">
+        <field name="kpi_id" ref="kpi_pm_demo_otd"/>
+        <field name="measurement_date">2026-02-28</field>
+        <field name="period_start">2026-02-01</field>
+        <field name="period_end">2026-02-28</field>
+        <field name="value">94.8</field>
+        <field name="notes">Demo February result.</field>
+    </record>
+
+    <record id="measurement_pm_demo_otd_march" model="pm.qms.kpi.measurement">
+        <field name="kpi_id" ref="kpi_pm_demo_otd"/>
+        <field name="measurement_date">2026-03-31</field>
+        <field name="period_start">2026-03-01</field>
+        <field name="period_end">2026-03-31</field>
+        <field name="value">96.2</field>
+        <field name="notes">Demo March result.</field>
+    </record>
+
+    <record id="ncr_pm_demo_customer" model="pm.qms.nonconformity">
+        <field name="name">Demo customer rejection record</field>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="process_id" ref="process_pm_demo_delivery"/>
+        <field name="source_type">customer</field>
+        <field name="description">Demo customer-related nonconformity used for performance metrics.</field>
+        <field name="detected_date">2026-03-15</field>
+        <field name="severity">minor</field>
+    </record>
+
+    <record id="ncr_pm_demo_supplier" model="pm.qms.nonconformity">
+        <field name="name">Demo supplier quality record</field>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="process_id" ref="process_pm_demo_delivery"/>
+        <field name="source_type">supplier</field>
+        <field name="description">Demo supplier-related nonconformity used for performance metrics.</field>
+        <field name="detected_date">2026-03-20</field>
+        <field name="severity">major</field>
+    </record>
+
+    <record id="customer_performance_pm_demo_q1" model="pm.qms.customer.performance">
+        <field name="customer_id" ref="partner_pm_demo_customer"/>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="period_start">2026-01-01</field>
+        <field name="period_end">2026-03-31</field>
+        <field name="customer_satisfaction_score">88.0</field>
+        <field name="manual_complaint_count">1</field>
+        <field name="return_count">2</field>
+        <field name="rejection_count">1</field>
+        <field name="delivery_performance">96.2</field>
+        <field name="survey_response_count">12</field>
+    </record>
+
+    <record id="customer_satisfaction_pm_demo_q1" model="pm.qms.customer.satisfaction">
+        <field name="customer_id" ref="partner_pm_demo_customer"/>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="measurement_date">2026-03-31</field>
+        <field name="period_start">2026-01-01</field>
+        <field name="period_end">2026-03-31</field>
+        <field name="measurement_method">survey</field>
+        <field name="score">88.0</field>
+        <field name="score_scale_max">100.0</field>
+        <field name="response_count">12</field>
+        <field name="owner_id" ref="base.user_admin"/>
+    </record>
+
+    <record id="supplier_performance_pm_demo_q1" model="pm.qms.supplier.performance">
+        <field name="supplier_id" ref="partner_pm_demo_supplier"/>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="period_start">2026-01-01</field>
+        <field name="period_end">2026-03-31</field>
+        <field name="quality_score">91.0</field>
+        <field name="delivery_score">94.0</field>
+        <field name="received_quantity">500.0</field>
+        <field name="rejected_quantity">8.0</field>
+        <field name="late_delivery_count">2</field>
+        <field name="total_delivery_count">45</field>
+    </record>
+
+    <record id="supplier_evaluation_pm_demo_q1" model="pm.qms.supplier.evaluation">
+        <field name="supplier_id" ref="partner_pm_demo_supplier"/>
+        <field name="organization_id" ref="organization_pm_demo_performance"/>
+        <field name="evaluation_date">2026-03-31</field>
+        <field name="period_start">2026-01-01</field>
+        <field name="period_end">2026-03-31</field>
+        <field name="evaluator_id" ref="base.user_admin"/>
+        <field name="quality_score">91.0</field>
+        <field name="delivery_score">94.0</field>
+        <field name="service_score">90.0</field>
+        <field name="status">approved</field>
+    </record>
+</odoo>

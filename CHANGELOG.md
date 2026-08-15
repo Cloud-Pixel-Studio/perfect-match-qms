@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 - 2026-08-15
+
+- Added `pm_qms_kpi` with objectives, KPI definitions, historical KPI
+  measurements, schedule/overdue logic, status calculation, and trend summaries.
+- Added historical target, warning, and direction snapshots on KPI measurements
+  so target changes do not rewrite past evaluations.
+- Added customer performance and customer satisfaction models using Odoo
+  `res.partner` for customer master data.
+- Added supplier performance and supplier evaluation models using Odoo
+  `res.partner` for supplier master data and transparent weighted scoring.
+- Derived customer and supplier NCR counts from existing NCR source categories
+  where structured source data exists.
+- Extended control instance and process forms with performance relationships
+  and summary counts.
+- Updated CI and DEV script targets for Mission 06 validation.
+- Added Mission 06 architecture, testing, security, plan, and ADR
+  documentation.
+
 ## 0.4.0 - 2026-08-14
 
 - Added `pm_qms_audit` with audit programs, audits, scope, criteria, planning,

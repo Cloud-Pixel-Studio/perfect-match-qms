@@ -14,6 +14,8 @@ MISSION04_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION04_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa"
 MISSION05_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit"
 MISSION05_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit"
+MISSION06_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi"
+MISSION06_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -120,6 +122,12 @@ Commands:
                 Upgrade core through Internal Audit addons in pmqms_dev.
   test-mission05
                 Run Mission 05 addon tests in pmqms_test.
+  install-mission06
+                Install core through Performance KPI addons in pmqms_dev.
+  update-mission06
+                Upgrade core through Performance KPI addons in pmqms_dev.
+  test-mission06
+                Run Mission 06 addon tests in pmqms_test.
 EOF
 }
 
@@ -129,7 +137,8 @@ run_odoo_tests() {
   local label="$3"
   prepare_runtime_permissions
   compose up -d postgres-dev
-  compose exec -T postgres-dev dropdb -U odoo --if-exists pmqms_test
+  compose exec -T postgres-dev psql -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null
+  compose exec -T postgres-dev dropdb -U odoo --maintenance-db=postgres --if-exists pmqms_test
   local test_log
   test_log="$(mktemp)"
   set +e
@@ -246,6 +255,22 @@ case "$command" in
     ;;
   test-mission05)
     run_odoo_tests "$MISSION05_ADDONS" "$MISSION05_TEST_TAGS" "Mission 05"
+    ;;
+  install-mission06)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION05_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_kpi" --without-demo=all --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION06_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission06)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION06_ADDONS" --stop-after-init
+    ;;
+  test-mission06)
+    run_odoo_tests "$MISSION06_ADDONS" "$MISSION06_TEST_TAGS" "Mission 06"
     ;;
   ""|help|-h|--help)
     usage

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_objective_list" model="ir.ui.view">
+        <field name="name">pm.qms.objective.list</field>
+        <field name="model">pm.qms.objective</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <field name="target_value"/>
+                <field name="unit_of_measure"/>
+                <field name="target_date"/>
+                <field name="is_overdue"/>
+                <field name="kpi_count"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_objective_form" model="ir.ui.view">
+        <field name="name">pm.qms.objective.form</field>
+        <field name="model">pm.qms.objective</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_activate" type="object" string="Activate" invisible="status != 'draft'"/>
+                    <button name="action_mark_achieved" type="object" string="Achieved" invisible="status not in ('active', 'not_achieved')"/>
+                    <button name="action_mark_not_achieved" type="object" string="Not Achieved" invisible="status not in ('active', 'achieved')"/>
+                    <button name="action_evaluate_from_kpis" type="object" string="Evaluate From KPIs" invisible="status not in ('active', 'achieved', 'not_achieved')"/>
+                    <button name="action_close" type="object" string="Close" invisible="status in ('closed', 'cancelled')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="status in ('closed', 'cancelled')"/>
+                    <field name="status" widget="statusbar" statusbar_visible="draft,active,achieved,not_achieved,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="owner_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Target">
+                            <field name="date_start"/>
+                            <field name="target_date"/>
+                            <field name="review_date"/>
+                            <field name="target_operator"/>
+                            <field name="target_value"/>
+                            <field name="unit_of_measure"/>
+                            <field name="auto_evaluation"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Baseline">
+                            <field name="baseline_value"/>
+                            <field name="baseline_date"/>
+                        </group>
+                        <group string="Summary">
+                            <field name="kpi_count"/>
+                            <field name="kpi_on_target_count"/>
+                            <field name="kpi_off_target_count"/>
+                            <field name="is_overdue"/>
+                            <field name="days_overdue"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Purpose">
+                            <field name="purpose"/>
+                            <field name="description"/>
+                        </page>
+                        <page string="KPIs">
+                            <field name="kpi_ids">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="latest_value"/>
+                                    <field name="latest_status"/>
+                                    <field name="trend_direction"/>
+                                    <field name="next_measurement_date"/>
+                                    <field name="measurement_overdue"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Relationships">
+                            <field name="related_control_instance_ids"/>
+                            <field name="related_risk_ids"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_objective_search" model="ir.ui.view">
+        <field name="name">pm.qms.objective.search</field>
+        <field name="model">pm.qms.objective</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="organization_id"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <filter name="active_objectives" string="Active" domain="[('status', '=', 'active')]"/>
+                <filter name="achieved" string="Achieved" domain="[('status', '=', 'achieved')]"/>
+                <filter name="not_achieved" string="Not Achieved" domain="[('status', '=', 'not_achieved')]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                <filter name="group_process" string="Process" context="{'group_by': 'process_id'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_objective_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.objective.pivot</field>
+        <field name="model">pm.qms.objective</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="status" type="row"/>
+                <field name="process_id" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_objective_graph" model="ir.ui.view">
+        <field name="name">pm.qms.objective.graph</field>
+        <field name="model">pm.qms.objective</field>
+        <field name="arch" type="xml">
+            <graph string="Objectives By Status">
+                <field name="status" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_objective" model="ir.actions.act_window">
+        <field name="name">Objectives</field>
+        <field name="res_model">pm.qms.objective</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_objective_search"/>
+    </record>
+</odoo>

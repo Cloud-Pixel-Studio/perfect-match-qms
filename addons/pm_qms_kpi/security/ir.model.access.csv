@@ -1,0 +1,22 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pm_qms_objective_user,pm.qms.objective user,model_pm_qms_objective,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_objective_manager,pm.qms.objective manager,model_pm_qms_objective,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_objective_admin,pm.qms.objective admin,model_pm_qms_objective,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_kpi_user,pm.qms.kpi user,model_pm_qms_kpi,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_kpi_manager,pm.qms.kpi manager,model_pm_qms_kpi,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_kpi_admin,pm.qms.kpi admin,model_pm_qms_kpi,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_kpi_measurement_user,pm.qms.kpi.measurement user,model_pm_qms_kpi_measurement,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_kpi_measurement_manager,pm.qms.kpi.measurement manager,model_pm_qms_kpi_measurement,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_kpi_measurement_admin,pm.qms.kpi.measurement admin,model_pm_qms_kpi_measurement,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_customer_performance_user,pm.qms.customer.performance user,model_pm_qms_customer_performance,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_customer_performance_manager,pm.qms.customer.performance manager,model_pm_qms_customer_performance,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_customer_performance_admin,pm.qms.customer.performance admin,model_pm_qms_customer_performance,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_customer_satisfaction_user,pm.qms.customer.satisfaction user,model_pm_qms_customer_satisfaction,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_customer_satisfaction_manager,pm.qms.customer.satisfaction manager,model_pm_qms_customer_satisfaction,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_customer_satisfaction_admin,pm.qms.customer.satisfaction admin,model_pm_qms_customer_satisfaction,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_supplier_performance_user,pm.qms.supplier.performance user,model_pm_qms_supplier_performance,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_supplier_performance_manager,pm.qms.supplier.performance manager,model_pm_qms_supplier_performance,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_supplier_performance_admin,pm.qms.supplier.performance admin,model_pm_qms_supplier_performance,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_supplier_evaluation_user,pm.qms.supplier.evaluation user,model_pm_qms_supplier_evaluation,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_supplier_evaluation_manager,pm.qms.supplier.evaluation manager,model_pm_qms_supplier_evaluation,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_supplier_evaluation_admin,pm.qms.supplier.evaluation admin,model_pm_qms_supplier_evaluation,pm_qms_core.group_pm_qms_administrator,1,1,1,1

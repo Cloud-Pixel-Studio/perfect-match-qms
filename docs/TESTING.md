@@ -69,6 +69,27 @@ Mission 05 adds tests covering:
 - Multi-company isolation for audit programs, audits, scope, criteria, evidence,
   findings, and audit attachments.
 
+Mission 06 adds tests covering:
+
+- Objective creation, sequence generation, workflow actions, direct status write
+  blocking, event history, KPI relationships, control instance relationships,
+  process summary counts, and multi-company relationship constraints.
+- KPI creation, target configuration validation, higher-is-better and
+  lower-is-better evaluation, warning and off-target states, historical target
+  snapshots, trend calculation, measurement schedule refresh, overdue logic,
+  duplicate period blocking, and user measurement entry.
+- Customer performance records using Odoo `res.partner`, customer satisfaction
+  scoring and period validation, and NCR-derived customer complaint metrics.
+- Supplier performance records using Odoo `res.partner`, supplier NCR-derived
+  metrics, weighted supplier evaluation scoring, workflow completion events, and
+  scoring validation.
+- Multi-company isolation for objectives, KPIs, KPI measurements, customer
+  performance, customer satisfaction, supplier performance, and supplier
+  evaluations.
+- Cross-module behavior from organization, process, control instance, objective,
+  KPI, off-target measurement, and related risk without automatic NCR/CAPA
+  creation.
+
 ## Run Tests
 
 ```bash
@@ -77,6 +98,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission03
 ./deployment/scripts/odoo-dev.sh test-mission04
 ./deployment/scripts/odoo-dev.sh test-mission05
+./deployment/scripts/odoo-dev.sh test-mission06
 ```
 
 ## Rules
