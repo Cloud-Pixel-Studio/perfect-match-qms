@@ -31,9 +31,15 @@ Thumbs.db
 exports/
 backups/
 *.dump
+*.backup
+*.bak
 *.sql
 *.tar
 *.tar.gz
+*.tgz
+*.zip
+*.7z
+*.sqlite3
 standards-private/
 licensed-standards/
 *ISO*9001*.pdf
