@@ -1,5 +1,5 @@
 {
-    "name": "Perfect Match QMS Core",
+    "name": "Perfect Match QMS Core Services",
     "summary": "Core proprietary QMS entities for Perfect Match Digital QMS",
     "description": """
 Perfect Match QMS Core defines the foundational proprietary QMS objects for
@@ -8,7 +8,7 @@ activities, evidence requirements, and reference-only external mappings.
 It also defines client control instances that keep implementation status
 separate from reusable framework controls.
     """,
-    "version": "19.0.2.0.0",
+    "version": "19.0.3.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
@@ -27,6 +27,6 @@ separate from reusable framework controls.
         "views/event_views.xml",
         "views/menu_views.xml",
     ],
-    "application": True,
+    "application": False,
     "installable": True,
 }

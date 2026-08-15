@@ -494,3 +494,44 @@ The Oliva technical pilot generated the Quality Pack v1.0 into project
 `PM-IMP-00002` with 37 controls, 74 tasks, and 37 evidence requirements. Its
 readiness and management review snapshots remain historical implementation
 records, not certification or compliance claims.
+
+## Mission 11 Application Shell
+
+Mission 11 adds `pm_qms_app` as the customer-facing Perfect Match QMS
+application shell. Odoo remains the application platform and the existing
+domain addons remain modular underneath the shell.
+
+```text
+Perfect Match QMS
+        |
+        v
+pm_qms_app
+        |
+        v
+pm_qms_core, documents, evidence, risk, NCR, CAPA, audit, KPI,
+management review, implementation, quality pack, migration
+        |
+        v
+Odoo 19 / Project / Mail / PostgreSQL
+```
+
+`pm_qms_app` owns product branding, dashboard/home, unified navigation, and
+implementation-centered entry points. `pm_qms_core` owns foundational models,
+security groups, and shared services, but it is no longer the customer-facing
+application tile.
+
+The existing root menu XML ID, `pm_qms_core.menu_pm_qms_root`, remains in place
+to avoid circular dependencies and preserve downstream references. The shell
+updates that menu with the product name, icon, and dashboard action.
+
+The implementation layer continues to use Odoo-native models:
+
+```text
+Implementation -> project.project
+Activity       -> project.task
+```
+
+Mission 11 changes user-facing navigation and dashboard composition, not the
+underlying ownership of implementation state. Framework definitions remain
+separate from client implementation state, and external standard mappings stay
+metadata-only.

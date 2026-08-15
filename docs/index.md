@@ -1,6 +1,7 @@
 # Documentation Index
 
 - [Product Vision](PRODUCT_VISION.md)
+- [Application Shell](APPLICATION_SHELL.md)
 - [Architecture](ARCHITECTURE.md)
 - [Roadmap](ROADMAP.md)
 - [Security](SECURITY.md)

@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pm_qms_dashboard_user,pm.qms.dashboard user,model_pm_qms_dashboard,pm_qms_core.group_pm_qms_user,1,1,1,1

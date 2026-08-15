@@ -156,6 +156,21 @@ Mission 10 adds tests covering:
 - Mission 10 stack installation through the complete Quality Pack dependency
   chain.
 
+Mission 11 adds tests covering:
+
+- `pm_qms_app` installation with the complete QMS stack.
+- The single customer-facing `Perfect Match QMS` root application menu.
+- `pm_qms_core` remaining a technical service addon instead of the product app.
+- Expected product navigation for dashboard, implementations, activities,
+  evidence, readiness, framework, and migration/admin tools.
+- Framework menu visibility for QMS User versus QMS Manager roles.
+- Dashboard organization context and security-scoped counters.
+- Dashboard readiness using live implementation project metrics.
+- Implementation smart-button actions for controls, generated `project.task`
+  activities, evidence, and readiness assessments.
+- Historical readiness assessment immutability after live readiness changes.
+- Existing implementation generator idempotency through prior regression tests.
+
 ## Run Tests
 
 ```bash
@@ -169,6 +184,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission08
 ./deployment/scripts/odoo-dev.sh test-mission09
 ./deployment/scripts/odoo-dev.sh test-mission10
+./deployment/scripts/odoo-dev.sh test-mission11
 ```
 
 ## Rules
@@ -181,3 +197,5 @@ cd /opt/perfect-match/perfect-match-qms
   copied external requirement text as assertions or fixtures.
 - Mission 10 customer-pilot tests and validation data must use
   `PILOT VALIDATION` labels unless authorized real customer data is supplied.
+- Mission 11 dashboard tests must validate real model counters and security
+  scope, not placeholder dashboard values.

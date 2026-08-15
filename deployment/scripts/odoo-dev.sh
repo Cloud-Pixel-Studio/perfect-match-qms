@@ -24,6 +24,8 @@ MISSION09_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION09_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality"
 MISSION10_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration"
 MISSION10_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration"
+MISSION11_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_app"
+MISSION11_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration,/pm_qms_app"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -197,6 +199,12 @@ Commands:
                 Upgrade core through migration/pilot validation addons in pmqms_dev.
   test-mission10
                 Run Mission 10 addon tests in pmqms_test.
+  install-mission11
+                Install full QMS stack including the application shell in pmqms_dev.
+  update-mission11
+                Upgrade full QMS stack including the application shell in pmqms_dev.
+  test-mission11
+                Run Mission 11 addon tests in pmqms_test.
 EOF
 }
 
@@ -408,6 +416,22 @@ case "$command" in
     ;;
   test-mission10)
     run_odoo_tests "$MISSION10_ADDONS" "$MISSION10_TEST_TAGS" "Mission 10"
+    ;;
+  install-mission11)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION10_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_app" --without-demo=all --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION11_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission11)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION11_ADDONS" --stop-after-init
+    ;;
+  test-mission11)
+    run_odoo_tests "$MISSION11_ADDONS" "$MISSION11_TEST_TAGS" "Mission 11"
     ;;
   ""|help|-h|--help)
     usage

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_implementation_project_form_app_shell" model="ir.ui.view">
+        <field name="name">pm.qms.implementation.project.form.app.shell</field>
+        <field name="model">pm.qms.implementation.project</field>
+        <field name="inherit_id" ref="pm_qms_implementation.view_pm_qms_implementation_project_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group[1]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_controls" type="object" class="oe_stat_button" icon="fa-check-square-o">
+                        <field name="total_controls" widget="statinfo" string="Controls"/>
+                    </button>
+                    <button name="action_view_activities" type="object" class="oe_stat_button" icon="fa-tasks">
+                        <field name="total_generated_tasks" widget="statinfo" string="Activities"/>
+                    </button>
+                    <button name="action_view_evidence" type="object" class="oe_stat_button" icon="fa-archive">
+                        <field name="required_evidence" widget="statinfo" string="Evidence"/>
+                    </button>
+                    <button name="action_view_readiness_assessments" type="object" class="oe_stat_button" icon="fa-line-chart">
+                        <field name="readiness_percent" widget="statinfo" string="Readiness %"/>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='odoo_project_id']" position="attributes">
+                <attribute name="string">Underlying Odoo Project</attribute>
+            </xpath>
+            <xpath expr="//page[field[@name='generated_task_ids']]" position="attributes">
+                <attribute name="string">Activities</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
