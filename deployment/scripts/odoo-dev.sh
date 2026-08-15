@@ -26,6 +26,8 @@ MISSION10_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION10_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration"
 MISSION11_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_app"
 MISSION11_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration,/pm_qms_app"
+MISSION12_ADDONS="$MISSION11_ADDONS"
+MISSION12_TEST_TAGS="$MISSION11_TEST_TAGS"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -205,6 +207,12 @@ Commands:
                 Upgrade full QMS stack including the application shell in pmqms_dev.
   test-mission11
                 Run Mission 11 addon tests in pmqms_test.
+  install-mission12
+                Install full QMS stack including guided readiness in pmqms_dev.
+  update-mission12
+                Upgrade full QMS stack including guided readiness in pmqms_dev.
+  test-mission12
+                Run Mission 12 addon tests in pmqms_test.
 EOF
 }
 
@@ -432,6 +440,21 @@ case "$command" in
     ;;
   test-mission11)
     run_odoo_tests "$MISSION11_ADDONS" "$MISSION11_TEST_TAGS" "Mission 11"
+    ;;
+  install-mission12)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION12_ADDONS" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION12_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission12)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION12_ADDONS" --stop-after-init
+    ;;
+  test-mission12)
+    run_odoo_tests "$MISSION12_ADDONS" "$MISSION12_TEST_TAGS" "Mission 12"
     ;;
   ""|help|-h|--help)
     usage

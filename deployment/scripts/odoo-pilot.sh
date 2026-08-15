@@ -171,7 +171,7 @@ if not project:
         "create_odoo_project": True,
         "notes": "TECHNICAL PILOT. Customer process owners, users, real documents, KPIs, and mapping review pending authorized input.",
     })
-elif not project.implementation_control_ids:
+else:
     project.action_sync_framework()
 print(f"organization={organization.code}:{organization.name}")
 print(f"project={project.code}:{project.state}")

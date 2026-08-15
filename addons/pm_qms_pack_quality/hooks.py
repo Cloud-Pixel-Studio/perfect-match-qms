@@ -1,6 +1,59 @@
 from odoo import Command, fields
 
 
+QUALITY_AREA_DEFINITIONS = [
+    (10, "LEAD", "Leadership & Governance", "Direction, accountability, scope, and operating model for the QMS."),
+    (20, "PLAN", "Planning & Performance", "Risk, objectives, metrics, and planned performance control."),
+    (30, "SUPPORT", "Support & Documented Information", "Resources, competence, communication, documents, and records."),
+    (40, "OPERATE", "Operational Management", "Customer, design, purchasing, production, release, and change execution."),
+    (50, "EVALUATE", "Evaluation & Review", "Monitoring, audit, customer feedback, and leadership review."),
+    (60, "IMPROVE", "Improvement System", "Nonconformity, root cause, corrective action, and improvement flow."),
+]
+
+
+def _quality_area_code(control_data):
+    category = control_data.get("category")
+    capability = control_data.get("capability")
+    domain = control_data.get("domain", "")
+    if category == "governance":
+        return "LEAD"
+    if category == "training" or domain in {
+        "Documented Information",
+        "Document Control",
+        "Records",
+        "Competence & Awareness",
+        "Communication",
+        "Infrastructure & Environment",
+        "Monitoring Resources",
+        "Knowledge",
+    }:
+        return "SUPPORT"
+    if category == "supplier" or capability in {"Operations", "Supplier Management", "Design Control", "Change Management"}:
+        return "OPERATE"
+    if capability in {"Internal Audit", "Management Review", "Customer Performance"}:
+        return "EVALUATE"
+    if category == "improvement" or capability in {"NCR", "CAPA", "Improvement"}:
+        return "IMPROVE"
+    if category == "performance" or capability in {"Objectives and KPIs", "Performance Data"}:
+        return "PLAN"
+    return "PLAN"
+
+
+def _quality_guidance_values(control_data):
+    name = control_data["name"]
+    activity_names = ", ".join(activity[0] for activity in control_data["activities"])
+    evidence_names = ", ".join(item[0] for item in control_data["evidence"])
+    return {
+        "guidance_purpose": f"Use {name} to make the expected quality behavior visible, assigned, and reviewable.",
+        "guidance_why": f"This control reduces ambiguity by turning {control_data['domain'].lower()} into owned work, objective evidence, and repeatable review points.",
+        "implementation_guidance": "Start with the current process, identify the owner and decision points, then configure the simplest Perfect Match record that proves the method is operating. Keep the method practical for the organization before adding extra approval layers.",
+        "recommended_steps": f"1. Confirm owner and scope.\n2. Compare current practice with the control objective.\n3. Complete these starter activities: {activity_names}.\n4. Attach or create evidence before marking the control implemented.",
+        "recommended_tools": f"Use the implementation project, generated activities, evidence records, and the operational Perfect Match capability: {control_data['capability']}.",
+        "evidence_guidance": f"Accept evidence when it is current, owned, traceable to the organization, and sufficient to show the method is in use. Starter evidence type: {evidence_names}.",
+        "practical_notes": "Favor small working records over decorative documentation. Client-specific decisions belong on the implementation control instance, not on the reusable framework control.",
+    }
+
+
 QUALITY_CONTROLS = [
     {
         "code": "PM-QMP-ORG-001",
@@ -620,6 +673,7 @@ def seed_quality_pack(env):
                     "state": "active",
                 }
             )
+        control.write(_quality_guidance_values(control_data))
         controls.append(control)
         for sequence, (name, expected_output, role) in enumerate(control_data["activities"], start=1):
             existing_activity = env["pm.qms.activity"].search(
@@ -687,6 +741,8 @@ def seed_quality_pack(env):
                 )
         pack.action_activate()
 
+    seed_quality_guided_readiness(env)
+
     profile = env["pm.qms.mapping.profile"].search(
         [
             ("code", "=", "PM-QMS-QUALITY-ISO9001"),
@@ -714,3 +770,62 @@ def seed_quality_pack(env):
         )
     if profile.state == "draft":
         profile.with_context(pm_qms_quality_seed=True).action_activate()
+
+
+
+def seed_quality_guided_readiness(env):
+    company = env.ref("base.main_company")
+    pack = env["pm.qms.framework.pack"].search(
+        [
+            ("code", "=", "PM-QMS-QUALITY"),
+            ("version", "=", "1.0"),
+            ("company_id", "=", company.id),
+        ],
+        limit=1,
+    )
+    if not pack:
+        return
+    seed_env = env(context=dict(env.context, module="pm_qms_pack_quality"))
+    pack = seed_env["pm.qms.framework.pack"].browse(pack.id)
+    areas_by_code = {}
+    for sequence, code, name, description in QUALITY_AREA_DEFINITIONS:
+        area = seed_env["pm.qms.framework.area"].search([("pack_id", "=", pack.id), ("code", "=", code)], limit=1)
+        values = {
+            "name": name,
+            "code": code,
+            "pack_id": pack.id,
+            "sequence": sequence,
+            "description": description,
+            "active": True,
+        }
+        if area:
+            area.write(values)
+        else:
+            area = seed_env["pm.qms.framework.area"].create(values)
+        areas_by_code[code] = area
+
+    for sequence, control_data in enumerate(QUALITY_CONTROLS, start=1):
+        control = seed_env["pm.qms.control"].search(
+            [("code", "=", control_data["code"]), ("company_id", "=", company.id)],
+            limit=1,
+        )
+        if not control:
+            continue
+        control.write(_quality_guidance_values(control_data))
+        line = seed_env["pm.qms.framework.pack.control"].search(
+            [("pack_id", "=", pack.id), ("control_id", "=", control.id)],
+            limit=1,
+        )
+        area = areas_by_code[_quality_area_code(control_data)]
+        if line:
+            line.write({"area_id": area.id, "sequence": sequence * 10, "required": True, "active": True})
+
+    projects = seed_env["pm.qms.implementation.project"].search(
+        [
+            ("company_id", "=", company.id),
+            ("pack_ids", "in", [pack.id]),
+            ("state", "not in", ("completed", "cancelled")),
+        ]
+    )
+    for project in projects:
+        project.sudo().action_sync_framework()

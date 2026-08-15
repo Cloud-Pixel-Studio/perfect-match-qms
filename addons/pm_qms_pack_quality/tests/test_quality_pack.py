@@ -5,6 +5,8 @@ from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
+from odoo.addons.pm_qms_pack_quality.hooks import seed_quality_guided_readiness
+
 
 @tagged("-at_install", "post_install")
 class TestPmQmsQualityPack(TransactionCase):
@@ -113,8 +115,12 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertEqual(self.quality_pack.state, "active")
         self.assertEqual(self.quality_pack.pack_type, "standard")
         controls = self.quality_pack.control_line_ids.mapped("control_id")
-        self.assertGreaterEqual(len(controls), 30)
+        self.assertEqual(len(controls), 37)
+        self.assertEqual(len(controls.mapped("implementation_activity_ids").filtered("active")), 74)
+        self.assertEqual(len(controls.mapped("evidence_requirement_ids").filtered(lambda req: req.active and req.mandatory)), 37)
         self.assertEqual(len(controls.mapped("code")), len(set(controls.mapped("code"))))
+        self.assertGreaterEqual(self.quality_pack.area_count, 6)
+        self.assertFalse(self.quality_pack.control_line_ids.filtered(lambda line: not line.area_id))
 
         forbidden = ("ISO requires", "This International Standard", "certification guarantee", "certification probability")
         for control in controls:
@@ -122,6 +128,9 @@ class TestPmQmsQualityPack(TransactionCase):
             self.assertTrue(control.description, control.code)
             self.assertTrue(control.pm_control_domain, control.code)
             self.assertTrue(control.pm_supported_capability, control.code)
+            self.assertTrue(control.guidance_purpose, control.code)
+            self.assertTrue(control.implementation_guidance, control.code)
+            self.assertTrue(control.evidence_guidance, control.code)
             self.assertTrue(control.implementation_activity_ids.filtered("active"), control.code)
             self.assertTrue(control.evidence_requirement_ids.filtered(lambda req: req.active and req.mandatory), control.code)
             combined = " ".join(
@@ -238,6 +247,12 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertEqual(len(project.implementation_control_ids), len(controls))
         self.assertEqual(project.total_generated_tasks, len(controls.mapped("implementation_activity_ids").filtered("active")))
         self.assertEqual(project.readiness_percent, 0.0)
+        self.assertFalse(project.implementation_control_ids.filtered(lambda line: not line.area_ids))
+        center = self.env["pm.qms.readiness.center"].with_user(self.manager).create(
+            {"implementation_project_id": project.id}
+        )
+        self.assertEqual(len(center.area_line_ids), self.quality_pack.area_count)
+        self.assertTrue(center.action_line_ids)
 
         lines = project.implementation_control_ids.sorted("sequence")
         self._mark_line_ready(lines[0])
@@ -248,6 +263,19 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertEqual(project.not_applicable_controls, 1)
         self.assertGreater(project.readiness_percent, 0.0)
         self.assertLess(project.readiness_percent, 100.0)
+
+    def test_quality_guided_seed_syncs_existing_project_areas(self):
+        project = self._generate_project()
+        project.implementation_control_ids.write({"area_ids": [Command.clear()]})
+        self.assertTrue(project.implementation_control_ids.filtered(lambda line: not line.area_ids))
+
+        seed_quality_guided_readiness(self.env)
+
+        self.assertFalse(project.implementation_control_ids.filtered(lambda line: not line.area_ids))
+        center = self.env["pm.qms.readiness.center"].with_user(self.manager).create(
+            {"implementation_project_id": project.id}
+        )
+        self.assertEqual(len(center.area_line_ids), self.quality_pack.area_count)
 
     def test_shared_control_deduplication_with_quality_pack(self):
         shared_control = self.quality_pack.control_line_ids.mapped("control_id").sorted("code")[0]

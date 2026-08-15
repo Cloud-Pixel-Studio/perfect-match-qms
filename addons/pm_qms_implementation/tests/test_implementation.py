@@ -382,3 +382,64 @@ class TestPmQmsImplementation(TransactionCase):
 
         with self.assertRaises(UserError):
             project.copy()
+
+    def test_pack_specific_areas_guidance_and_readiness_center(self):
+        first_pack = self.env["pm.qms.framework.pack"].with_user(self.admin).create(
+            {
+                "name": "Area Pack A",
+                "code": "PM-TST-AREA-A",
+                "version": "1.0",
+                "company_id": self.company.id,
+            }
+        )
+        second_pack = self.env["pm.qms.framework.pack"].with_user(self.admin).create(
+            {
+                "name": "Area Pack B",
+                "code": "PM-TST-AREA-B",
+                "version": "1.0",
+                "company_id": self.company.id,
+            }
+        )
+        first_area = self.env["pm.qms.framework.area"].with_user(self.admin).create(
+            {"name": "First Pack Area", "code": "FIRST", "pack_id": first_pack.id, "sequence": 10}
+        )
+        second_area = self.env["pm.qms.framework.area"].with_user(self.admin).create(
+            {"name": "Second Pack Area", "code": "SECOND", "pack_id": second_pack.id, "sequence": 20}
+        )
+        self.controls[0].with_user(self.admin).write(
+            {
+                "guidance_purpose": "Use this control to keep implementation ownership visible.",
+                "recommended_steps": "Confirm owner, collect evidence, and review readiness.",
+            }
+        )
+        self.env["pm.qms.framework.pack.control"].with_user(self.admin).create(
+            {"pack_id": first_pack.id, "control_id": self.controls[0].id, "area_id": first_area.id, "sequence": 20}
+        )
+        self.env["pm.qms.framework.pack.control"].with_user(self.admin).create(
+            {"pack_id": second_pack.id, "control_id": self.controls[0].id, "area_id": second_area.id, "sequence": 10}
+        )
+        first_pack.with_user(self.admin).action_activate()
+        second_pack.with_user(self.admin).action_activate()
+
+        project = self._generate_project([first_pack, second_pack], name="Area Guided Implementation")
+        self.assertEqual(len(project.implementation_control_ids), 1)
+        line = project.implementation_control_ids
+        self.assertEqual(set(line.pack_ids.ids), {first_pack.id, second_pack.id})
+        self.assertEqual(set(line.area_ids.ids), {first_area.id, second_area.id})
+        self.assertIn("First Pack Area", line.area_display)
+        self.assertEqual(line.guidance_purpose, self.controls[0].guidance_purpose)
+
+        line.control_instance_id.with_user(self.manager).write({"notes": "Client-specific note."})
+        self.assertEqual(self.controls[0].guidance_purpose, "Use this control to keep implementation ownership visible.")
+
+        center = self.env["pm.qms.readiness.center"].with_user(self.manager).create(
+            {"implementation_project_id": project.id}
+        )
+        self.assertEqual(set(center.area_line_ids.mapped("area_id").ids), {first_area.id, second_area.id})
+        self.assertTrue(center.action_line_ids.filtered(lambda action: action.implementation_control_id == line))
+        self.assertEqual(project._recommended_next_action_values(limit=1)[0]["action_type"], "start_control")
+
+        with self.assertRaises(UserError):
+            self.env["pm.qms.framework.area"].with_user(self.manager).create(
+                {"name": "Manager Cannot Author Framework Area", "code": "NOPE", "pack_id": first_pack.id}
+            )

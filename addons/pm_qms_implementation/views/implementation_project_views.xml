@@ -28,7 +28,8 @@
                     <button name="action_sync_framework" type="object" string="Sync Framework" invisible="state in ('completed', 'cancelled')"/>
                     <button name="action_start_implementation" type="object" string="Start Implementation" invisible="state not in ('generated', 'readiness_review')"/>
                     <button name="action_move_readiness_review" type="object" string="Readiness Review" invisible="state not in ('generated', 'in_progress')"/>
-                    <button name="action_run_readiness_assessment" type="object" string="Run Readiness Assessment" invisible="state in ('draft', 'cancelled')"/>
+                    <button name="action_open_readiness_center" type="object" string="Readiness Center" invisible="state in ('draft', 'cancelled')"/>
+                    <button name="action_run_readiness_assessment" type="object" string="Create Readiness Snapshot" invisible="state in ('draft', 'cancelled')"/>
                     <button name="action_complete" type="object" string="Complete" invisible="state not in ('generated', 'in_progress', 'readiness_review')"/>
                     <button name="action_cancel" type="object" string="Cancel" invisible="state in ('completed', 'cancelled')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,generated,in_progress,readiness_review,completed"/>
@@ -46,6 +47,8 @@
                             <field name="implementation_type"/>
                             <field name="date_start"/>
                             <field name="target_date"/>
+                            <field name="assessment_goal_type"/>
+                            <field name="target_assessment_date"/>
                             <field name="actual_completion_date"/>
                             <field name="odoo_project_id"/>
                         </group>
@@ -68,9 +71,24 @@
                                     <field name="control_instance_id"/>
                                     <field name="required"/>
                                     <field name="pack_ids" widget="many2many_tags"/>
+                                    <field name="area_display"/>
                                     <field name="implementation_status"/>
                                     <field name="readiness_state"/>
                                     <field name="gap_reason"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Implementation Areas">
+                            <button name="action_open_readiness_center" type="object" string="Open Readiness Center" class="btn-primary"/>
+                            <field name="implementation_control_ids" readonly="1">
+                                <list>
+                                    <field name="area_display"/>
+                                    <field name="control_id"/>
+                                    <field name="readiness_state"/>
+                                    <field name="gap_reason"/>
+                                    <field name="missing_evidence_count"/>
+                                    <field name="open_activity_count"/>
+                                    <field name="overdue_activity_count"/>
                                 </list>
                             </field>
                         </page>

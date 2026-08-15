@@ -24,6 +24,14 @@ class PmQmsImplementationControl(models.Model):
         "pack_id",
         string="Source Packs",
     )
+    area_ids = fields.Many2many(
+        "pm.qms.framework.area",
+        "pm_qms_implementation_control_area_rel",
+        "implementation_control_id",
+        "area_id",
+        string="Implementation Areas",
+    )
+    area_display = fields.Char(compute="_compute_area_display")
     required = fields.Boolean(default=True)
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
@@ -32,6 +40,14 @@ class PmQmsImplementationControl(models.Model):
     control_name = fields.Char(related="control_id.name", readonly=True)
     applicability = fields.Selection(related="control_instance_id.applicability", readonly=True)
     implementation_status = fields.Selection(related="control_instance_id.implementation_status", readonly=True)
+    guidance_purpose = fields.Text(related="control_id.guidance_purpose", readonly=True)
+    guidance_why = fields.Text(related="control_id.guidance_why", readonly=True)
+    implementation_guidance = fields.Text(related="control_id.implementation_guidance", readonly=True)
+    recommended_steps = fields.Text(related="control_id.recommended_steps", readonly=True)
+    recommended_tools = fields.Text(related="control_id.recommended_tools", readonly=True)
+    evidence_guidance = fields.Text(related="control_id.evidence_guidance", readonly=True)
+    practical_notes = fields.Text(related="control_id.practical_notes", readonly=True)
+    external_alignment_summary = fields.Text(compute="_compute_external_alignment_summary")
 
     task_ids = fields.One2many("project.task", "pm_implementation_control_id", string="Generated Tasks")
     required_evidence_count = fields.Integer(compute="_compute_readiness_components", store=True)
@@ -71,7 +87,7 @@ class PmQmsImplementationControl(models.Model):
         "An implementation project can include each control only once.",
     )
 
-    @api.constrains("implementation_project_id", "control_id", "control_instance_id", "pack_ids")
+    @api.constrains("implementation_project_id", "control_id", "control_instance_id", "pack_ids", "area_ids")
     def _check_relationships(self):
         for line in self:
             project = line.implementation_project_id
@@ -85,6 +101,35 @@ class PmQmsImplementationControl(models.Model):
                 raise ValidationError("Implementation control instance must belong to the project company.")
             if any(pack.company_id != project.company_id for pack in line.pack_ids):
                 raise ValidationError("Source packs must belong to the project company.")
+            if any(area.company_id != project.company_id for area in line.area_ids):
+                raise ValidationError("Implementation areas must belong to the project company.")
+            if line.area_ids and line.pack_ids and any(area.pack_id not in line.pack_ids for area in line.area_ids):
+                raise ValidationError("Implementation areas must come from the selected source packs.")
+
+    @api.depends("area_ids.name", "area_ids.code", "area_ids.sequence")
+    def _compute_area_display(self):
+        for line in self:
+            areas = line.area_ids.sorted(lambda area: (area.sequence, area.code or "", area.id))
+            line.area_display = ", ".join(areas.mapped("name"))
+
+    @api.depends(
+        "control_id.external_mapping_ids.standard_name",
+        "control_id.external_mapping_ids.edition",
+        "control_id.external_mapping_ids.reference",
+        "control_id.external_mapping_ids.active",
+    )
+    def _compute_external_alignment_summary(self):
+        for line in self:
+            mappings = line.control_id.external_mapping_ids.filtered("active")
+            if "review_status" in mappings._fields:
+                mappings = mappings.filtered(lambda mapping: mapping.review_status == "approved")
+            else:
+                mappings = self.env["pm.qms.external.mapping"]
+            parts = []
+            for mapping in mappings.sorted(lambda item: (item.standard_name or "", item.edition or "", item.reference or "")):
+                label = " ".join(part for part in [mapping.standard_name, mapping.edition] if part)
+                parts.append(f"{label}: {mapping.reference}" if label else mapping.reference)
+            line.external_alignment_summary = "\n".join(parts)
 
     @api.depends(
         "control_instance_id.implementation_status",
@@ -151,6 +196,22 @@ class PmQmsImplementationControl(models.Model):
         for project in projects:
             project._ensure_tasks_for_lines(self.filtered(lambda line: line.implementation_project_id == project))
         return True
+
+    def action_open_tasks(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id("project.action_view_task")
+        action["domain"] = [("id", "in", self.task_ids.ids)]
+        return action
+
+    def action_open_control_instance(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Control Instance",
+            "res_model": "pm.qms.control.instance",
+            "view_mode": "form",
+            "res_id": self.control_instance_id.id,
+        }
 
     def write(self, vals):
         result = super().write(vals)

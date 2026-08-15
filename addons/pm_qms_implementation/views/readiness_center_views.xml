@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_readiness_center_form" model="ir.ui.view">
+        <field name="name">pm.qms.readiness.center.form</field>
+        <field name="model">pm.qms.readiness.center</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false" edit="false">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh"/>
+                    <button name="action_create_readiness_assessment" type="object" string="Create Readiness Snapshot" groups="pm_qms_core.group_pm_qms_manager"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Readiness Center</h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="implementation_project_id"/>
+                            <field name="organization_id"/>
+                            <field name="assessment_goal_type"/>
+                            <field name="target_assessment_date"/>
+                        </group>
+                        <group>
+                            <field name="dashboard_timestamp"/>
+                            <field name="readiness_percent"/>
+                            <field name="evidence_completion_percent"/>
+                            <field name="activity_completion_percent"/>
+                        </group>
+                    </group>
+                    <group string="Current Readiness">
+                        <group>
+                            <field name="total_controls"/>
+                            <field name="ready_controls"/>
+                            <field name="partial_controls"/>
+                            <field name="gap_controls"/>
+                        </group>
+                        <group>
+                            <field name="missing_evidence"/>
+                            <field name="open_tasks"/>
+                            <field name="overdue_tasks"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Area Progress">
+                            <field name="area_line_ids">
+                                <list>
+                                    <button name="action_open_controls" type="object" string="Open"/>
+                                    <field name="sequence"/>
+                                    <field name="name"/>
+                                    <field name="control_count"/>
+                                    <field name="ready_controls"/>
+                                    <field name="partial_controls"/>
+                                    <field name="gap_controls"/>
+                                    <field name="not_applicable_controls"/>
+                                    <field name="missing_evidence"/>
+                                    <field name="open_tasks"/>
+                                    <field name="overdue_tasks"/>
+                                    <field name="readiness_percent"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Recommended Next Actions">
+                            <field name="action_line_ids">
+                                <list>
+                                    <button name="action_open_record" type="object" string="Open"/>
+                                    <field name="sequence"/>
+                                    <field name="priority"/>
+                                    <field name="action_type"/>
+                                    <field name="name"/>
+                                    <field name="reason"/>
+                                    <field name="area_id"/>
+                                    <field name="implementation_control_id"/>
+                                    <field name="task_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_readiness_center" model="ir.actions.act_window">
+        <field name="name">Readiness Center</field>
+        <field name="res_model">pm.qms.readiness.center</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+</odoo>

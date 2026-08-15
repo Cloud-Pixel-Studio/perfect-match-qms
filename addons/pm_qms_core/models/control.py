@@ -13,6 +13,21 @@ class PmQmsControl(models.Model):
 
     objective = fields.Text(required=True, tracking=True)
     description = fields.Text()
+    guidance_purpose = fields.Text(
+        string="Purpose",
+        help="Reusable Perfect Match guidance describing what this control is meant to achieve.",
+    )
+    guidance_why = fields.Text(
+        string="Why This Matters",
+        help="Reusable Perfect Match guidance explaining the business reason for the control.",
+    )
+    implementation_guidance = fields.Text(
+        help="Reusable implementation guidance. Keep client-specific notes on control instances.",
+    )
+    recommended_steps = fields.Text(help="Recommended proprietary implementation steps.")
+    recommended_tools = fields.Text(help="Suggested Perfect Match or operational tools to use.")
+    evidence_guidance = fields.Text(help="Reusable guidance for acceptable implementation evidence.")
+    practical_notes = fields.Text(help="Practical Perfect Match notes for implementers.")
 
     owner_id = fields.Many2one("res.users", string="Control Owner", tracking=True)
     process_id = fields.Many2one("pm.qms.process", required=True, index=True, tracking=True)
