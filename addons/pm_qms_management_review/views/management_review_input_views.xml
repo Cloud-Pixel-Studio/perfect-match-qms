@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_management_review_input_list" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.input.list</field>
+        <field name="model">pm.qms.management.review.input</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="review_id"/>
+                <field name="category"/>
+                <field name="title"/>
+                <field name="status_snapshot"/>
+                <field name="numeric_value"/>
+                <field name="target_snapshot"/>
+                <field name="unit_of_measure"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="snapshot_date"/>
+                <field name="source_type"/>
+                <field name="source_identifier"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_input_form" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.input.form</field>
+        <field name="model">pm.qms.management.review.input</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="review_id"/>
+                            <field name="category"/>
+                            <field name="title"/>
+                            <field name="status_snapshot"/>
+                            <field name="is_system_generated"/>
+                        </group>
+                        <group>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="snapshot_date"/>
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Values">
+                            <field name="numeric_value"/>
+                            <field name="target_snapshot"/>
+                            <field name="unit_of_measure"/>
+                        </group>
+                        <group string="Source">
+                            <field name="source_type"/>
+                            <field name="source_identifier"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Description">
+                            <field name="description"/>
+                            <field name="text_value"/>
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_input_search" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.input.search</field>
+        <field name="model">pm.qms.management.review.input</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="title"/>
+                <field name="review_id"/>
+                <field name="organization_id"/>
+                <field name="source_identifier"/>
+                <filter name="system_generated" string="System Generated" domain="[('is_system_generated', '=', True)]"/>
+                <filter name="manual" string="Manual" domain="[('is_system_generated', '=', False)]"/>
+                <filter name="group_category" string="Category" context="{'group_by': 'category'}"/>
+                <filter name="group_review" string="Review" context="{'group_by': 'review_id'}"/>
+                <filter name="group_source" string="Source" context="{'group_by': 'source_type'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_input_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.input.pivot</field>
+        <field name="model">pm.qms.management.review.input</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="category" type="row"/>
+                <field name="source_type" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_input_graph" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.input.graph</field>
+        <field name="model">pm.qms.management.review.input</field>
+        <field name="arch" type="xml">
+            <graph string="Review Inputs By Category">
+                <field name="category" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_management_review_input" model="ir.actions.act_window">
+        <field name="name">Review Inputs</field>
+        <field name="res_model">pm.qms.management.review.input</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_management_review_input_search"/>
+    </record>
+</odoo>

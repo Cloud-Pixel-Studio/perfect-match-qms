@@ -90,6 +90,25 @@ Mission 06 adds tests covering:
   KPI, off-target measurement, and related risk without automatic NCR/CAPA
   creation.
 
+Mission 07 adds tests covering:
+
+- Management review creation, sequence generation, period validation,
+  participant fields, workflow transitions, direct state write blocking, event
+  history, and completion requirements.
+- Snapshot generation for objectives, KPI measurements, customer performance,
+  customer satisfaction, supplier performance, supplier evaluations, audit
+  summaries, open findings, risks, opportunities, NCR, CAPA, and previous
+  management review actions.
+- Historical snapshot behavior proving that KPI target changes, newer KPI
+  measurements, objective changes, audit finding closure, and CAPA closure do
+  not rewrite captured review inputs.
+- The valid state where Management Review is completed while Management Review
+  Action remains open.
+- Management Review Action owner workflow, overdue calculation, completion,
+  manager verification, and permission boundaries.
+- Multi-company isolation for reviews, inputs, decisions, and actions, plus
+  snapshot generation that excludes other companies and other organizations.
+
 ## Run Tests
 
 ```bash
@@ -99,6 +118,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission04
 ./deployment/scripts/odoo-dev.sh test-mission05
 ./deployment/scripts/odoo-dev.sh test-mission06
+./deployment/scripts/odoo-dev.sh test-mission07
 ```
 
 ## Rules

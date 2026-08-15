@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_management_review_decision_list" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.decision.list</field>
+        <field name="model">pm.qms.management.review.decision</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="decision_date"/>
+                <field name="review_id"/>
+                <field name="name"/>
+                <field name="decision_type"/>
+                <field name="owner_id"/>
+                <field name="organization_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_decision_form" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.decision.form</field>
+        <field name="model">pm.qms.management.review.decision</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="review_id"/>
+                            <field name="decision_type"/>
+                            <field name="decision_date"/>
+                            <field name="owner_id"/>
+                        </group>
+                        <group>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Decision">
+                        <field name="description"/>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_decision_search" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.decision.search</field>
+        <field name="model">pm.qms.management.review.decision</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="review_id"/>
+                <field name="owner_id"/>
+                <filter name="group_type" string="Decision Type" context="{'group_by': 'decision_type'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+                <filter name="group_review" string="Review" context="{'group_by': 'review_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_decision_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.decision.pivot</field>
+        <field name="model">pm.qms.management.review.decision</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="decision_type" type="row"/>
+                <field name="owner_id" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_decision_graph" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.decision.graph</field>
+        <field name="model">pm.qms.management.review.decision</field>
+        <field name="arch" type="xml">
+            <graph string="Decisions By Type">
+                <field name="decision_type" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_management_review_decision" model="ir.actions.act_window">
+        <field name="name">Decisions</field>
+        <field name="res_model">pm.qms.management.review.decision</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_management_review_decision_search"/>
+    </record>
+</odoo>

@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0 - 2026-08-15
+
+- Added `pm_qms_management_review` with management review records, workflow,
+  participants, period validation, decisions, and follow-up actions.
+- Added historical management review input snapshots across objectives, KPIs,
+  customer and supplier performance, audits, audit findings, risks,
+  opportunities, NCR, CAPA, and previous review actions.
+- Added snapshot locking policy so normal users cannot silently regenerate or
+  mutate review history once a review is ready or completed.
+- Added management review action owner workflow with overdue calculations and
+  manager verification.
+- Extended CI and DEV script targets for Mission 07 validation.
+- Added Mission 07 architecture, security, testing, plan, and ADR
+  documentation.
+
 ## 0.5.0 - 2026-08-15
 
 - Added `pm_qms_kpi` with objectives, KPI definitions, historical KPI

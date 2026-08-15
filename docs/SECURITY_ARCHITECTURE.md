@@ -3,7 +3,7 @@
 ## Scope
 
 This document defines the QMS security model for internal Odoo users through
-Mission 06.
+Mission 07.
 It does not implement customer portal access.
 
 ## Roles
@@ -23,6 +23,8 @@ It does not implement customer portal access.
   customer satisfaction measurements where operational entry is appropriate.
 - Cannot configure objectives, KPI targets, supplier evaluations, or privileged
   performance configuration.
+- Can read permitted management reviews and update management review actions
+  assigned to them where the action workflow allows owner updates.
 
 `QMS Manager`
 
@@ -35,6 +37,9 @@ It does not implement customer portal access.
 - Create and manage objectives, KPI definitions, KPI targets, customer
   performance, supplier performance, and supplier evaluations.
 - Verify KPI measurements and complete supplier evaluations.
+- Create and manage management reviews, generate snapshots, record decisions,
+  create follow-up actions, complete reviews, and verify management review
+  actions.
 - Cannot bypass company record rules.
 
 `QMS Administrator`
@@ -90,6 +95,13 @@ Mission 06 extends this to:
 - supplier performance;
 - supplier evaluations.
 
+Mission 07 extends this to:
+
+- management reviews;
+- management review inputs;
+- management review decisions;
+- management review actions.
+
 Organization isolation is enforced by model constraints where relationships
 must belong to the selected organization. Documents, evidence, and control
 instances reject mismatched process, organization, or company relationships.
@@ -132,7 +144,13 @@ Workflow state changes use model actions:
 Direct state writes are blocked for controlled implementation, document,
 revision, evidence, risk, NCR, CAPA, CAPA action, audit program, audit, and
 audit finding states. Mission 06 also blocks direct status/state writes for
-objectives, KPI definitions, and supplier evaluations.
+objectives, KPI definitions, and supplier evaluations. Mission 07 blocks direct
+state/status writes for management reviews and management review actions.
+
+Management review inputs are locked once a review is ready, in progress,
+completed, or cancelled for normal users. Completed review history is corrected
+only by QMS Administrators. Management review actions remain operational
+follow-up records and may stay open after the meeting is completed.
 
 `pm.qms.event` is append-only at the ORM level for normal QMS groups. Workflow
 methods append events with the acting user, timestamp, previous state, new
@@ -172,3 +190,8 @@ Mission 03 and Mission 04 tests validate:
   supplier evaluation authority, multi-company performance isolation,
   relationship constraints, and the rule that off-target KPI results do not
   automatically create NCR or CAPA records.
+- management review workflow authority, historical snapshot integrity,
+  snapshot locking, previous review action capture, owner action workflow,
+  management review action verification authority, multi-company review/input/
+  decision/action isolation, and snapshot generation that excludes other
+  companies and organizations.

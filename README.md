@@ -41,9 +41,12 @@ integration while preserving NCR-to-CAPA separation.
 Mission 06 adds the performance-management foundation: objectives, KPI
 definitions, KPI measurements with historical snapshots, KPI trends and
 measurement schedules, customer performance, customer satisfaction, supplier
-performance, and supplier evaluations. This data is designed for future
-Management Review consumption; Management Review itself is not implemented in
-Mission 06.
+performance, and supplier evaluations.
+
+Mission 07 adds the Management Review engine: controlled review records,
+historical input snapshots, management decisions, and follow-up actions. It
+consolidates operational QMS data for management review without turning the
+review into a live dashboard or copying operational attachments.
 
 Core paths:
 
@@ -60,6 +63,7 @@ Core paths:
 - `addons/pm_qms_capa/`
 - `addons/pm_qms_audit/`
 - `addons/pm_qms_kpi/`
+- `addons/pm_qms_management_review/`
 - `.github/workflows/qms-ci.yml`
 
 ## DEV Quick Start
@@ -79,6 +83,8 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission05
 ./deployment/scripts/odoo-dev.sh install-mission06
 ./deployment/scripts/odoo-dev.sh test-mission06
+./deployment/scripts/odoo-dev.sh install-mission07
+./deployment/scripts/odoo-dev.sh test-mission07
 ```
 
 Raw Docker Compose commands use the same compose file:
@@ -115,3 +121,9 @@ relate to control instances and processes, but historical KPI measurements live
 on `pm.qms.kpi.measurement`, not on reusable `pm.qms.control`. Customer and
 supplier performance reuse Odoo `res.partner` as master data instead of
 duplicating customer or supplier databases.
+
+Management Review records are client operational records. Review inputs are
+snapshots stored on `pm.qms.management.review.input` so completed reviews show
+what management actually reviewed at that time. Decisions and follow-up actions
+remain separate from the meeting closure, so a review can be completed while
+its actions remain open.

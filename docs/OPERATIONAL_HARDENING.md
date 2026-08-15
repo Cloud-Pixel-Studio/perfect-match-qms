@@ -28,11 +28,11 @@ Operational records use Odoo sequences:
 
 ## Client Operational Layer
 
-Risk, NCR, CAPA, internal audit, objectives, KPIs, customer performance, and
-supplier performance belong to the client operational layer. They relate to
-`pm.qms.control.instance`, documents, evidence, processes, partners, and
-organizations where appropriate. They do not add client implementation data to
-reusable `pm.qms.control` definitions.
+Risk, NCR, CAPA, internal audit, objectives, KPIs, customer performance,
+supplier performance, and management reviews belong to the client operational
+layer. They relate to `pm.qms.control.instance`, documents, evidence,
+processes, partners, and organizations where appropriate. They do not add
+client implementation data to reusable `pm.qms.control` definitions.
 
 ## Due Dates
 
@@ -50,3 +50,19 @@ targets are changed later.
 Supplier evaluation scores preserve the weights used on the evaluation record.
 Future configuration may centralize default weights, but Mission 06 keeps the
 mechanism explicit and reviewable.
+
+## Management Review Snapshots
+
+Management reviews preserve what management reviewed by storing normalized
+inputs in `pm.qms.management.review.input`. The snapshot generator collects
+operational records through controlled Odoo ORM domains for the selected
+company, organization, and period.
+
+Draft and preparing reviews may regenerate system-generated inputs. Manual
+inputs are preserved during regeneration. Ready, in-progress, and completed
+reviews are locked against normal snapshot regeneration, and completed review
+history requires administrative correction authority.
+
+Management review actions are separate follow-up records. Completing a meeting
+does not require closing every action, and action verification remains a later
+manager-controlled workflow step.

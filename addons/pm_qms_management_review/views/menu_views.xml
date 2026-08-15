@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pm_qms_management_review"
+        name="Management Review"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_management_reviews"
+        name="Reviews"
+        parent="menu_pm_qms_management_review"
+        action="action_pm_qms_management_review"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_pm_qms_management_review_actions"
+        name="Actions"
+        parent="menu_pm_qms_management_review"
+        action="action_pm_qms_management_review_action"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_pm_qms_management_review_decisions"
+        name="Decisions"
+        parent="menu_pm_qms_management_review"
+        action="action_pm_qms_management_review_decision"
+        sequence="30"/>
+
+    <menuitem
+        id="menu_pm_qms_management_review_inputs"
+        name="Review Inputs"
+        parent="menu_pm_qms_management_review"
+        action="action_pm_qms_management_review_input"
+        sequence="40"/>
+</odoo>

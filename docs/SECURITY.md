@@ -10,6 +10,11 @@
   findings, NCRs, and CAPAs remain visible after an audit report is completed.
 - Keep objective targets, KPI results, customer performance, and supplier
   performance isolated by company and organization relationships.
+- Keep management review snapshots isolated by company and organization. A
+  review input must not expose another company's operational performance,
+  supplier, audit, risk, NCR, or CAPA summaries.
+- Do not allow normal users to silently regenerate or modify completed
+  management review inputs.
 - Do not allow arbitrary SQL, Python, or executable formulas for performance
   measurement calculations.
 

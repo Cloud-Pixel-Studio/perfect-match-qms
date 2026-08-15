@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_management_review_action_list" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.action.list</field>
+        <field name="model">pm.qms.management.review.action</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="review_id"/>
+                <field name="owner_id"/>
+                <field name="target_date"/>
+                <field name="completion_date"/>
+                <field name="priority"/>
+                <field name="status"/>
+                <field name="is_overdue"/>
+                <field name="days_overdue"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_action_form" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.action.form</field>
+        <field name="model">pm.qms.management.review.action</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start" invisible="status != 'open'"/>
+                    <button name="action_complete" type="object" string="Complete" invisible="status not in ('open', 'in_progress')"/>
+                    <button name="action_verify" type="object" string="Verify" invisible="status != 'completed'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="status in ('verified', 'cancelled')"/>
+                    <field name="status" widget="statusbar" statusbar_visible="open,in_progress,completed,verified"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="review_id"/>
+                            <field name="owner_id"/>
+                            <field name="priority"/>
+                        </group>
+                        <group>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="target_date"/>
+                            <field name="completion_date"/>
+                            <field name="verified_by_id"/>
+                            <field name="verified_date"/>
+                        </group>
+                    </group>
+                    <group string="Follow Up">
+                        <field name="description"/>
+                        <field name="verification_notes"/>
+                        <field name="is_overdue"/>
+                        <field name="days_overdue"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_action_search" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.action.search</field>
+        <field name="model">pm.qms.management.review.action</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="review_id"/>
+                <field name="owner_id"/>
+                <filter name="open" string="Open" domain="[('status', 'in', ['open', 'in_progress'])]"/>
+                <filter name="completed" string="Completed" domain="[('status', '=', 'completed')]"/>
+                <filter name="verified" string="Verified" domain="[('status', '=', 'verified')]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+                <filter name="group_priority" string="Priority" context="{'group_by': 'priority'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_action_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.action.pivot</field>
+        <field name="model">pm.qms.management.review.action</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="status" type="row"/>
+                <field name="owner_id" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_action_graph" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.action.graph</field>
+        <field name="model">pm.qms.management.review.action</field>
+        <field name="arch" type="xml">
+            <graph string="Actions By Status">
+                <field name="status" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_management_review_action" model="ir.actions.act_window">
+        <field name="name">Management Review Actions</field>
+        <field name="res_model">pm.qms.management.review.action</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_management_review_action_search"/>
+    </record>
+</odoo>

@@ -16,6 +16,8 @@ MISSION05_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION05_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit"
 MISSION06_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi"
 MISSION06_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi"
+MISSION07_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review"
+MISSION07_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -128,6 +130,12 @@ Commands:
                 Upgrade core through Performance KPI addons in pmqms_dev.
   test-mission06
                 Run Mission 06 addon tests in pmqms_test.
+  install-mission07
+                Install core through Management Review addons in pmqms_dev.
+  update-mission07
+                Upgrade core through Management Review addons in pmqms_dev.
+  test-mission07
+                Run Mission 07 addon tests in pmqms_test.
 EOF
 }
 
@@ -271,6 +279,22 @@ case "$command" in
     ;;
   test-mission06)
     run_odoo_tests "$MISSION06_ADDONS" "$MISSION06_TEST_TAGS" "Mission 06"
+    ;;
+  install-mission07)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION06_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_management_review" --without-demo=all --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION07_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission07)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION07_ADDONS" --stop-after-init
+    ;;
+  test-mission07)
+    run_odoo_tests "$MISSION07_ADDONS" "$MISSION07_TEST_TAGS" "Mission 07"
     ;;
   ""|help|-h|--help)
     usage

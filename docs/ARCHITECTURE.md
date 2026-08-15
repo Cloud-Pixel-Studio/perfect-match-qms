@@ -281,3 +281,63 @@ records when structured `source_type` data exists.
 Performance records relate to `pm.qms.control.instance` and `pm.qms.process`.
 They do not attach mutable client objective, target, or result data to reusable
 `pm.qms.control` framework definitions.
+
+## Mission 07 Management Review Engine
+
+```text
+OPERATIONAL QMS DATA
+        |
+        v
+SNAPSHOT GENERATOR
+        |
+        v
+MANAGEMENT REVIEW
+        |
+   +----+-----+
+   |          |
+Decision    Action
+```
+
+Mission 07 adds `pm_qms_management_review` as a client operational addon. It
+depends on `pm_qms_audit` and `pm_qms_kpi`, which bring the existing risk, NCR,
+CAPA, audit, and performance layers.
+
+The management review layer includes:
+
+- `pm.qms.management.review` for the formal review header, period, meeting
+  participants, workflow, summary counts, and conclusion.
+- `pm.qms.management.review.input` for historical inputs captured from
+  controlled application logic.
+- `pm.qms.management.review.decision` for management decisions recorded during
+  the review.
+- `pm.qms.management.review.action` for follow-up actions with owners, due
+  dates, completion, verification, and overdue calculations.
+
+Completed management reviews are historical records, not live dashboards. The
+snapshot generator stores values such as KPI actuals, KPI target snapshots,
+objective status, finding status, CAPA state, and previous action status at the
+time the snapshot is generated. Later changes to the live KPI, objective,
+finding, CAPA, or action do not rewrite completed review inputs.
+
+Snapshot generation is implemented as controlled Odoo ORM logic. It does not
+allow user-configured SQL, Python expressions, or arbitrary model references.
+The first implementation replaces system-generated draft/preparing inputs on
+regeneration and preserves manual inputs. Once a review is ready or completed,
+normal users cannot regenerate or mutate the historical inputs.
+
+Management Review remains downstream of operational QMS data:
+
+```text
+Perfect Match Framework
+        |
+        v
+Control Instances
+        |
+        v
+Operational QMS Data
+        |
+        v
+Management Review
+```
+
+No management review state is stored on reusable `pm.qms.control` definitions.

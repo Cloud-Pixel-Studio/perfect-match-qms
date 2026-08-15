@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_management_review_list" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.list</field>
+        <field name="model">pm.qms.management.review</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="organization_id"/>
+                <field name="period_start"/>
+                <field name="period_end"/>
+                <field name="planned_date"/>
+                <field name="actual_date"/>
+                <field name="chair_id"/>
+                <field name="snapshot_date"/>
+                <field name="open_action_count"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_form" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.form</field>
+        <field name="model">pm.qms.management.review</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_prepare" type="object" string="Prepare" invisible="state != 'draft'"/>
+                    <button name="action_generate_snapshot" type="object" string="Generate Snapshot" invisible="state not in ('draft', 'preparing')"/>
+                    <button name="action_mark_ready" type="object" string="Mark Ready" invisible="state != 'preparing'"/>
+                    <button name="action_start_review" type="object" string="Start Review" invisible="state != 'ready'"/>
+                    <button name="action_complete" type="object" string="Complete" invisible="state != 'in_progress'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'preparing', 'ready', 'in_progress')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,preparing,ready,in_progress,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Identification">
+                            <field name="code"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Period And Meeting">
+                            <field name="period_start"/>
+                            <field name="period_end"/>
+                            <field name="planned_date"/>
+                            <field name="actual_date"/>
+                            <field name="next_review_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Participants">
+                            <field name="chair_id"/>
+                            <field name="participant_ids" widget="many2many_tags"/>
+                        </group>
+                        <group string="Snapshot">
+                            <field name="snapshot_date"/>
+                            <field name="completed_date"/>
+                        </group>
+                    </group>
+                    <group string="Review Summary">
+                        <field name="objective_input_count"/>
+                        <field name="kpi_input_count"/>
+                        <field name="kpi_off_target_count"/>
+                        <field name="customer_issue_count"/>
+                        <field name="supplier_issue_count"/>
+                        <field name="audits_reviewed_count"/>
+                        <field name="open_finding_count"/>
+                        <field name="high_risk_count"/>
+                        <field name="open_ncr_count"/>
+                        <field name="open_capa_count"/>
+                        <field name="previous_action_count"/>
+                        <field name="decision_count"/>
+                        <field name="open_action_count"/>
+                    </group>
+                    <notebook>
+                        <page string="Overview">
+                            <field name="objective"/>
+                            <field name="agenda_notes"/>
+                            <field name="general_notes"/>
+                            <field name="conclusion"/>
+                        </page>
+                        <page string="Performance">
+                            <field name="input_ids" domain="[('category', 'in', ['objectives', 'kpi', 'customer_performance', 'customer_satisfaction', 'supplier_performance', 'supplier_evaluation'])]">
+                                <list>
+                                    <field name="category"/>
+                                    <field name="title"/>
+                                    <field name="status_snapshot"/>
+                                    <field name="numeric_value"/>
+                                    <field name="target_snapshot"/>
+                                    <field name="unit_of_measure"/>
+                                    <field name="period_start"/>
+                                    <field name="period_end"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Assurance">
+                            <field name="input_ids" domain="[('category', 'in', ['audit', 'audit_findings', 'ncr', 'capa'])]">
+                                <list>
+                                    <field name="category"/>
+                                    <field name="title"/>
+                                    <field name="status_snapshot"/>
+                                    <field name="numeric_value"/>
+                                    <field name="unit_of_measure"/>
+                                    <field name="source_identifier"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Risk">
+                            <field name="input_ids" domain="[('category', 'in', ['risks', 'opportunities'])]">
+                                <list>
+                                    <field name="category"/>
+                                    <field name="title"/>
+                                    <field name="status_snapshot"/>
+                                    <field name="numeric_value"/>
+                                    <field name="target_snapshot"/>
+                                    <field name="source_identifier"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Previous Actions">
+                            <field name="input_ids" domain="[('category', '=', 'previous_actions')]">
+                                <list>
+                                    <field name="title"/>
+                                    <field name="status_snapshot"/>
+                                    <field name="text_value"/>
+                                    <field name="source_identifier"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Changes And Resources">
+                            <field name="input_ids" domain="[('category', 'in', ['organizational_changes', 'resources', 'improvement_opportunities', 'other'])]">
+                                <list editable="bottom">
+                                    <field name="category"/>
+                                    <field name="title"/>
+                                    <field name="description"/>
+                                    <field name="status_snapshot"/>
+                                    <field name="source_type"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Decisions">
+                            <field name="decision_ids">
+                                <list editable="bottom">
+                                    <field name="decision_date"/>
+                                    <field name="name"/>
+                                    <field name="decision_type"/>
+                                    <field name="owner_id"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Actions">
+                            <field name="action_ids">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="owner_id"/>
+                                    <field name="target_date"/>
+                                    <field name="priority"/>
+                                    <field name="status"/>
+                                    <field name="is_overdue"/>
+                                    <field name="days_overdue"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Snapshot History">
+                            <field name="input_ids">
+                                <list>
+                                    <field name="category"/>
+                                    <field name="title"/>
+                                    <field name="snapshot_date"/>
+                                    <field name="status_snapshot"/>
+                                    <field name="numeric_value"/>
+                                    <field name="target_snapshot"/>
+                                    <field name="unit_of_measure"/>
+                                    <field name="source_type"/>
+                                    <field name="source_identifier"/>
+                                    <field name="is_system_generated"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_search" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.search</field>
+        <field name="model">pm.qms.management.review</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="organization_id"/>
+                <field name="chair_id"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="preparing" string="Preparing" domain="[('state', '=', 'preparing')]"/>
+                <filter name="ready" string="Ready" domain="[('state', '=', 'ready')]"/>
+                <filter name="in_progress" string="In Progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter name="completed" string="Completed" domain="[('state', '=', 'completed')]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_organization" string="Organization" context="{'group_by': 'organization_id'}"/>
+                <filter name="group_chair" string="Chair" context="{'group_by': 'chair_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.pivot</field>
+        <field name="model">pm.qms.management.review</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="state" type="row"/>
+                <field name="organization_id" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_management_review_graph" model="ir.ui.view">
+        <field name="name">pm.qms.management.review.graph</field>
+        <field name="model">pm.qms.management.review</field>
+        <field name="arch" type="xml">
+            <graph string="Management Reviews By Status">
+                <field name="state" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_management_review" model="ir.actions.act_window">
+        <field name="name">Management Reviews</field>
+        <field name="res_model">pm.qms.management.review</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="search_view_id" ref="view_pm_qms_management_review_search"/>
+    </record>
+</odoo>

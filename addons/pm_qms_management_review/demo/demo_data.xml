@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="review_pm_demo_q2" model="pm.qms.management.review">
+        <field name="name">Perfect Match Demo - Q2 Management Review</field>
+        <field name="organization_id" ref="pm_qms_kpi.organization_pm_demo_performance"/>
+        <field name="period_start">2026-04-01</field>
+        <field name="period_end">2026-06-30</field>
+        <field name="planned_date">2026-07-10</field>
+        <field name="actual_date">2026-07-10</field>
+        <field name="chair_id" ref="base.user_admin"/>
+        <field name="participant_ids" eval="[Command.link(ref('base.user_admin'))]"/>
+        <field name="objective">Review selected operational performance and decide improvement follow-up using Perfect Match methodology.</field>
+        <field name="agenda_notes">Review performance snapshots, supplier monitoring, customer feedback, and improvement actions.</field>
+        <field name="general_notes">Fictional demo management review for Perfect Match Digital QMS.</field>
+        <field name="conclusion">Management accepted the demo performance summary and selected one supplier-monitoring follow-up action.</field>
+        <field name="snapshot_date">2026-07-10 13:00:00</field>
+        <field name="state">draft</field>
+    </record>
+
+    <record id="review_input_pm_demo_otd" model="pm.qms.management.review.input">
+        <field name="review_id" ref="review_pm_demo_q2"/>
+        <field name="category">kpi</field>
+        <field name="title">On-Time Delivery KPI</field>
+        <field name="description">Demo KPI reviewed by management.</field>
+        <field name="snapshot_date">2026-07-10 13:00:00</field>
+        <field name="status_snapshot">on_target</field>
+        <field name="numeric_value">96.2</field>
+        <field name="target_snapshot">95.0</field>
+        <field name="unit_of_measure">%</field>
+        <field name="period_start">2026-04-01</field>
+        <field name="period_end">2026-06-30</field>
+        <field name="source_type">kpi_measurement</field>
+        <field name="source_identifier">PM-DEMO-OTD</field>
+        <field name="is_system_generated">1</field>
+    </record>
+
+    <record id="review_input_pm_demo_customer" model="pm.qms.management.review.input">
+        <field name="review_id" ref="review_pm_demo_q2"/>
+        <field name="category">customer_satisfaction</field>
+        <field name="title">Customer Satisfaction Summary</field>
+        <field name="snapshot_date">2026-07-10 13:00:00</field>
+        <field name="status_snapshot">on_target</field>
+        <field name="numeric_value">88.0</field>
+        <field name="unit_of_measure">percent</field>
+        <field name="period_start">2026-04-01</field>
+        <field name="period_end">2026-06-30</field>
+        <field name="source_type">customer_satisfaction</field>
+        <field name="source_identifier">demo-customer-satisfaction</field>
+        <field name="is_system_generated">1</field>
+    </record>
+
+    <record id="review_input_pm_demo_supplier" model="pm.qms.management.review.input">
+        <field name="review_id" ref="review_pm_demo_q2"/>
+        <field name="category">supplier_performance</field>
+        <field name="title">Supplier Performance Summary</field>
+        <field name="snapshot_date">2026-07-10 13:00:00</field>
+        <field name="status_snapshot">monitor</field>
+        <field name="numeric_value">79.0</field>
+        <field name="unit_of_measure">percent</field>
+        <field name="period_start">2026-04-01</field>
+        <field name="period_end">2026-06-30</field>
+        <field name="source_type">supplier_performance</field>
+        <field name="source_identifier">demo-supplier-performance</field>
+        <field name="is_system_generated">1</field>
+    </record>
+
+    <record id="review_decision_pm_demo_supplier_monitoring" model="pm.qms.management.review.decision">
+        <field name="review_id" ref="review_pm_demo_q2"/>
+        <field name="name">Increase supplier monitoring frequency</field>
+        <field name="description">Increase review cadence for suppliers below the internal performance threshold.</field>
+        <field name="decision_type">improvement</field>
+        <field name="owner_id" ref="base.user_admin"/>
+        <field name="decision_date">2026-07-10</field>
+    </record>
+
+    <record id="review_action_pm_demo_supplier_monitoring" model="pm.qms.management.review.action">
+        <field name="review_id" ref="review_pm_demo_q2"/>
+        <field name="name">Review monitored supplier performance within 60 days</field>
+        <field name="description">Review suppliers under monitoring and confirm whether additional supplier development actions are needed.</field>
+        <field name="owner_id" ref="base.user_admin"/>
+        <field name="target_date">2026-09-08</field>
+        <field name="priority">medium</field>
+    </record>
+</odoo>
