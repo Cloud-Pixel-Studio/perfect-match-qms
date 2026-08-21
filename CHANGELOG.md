@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-rc2 - 2026-08-21
+
+- Added the Perfect Match QMS product application shell as the coherent user entry point for the current QMS baseline.
+- Added the executive dashboard with implementation readiness, controls, activities, evidence, operational health, performance, and management review indicators.
+- Added guided implementation UX with implementation areas, control guidance, gap visibility, readiness center, area progress, and deterministic recommended next actions.
+- Added Perfect Match-specific Activities UX backed by Odoo `project.task`, preserving native Project for authorized users while keeping implementation work in QMS context.
+- Integrated existing QMS operational modules into the application shell: documents, evidence, risk, NCR, CAPA, audit, objectives, KPI, customer performance, supplier performance, and management review.
+- Preserved historical readiness snapshots and management review history as release baseline behavior.
+- Validated `PM-QMS-QUALITY` version `1.0` in the Oliva Torras technical pilot with 6 implementation areas, 37 controls, 74 generated activities, and 37 required evidence expectations.
+- Confirmed the Oliva pilot as validation-only data; no Oliva-specific product code, secrets, database dumps, filestore data, or customer production records are included.
+- Added RC2 release notes and baseline documentation.
+- Documented non-claims: no certification claim, no certification-body approval claim, no guaranteed compliance claim, and no copyrighted external-standard requirement text.
+- Recorded non-blocking GitHub Actions Node.js 20 deprecation warning as release technical debt.
+
 ## 1.0.0-rc1 - 2026-08-15
 
 - Added isolated Oliva Torras technical pilot deployment under
