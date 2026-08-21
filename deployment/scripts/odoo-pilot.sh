@@ -14,6 +14,7 @@ OLIVA_ORG_CODE="${PMQMS_OLIVA_ORG_CODE:-OTUS}"
 MISSION10_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration"
 MISSION11_ADDONS="$MISSION10_ADDONS,pm_qms_app"
 MISSION14_ADDONS="$MISSION10_ADDONS,pm_qms_people,pm_qms_app"
+MISSION15_ADDONS="$MISSION10_ADDONS,pm_qms_people,pm_qms_calibration,pm_qms_app"
 
 export ODOO_OLIVA_PILOT_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_OLIVA_PILOT_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -117,6 +118,13 @@ update_qms_stack() {
     run_odoo -d "$DB_NAME" --update pm_qms_people --stop-after-init
   else
     run_odoo -d "$DB_NAME" --init pm_qms_people --without-demo=all --stop-after-init
+  fi
+  local calibration_state
+  calibration_state="$(odoo_module_state pm_qms_calibration)"
+  if [[ "$calibration_state" == "installed" ]]; then
+    run_odoo -d "$DB_NAME" --update pm_qms_calibration --stop-after-init
+  else
+    run_odoo -d "$DB_NAME" --init pm_qms_calibration --without-demo=all --stop-after-init
   fi
   local app_state
   app_state="$(odoo_module_state pm_qms_app)"
@@ -304,7 +312,7 @@ case "${1:-}" in
     else
       run_odoo -d "$DB_NAME" --init base --without-demo=all --stop-after-init
       configure_company
-      run_odoo -d "$DB_NAME" --init "$MISSION14_ADDONS" --without-demo=all --stop-after-init
+      run_odoo -d "$DB_NAME" --init "$MISSION15_ADDONS" --without-demo=all --stop-after-init
     fi
     ;;
   update)

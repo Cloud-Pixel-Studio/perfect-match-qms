@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_pm_qms_calibration_org" model="pm.qms.organization">
+        <field name="name">Demo Calibration Organization</field>
+        <field name="code">PM-CAL-DEMO-ORG</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="demo_pm_qms_calibration_process" model="pm.qms.process">
+        <field name="name">Monitoring Resource Control</field>
+        <field name="code">PM-CAL-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_pm_qms_calibration_org"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="process_type">support</field>
+    </record>
+
+    <record id="demo_pm_qms_equipment_type_gage" model="pm.qms.equipment.type">
+        <field name="name">Inspection Gage</field>
+        <field name="code">PM-CAL-DEMO-GAGE</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="demo_pm_qms_calibration_provider" model="pm.qms.calibration.provider">
+        <field name="name">Demo Calibration Provider</field>
+        <field name="code">PM-CAL-DEMO-PROVIDER</field>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="qualification_reference">Demo qualification on file</field>
+    </record>
+
+    <record id="demo_pm_qms_calibration_person" model="pm.qms.person">
+        <field name="name">Jordan Demo</field>
+        <field name="code">PM-CAL-PER-DEMO-001</field>
+        <field name="organization_id" ref="demo_pm_qms_calibration_org"/>
+    </record>
+
+    <record id="demo_pm_qms_equipment_current" model="pm.qms.equipment">
+        <field name="code">PM-CAL-DEMO-001</field>
+        <field name="name">Demo Digital Caliper</field>
+        <field name="type_id" ref="demo_pm_qms_equipment_type_gage"/>
+        <field name="organization_id" ref="demo_pm_qms_calibration_org"/>
+        <field name="process_id" ref="demo_pm_qms_calibration_process"/>
+        <field name="location">Demo Quality Bench</field>
+        <field name="responsible_person_id" ref="demo_pm_qms_calibration_person"/>
+        <field name="calibration_strategy">external</field>
+        <field name="default_provider_id" ref="demo_pm_qms_calibration_provider"/>
+        <field name="frequency_interval">12</field>
+        <field name="frequency_unit">months</field>
+        <field name="acceptance_criteria">Demo acceptance criteria retained by the organization.</field>
+    </record>
+
+    <record id="demo_pm_qms_calibration_event_current" model="pm.qms.calibration.event">
+        <field name="code">PM-CAL-DEMO-EVT-001</field>
+        <field name="equipment_id" ref="demo_pm_qms_equipment_current"/>
+        <field name="event_type">calibration</field>
+        <field name="calibration_date">2026-08-01</field>
+        <field name="next_due_date">2027-08-01</field>
+        <field name="provider_id" ref="demo_pm_qms_calibration_provider"/>
+        <field name="result">pass</field>
+        <field name="state">accepted</field>
+    </record>
+</odoo>

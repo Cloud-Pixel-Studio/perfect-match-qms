@@ -564,3 +564,41 @@ to exact `pm.qms.document.revision` records.
 
 See `docs/PEOPLE_TRAINING_COMPETENCY.md` and
 `docs/DECISIONS/ADR-050-qms-people-training-competency-architecture.md`.
+
+## Mission 15 Equipment, Monitoring Resources and Calibration
+
+Mission 15 adds `pm_qms_calibration` as a QMS-native calibration layer.
+
+```text
+pm.qms.equipment
+|-- calibration and verification requirements
+|-- calculated due status
+|-- calibration events
+|      `-- optional measurement lines
+`-- OOT impact assessments
+       |-- affected references
+       |-- NCR when required
+       `-- CAPA when required
+```
+
+The module intentionally does not depend on Odoo Maintenance, MRP, Inventory,
+Odoo Quality, or a LIMS. Customers can use those systems independently, and
+future bridge modules can connect them to QMS equipment without changing the
+core calibration records.
+
+Lifecycle status and calibration schedule status are separate. A resource can
+be in service, out for calibration, quarantined, out of service, or retired
+while schedule status is calculated from accepted calibration history, interval
+configuration, next due date, and due-soon threshold.
+
+Passed or conditionally accepted calibration events update the equipment due
+date and may return equipment to service. Failed or out-of-tolerance events
+quarantine the equipment and create or reuse a linked impact assessment. The
+impact assessment records the exposure window, affected references,
+containment, evaluation, disposition, and any required NCR/CAPA links.
+
+Evidence, NCR, CAPA, Dashboard, and Management Review records reference
+calibration objects for traceability. Readiness scoring remains unchanged.
+
+See `docs/EQUIPMENT_CALIBRATION.md` and
+`docs/DECISIONS/ADR-051-equipment-calibration-architecture.md`.

@@ -135,6 +135,14 @@
                             <button name="action_view_pending_acknowledgments" type="object" string="Pending Acknowledgments" class="oe_link"/>
                             <field name="attention_pending_acknowledgments"/>
                         </group>
+                        <group string="Equipment &amp; Calibration">
+                            <button name="action_view_calibration_attention" type="object" string="Calibration Attention" class="oe_link"/>
+                            <field name="calibration_due_soon"/>
+                            <field name="calibration_overdue"/>
+                            <field name="quarantined_equipment"/>
+                            <button name="action_view_oot_assessments" type="object" string="Open OOT Assessments" class="oe_link"/>
+                            <field name="open_calibration_impact_assessments"/>
+                        </group>
                     </group>
                     <footer>
                         <button name="action_continue_implementation" type="object" string="Continue Implementation" class="btn-primary"/>

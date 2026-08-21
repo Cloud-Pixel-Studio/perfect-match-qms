@@ -66,6 +66,10 @@ class PmQmsDashboard(models.TransientModel):
     attention_overdue_training = fields.Integer(compute="_compute_dashboard")
     attention_expiring_qualifications = fields.Integer(compute="_compute_dashboard")
     attention_pending_acknowledgments = fields.Integer(compute="_compute_dashboard")
+    calibration_due_soon = fields.Integer(compute="_compute_dashboard")
+    calibration_overdue = fields.Integer(compute="_compute_dashboard")
+    quarantined_equipment = fields.Integer(compute="_compute_dashboard")
+    open_calibration_impact_assessments = fields.Integer(compute="_compute_dashboard")
 
     next_action_1_name = fields.Char(compute="_compute_dashboard")
     next_action_1_reason = fields.Char(compute="_compute_dashboard")
@@ -179,6 +183,10 @@ class PmQmsDashboard(models.TransientModel):
             "attention_overdue_training",
             "attention_expiring_qualifications",
             "attention_pending_acknowledgments",
+            "calibration_due_soon",
+            "calibration_overdue",
+            "quarantined_equipment",
+            "open_calibration_impact_assessments",
         ]
 
     @api.depends("organization_id", "implementation_project_id")
@@ -232,6 +240,8 @@ class PmQmsDashboard(models.TransientModel):
             Training = dashboard.env["pm.qms.training.record"]
             Qualification = dashboard.env["pm.qms.qualification.record"]
             Acknowledgment = dashboard.env["pm.qms.document.acknowledgment"]
+            Equipment = dashboard.env["pm.qms.equipment"]
+            ImpactAssessment = dashboard.env["pm.qms.calibration.impact.assessment"]
 
             open_risk_domain = base_domain + [("state", "!=", "closed")]
             dashboard.open_risks = Risk.search_count(open_risk_domain)
@@ -295,6 +305,17 @@ class PmQmsDashboard(models.TransientModel):
             )
             dashboard.attention_pending_acknowledgments = Acknowledgment.search_count(
                 base_domain + [("state", "=", "pending")]
+            )
+            equipment_records = Equipment.search(base_domain + [("calibration_required", "=", True)])
+            dashboard.calibration_due_soon = len(
+                equipment_records.filtered(lambda item: item.calibration_status in ("due", "due_soon"))
+            )
+            dashboard.calibration_overdue = len(
+                equipment_records.filtered(lambda item: item.calibration_status == "overdue")
+            )
+            dashboard.quarantined_equipment = Equipment.search_count(base_domain + [("lifecycle_state", "=", "quarantined")])
+            dashboard.open_calibration_impact_assessments = ImpactAssessment.search_count(
+                base_domain + [("state", "not in", ("closed", "cancelled"))]
             )
 
     def _action_for_xmlid(self, xmlid, domain=None, context=None, name=None):
@@ -428,4 +449,27 @@ class PmQmsDashboard(models.TransientModel):
             "pm_qms_people.action_pm_qms_document_acknowledgment",
             domain=self._base_domain() + [("state", "=", "pending")],
             name="Pending Document Acknowledgments",
+        )
+
+    def action_view_calibration_attention(self):
+        self.ensure_one()
+        today = fields.Date.context_today(self)
+        return self._action_for_xmlid(
+            "pm_qms_calibration.action_pm_qms_equipment",
+            domain=self._base_domain()
+            + [
+                ("calibration_required", "=", True),
+                "|",
+                ("lifecycle_state", "=", "quarantined"),
+                ("next_due_date", "<=", today),
+            ],
+            name="Calibration Attention",
+        )
+
+    def action_view_oot_assessments(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_calibration.action_pm_qms_calibration_impact_assessment",
+            domain=self._base_domain() + [("state", "not in", ("closed", "cancelled"))],
+            name="Open OOT Impact Assessments",
         )

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_nonconformity_form_calibration" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.form.calibration</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="inherit_id" ref="pm_qms_ncr.view_pm_qms_nonconformity_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Calibration">
+                    <group>
+                        <field name="calibration_event_id"/>
+                        <field name="calibration_impact_assessment_id"/>
+                        <field name="equipment_id"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

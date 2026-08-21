@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_pm_qms_calibration" name="Equipment &amp; Calibration" parent="pm_qms_core.menu_pm_qms_root" sequence="35"/>
+
+    <menuitem id="menu_pm_qms_calibration_equipment" name="Monitoring Resources" parent="menu_pm_qms_calibration" action="action_pm_qms_equipment" sequence="10"/>
+    <menuitem id="menu_pm_qms_calibration_due_soon" name="Due Soon" parent="menu_pm_qms_calibration" action="action_pm_qms_equipment_due_soon" sequence="20"/>
+    <menuitem id="menu_pm_qms_calibration_overdue" name="Overdue" parent="menu_pm_qms_calibration" action="action_pm_qms_equipment_overdue" sequence="30"/>
+    <menuitem id="menu_pm_qms_calibration_out" name="Out for Calibration" parent="menu_pm_qms_calibration" action="action_pm_qms_equipment_out_for_calibration" sequence="40"/>
+    <menuitem id="menu_pm_qms_calibration_quarantine" name="Quarantined" parent="menu_pm_qms_calibration" action="action_pm_qms_equipment_quarantined" sequence="50"/>
+    <menuitem id="menu_pm_qms_calibration_events" name="Calibration Events" parent="menu_pm_qms_calibration" action="action_pm_qms_calibration_event" sequence="60"/>
+    <menuitem id="menu_pm_qms_calibration_impact" name="OOT Impact Assessments" parent="menu_pm_qms_calibration" action="action_pm_qms_calibration_impact_assessment" sequence="70"/>
+
+    <menuitem id="menu_pm_qms_calibration_config" name="Configuration" parent="menu_pm_qms_calibration" sequence="90" groups="pm_qms_core.group_pm_qms_manager"/>
+    <menuitem id="menu_pm_qms_calibration_types" name="Resource Types" parent="menu_pm_qms_calibration_config" action="action_pm_qms_equipment_type" sequence="10"/>
+    <menuitem id="menu_pm_qms_calibration_providers" name="Providers" parent="menu_pm_qms_calibration_config" action="action_pm_qms_calibration_provider" sequence="20"/>
+</odoo>

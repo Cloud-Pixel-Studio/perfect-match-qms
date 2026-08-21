@@ -171,6 +171,25 @@ Mission 11 adds tests covering:
 - Historical readiness assessment immutability after live readiness changes.
 - Existing implementation generator idempotency through prior regression tests.
 
+Mission 15 adds tests covering:
+
+- Equipment/gage identity, sequence generation, organization-scoped uniqueness,
+  configurable equipment types, and company/organization alignment.
+- Deterministic calibration scheduling from accepted event history, interval
+  unit, next due date, due-soon threshold, and overdue conditions.
+- Idempotent activity/reminder creation for due calibration.
+- Calibration and verification event acceptance, pass behavior, conditional
+  behavior, certificate/evidence links, and accepted-history protection.
+- Failed and out-of-tolerance events that quarantine equipment and create or
+  reuse a linked impact assessment.
+- Impact assessment exposure-window derivation, no/potential/confirmed/unknown
+  conclusions, closure requirements, affected references, NCR creation, and
+  CAPA linkage without automatic CAPA creation for every failure.
+- Dashboard calibration attention counts and Management Review snapshot inputs
+  without changing historical reviews or readiness scoring.
+- QMS User, QMS Manager, QMS Administrator, company isolation, and
+  organization-alignment boundaries.
+
 ## Run Tests
 
 ```bash
@@ -185,6 +204,7 @@ cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh test-mission09
 ./deployment/scripts/odoo-dev.sh test-mission10
 ./deployment/scripts/odoo-dev.sh test-mission11
+./deployment/scripts/odoo-dev.sh test-mission15
 ```
 
 ## Rules

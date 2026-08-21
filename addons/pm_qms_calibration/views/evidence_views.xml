@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_evidence_form_calibration" model="ir.ui.view">
+        <field name="name">pm.qms.evidence.form.calibration</field>
+        <field name="model">pm.qms.evidence</field>
+        <field name="inherit_id" ref="pm_qms_evidence.view_pm_qms_evidence_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Calibration">
+                    <group>
+                        <field name="calibration_event_ids"/>
+                        <field name="equipment_ids"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
