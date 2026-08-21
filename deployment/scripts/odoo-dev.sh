@@ -30,6 +30,8 @@ MISSION12_ADDONS="$MISSION11_ADDONS"
 MISSION12_TEST_TAGS="$MISSION11_TEST_TAGS"
 MISSION12_1_ADDONS="$MISSION12_ADDONS"
 MISSION12_1_TEST_TAGS="$MISSION12_TEST_TAGS"
+MISSION14_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_people,pm_qms_app"
+MISSION14_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration,/pm_qms_people,/pm_qms_app"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -102,7 +104,7 @@ postgres_exec_interactive() {
 
 wait_for_postgres() {
   for _ in {1..60}; do
-    if postgres_exec pg_isready -U odoo -d postgres >/dev/null 2>&1; then
+    if postgres_exec pg_isready -h 127.0.0.1 -U odoo -d postgres >/dev/null 2>&1; then
       return 0
     fi
     sleep 1
@@ -117,7 +119,7 @@ database_exists() {
   prepare_runtime_permissions
   compose up -d postgres-dev >/dev/null
   wait_for_postgres
-  postgres_exec psql -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
+  postgres_exec psql -h 127.0.0.1 -U odoo -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$db_name'" | grep -q 1
 }
 
 health() {
@@ -217,6 +219,12 @@ Commands:
                 Run Mission 12 addon tests in pmqms_test.
   test-mission12-1
                 Run Mission 12.1 UX hardening addon tests in pmqms_test.
+  install-mission14
+                Install full QMS stack including People, Training, and Competency in pmqms_dev.
+  update-mission14
+                Upgrade full QMS stack including People, Training, and Competency in pmqms_dev.
+  test-mission14
+                Run Mission 14 full-stack Odoo tests in pmqms_test.
 EOF
 }
 
@@ -227,8 +235,8 @@ run_odoo_tests() {
   prepare_runtime_permissions
   compose up -d postgres-dev
   wait_for_postgres
-  postgres_exec psql -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null
-  postgres_exec dropdb -U odoo --maintenance-db=postgres --if-exists pmqms_test
+  postgres_exec psql -h 127.0.0.1 -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null || true
+  postgres_exec dropdb -h 127.0.0.1 -U odoo --maintenance-db=postgres --if-exists pmqms_test
   local test_log
   test_log="$(mktemp)"
   set +e
@@ -289,7 +297,7 @@ case "$command" in
     ;;
   db-shell)
     prepare_runtime_permissions
-    postgres_exec_interactive psql -U odoo -d postgres
+    postgres_exec_interactive psql -h 127.0.0.1 -U odoo -d postgres
     ;;
   init-db)
     prepare_runtime_permissions
@@ -462,6 +470,23 @@ case "$command" in
     ;;
   test-mission12-1)
     run_odoo_tests "$MISSION12_1_ADDONS" "$MISSION12_1_TEST_TAGS" "Mission 12.1"
+    ;;
+  install-mission14)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION12_1_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_people" --without-demo=all --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "pm_qms_app" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION14_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission14)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION14_ADDONS" --stop-after-init
+    ;;
+  test-mission14)
+    run_odoo_tests "$MISSION14_ADDONS" "$MISSION14_TEST_TAGS" "Mission 14"
     ;;
   ""|help|-h|--help)
     usage

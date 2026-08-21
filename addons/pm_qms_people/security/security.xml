@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_person_user_own" model="ir.rule">
+        <field name="name">QMS person own record</field>
+        <field name="model_id" ref="model_pm_qms_person"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_person_manager_company" model="ir.rule">
+        <field name="name">QMS person manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_person"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_person_role_assignment_user_own" model="ir.rule">
+        <field name="name">QMS role assignment own person</field>
+        <field name="model_id" ref="model_pm_qms_person_role_assignment"/>
+        <field name="domain_force">[('person_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_person_role_assignment_manager_company" model="ir.rule">
+        <field name="name">QMS role assignment manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_person_role_assignment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_role_company" model="ir.rule">
+        <field name="name">QMS role company boundary</field>
+        <field name="model_id" ref="model_pm_qms_role"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_competency_company" model="ir.rule">
+        <field name="name">QMS competency company boundary</field>
+        <field name="model_id" ref="model_pm_qms_competency"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_role_competency_requirement_company" model="ir.rule">
+        <field name="name">QMS role competency requirement company boundary</field>
+        <field name="model_id" ref="model_pm_qms_role_competency_requirement"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_competency_assessment_user_own" model="ir.rule">
+        <field name="name">QMS competency assessment own person</field>
+        <field name="model_id" ref="model_pm_qms_competency_assessment"/>
+        <field name="domain_force">[('person_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_competency_assessment_manager_company" model="ir.rule">
+        <field name="name">QMS competency assessment manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_competency_assessment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_competency_matrix_user_own" model="ir.rule">
+        <field name="name">QMS competency matrix own person</field>
+        <field name="model_id" ref="model_pm_qms_competency_matrix_line"/>
+        <field name="domain_force">[('person_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_competency_matrix_manager_company" model="ir.rule">
+        <field name="name">QMS competency matrix manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_competency_matrix_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_training_course_company" model="ir.rule">
+        <field name="name">QMS training course company boundary</field>
+        <field name="model_id" ref="model_pm_qms_training_course"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_training_event_company" model="ir.rule">
+        <field name="name">QMS training event company boundary</field>
+        <field name="model_id" ref="model_pm_qms_training_event"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_training_requirement_company" model="ir.rule">
+        <field name="name">QMS training requirement company boundary</field>
+        <field name="model_id" ref="model_pm_qms_training_requirement"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_training_record_user_own" model="ir.rule">
+        <field name="name">QMS training record own person</field>
+        <field name="model_id" ref="model_pm_qms_training_record"/>
+        <field name="domain_force">[('person_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_training_record_manager_company" model="ir.rule">
+        <field name="name">QMS training record manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_training_record"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_qualification_type_company" model="ir.rule">
+        <field name="name">QMS qualification type company boundary</field>
+        <field name="model_id" ref="model_pm_qms_qualification_type"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_qualification_record_user_own" model="ir.rule">
+        <field name="name">QMS qualification record own person</field>
+        <field name="model_id" ref="model_pm_qms_qualification_record"/>
+        <field name="domain_force">[('person_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_qualification_record_manager_company" model="ir.rule">
+        <field name="name">QMS qualification record manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_qualification_record"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_role_document_requirement_company" model="ir.rule">
+        <field name="name">QMS role document requirement company boundary</field>
+        <field name="model_id" ref="model_pm_qms_role_document_requirement"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_document_acknowledgment_user_own" model="ir.rule">
+        <field name="name">QMS document acknowledgment own person</field>
+        <field name="model_id" ref="model_pm_qms_document_acknowledgment"/>
+        <field name="domain_force">[('person_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_document_acknowledgment_manager_company" model="ir.rule">
+        <field name="name">QMS document acknowledgment manager company boundary</field>
+        <field name="model_id" ref="model_pm_qms_document_acknowledgment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_manager'))]"/>
+    </record>
+</odoo>

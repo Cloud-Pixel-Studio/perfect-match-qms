@@ -30,3 +30,5 @@
 - [Project Abstraction Activity UX](PROJECT_ABSTRACTION_ACTIVITY_UX.md)
 
 - [Product Visual Surface](PRODUCT_VISUAL_SURFACE.md)
+- [People, Training and Competency](PEOPLE_TRAINING_COMPETENCY.md)
+- [ADR-050: QMS People, Training and Competency Architecture](DECISIONS/ADR-050-qms-people-training-competency-architecture.md)

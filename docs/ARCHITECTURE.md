@@ -535,3 +535,32 @@ Mission 11 changes user-facing navigation and dashboard composition, not the
 underlying ownership of implementation state. Framework definitions remain
 separate from client implementation state, and external standard mappings stay
 metadata-only.
+
+## Mission 14 People, Training and Competency
+
+Mission 14 adds `pm_qms_people`.
+
+```text
+pm.qms.person
+|-- optional res.partner
+|-- optional res.users
+|-- QMS role assignments
+|-- competency assessments
+|-- training records
+|-- qualification records
+`-- revision-specific document acknowledgments
+```
+
+The module intentionally avoids an Odoo HR dependency. It stores only
+business/QMS personnel data needed to demonstrate competence, training,
+qualification validity, and current controlled-document awareness. It does not
+store payroll, attendance, benefits, medical, banking, immigration, or other
+HRIS data.
+
+Competency gaps are derived from active QMS role assignments, role competency
+requirements, and historical assessment records. Training supports competence
+but does not automatically equal competence. Document acknowledgments are linked
+to exact `pm.qms.document.revision` records.
+
+See `docs/PEOPLE_TRAINING_COMPETENCY.md` and
+`docs/DECISIONS/ADR-050-qms-people-training-competency-architecture.md`.
