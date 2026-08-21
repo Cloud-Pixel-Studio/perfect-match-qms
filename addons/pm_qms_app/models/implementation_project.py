@@ -41,6 +41,18 @@ class PmQmsImplementationProject(models.Model):
             name="Evidence",
         )
 
+    def action_view_gaps(self):
+        self.ensure_one()
+        return self._qms_action(
+            "pm_qms_implementation.action_pm_qms_implementation_control",
+            domain=[
+                ("implementation_project_id", "=", self.id),
+                ("readiness_state", "in", ("gap", "partial")),
+            ],
+            context={"default_implementation_project_id": self.id, "search_default_group_readiness": 1},
+            name="Readiness Gaps",
+        )
+
     def action_view_readiness_assessments(self):
         self.ensure_one()
         return self._qms_action(

@@ -4,7 +4,7 @@
         <field name="name">pm.qms.audit.list</field>
         <field name="model">pm.qms.audit</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-warning="state in ('planned', 'ready', 'in_progress', 'reporting')" decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="audit_type"/>

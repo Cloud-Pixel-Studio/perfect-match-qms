@@ -4,7 +4,7 @@
         <field name="name">pm.qms.capa.list</field>
         <field name="model">pm.qms.capa</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-danger="state == 'ineffective' or is_overdue or effectiveness_is_overdue" decoration-warning="state in ('analysis', 'action_planned', 'implementation', 'effectiveness_review')" decoration-success="state in ('effective', 'closed')" decoration-muted="state == 'cancelled'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="source_type"/>

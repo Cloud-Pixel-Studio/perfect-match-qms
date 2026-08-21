@@ -4,7 +4,7 @@
         <field name="name">pm.qms.evidence.list</field>
         <field name="model">pm.qms.evidence</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="state == 'accepted'" decoration-warning="state in ('submitted', 'under_review')" decoration-danger="state in ('rejected', 'expired')" decoration-muted="state == 'draft'">
                 <field name="name"/>
                 <field name="control_instance_id"/>
                 <field name="evidence_requirement_id"/>
@@ -15,7 +15,7 @@
                 <field name="evidence_date"/>
                 <field name="review_date"/>
                 <field name="state"/>
-                <field name="active"/>
+                <field name="active" optional="hide"/>
             </list>
         </field>
     </record>
@@ -81,9 +81,35 @@
         </field>
     </record>
 
+    <record id="view_pm_qms_evidence_search" model="ir.ui.view">
+        <field name="name">pm.qms.evidence.search</field>
+        <field name="model">pm.qms.evidence</field>
+        <field name="arch" type="xml">
+            <search string="Evidence">
+                <field name="name"/>
+                <field name="control_instance_id"/>
+                <field name="evidence_requirement_id"/>
+                <field name="organization_id"/>
+                <field name="owner_id"/>
+                <filter name="pending_review" string="Pending Review" domain="[('state', 'in', ('submitted', 'under_review'))]"/>
+                <filter name="accepted" string="Accepted" domain="[('state', '=', 'accepted')]"/>
+                <filter name="missing_or_rejected" string="Rejected / Expired" domain="[('state', 'in', ('rejected', 'expired'))]"/>
+                <separator/>
+                <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                <filter name="group_organization" string="Organization" context="{'group_by': 'organization_id'}"/>
+                <filter name="group_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="action_pm_qms_evidence" model="ir.actions.act_window">
         <field name="name">Evidence Records</field>
         <field name="res_model">pm.qms.evidence</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_evidence_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No evidence records yet</p>
+            <p>Evidence records show proof that controls are implemented, reviewed, and ready for assessment.</p>
+        </field>
     </record>
 </odoo>

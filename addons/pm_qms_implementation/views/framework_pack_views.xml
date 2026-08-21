@@ -4,7 +4,7 @@
         <field name="name">pm.qms.framework.pack.list</field>
         <field name="model">pm.qms.framework.pack</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="state == 'active'" decoration-muted="state == 'retired'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="version"/>

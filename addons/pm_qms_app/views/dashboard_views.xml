@@ -26,13 +26,25 @@
                             <field name="readiness_percent" widget="statinfo" string="Readiness %"/>
                         </button>
                         <button name="action_review_gaps" type="object" class="oe_stat_button" icon="fa-exclamation-triangle">
-                            <field name="gap_controls" widget="statinfo" string="Gaps"/>
+                            <field name="gap_controls" widget="statinfo" string="Control Gaps"/>
                         </button>
                         <button name="action_review_evidence" type="object" class="oe_stat_button" icon="fa-archive">
                             <field name="missing_evidence" widget="statinfo" string="Missing Evidence"/>
                         </button>
                         <button name="action_run_readiness_assessment" type="object" class="oe_stat_button" icon="fa-line-chart">
                             <field name="total_controls" widget="statinfo" string="Controls"/>
+                        </button>
+                        <button name="action_view_risks" type="object" class="oe_stat_button" icon="fa-warning">
+                            <field name="open_risks" widget="statinfo" string="Open Risks"/>
+                        </button>
+                        <button name="action_view_nonconformities" type="object" class="oe_stat_button" icon="fa-search">
+                            <field name="open_ncr" widget="statinfo" string="Open NCR"/>
+                        </button>
+                        <button name="action_view_capa" type="object" class="oe_stat_button" icon="fa-check-square-o">
+                            <field name="open_capa" widget="statinfo" string="Open CAPA"/>
+                        </button>
+                        <button name="action_view_audit_findings" type="object" class="oe_stat_button" icon="fa-flag">
+                            <field name="open_audit_findings" widget="statinfo" string="Audit Findings"/>
                         </button>
                     </div>
                     <group string="Implementation Readiness">
@@ -72,19 +84,34 @@
                     </group>
                     <group string="Performance">
                         <group>
+                            <button name="action_view_objectives" type="object" string="Quality Objectives" class="oe_link"/>
                             <field name="active_objectives"/>
                             <field name="objectives_on_target"/>
-                            <field name="active_kpis"/>
-                            <field name="kpis_on_target"/>
                         </group>
                         <group>
+                            <button name="action_view_kpis" type="object" string="KPIs" class="oe_link"/>
+                            <field name="active_kpis"/>
+                            <field name="kpis_on_target"/>
                             <field name="customer_performance_issues"/>
                             <field name="supplier_performance_issues"/>
                         </group>
                     </group>
                     <group string="Management Review">
+                        <button name="action_view_management_reviews" type="object" string="Open Management Reviews" class="oe_link"/>
                         <field name="last_management_review_id"/>
                         <field name="open_management_review_actions"/>
+                    </group>
+                    <group string="Recommended Next Actions">
+                        <group>
+                            <field name="next_action_1_name" string="Next Action" readonly="1"/>
+                            <field name="next_action_1_reason" string="Reason" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="next_action_2_name" string="Next Action" readonly="1"/>
+                            <field name="next_action_2_reason" string="Reason" readonly="1"/>
+                            <field name="next_action_3_name" string="Next Action" readonly="1"/>
+                            <field name="next_action_3_reason" string="Reason" readonly="1"/>
+                        </group>
                     </group>
                     <group string="Attention Required">
                         <group>

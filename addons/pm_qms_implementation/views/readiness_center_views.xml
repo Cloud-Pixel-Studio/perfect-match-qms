@@ -43,10 +43,10 @@
                     <notebook>
                         <page string="Area Progress">
                             <field name="area_line_ids">
-                                <list>
+                                <list decoration-success="gap_controls == 0 and missing_evidence == 0 and overdue_tasks == 0" decoration-warning="partial_controls &gt; 0 or open_tasks &gt; 0" decoration-danger="gap_controls &gt; 0 or missing_evidence &gt; 0 or overdue_tasks &gt; 0">
                                     <button name="action_open_controls" type="object" string="Open"/>
-                                    <field name="sequence"/>
-                                    <field name="name"/>
+                                    <field name="sequence" optional="hide"/>
+                                    <field name="name" string="Area"/>
                                     <field name="control_count"/>
                                     <field name="ready_controls"/>
                                     <field name="partial_controls"/>
@@ -61,7 +61,7 @@
                         </page>
                         <page string="Recommended Next Actions">
                             <field name="action_line_ids">
-                                <list>
+                                <list decoration-danger="priority == 'high'" decoration-info="priority == 'normal'" decoration-muted="priority == 'low'">
                                     <button name="action_open_record" type="object" string="Open"/>
                                     <field name="sequence"/>
                                     <field name="priority"/>

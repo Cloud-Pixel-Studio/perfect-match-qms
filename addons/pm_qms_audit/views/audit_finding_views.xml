@@ -4,7 +4,7 @@
         <field name="name">pm.qms.audit.finding.list</field>
         <field name="model">pm.qms.audit.finding</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-danger="severity == 'critical' or is_overdue or follow_up_is_overdue" decoration-warning="state in ('issued', 'accepted', 'action_required')" decoration-success="state == 'closed'" decoration-muted="state == 'cancelled'">
                 <field name="code"/>
                 <field name="title"/>
                 <field name="audit_id"/>
