@@ -31,9 +31,9 @@
 
     <menuitem
         id="menu_pm_qms_implementation_tasks"
-        name="Implementation Tasks"
+        name="Activities"
         parent="pm_qms_core.menu_pm_qms_implementation"
-        action="action_pm_qms_generated_task"
+        action="action_pm_qms_implementation_activities"
         sequence="9"/>
 
     <menuitem

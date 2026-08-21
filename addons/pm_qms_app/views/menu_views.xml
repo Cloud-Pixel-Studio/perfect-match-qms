@@ -108,6 +108,9 @@
     <record id="pm_qms_implementation.action_pm_qms_implementation_control" model="ir.actions.act_window">
         <field name="name">Controls</field>
     </record>
+    <record id="pm_qms_implementation.action_pm_qms_implementation_activities" model="ir.actions.act_window">
+        <field name="name">Activities</field>
+    </record>
     <record id="pm_qms_implementation.action_pm_qms_generated_task" model="ir.actions.act_window">
         <field name="name">Activities</field>
     </record>

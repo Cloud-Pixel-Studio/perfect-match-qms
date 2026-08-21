@@ -150,9 +150,7 @@ class PmQmsReadinessCenterAction(models.TransientModel):
     def action_open_record(self):
         self.ensure_one()
         if self.res_model == "project.task" and self.task_id:
-            action = self.env["ir.actions.actions"]._for_xml_id("project.action_view_task")
-            action.update({"res_id": self.task_id.id, "views": [(False, "form")], "view_mode": "form"})
-            return action
+            return self.task_id.action_open_pm_qms_activity()
         if self.implementation_control_id:
             return {
                 "type": "ir.actions.act_window",

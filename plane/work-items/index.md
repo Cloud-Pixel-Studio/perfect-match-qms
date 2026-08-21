@@ -52,3 +52,4 @@
 - [PMQMS-050 - Design Multi-Standard Control Engine](PMQMS-050.md)
 - [PMQMS-051 - Design CMMC Boundary](PMQMS-051.md)
 - [PMQMS-052 - Create Documentation Quality Gate](PMQMS-052.md)
+- [PMQMS-055 - Harden QMS Activity UX And Project Abstraction](PMQMS-055.md)

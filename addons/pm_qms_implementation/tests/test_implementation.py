@@ -19,6 +19,7 @@ class TestPmQmsImplementation(TransactionCase):
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
         cls.qms_admin_group = cls.env.ref("pm_qms_core.group_pm_qms_administrator")
 
+        cls.user = cls._create_test_user("impl_user", cls.qms_user_group)
         cls.manager = cls._create_test_user("impl_manager", cls.qms_manager_group)
         cls.admin = cls._create_test_user("impl_admin", cls.qms_admin_group)
         cls.other_user = cls._create_test_user("impl_other_user", cls.qms_user_group, cls.other_company)
@@ -281,6 +282,46 @@ class TestPmQmsImplementation(TransactionCase):
         self.assertEqual(line.completed_activity_count, 1)
         self.assertEqual(project.completed_tasks, 1)
         self.assertEqual(self.activity.name, original_activity_name)
+
+    def test_activity_actions_preserve_qms_context_and_project_task_engine(self):
+        pack = self._create_pack("PM-TST-ACTUX", [self.controls[0]])
+        project = self._generate_project([pack])
+        line = project.implementation_control_ids[0]
+        task = line.task_ids[0]
+        qms_activity_action = self.env.ref("pm_qms_implementation.action_pm_qms_implementation_activities")
+
+        self.assertEqual(task._name, "project.task")
+        self.assertFalse(self.env["ir.model"].search([("model", "=", "pm.qms.task")]))
+        self.assertEqual(self.env["ir.actions.actions"]._for_xml_id("project.action_view_task")["res_model"], "project.task")
+
+        control_action = line.action_open_tasks()
+        self.assertEqual(control_action["id"], qms_activity_action.id)
+        self.assertEqual(control_action["res_model"], "project.task")
+        self.assertIn(("pm_implementation_project_id", "=", project.id), control_action["domain"])
+        self.assertIn(("pm_implementation_control_id", "=", line.id), control_action["domain"])
+        self.assertIn(("pm_generated", "=", True), control_action["domain"])
+
+        form_action = task.action_open_pm_qms_activity()
+        self.assertEqual(form_action["id"], qms_activity_action.id)
+        self.assertEqual(form_action["res_id"], task.id)
+        self.assertEqual(form_action["views"][0], (self.env.ref("pm_qms_implementation.view_pm_qms_project_task_form").id, "form"))
+        self.assertEqual(form_action["context"]["default_pm_implementation_project_id"], project.id)
+
+        line.control_instance_id.with_user(self.manager).action_mark_implemented()
+        self._accept_evidence(line)
+        center = self.env["pm.qms.readiness.center"].with_user(self.manager).create(
+            {"implementation_project_id": project.id}
+        )
+        recommended_activity = center.action_line_ids.filtered(lambda action: action.action_type == "activity")[:1]
+        self.assertTrue(recommended_activity)
+        readiness_action = recommended_activity.action_open_record()
+        self.assertEqual(readiness_action["id"], qms_activity_action.id)
+        self.assertEqual(readiness_action["res_id"], task.id)
+
+        visible_task = self.env["project.task"].with_user(self.user).search([("id", "=", task.id)])
+        self.assertEqual(visible_task, task)
+        task.with_user(self.manager).write({"state": "1_done"})
+        self.assertTrue(task.is_closed)
 
     def test_evidence_and_activity_drive_control_readiness(self):
         pack = self._create_pack("PM-TST-EVIDENCE", [self.controls[0]])

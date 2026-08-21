@@ -199,8 +199,20 @@ class PmQmsImplementationControl(models.Model):
 
     def action_open_tasks(self):
         self.ensure_one()
-        action = self.env["ir.actions.actions"]._for_xml_id("project.action_view_task")
-        action["domain"] = [("id", "in", self.task_ids.ids)]
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "pm_qms_implementation.action_pm_qms_implementation_activities"
+        )
+        action["domain"] = [
+            ("pm_implementation_project_id", "=", self.implementation_project_id.id),
+            ("pm_implementation_control_id", "=", self.id),
+            ("pm_generated", "=", True),
+        ]
+        action["context"] = {
+            "default_pm_implementation_project_id": self.implementation_project_id.id,
+            "default_pm_implementation_control_id": self.id,
+            "default_project_id": self.implementation_project_id.odoo_project_id.id,
+        }
+        action["name"] = "Activities"
         return action
 
     def action_open_control_instance(self):

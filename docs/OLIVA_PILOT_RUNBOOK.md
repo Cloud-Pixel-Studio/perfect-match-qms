@@ -49,6 +49,8 @@ Then browse to `http://127.0.0.1:8169/web/login?db=pmqms_oliva_pilot`.
 ./deployment/scripts/odoo-pilot.sh run-readiness
 ```
 
+The `update` command refreshes the long-running pilot Odoo web service after module updates so the browser uses the current registry and view definitions.
+
 `configure-client` verifies:
 
 - Odoo company name: `Oliva Torras USA, Inc.`
