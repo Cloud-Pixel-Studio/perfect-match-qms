@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_equipment_list" model="ir.ui.view">
+        <field name="name">pm.qms.equipment.list</field>
+        <field name="model">pm.qms.equipment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="type_id"/>
+                <field name="organization_id"/>
+                <field name="location"/>
+                <field name="responsible_person_id"/>
+                <field name="lifecycle_state"/>
+                <field name="calibration_status"/>
+                <field name="last_calibration_date"/>
+                <field name="next_due_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_equipment_form" model="ir.ui.view">
+        <field name="name">pm.qms.equipment.form</field>
+        <field name="model">pm.qms.equipment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_out_for_calibration" type="object" string="Send for Calibration" class="btn-secondary"/>
+                    <button name="action_quarantine" type="object" string="Quarantine" class="btn-secondary"/>
+                    <button name="action_return_to_service" type="object" string="Return to Service" class="btn-primary"/>
+                    <field name="lifecycle_state" widget="statusbar" statusbar_visible="in_service,out_for_calibration,quarantined,out_of_service,retired"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_events" type="object" class="oe_stat_button" icon="fa-history">
+                            <field name="last_calibration_date" widget="statinfo" string="Last Event"/>
+                        </button>
+                        <button name="action_view_impact_assessments" type="object" class="oe_stat_button" icon="fa-warning">
+                            <field name="open_impact_assessment_count" widget="statinfo" string="Open OOT"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                        <h2><field name="code"/></h2>
+                    </div>
+                    <group>
+                        <group string="Identity">
+                            <field name="type_id"/>
+                            <field name="manufacturer"/>
+                            <field name="model"/>
+                            <field name="serial_number"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="Ownership">
+                            <field name="process_id"/>
+                            <field name="location"/>
+                            <field name="responsible_person_id"/>
+                            <field name="calibration_status"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Planning">
+                        <group>
+                            <field name="calibration_required"/>
+                            <field name="verification_required"/>
+                            <field name="calibration_strategy"/>
+                            <field name="default_provider_id"/>
+                        </group>
+                        <group>
+                            <field name="frequency_interval"/>
+                            <field name="frequency_unit"/>
+                            <field name="due_soon_days"/>
+                            <field name="last_calibration_date"/>
+                            <field name="next_due_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Use &amp; Criteria">
+                            <group>
+                                <field name="purpose"/>
+                                <field name="calibration_method"/>
+                                <field name="acceptance_criteria"/>
+                                <field name="notes"/>
+                            </group>
+                        </page>
+                        <page string="Documents">
+                            <field name="document_ids"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                        <page string="Events">
+                            <field name="event_ids" readonly="1">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="event_type"/>
+                                    <field name="calibration_date"/>
+                                    <field name="result"/>
+                                    <field name="next_due_date"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_equipment_search" model="ir.ui.view">
+        <field name="name">pm.qms.equipment.search</field>
+        <field name="model">pm.qms.equipment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="serial_number"/>
+                <filter name="calibration_required" string="Calibration Required" domain="[('calibration_required', '=', True)]"/>
+                <filter name="due_soon" string="Due Soon" domain="[('calibration_required', '=', True), ('next_due_date', '&gt;=', context_today().strftime('%Y-%m-%d')), ('next_due_date', '&lt;=', (context_today() + relativedelta(days=30)).strftime('%Y-%m-%d'))]"/>
+                <filter name="overdue" string="Overdue" domain="[('calibration_required', '=', True), ('next_due_date', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="out_for_calibration" string="Out for Calibration" domain="[('lifecycle_state', '=', 'out_for_calibration')]"/>
+                <filter name="quarantined" string="Quarantined" domain="[('lifecycle_state', '=', 'quarantined')]"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'lifecycle_state'}"/>
+                <filter name="group_type" string="Type" context="{'group_by': 'type_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_equipment" model="ir.actions.act_window">
+        <field name="name">Monitoring Resources</field>
+        <field name="res_model">pm.qms.equipment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_pm_qms_equipment_due_soon" model="ir.actions.act_window">
+        <field name="name">Due Soon</field>
+        <field name="res_model">pm.qms.equipment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('calibration_required', '=', True), ('next_due_date', '&gt;=', context_today().strftime('%Y-%m-%d')), ('next_due_date', '&lt;=', (context_today() + relativedelta(days=30)).strftime('%Y-%m-%d'))]</field>
+    </record>
+
+    <record id="action_pm_qms_equipment_overdue" model="ir.actions.act_window">
+        <field name="name">Overdue</field>
+        <field name="res_model">pm.qms.equipment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('calibration_required', '=', True), ('next_due_date', '&lt;', context_today().strftime('%Y-%m-%d'))]</field>
+    </record>
+
+    <record id="action_pm_qms_equipment_out_for_calibration" model="ir.actions.act_window">
+        <field name="name">Out for Calibration</field>
+        <field name="res_model">pm.qms.equipment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('lifecycle_state', '=', 'out_for_calibration')]</field>
+    </record>
+
+    <record id="action_pm_qms_equipment_quarantined" model="ir.actions.act_window">
+        <field name="name">Quarantined</field>
+        <field name="res_model">pm.qms.equipment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('lifecycle_state', '=', 'quarantined')]</field>
+    </record>
+</odoo>

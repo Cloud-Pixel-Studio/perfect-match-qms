@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_equipment_type_list" model="ir.ui.view">
+        <field name="name">pm.qms.equipment.type.list</field>
+        <field name="model">pm.qms.equipment.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_equipment_type_form" model="ir.ui.view">
+        <field name="name">pm.qms.equipment.type.form</field>
+        <field name="model">pm.qms.equipment.type</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="active"/>
+                    </group>
+                    <field name="description"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_equipment_type" model="ir.actions.act_window">
+        <field name="name">Resource Types</field>
+        <field name="res_model">pm.qms.equipment.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

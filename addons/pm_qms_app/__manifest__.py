@@ -23,6 +23,7 @@ Technical addons remain modular underneath this product entry point.
         "pm_qms_implementation",
         "pm_qms_pack_quality",
         "pm_qms_migration",
+        "pm_qms_calibration",
     ],
     "data": [
         "security/ir.model.access.csv",

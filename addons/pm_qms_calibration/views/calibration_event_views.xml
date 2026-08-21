@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_calibration_event_list" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.event.list</field>
+        <field name="model">pm.qms.calibration.event</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="equipment_id"/>
+                <field name="event_type"/>
+                <field name="calibration_date"/>
+                <field name="result"/>
+                <field name="next_due_date"/>
+                <field name="provider_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_calibration_event_form" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.event.form</field>
+        <field name="model">pm.qms.calibration.event</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start" class="btn-secondary"/>
+                    <button name="action_submit_review" type="object" string="Submit" class="btn-secondary"/>
+                    <button name="action_accept" type="object" string="Accept" class="btn-primary"/>
+                    <button name="action_cancel" type="object" string="Cancel" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,awaiting_review,accepted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="code"/>
+                        <h1><field name="code"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="equipment_id"/>
+                            <field name="organization_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="event_type"/>
+                            <field name="strategy"/>
+                        </group>
+                        <group>
+                            <field name="date_sent"/>
+                            <field name="calibration_date"/>
+                            <field name="next_due_date"/>
+                            <field name="result"/>
+                        </group>
+                    </group>
+                    <group string="Execution">
+                        <group>
+                            <field name="technician_person_id"/>
+                            <field name="provider_id"/>
+                            <field name="method"/>
+                        </group>
+                        <group>
+                            <field name="certificate_number"/>
+                            <field name="certificate_attachment_id"/>
+                            <field name="reviewed_by_id"/>
+                            <field name="review_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Result">
+                            <group>
+                                <field name="as_found_condition"/>
+                                <field name="as_left_condition"/>
+                                <field name="notes"/>
+                            </group>
+                        </page>
+                        <page string="Measurements">
+                            <field name="measurement_line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="parameter"/>
+                                    <field name="nominal_value"/>
+                                    <field name="lower_limit"/>
+                                    <field name="upper_limit"/>
+                                    <field name="as_found_value"/>
+                                    <field name="as_left_value"/>
+                                    <field name="result"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="QMS Links">
+                            <group>
+                                <field name="related_evidence_ids"/>
+                                <field name="impact_assessment_id"/>
+                                <field name="ncr_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_calibration_event_search" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.event.search</field>
+        <field name="model">pm.qms.calibration.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="equipment_id"/>
+                <field name="certificate_number"/>
+                <filter name="open" string="Open" domain="[('state', 'not in', ('accepted', 'cancelled'))]"/>
+                <filter name="accepted" string="Accepted" domain="[('state', '=', 'accepted')]"/>
+                <filter name="oot" string="Failed / OOT" domain="[('result', 'in', ('fail', 'out_of_tolerance'))]"/>
+                <filter name="group_equipment" string="Equipment" context="{'group_by': 'equipment_id'}"/>
+                <filter name="group_result" string="Result" context="{'group_by': 'result'}"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_calibration_event" model="ir.actions.act_window">
+        <field name="name">Calibration Events</field>
+        <field name="res_model">pm.qms.calibration.event</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

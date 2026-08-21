@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_calibration_provider_list" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.provider.list</field>
+        <field name="model">pm.qms.calibration.provider</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="qualification_reference"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_calibration_provider_form" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.provider.form</field>
+        <field name="model">pm.qms.calibration.provider</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="qualification_reference"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Scope">
+                            <field name="scope"/>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_calibration_provider" model="ir.actions.act_window">
+        <field name="name">Calibration Providers</field>
+        <field name="res_model">pm.qms.calibration.provider</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_calibration_impact_assessment_list" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.impact.assessment.list</field>
+        <field name="model">pm.qms.calibration.impact.assessment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="equipment_id"/>
+                <field name="event_id"/>
+                <field name="exposure_start"/>
+                <field name="exposure_end"/>
+                <field name="used_during_exposure"/>
+                <field name="impact_conclusion"/>
+                <field name="ncr_id"/>
+                <field name="capa_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_calibration_impact_assessment_form" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.impact.assessment.form</field>
+        <field name="model">pm.qms.calibration.impact.assessment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start_review" type="object" string="Start Review" class="btn-secondary"/>
+                    <button name="action_set_disposition" type="object" string="Set Disposition" class="btn-secondary"/>
+                    <button name="action_create_ncr" type="object" string="Create NCR" class="btn-secondary"/>
+                    <button name="action_link_capa_from_ncr" type="object" string="Create CAPA from NCR" class="btn-secondary"/>
+                    <button name="action_close" type="object" string="Close" class="btn-primary"/>
+                    <button name="action_cancel" type="object" string="Cancel" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_review,disposition,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="code"/>
+                        <h1><field name="code"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="equipment_id"/>
+                            <field name="event_id"/>
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                        </group>
+                        <group>
+                            <field name="assessor_person_id"/>
+                            <field name="assessment_date"/>
+                            <field name="last_acceptable_event_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Exposure">
+                        <group>
+                            <field name="exposure_start"/>
+                            <field name="exposure_end"/>
+                            <field name="used_during_exposure"/>
+                        </group>
+                        <group>
+                            <field name="impact_conclusion"/>
+                            <field name="ncr_required"/>
+                            <field name="capa_required"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Assessment">
+                            <group>
+                                <field name="reviewed_scope"/>
+                                <field name="containment_action"/>
+                                <field name="evaluation_summary"/>
+                                <field name="disposition"/>
+                                <field name="notes"/>
+                            </group>
+                        </page>
+                        <page string="Affected References">
+                            <field name="affected_reference_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="reference_date"/>
+                                    <field name="description"/>
+                                    <field name="disposition"/>
+                                    <field name="impact_notes"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="QMS Links">
+                            <group>
+                                <field name="ncr_id"/>
+                                <field name="capa_id"/>
+                                <field name="approved_by_id"/>
+                                <field name="approval_date"/>
+                                <field name="closure_date"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_calibration_impact_assessment_search" model="ir.ui.view">
+        <field name="name">pm.qms.calibration.impact.assessment.search</field>
+        <field name="model">pm.qms.calibration.impact.assessment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="equipment_id"/>
+                <field name="event_id"/>
+                <filter name="open" string="Open" domain="[('state', 'not in', ('closed', 'cancelled'))]"/>
+                <filter name="unknown_impact" string="Unknown Impact" domain="[('impact_conclusion', '=', 'unknown')]"/>
+                <filter name="requires_ncr" string="Requires NCR" domain="[('ncr_required', '=', True), ('ncr_id', '=', False)]"/>
+                <filter name="group_conclusion" string="Impact" context="{'group_by': 'impact_conclusion'}"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_calibration_impact_assessment" model="ir.actions.act_window">
+        <field name="name">OOT Impact Assessments</field>
+        <field name="res_model">pm.qms.calibration.impact.assessment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

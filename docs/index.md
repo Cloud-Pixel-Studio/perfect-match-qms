@@ -32,3 +32,5 @@
 - [Product Visual Surface](PRODUCT_VISUAL_SURFACE.md)
 - [People, Training and Competency](PEOPLE_TRAINING_COMPETENCY.md)
 - [ADR-050: QMS People, Training and Competency Architecture](DECISIONS/ADR-050-qms-people-training-competency-architecture.md)
+- [Equipment, Monitoring Resources and Calibration](EQUIPMENT_CALIBRATION.md)
+- [ADR-051: Equipment, Monitoring Resources and Calibration Architecture](DECISIONS/ADR-051-equipment-calibration-architecture.md)

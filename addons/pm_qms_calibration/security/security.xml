@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_equipment_type_company" model="ir.rule">
+        <field name="name">QMS equipment type company boundary</field>
+        <field name="model_id" ref="model_pm_qms_equipment_type"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_calibration_provider_company" model="ir.rule">
+        <field name="name">QMS calibration provider company boundary</field>
+        <field name="model_id" ref="model_pm_qms_calibration_provider"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_equipment_company" model="ir.rule">
+        <field name="name">QMS equipment company boundary</field>
+        <field name="model_id" ref="model_pm_qms_equipment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_calibration_event_company" model="ir.rule">
+        <field name="name">QMS calibration event company boundary</field>
+        <field name="model_id" ref="model_pm_qms_calibration_event"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_calibration_measurement_line_company" model="ir.rule">
+        <field name="name">QMS calibration measurement company boundary</field>
+        <field name="model_id" ref="model_pm_qms_calibration_measurement_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_calibration_impact_assessment_company" model="ir.rule">
+        <field name="name">QMS OOT impact assessment company boundary</field>
+        <field name="model_id" ref="model_pm_qms_calibration_impact_assessment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_calibration_affected_reference_company" model="ir.rule">
+        <field name="name">QMS calibration affected reference company boundary</field>
+        <field name="model_id" ref="model_pm_qms_calibration_affected_reference"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>
