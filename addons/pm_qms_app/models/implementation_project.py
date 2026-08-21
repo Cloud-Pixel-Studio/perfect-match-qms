@@ -26,7 +26,7 @@ class PmQmsImplementationProject(models.Model):
     def action_view_activities(self):
         self.ensure_one()
         return self._qms_action(
-            "pm_qms_implementation.action_pm_qms_generated_task",
+            "pm_qms_implementation.action_pm_qms_implementation_activities",
             domain=[("pm_implementation_project_id", "=", self.id), ("pm_generated", "=", True)],
             context={"default_pm_implementation_project_id": self.id, "default_project_id": self.odoo_project_id.id},
             name="Activities",

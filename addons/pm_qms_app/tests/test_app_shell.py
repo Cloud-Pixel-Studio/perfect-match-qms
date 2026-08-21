@@ -1,6 +1,7 @@
 from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
+from odoo.tools.safe_eval import safe_eval
 
 
 @tagged("-at_install", "post_install")
@@ -180,10 +181,38 @@ class TestPmQmsAppShell(TransactionCase):
 
     def test_implementation_activity_navigation_uses_project_task(self):
         action = self.project.action_view_activities()
+        self.assertEqual(action["id"], self.env.ref("pm_qms_implementation.action_pm_qms_implementation_activities").id)
         self.assertEqual(action["res_model"], "project.task")
+        self.assertIn("kanban", action["view_mode"])
+        self.assertIn("list", action["view_mode"])
+        self.assertIn("form", action["view_mode"])
         self.assertIn(("pm_implementation_project_id", "=", self.project.id), action["domain"])
+        self.assertIn(("pm_generated", "=", True), action["domain"])
+        self.assertEqual(action["context"]["default_pm_implementation_project_id"], self.project.id)
+        self.assertEqual(action["context"]["default_project_id"], self.project.odoo_project_id.id)
         self.assertTrue(self.project.generated_task_ids)
         self.assertEqual(self.project.generated_task_ids._name, "project.task")
+
+    def test_qms_activity_action_filters_out_generic_project_tasks(self):
+        odoo_project = self.env["project.project"].create(
+            {"name": "Generic Non-QMS Project", "company_id": self.company.id}
+        )
+        generic_task = self.env["project.task"].create(
+            {"name": "Generic task outside QMS", "project_id": odoo_project.id}
+        )
+
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "pm_qms_implementation.action_pm_qms_implementation_activities"
+        )
+        domain = safe_eval(action["domain"]) if isinstance(action["domain"], str) else action["domain"]
+        activity_ids = self.env["project.task"].search(domain).ids
+
+        self.assertEqual(action["res_model"], "project.task")
+        self.assertNotIn(generic_task.id, activity_ids)
+        self.assertTrue(set(self.project.generated_task_ids.ids).issubset(set(activity_ids)))
+        self.assertFalse(self.env["ir.model"].search([("model", "=", "pm.qms.task")]))
+        self.assertEqual(action["search_view_id"][0], self.env.ref("pm_qms_implementation.view_pm_qms_project_task_search").id)
+        self.assertEqual([mode for _, mode in action["views"]], ["kanban", "list", "form"])
 
     def test_historical_readiness_snapshot_remains_immutable(self):
         action = self.project.with_user(self.manager).action_run_readiness_assessment()

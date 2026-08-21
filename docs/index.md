@@ -25,3 +25,6 @@
 
 - [Guided Implementation and Readiness Center](GUIDED_IMPLEMENTATION_READINESS.md)
 - [ADR-047: Guided Implementation and Readiness Center](DECISIONS/ADR-047-guided-implementation-readiness-center.md)
+- [ADR-048: Perfect Match Project Abstraction and Activity UX](DECISIONS/ADR-048-perfect-match-project-abstraction-activity-ux.md)
+
+- [Project Abstraction Activity UX](PROJECT_ABSTRACTION_ACTIVITY_UX.md)

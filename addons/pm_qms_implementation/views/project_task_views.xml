@@ -1,19 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="view_pm_qms_project_task_search" model="ir.ui.view">
+        <field name="name">pm.qms.project.task.search</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <search string="Activities">
+                <field name="name" string="Activity"/>
+                <field name="pm_implementation_project_id" string="Implementation"/>
+                <field name="pm_implementation_control_id" string="Control"/>
+                <field name="pm_area_display" string="Area"/>
+                <field name="user_ids" string="Responsible"/>
+                <filter name="pm_required" string="Required" domain="[('pm_required', '=', True)]"/>
+                <filter name="pm_open" string="Open" domain="[('state', 'not in', ['1_done', '1_canceled'])]"/>
+                <filter name="pm_done" string="Done" domain="[('state', '=', '1_done')]"/>
+                <separator/>
+                <filter name="group_by_stage" string="Stage" context="{'group_by': 'stage_id'}"/>
+                <filter name="group_by_implementation" string="Implementation" context="{'group_by': 'pm_implementation_project_id'}"/>
+                <filter name="group_by_control" string="Control" context="{'group_by': 'pm_implementation_control_id'}"/>
+                <filter name="group_by_responsible" string="Responsible" context="{'group_by': 'user_ids'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_project_task_kanban" model="ir.ui.view">
+        <field name="name">pm.qms.project.task.kanban</field>
+        <field name="model">project.task</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage_id" class="o_kanban_small_column o_kanban_project_tasks" default_order="priority desc, sequence, date_deadline asc, id desc">
+                <field name="name"/>
+                <field name="stage_id"/>
+                <field name="state"/>
+                <field name="pm_implementation_project_id"/>
+                <field name="pm_implementation_control_id"/>
+                <field name="pm_area_display"/>
+                <field name="pm_control_code"/>
+                <field name="pm_control_name"/>
+                <field name="pm_required"/>
+                <field name="date_deadline"/>
+                <field name="user_ids"/>
+                <templates>
+                    <t t-name="card">
+                        <main t-att-class="['1_done', '1_canceled'].includes(record.state.raw_value) ? 'opacity-50' : ''">
+                            <field name="name" string="Activity" class="fw-bold fs-5"/>
+                            <div class="text-muted mt-1">
+                                <div t-if="record.pm_implementation_project_id.raw_value">
+                                    <field name="pm_implementation_project_id" string="Implementation" options="{'no_open': True}"/>
+                                </div>
+                                <div t-if="record.pm_area_display.raw_value">
+                                    <field name="pm_area_display" string="Area"/>
+                                </div>
+                                <div t-if="record.pm_control_name.raw_value">
+                                    <span t-if="record.pm_control_code.raw_value"><field name="pm_control_code"/> - </span><field name="pm_control_name"/>
+                                </div>
+                            </div>
+                            <footer class="pt-2">
+                                <div class="d-flex align-items-center gap-1">
+                                    <field name="user_ids" widget="many2many_avatar_user"/>
+                                    <field t-if="record.date_deadline.raw_value" name="date_deadline" widget="remaining_days"/>
+                                </div>
+                                <div>
+                                    <span t-if="record.pm_required.raw_value" class="badge text-bg-info">Required</span>
+                                </div>
+                            </footer>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
     <record id="view_pm_qms_project_task_list" model="ir.ui.view">
         <field name="name">pm.qms.project.task.list</field>
         <field name="model">project.task</field>
         <field name="arch" type="xml">
-            <list>
-                <field name="name"/>
-                <field name="project_id"/>
-                <field name="pm_implementation_project_id"/>
-                <field name="pm_implementation_control_id"/>
-                <field name="pm_activity_id"/>
-                <field name="user_ids" widget="many2many_tags"/>
-                <field name="state"/>
-                <field name="date_deadline"/>
-                <field name="pm_required"/>
+            <list string="Activities">
+                <field name="name" string="Activity"/>
+                <field name="stage_id" string="Stage" optional="show"/>
+                <field name="pm_implementation_project_id" string="Implementation"/>
+                <field name="pm_area_display" string="Area" optional="show"/>
+                <field name="pm_control_code" string="Control Code" optional="show"/>
+                <field name="pm_control_name" string="Control" optional="show"/>
+                <field name="user_ids" string="Responsible" widget="many2many_tags"/>
+                <field name="state" string="Status"/>
+                <field name="date_deadline" string="Due Date"/>
+                <field name="pm_required" string="Required"/>
+                <field name="project_id" string="Execution Project" optional="hide"/>
             </list>
         </field>
     </record>
@@ -22,37 +93,79 @@
         <field name="name">pm.qms.project.task.form</field>
         <field name="model">project.task</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Activity">
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
                 <sheet>
-                    <group>
+                    <div class="oe_title">
+                        <label for="name" string="Activity"/>
+                        <h1><field name="name" placeholder="Activity"/></h1>
+                    </div>
+                    <group string="Implementation">
                         <group>
-                            <field name="name"/>
-                            <field name="project_id"/>
-                            <field name="user_ids" widget="many2many_tags"/>
-                            <field name="state"/>
-                            <field name="date_deadline"/>
+                            <field name="pm_implementation_project_id" string="Implementation" readonly="1"/>
+                            <field name="pm_area_display" string="Area" readonly="1"/>
+                            <field name="user_ids" string="Responsible" widget="many2many_tags"/>
+                            <field name="date_deadline" string="Due Date"/>
                         </group>
-                        <group string="QMS Traceability">
-                            <field name="pm_implementation_project_id"/>
-                            <field name="pm_implementation_control_id"/>
-                            <field name="pm_control_instance_id"/>
-                            <field name="pm_activity_id"/>
-                            <field name="pm_generated"/>
-                            <field name="pm_required"/>
+                        <group string="Activity Status">
+                            <field name="stage_id" string="Stage"/>
+                            <field name="pm_required" string="Required For Readiness"/>
+                            <field name="project_id" string="Execution Project" readonly="1"/>
+                            <field name="pm_generated" string="Generated By QMS" readonly="1"/>
                         </group>
                     </group>
-                    <field name="description"/>
+                    <group string="Related Control">
+                        <group>
+                            <field name="pm_control_code" string="Control Code" readonly="1"/>
+                            <field name="pm_control_name" string="Control" readonly="1"/>
+                            <field name="pm_implementation_control_id" string="Implementation Control" readonly="1"/>
+                            <field name="pm_control_instance_id" string="Control Instance" readonly="1"/>
+                        </group>
+                        <group string="Required / Related Evidence">
+                            <field name="pm_required_evidence_count" readonly="1"/>
+                            <field name="pm_accepted_evidence_count" readonly="1"/>
+                            <field name="pm_missing_evidence_count" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Activity Description">
+                            <field name="description" nolabel="1"/>
+                        </page>
+                        <page string="Implementation Guidance">
+                            <field name="pm_implementation_guidance" nolabel="1" readonly="1"/>
+                        </page>
+                        <page string="Recommended Steps">
+                            <field name="pm_recommended_steps" nolabel="1" readonly="1"/>
+                        </page>
+                        <page string="Evidence Guidance">
+                            <field name="pm_evidence_guidance" nolabel="1" readonly="1"/>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>
         </field>
     </record>
 
-    <record id="action_pm_qms_generated_task" model="ir.actions.act_window">
-        <field name="name">Implementation Tasks</field>
+    <record id="action_pm_qms_implementation_activities" model="ir.actions.act_window">
+        <field name="name">Activities</field>
         <field name="res_model">project.task</field>
-        <field name="view_mode">list,form</field>
-        <field name="domain">[('pm_generated', '=', True)]</field>
-        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'list', 'view_id': ref('view_pm_qms_project_task_list')}), (0, 0, {'view_mode': 'form', 'view_id': ref('view_pm_qms_project_task_form')})]"/>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('pm_generated', '=', True), ('pm_implementation_project_id', '!=', False)]</field>
+        <field name="context">{'search_default_group_by_stage': 1}</field>
+        <field name="search_view_id" ref="view_pm_qms_project_task_search"/>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_pm_qms_project_task_kanban')}), (0, 0, {'view_mode': 'list', 'view_id': ref('view_pm_qms_project_task_list')}), (0, 0, {'view_mode': 'form', 'view_id': ref('view_pm_qms_project_task_form')})]"/>
+    </record>
+
+    <record id="action_pm_qms_generated_task" model="ir.actions.act_window">
+        <field name="name">Activities</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('pm_generated', '=', True), ('pm_implementation_project_id', '!=', False)]</field>
+        <field name="context">{'search_default_group_by_stage': 1}</field>
+        <field name="search_view_id" ref="view_pm_qms_project_task_search"/>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_pm_qms_project_task_kanban')}), (0, 0, {'view_mode': 'list', 'view_id': ref('view_pm_qms_project_task_list')}), (0, 0, {'view_mode': 'form', 'view_id': ref('view_pm_qms_project_task_form')})]"/>
     </record>
 </odoo>

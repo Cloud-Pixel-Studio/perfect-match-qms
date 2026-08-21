@@ -95,6 +95,11 @@ run_odoo() {
   compose run --rm odoo-oliva-pilot odoo "$@"
 }
 
+refresh_pilot_web() {
+  prepare_runtime_permissions
+  compose restart odoo-oliva-pilot >/dev/null 2>&1 || compose up -d odoo-oliva-pilot >/dev/null
+}
+
 odoo_module_state() {
   local module="$1"
   run_odoo shell -d "$DB_NAME" --log-level=error <<PY | tail -n 1
@@ -296,6 +301,7 @@ case "${1:-}" in
     ;;
   update)
     update_qms_stack
+    refresh_pilot_web
     ;;
   configure-client)
     configure_client
