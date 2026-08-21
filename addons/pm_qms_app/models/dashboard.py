@@ -62,6 +62,10 @@ class PmQmsDashboard(models.TransientModel):
     attention_high_risks = fields.Integer(compute="_compute_dashboard")
     attention_overdue_capa = fields.Integer(compute="_compute_dashboard")
     attention_open_findings = fields.Integer(compute="_compute_dashboard")
+    attention_competency_gaps = fields.Integer(compute="_compute_dashboard")
+    attention_overdue_training = fields.Integer(compute="_compute_dashboard")
+    attention_expiring_qualifications = fields.Integer(compute="_compute_dashboard")
+    attention_pending_acknowledgments = fields.Integer(compute="_compute_dashboard")
 
     next_action_1_name = fields.Char(compute="_compute_dashboard")
     next_action_1_reason = fields.Char(compute="_compute_dashboard")
@@ -171,6 +175,10 @@ class PmQmsDashboard(models.TransientModel):
             "attention_high_risks",
             "attention_overdue_capa",
             "attention_open_findings",
+            "attention_competency_gaps",
+            "attention_overdue_training",
+            "attention_expiring_qualifications",
+            "attention_pending_acknowledgments",
         ]
 
     @api.depends("organization_id", "implementation_project_id")
@@ -220,6 +228,10 @@ class PmQmsDashboard(models.TransientModel):
             SupplierPerformance = dashboard.env["pm.qms.supplier.performance"]
             Review = dashboard.env["pm.qms.management.review"]
             ReviewAction = dashboard.env["pm.qms.management.review.action"]
+            Matrix = dashboard.env["pm.qms.competency.matrix.line"]
+            Training = dashboard.env["pm.qms.training.record"]
+            Qualification = dashboard.env["pm.qms.qualification.record"]
+            Acknowledgment = dashboard.env["pm.qms.document.acknowledgment"]
 
             open_risk_domain = base_domain + [("state", "!=", "closed")]
             dashboard.open_risks = Risk.search_count(open_risk_domain)
@@ -272,6 +284,18 @@ class PmQmsDashboard(models.TransientModel):
             dashboard.attention_high_risks = dashboard.high_open_risks
             dashboard.attention_overdue_capa = dashboard.overdue_capa
             dashboard.attention_open_findings = dashboard.open_audit_findings
+            dashboard.attention_competency_gaps = Matrix.search_count(
+                base_domain + [("status", "in", ("gap", "not_assessed", "expired"))]
+            )
+            dashboard.attention_overdue_training = Training.search_count(
+                base_domain + [("state", "=", "overdue")]
+            )
+            dashboard.attention_expiring_qualifications = Qualification.search_count(
+                base_domain + [("status", "in", ("expiring", "expired"))]
+            )
+            dashboard.attention_pending_acknowledgments = Acknowledgment.search_count(
+                base_domain + [("state", "=", "pending")]
+            )
 
     def _action_for_xmlid(self, xmlid, domain=None, context=None, name=None):
         action = self.env["ir.actions.actions"]._for_xml_id(xmlid)
@@ -372,4 +396,36 @@ class PmQmsDashboard(models.TransientModel):
             "pm_qms_management_review.action_pm_qms_management_review",
             domain=self._base_domain(),
             name="Management Reviews",
+        )
+
+    def action_view_competency_gaps(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_people.action_pm_qms_competency_matrix",
+            domain=self._base_domain() + [("status", "in", ("gap", "not_assessed", "expired"))],
+            name="Competency Attention",
+        )
+
+    def action_view_overdue_training(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_people.action_pm_qms_training_record",
+            domain=self._base_domain() + [("state", "=", "overdue")],
+            name="Overdue Training",
+        )
+
+    def action_view_expiring_qualifications(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_people.action_pm_qms_qualification_record",
+            domain=self._base_domain() + [("status", "in", ("expiring", "expired"))],
+            name="Qualification Attention",
+        )
+
+    def action_view_pending_acknowledgments(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_people.action_pm_qms_document_acknowledgment",
+            domain=self._base_domain() + [("state", "=", "pending")],
+            name="Pending Document Acknowledgments",
         )

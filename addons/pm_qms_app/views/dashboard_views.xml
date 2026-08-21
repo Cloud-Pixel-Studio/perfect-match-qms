@@ -123,6 +123,18 @@
                             <field name="attention_overdue_capa"/>
                             <field name="attention_open_findings"/>
                         </group>
+                        <group string="People &amp; Competency">
+                            <button name="action_view_competency_gaps" type="object" string="Competency Attention" class="oe_link"/>
+                            <field name="attention_competency_gaps"/>
+                            <button name="action_view_overdue_training" type="object" string="Overdue Training" class="oe_link"/>
+                            <field name="attention_overdue_training"/>
+                        </group>
+                        <group string="Awareness &amp; Qualifications">
+                            <button name="action_view_expiring_qualifications" type="object" string="Qualification Attention" class="oe_link"/>
+                            <field name="attention_expiring_qualifications"/>
+                            <button name="action_view_pending_acknowledgments" type="object" string="Pending Acknowledgments" class="oe_link"/>
+                            <field name="attention_pending_acknowledgments"/>
+                        </group>
                     </group>
                     <footer>
                         <button name="action_continue_implementation" type="object" string="Continue Implementation" class="btn-primary"/>

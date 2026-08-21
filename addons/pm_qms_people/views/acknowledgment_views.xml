@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_document_acknowledgment_list" model="ir.ui.view">
+        <field name="name">pm.qms.document.acknowledgment.list</field>
+        <field name="model">pm.qms.document.acknowledgment</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'acknowledged'" decoration-warning="state == 'pending'" decoration-danger="is_overdue">
+                <field name="person_id"/>
+                <field name="document_id"/>
+                <field name="revision_id"/>
+                <field name="role_id"/>
+                <field name="due_date"/>
+                <field name="state"/>
+                <field name="acknowledged_by"/>
+                <field name="acknowledged_at"/>
+                <field name="is_overdue"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_document_acknowledgment_form" model="ir.ui.view">
+        <field name="name">pm.qms.document.acknowledgment.form</field>
+        <field name="model">pm.qms.document.acknowledgment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_acknowledge" type="object" string="Acknowledge" class="btn-primary" invisible="state != 'pending'"/>
+                    <button name="action_waive" type="object" string="Waive" invisible="state != 'pending'" groups="pm_qms_core.group_pm_qms_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,acknowledged,waived"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="person_id"/>
+                            <field name="document_id"/>
+                            <field name="revision_id"/>
+                            <field name="role_id"/>
+                        </group>
+                        <group>
+                            <field name="due_date"/>
+                            <field name="is_overdue"/>
+                            <field name="acknowledged_by"/>
+                            <field name="acknowledged_at"/>
+                        </group>
+                    </group>
+                    <field name="acknowledgment_note"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_document_acknowledgment_search" model="ir.ui.view">
+        <field name="name">pm.qms.document.acknowledgment.search</field>
+        <field name="model">pm.qms.document.acknowledgment</field>
+        <field name="arch" type="xml">
+            <search string="Document Acknowledgments">
+                <field name="person_id"/>
+                <field name="document_id"/>
+                <field name="revision_id"/>
+                <filter name="pending" string="Pending" domain="[('state', '=', 'pending')]"/>
+                <filter name="overdue" string="Overdue" domain="[('is_overdue', '=', True)]"/>
+                <filter name="acknowledged" string="Acknowledged" domain="[('state', '=', 'acknowledged')]"/>
+                <filter name="group_document" string="Document" context="{'group_by': 'document_id'}"/>
+                <filter name="group_person" string="Person" context="{'group_by': 'person_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_document_acknowledgment" model="ir.actions.act_window">
+        <field name="name">Document Acknowledgments</field>
+        <field name="res_model">pm.qms.document.acknowledgment</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_document_acknowledgment_search"/>
+    </record>
+
+    <record id="action_pm_qms_my_acknowledgment" model="ir.actions.act_window">
+        <field name="name">My Required Acknowledgments</field>
+        <field name="res_model">pm.qms.document.acknowledgment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'pending')]</field>
+        <field name="search_view_id" ref="view_pm_qms_document_acknowledgment_search"/>
+    </record>
+</odoo>

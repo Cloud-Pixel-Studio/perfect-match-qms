@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_pm_qms_people" name="People &amp; Competency" parent="pm_qms_core.menu_pm_qms_root" sequence="25"/>
+
+    <menuitem id="menu_pm_qms_people_people" name="People" parent="menu_pm_qms_people" action="action_pm_qms_person" sequence="10"/>
+    <menuitem id="menu_pm_qms_people_roles" name="Roles" parent="menu_pm_qms_people" action="action_pm_qms_role" sequence="20"/>
+    <menuitem id="menu_pm_qms_people_competencies" name="Competencies" parent="menu_pm_qms_people" action="action_pm_qms_competency" sequence="30"/>
+    <menuitem id="menu_pm_qms_people_matrix" name="Competency Matrix" parent="menu_pm_qms_people" action="action_pm_qms_competency_matrix" sequence="40"/>
+    <menuitem id="menu_pm_qms_people_assessments" name="Assessments" parent="menu_pm_qms_people" action="action_pm_qms_competency_assessment" sequence="50"/>
+
+    <menuitem id="menu_pm_qms_training" name="Training" parent="menu_pm_qms_people" sequence="60"/>
+    <menuitem id="menu_pm_qms_training_courses" name="Definitions" parent="menu_pm_qms_training" action="action_pm_qms_training_course" sequence="10"/>
+    <menuitem id="menu_pm_qms_training_events" name="Events" parent="menu_pm_qms_training" action="action_pm_qms_training_event" sequence="20"/>
+    <menuitem id="menu_pm_qms_training_records" name="Records" parent="menu_pm_qms_training" action="action_pm_qms_training_record" sequence="30"/>
+
+    <menuitem id="menu_pm_qms_qualifications" name="Qualifications" parent="menu_pm_qms_people" sequence="70"/>
+    <menuitem id="menu_pm_qms_qualification_records" name="Records" parent="menu_pm_qms_qualifications" action="action_pm_qms_qualification_record" sequence="10"/>
+    <menuitem id="menu_pm_qms_qualification_types" name="Types" parent="menu_pm_qms_qualifications" action="action_pm_qms_qualification_type" sequence="20"/>
+
+    <menuitem id="menu_pm_qms_my_acknowledgments" name="My Required Acknowledgments" parent="menu_pm_qms_people" action="action_pm_qms_my_acknowledgment" sequence="80"/>
+    <menuitem id="menu_pm_qms_all_acknowledgments" name="All Acknowledgments" parent="menu_pm_qms_people" action="action_pm_qms_document_acknowledgment" sequence="90" groups="pm_qms_core.group_pm_qms_manager"/>
+</odoo>

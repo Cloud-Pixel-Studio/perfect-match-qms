@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_document_revision_form_people" model="ir.ui.view">
+        <field name="name">pm.qms.document.revision.form.people</field>
+        <field name="model">pm.qms.document.revision</field>
+        <field name="inherit_id" ref="pm_qms_documents.view_pm_qms_document_revision_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group" position="after">
+                <group string="Acknowledgments">
+                    <group>
+                        <field name="required_acknowledgment_count"/>
+                        <field name="completed_acknowledgment_count"/>
+                    </group>
+                    <group>
+                        <field name="pending_acknowledgment_count"/>
+                        <field name="overdue_acknowledgment_count"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='change_summary']" position="after">
+                <notebook>
+                    <page string="Acknowledgments">
+                        <field name="acknowledgment_ids"/>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+</odoo>

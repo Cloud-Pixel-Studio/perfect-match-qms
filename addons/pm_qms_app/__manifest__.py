@@ -12,6 +12,7 @@ Technical addons remain modular underneath this product entry point.
     "depends": [
         "pm_qms_core",
         "pm_qms_documents",
+        "pm_qms_people",
         "pm_qms_evidence",
         "pm_qms_risk",
         "pm_qms_ncr",

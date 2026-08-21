@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_pm_qms_people_org" model="pm.qms.organization">
+        <field name="name">Demo People Organization</field>
+        <field name="code">PM-PEOPLE-DEMO-ORG</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="demo_pm_qms_people_process" model="pm.qms.process">
+        <field name="name">People and Competency Demo Process</field>
+        <field name="code">PM-PEOPLE-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="process_type">support</field>
+    </record>
+
+    <record id="demo_partner_riley" model="res.partner">
+        <field name="name">Riley Demo</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="demo_partner_morgan" model="res.partner">
+        <field name="name">Morgan Demo</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="demo_partner_casey" model="res.partner">
+        <field name="name">Casey Demo</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="demo_person_riley" model="pm.qms.person">
+        <field name="name">Riley Demo</field>
+        <field name="code">PM-PER-DEMO-001</field>
+        <field name="partner_id" ref="demo_partner_riley"/>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+    </record>
+    <record id="demo_person_morgan" model="pm.qms.person">
+        <field name="name">Morgan Demo</field>
+        <field name="code">PM-PER-DEMO-002</field>
+        <field name="partner_id" ref="demo_partner_morgan"/>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+    </record>
+    <record id="demo_person_casey" model="pm.qms.person">
+        <field name="name">Casey Demo</field>
+        <field name="code">PM-PER-DEMO-003</field>
+        <field name="partner_id" ref="demo_partner_casey"/>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+    </record>
+
+    <record id="demo_role_quality_coordinator" model="pm.qms.role">
+        <field name="name">Quality Coordinator</field>
+        <field name="code">PM-QMS-ROLE-DEMO-QC</field>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+    </record>
+    <record id="demo_role_internal_auditor" model="pm.qms.role">
+        <field name="name">Internal Auditor</field>
+        <field name="code">PM-QMS-ROLE-DEMO-AUD</field>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+    </record>
+
+    <record id="demo_competency_document_control" model="pm.qms.competency">
+        <field name="name">Document Control</field>
+        <field name="code">PM-COMP-DEMO-DOC</field>
+        <field name="category">QMS Awareness</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="demo_competency_internal_audit" model="pm.qms.competency">
+        <field name="name">Internal Audit Method</field>
+        <field name="code">PM-COMP-DEMO-AUD</field>
+        <field name="category">Audit</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+
+    <record id="demo_req_qc_document_control" model="pm.qms.role.competency.requirement">
+        <field name="role_id" ref="demo_role_quality_coordinator"/>
+        <field name="competency_id" ref="demo_competency_document_control"/>
+        <field name="valid_months">12</field>
+    </record>
+    <record id="demo_req_auditor_internal_audit" model="pm.qms.role.competency.requirement">
+        <field name="role_id" ref="demo_role_internal_auditor"/>
+        <field name="competency_id" ref="demo_competency_internal_audit"/>
+        <field name="valid_months">12</field>
+    </record>
+
+    <record id="demo_assignment_riley_qc" model="pm.qms.person.role.assignment">
+        <field name="person_id" ref="demo_person_riley"/>
+        <field name="role_id" ref="demo_role_quality_coordinator"/>
+        <field name="effective_date">2026-08-01</field>
+    </record>
+    <record id="demo_assignment_morgan_auditor" model="pm.qms.person.role.assignment">
+        <field name="person_id" ref="demo_person_morgan"/>
+        <field name="role_id" ref="demo_role_internal_auditor"/>
+        <field name="effective_date">2026-08-01</field>
+    </record>
+    <record id="demo_assignment_casey_qc" model="pm.qms.person.role.assignment">
+        <field name="person_id" ref="demo_person_casey"/>
+        <field name="role_id" ref="demo_role_quality_coordinator"/>
+        <field name="effective_date">2026-08-01</field>
+    </record>
+
+    <record id="demo_assessment_riley_doc" model="pm.qms.competency.assessment">
+        <field name="person_id" ref="demo_person_riley"/>
+        <field name="competency_id" ref="demo_competency_document_control"/>
+        <field name="assessment_date">2026-08-01</field>
+        <field name="result">competent</field>
+        <field name="valid_until">2027-08-01</field>
+    </record>
+    <record id="demo_assessment_morgan_audit_gap" model="pm.qms.competency.assessment">
+        <field name="person_id" ref="demo_person_morgan"/>
+        <field name="competency_id" ref="demo_competency_internal_audit"/>
+        <field name="assessment_date">2026-08-01</field>
+        <field name="result">gap</field>
+    </record>
+
+    <record id="demo_training_course_doc" model="pm.qms.training.course">
+        <field name="name">Controlled Document Awareness</field>
+        <field name="code">PM-TRN-DEMO-DOC</field>
+        <field name="training_type">awareness</field>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="competency_ids" eval="[Command.link(ref('demo_competency_document_control'))]"/>
+        <field name="validity_months">12</field>
+    </record>
+    <record id="demo_training_record_riley_done" model="pm.qms.training.record">
+        <field name="person_id" ref="demo_person_riley"/>
+        <field name="course_id" ref="demo_training_course_doc"/>
+        <field name="completion_date">2026-08-10</field>
+        <field name="result">satisfactory</field>
+    </record>
+    <record id="demo_training_record_casey_overdue" model="pm.qms.training.record">
+        <field name="person_id" ref="demo_person_casey"/>
+        <field name="course_id" ref="demo_training_course_doc"/>
+        <field name="due_date">2026-08-01</field>
+        <field name="result">not_completed</field>
+    </record>
+
+    <record id="demo_qualification_type_auditor" model="pm.qms.qualification.type">
+        <field name="name">Internal Auditor Qualification</field>
+        <field name="code">PM-QUAL-DEMO-AUD</field>
+        <field name="company_id" ref="base.main_company"/>
+        <field name="expiring_soon_days">60</field>
+    </record>
+    <record id="demo_qualification_morgan_expiring" model="pm.qms.qualification.record">
+        <field name="person_id" ref="demo_person_morgan"/>
+        <field name="qualification_type_id" ref="demo_qualification_type_auditor"/>
+        <field name="identifier">DEMO-AUD-001</field>
+        <field name="issuer">Demo Provider</field>
+        <field name="issue_date">2026-01-01</field>
+        <field name="expiration_date">2026-09-15</field>
+    </record>
+
+    <record id="demo_document_awareness" model="pm.qms.document">
+        <field name="name">Demo Quality Awareness Procedure</field>
+        <field name="code">PM-DOC-DEMO-AWARE</field>
+        <field name="organization_id" ref="demo_pm_qms_people_org"/>
+        <field name="process_id" ref="demo_pm_qms_people_process"/>
+        <field name="document_type">procedure</field>
+    </record>
+    <record id="demo_revision_awareness_a" model="pm.qms.document.revision">
+        <field name="document_id" ref="demo_document_awareness"/>
+        <field name="revision">A</field>
+        <field name="revision_date">2026-08-01</field>
+        <field name="effective_date">2026-08-01</field>
+        <field name="state">active</field>
+    </record>
+    <record id="demo_ack_riley_doc" model="pm.qms.document.acknowledgment">
+        <field name="person_id" ref="demo_person_riley"/>
+        <field name="role_id" ref="demo_role_quality_coordinator"/>
+        <field name="revision_id" ref="demo_revision_awareness_a"/>
+        <field name="due_date">2026-08-15</field>
+    </record>
+</odoo>
