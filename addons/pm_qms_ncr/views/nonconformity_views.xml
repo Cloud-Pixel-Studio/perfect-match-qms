@@ -4,7 +4,7 @@
         <field name="name">pm.qms.nonconformity.list</field>
         <field name="model">pm.qms.nonconformity</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-danger="severity == 'critical' or is_overdue" decoration-warning="state not in ('closed', 'cancelled')" decoration-success="state == 'closed'" decoration-muted="state == 'cancelled'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="source_type"/>

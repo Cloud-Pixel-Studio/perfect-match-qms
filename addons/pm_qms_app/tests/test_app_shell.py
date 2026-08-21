@@ -220,3 +220,64 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertEqual(assessment.state, "completed")
         with self.assertRaises(Exception):
             assessment.with_user(self.manager).write({"notes": "Do not mutate completed snapshots."})
+
+    def test_mission13_major_product_actions_are_reachable(self):
+        expected_actions = {
+            "pm_qms_app.action_pm_qms_dashboard": "pm.qms.dashboard",
+            "pm_qms_implementation.action_pm_qms_implementation_project": "pm.qms.implementation.project",
+            "pm_qms_implementation.action_pm_qms_implementation_control": "pm.qms.implementation.control",
+            "pm_qms_implementation.action_pm_qms_implementation_activities": "project.task",
+            "pm_qms_evidence.action_pm_qms_evidence": "pm.qms.evidence",
+            "pm_qms_implementation.action_pm_qms_readiness_assessment": "pm.qms.readiness.assessment",
+            "pm_qms_documents.action_pm_qms_document": "pm.qms.document",
+            "pm_qms_documents.action_pm_qms_document_revision": "pm.qms.document.revision",
+            "pm_qms_risk.action_pm_qms_risk": "pm.qms.risk",
+            "pm_qms_ncr.action_pm_qms_nonconformity": "pm.qms.nonconformity",
+            "pm_qms_capa.action_pm_qms_capa": "pm.qms.capa",
+            "pm_qms_audit.action_pm_qms_audit": "pm.qms.audit",
+            "pm_qms_audit.action_pm_qms_audit_finding": "pm.qms.audit.finding",
+            "pm_qms_kpi.action_pm_qms_objective": "pm.qms.objective",
+            "pm_qms_kpi.action_pm_qms_kpi": "pm.qms.kpi",
+            "pm_qms_kpi.action_pm_qms_customer_performance": "pm.qms.customer.performance",
+            "pm_qms_kpi.action_pm_qms_supplier_performance": "pm.qms.supplier.performance",
+            "pm_qms_management_review.action_pm_qms_management_review": "pm.qms.management.review",
+            "pm_qms_core.action_pm_qms_organization": "pm.qms.organization",
+            "pm_qms_core.action_pm_qms_process": "pm.qms.process",
+            "pm_qms_core.action_pm_qms_control": "pm.qms.control",
+            "pm_qms_core.action_pm_qms_evidence_requirement": "pm.qms.evidence.requirement",
+            "pm_qms_implementation.action_pm_qms_framework_pack": "pm.qms.framework.pack",
+            "pm_qms_pack_quality.action_pm_qms_external_mapping_quality": "pm.qms.external.mapping",
+        }
+        for xmlid, model_name in expected_actions.items():
+            action = self.env["ir.actions.actions"]._for_xml_id(xmlid)
+            self.assertEqual(action["res_model"], model_name, xmlid)
+            self.assertTrue(action.get("view_mode"), xmlid)
+
+    def test_mission13_dashboard_navigation_reaches_operational_surface(self):
+        dashboard = self.env["pm.qms.dashboard"].with_user(self.user).create(
+            {"organization_id": self.organization.id, "implementation_project_id": self.project.id}
+        )
+        self.assertTrue(dashboard.next_action_1_name or dashboard.total_controls)
+        operational_actions = {
+            dashboard.action_view_risks: "pm.qms.risk",
+            dashboard.action_view_nonconformities: "pm.qms.nonconformity",
+            dashboard.action_view_capa: "pm.qms.capa",
+            dashboard.action_view_audit_findings: "pm.qms.audit.finding",
+            dashboard.action_view_objectives: "pm.qms.objective",
+            dashboard.action_view_kpis: "pm.qms.kpi",
+            dashboard.action_view_management_reviews: "pm.qms.management.review",
+        }
+        for method, model_name in operational_actions.items():
+            action = method()
+            self.assertEqual(action["res_model"], model_name)
+            self.assertIn(("organization_id", "=", self.organization.id), action.get("domain", []))
+
+    def test_mission13_implementation_control_visual_actions(self):
+        gap_action = self.project.action_view_gaps()
+        self.assertEqual(gap_action["res_model"], "pm.qms.implementation.control")
+        self.assertIn(("implementation_project_id", "=", self.project.id), gap_action["domain"])
+        self.assertIn(("readiness_state", "in", ("gap", "partial")), gap_action["domain"])
+
+        evidence_action = self.line.action_open_evidence()
+        self.assertEqual(evidence_action["res_model"], "pm.qms.evidence")
+        self.assertIn(("control_instance_id", "=", self.line.control_instance_id.id), evidence_action["domain"])

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Mission 13 product visual surface: dashboard operational navigation, implementation gap/readiness stats, control evidence actions, search views, Odoo-native state decorations, and product visual architecture documentation.
+
 ## 1.0.0-rc2 - 2026-08-21
 
 - Added the Perfect Match QMS product application shell as the coherent user entry point for the current QMS baseline.

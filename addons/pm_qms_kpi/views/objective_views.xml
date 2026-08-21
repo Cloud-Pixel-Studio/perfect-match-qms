@@ -4,7 +4,7 @@
         <field name="name">pm.qms.objective.list</field>
         <field name="model">pm.qms.objective</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="status == 'achieved'" decoration-danger="status == 'not_achieved'" decoration-warning="status == 'active'" decoration-muted="status in ('draft', 'cancelled', 'closed')">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="organization_id"/>

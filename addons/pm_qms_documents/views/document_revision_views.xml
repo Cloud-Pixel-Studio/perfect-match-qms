@@ -4,7 +4,7 @@
         <field name="name">pm.qms.document.revision.list</field>
         <field name="model">pm.qms.document.revision</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="state in ('approved', 'active')" decoration-warning="state == 'under_review'" decoration-danger="state == 'rejected'" decoration-muted="state == 'superseded'">
                 <field name="document_id"/>
                 <field name="revision"/>
                 <field name="revision_date"/>
@@ -55,9 +55,27 @@
         </field>
     </record>
 
+    <record id="view_pm_qms_document_revision_search" model="ir.ui.view">
+        <field name="name">pm.qms.document.revision.search</field>
+        <field name="model">pm.qms.document.revision</field>
+        <field name="arch" type="xml">
+            <search string="Document Revisions">
+                <field name="document_id"/>
+                <field name="revision"/>
+                <field name="prepared_by"/>
+                <field name="approved_by"/>
+                <filter name="under_review" string="Under Review" domain="[('state', '=', 'under_review')]"/>
+                <filter name="active" string="Active" domain="[('state', '=', 'active')]"/>
+                <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+                <filter name="group_document" string="Document" context="{'group_by': 'document_id'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="action_pm_qms_document_revision" model="ir.actions.act_window">
         <field name="name">Revisions</field>
         <field name="res_model">pm.qms.document.revision</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_document_revision_search"/>
     </record>
 </odoo>

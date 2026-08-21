@@ -219,11 +219,22 @@ class PmQmsImplementationControl(models.Model):
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
-            "name": "Control Instance",
+            "name": "Operational Control Record",
             "res_model": "pm.qms.control.instance",
             "view_mode": "form",
             "res_id": self.control_instance_id.id,
         }
+
+    def action_open_evidence(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id("pm_qms_evidence.action_pm_qms_evidence")
+        action["domain"] = [("control_instance_id", "=", self.control_instance_id.id)]
+        action["context"] = {
+            "default_control_instance_id": self.control_instance_id.id,
+            "default_organization_id": self.organization_id.id,
+        }
+        action["name"] = "Evidence"
+        return action
 
     def write(self, vals):
         result = super().write(vals)

@@ -63,6 +63,13 @@ class PmQmsDashboard(models.TransientModel):
     attention_overdue_capa = fields.Integer(compute="_compute_dashboard")
     attention_open_findings = fields.Integer(compute="_compute_dashboard")
 
+    next_action_1_name = fields.Char(compute="_compute_dashboard")
+    next_action_1_reason = fields.Char(compute="_compute_dashboard")
+    next_action_2_name = fields.Char(compute="_compute_dashboard")
+    next_action_2_reason = fields.Char(compute="_compute_dashboard")
+    next_action_3_name = fields.Char(compute="_compute_dashboard")
+    next_action_3_reason = fields.Char(compute="_compute_dashboard")
+
     def _organization_domain(self):
         return [("company_id", "in", self.env.companies.ids)]
 
@@ -120,6 +127,12 @@ class PmQmsDashboard(models.TransientModel):
         self.readiness_percent = 0.0
         self.last_management_review_id = False
         self.last_management_review_date = False
+        self.next_action_1_name = False
+        self.next_action_1_reason = False
+        self.next_action_2_name = False
+        self.next_action_2_reason = False
+        self.next_action_3_name = False
+        self.next_action_3_reason = False
 
     @api.model
     def _metric_fields(self):
@@ -192,6 +205,9 @@ class PmQmsDashboard(models.TransientModel):
                 dashboard.accepted_evidence = project.accepted_evidence
                 dashboard.missing_evidence = project.missing_evidence
                 dashboard.pending_review_evidence = sum(controls.mapped("evidence_under_review_count"))
+                for index, next_action in enumerate(project._recommended_next_action_values(limit=3), start=1):
+                    dashboard[f"next_action_{index}_name"] = next_action.get("name")
+                    dashboard[f"next_action_{index}_reason"] = next_action.get("reason")
 
             base_domain = dashboard._base_domain()
             Risk = dashboard.env["pm.qms.risk"]
@@ -301,3 +317,59 @@ class PmQmsDashboard(models.TransientModel):
             return self.implementation_project_id.action_open_readiness_center()
         domain = [("organization_id", "=", self.organization_id.id)] if self.organization_id else [("id", "=", 0)]
         return self._action_for_xmlid("pm_qms_implementation.action_pm_qms_readiness_assessment", domain=domain)
+
+    def action_view_risks(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_risk.action_pm_qms_risk",
+            domain=self._base_domain() + [("state", "!=", "closed")],
+            name="Open Risks & Opportunities",
+        )
+
+    def action_view_nonconformities(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_ncr.action_pm_qms_nonconformity",
+            domain=self._base_domain() + [("state", "not in", ("closed", "cancelled"))],
+            name="Open Nonconformities",
+        )
+
+    def action_view_capa(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_capa.action_pm_qms_capa",
+            domain=self._base_domain() + [("state", "not in", ("effective", "closed", "cancelled"))],
+            name="Open CAPA",
+        )
+
+    def action_view_audit_findings(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_audit.action_pm_qms_audit_finding",
+            domain=self._base_domain() + [("state", "not in", ("closed", "cancelled"))],
+            name="Open Audit Findings",
+        )
+
+    def action_view_objectives(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_kpi.action_pm_qms_objective",
+            domain=self._base_domain(),
+            name="Quality Objectives",
+        )
+
+    def action_view_kpis(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_kpi.action_pm_qms_kpi",
+            domain=self._base_domain(),
+            name="KPIs",
+        )
+
+    def action_view_management_reviews(self):
+        self.ensure_one()
+        return self._action_for_xmlid(
+            "pm_qms_management_review.action_pm_qms_management_review",
+            domain=self._base_domain(),
+            name="Management Reviews",
+        )

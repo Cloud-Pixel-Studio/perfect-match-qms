@@ -4,10 +4,10 @@
         <field name="name">pm.qms.implementation.control.list</field>
         <field name="model">pm.qms.implementation.control</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="readiness_state == 'ready'" decoration-warning="readiness_state == 'partial'" decoration-danger="readiness_state == 'gap'" decoration-muted="readiness_state == 'not_applicable'">
                 <field name="implementation_project_id"/>
                 <field name="control_id"/>
-                <field name="control_instance_id"/>
+                <field name="control_instance_id" string="Operational Control Record"/>
                 <field name="pack_ids" widget="many2many_tags"/>
                 <field name="area_display"/>
                 <field name="required"/>
@@ -25,16 +25,29 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_generate_missing_tasks" type="object" string="Generate Missing Tasks"/>
-                    <button name="action_open_tasks" type="object" string="Open Tasks"/>
-                    <button name="action_open_control_instance" type="object" string="Open Instance"/>
+                    <button name="action_generate_missing_tasks" type="object" string="Generate Missing Activities"/>
+                    <button name="action_open_tasks" type="object" string="Open Activities"/>
+                    <button name="action_open_evidence" type="object" string="Open Evidence"/>
+                    <button name="action_open_control_instance" type="object" string="Open Operational Record"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_tasks" type="object" class="oe_stat_button" icon="fa-tasks">
+                            <field name="open_activity_count" widget="statinfo" string="Open Activities"/>
+                        </button>
+                        <button name="action_open_evidence" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="missing_evidence_count" widget="statinfo" string="Missing Evidence"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="control_name" string="Control"/>
+                        <h1><field name="control_name" readonly="1"/></h1>
+                    </div>
                     <group>
                         <group>
                             <field name="implementation_project_id"/>
                             <field name="control_id"/>
-                            <field name="control_instance_id"/>
+                            <field name="control_instance_id" string="Operational Control Record"/>
                             <field name="pack_ids" widget="many2many_tags"/>
                             <field name="area_ids" widget="many2many_tags" readonly="1"/>
                             <field name="required"/>
@@ -106,6 +119,9 @@
                 <field name="control_id"/>
                 <filter name="ready" string="Ready" domain="[('readiness_state', '=', 'ready')]"/>
                 <filter name="gap" string="Gap" domain="[('readiness_state', '=', 'gap')]"/>
+                <filter name="partial" string="Partial" domain="[('readiness_state', '=', 'partial')]"/>
+                <filter name="missing_evidence" string="Missing Evidence" domain="[('missing_evidence_count', '>', 0)]"/>
+                <filter name="open_activities" string="Open Activities" domain="[('open_activity_count', '>', 0)]"/>
                 <filter name="group_project" string="Project" context="{'group_by': 'implementation_project_id'}"/>
                 <filter name="group_area" string="Area" context="{'group_by': 'area_ids'}"/>
                 <filter name="group_readiness" string="Readiness" context="{'group_by': 'readiness_state'}"/>

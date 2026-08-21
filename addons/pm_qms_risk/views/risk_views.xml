@@ -4,7 +4,7 @@
         <field name="name">pm.qms.risk.list</field>
         <field name="model">pm.qms.risk</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-danger="residual_level in ('high', 'critical') or is_overdue" decoration-warning="state in ('assessed', 'action_required', 'monitoring')" decoration-success="state == 'closed'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="risk_type"/>

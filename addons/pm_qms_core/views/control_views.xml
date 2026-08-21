@@ -4,7 +4,7 @@
         <field name="name">pm.qms.control.list</field>
         <field name="model">pm.qms.control</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="state == 'active'" decoration-muted="state == 'retired'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="category"/>
@@ -12,7 +12,7 @@
                 <field name="owner_id"/>
                 <field name="state"/>
                 <field name="external_mapping_count"/>
-                <field name="active"/>
+                <field name="active" optional="hide"/>
             </list>
         </field>
     </record>
@@ -39,7 +39,7 @@
                         <group string="Identification">
                             <field name="code"/>
                             <field name="category"/>
-                            <field name="active"/>
+                            <field name="active" optional="hide"/>
                         </group>
                         <group string="Implementation">
                             <field name="process_id"/>
@@ -73,7 +73,7 @@
                                     <field name="responsible_role"/>
                                     <field name="responsible_user_id"/>
                                     <field name="expected_output"/>
-                                    <field name="active"/>
+                                    <field name="active" optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -84,7 +84,7 @@
                                     <field name="name"/>
                                     <field name="evidence_type"/>
                                     <field name="mandatory"/>
-                                    <field name="active"/>
+                                    <field name="active" optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -95,7 +95,7 @@
                                     <field name="edition"/>
                                     <field name="reference"/>
                                     <field name="note"/>
-                                    <field name="active"/>
+                                    <field name="active" optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -106,9 +106,31 @@
         </field>
     </record>
 
+    <record id="view_pm_qms_control_search" model="ir.ui.view">
+        <field name="name">pm.qms.control.search</field>
+        <field name="model">pm.qms.control</field>
+        <field name="arch" type="xml">
+            <search string="Framework Controls">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="process_id"/>
+                <field name="owner_id"/>
+                <filter name="active_controls" string="Active" domain="[('state', '=', 'active')]"/>
+                <filter name="draft_controls" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="group_category" string="Category" context="{'group_by': 'category'}"/>
+                <filter name="group_process" string="Process" context="{'group_by': 'process_id'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="action_pm_qms_control" model="ir.actions.act_window">
-        <field name="name">Controls</field>
+        <field name="name">Framework Controls</field>
         <field name="res_model">pm.qms.control</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_control_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No framework controls yet</p>
+            <p>Framework controls contain Perfect Match proprietary implementation guidance, activities, and evidence requirements.</p>
+        </field>
     </record>
 </odoo>

@@ -4,7 +4,7 @@
         <field name="name">pm.qms.management.review.list</field>
         <field name="model">pm.qms.management.review</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="state == 'completed'" decoration-warning="state in ('preparing', 'ready', 'in_progress')" decoration-muted="state == 'cancelled'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="organization_id"/>

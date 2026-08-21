@@ -4,7 +4,7 @@
         <field name="name">pm.qms.kpi.list</field>
         <field name="model">pm.qms.kpi</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="latest_status == 'on_target'" decoration-warning="latest_status == 'warning'" decoration-danger="latest_status == 'off_target'" decoration-muted="status != 'active'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="organization_id"/>

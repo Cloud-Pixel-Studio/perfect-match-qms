@@ -4,7 +4,7 @@
         <field name="name">pm.qms.readiness.assessment.list</field>
         <field name="model">pm.qms.readiness.assessment</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-success="state == 'completed'" decoration-muted="state == 'cancelled'">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="implementation_project_id"/>
@@ -78,7 +78,7 @@
         <field name="name">pm.qms.readiness.assessment.item.list</field>
         <field name="model">pm.qms.readiness.assessment.item</field>
         <field name="arch" type="xml">
-            <list create="0" edit="0">
+            <list create="0" edit="0" decoration-success="readiness_state_snapshot == 'ready'" decoration-warning="readiness_state_snapshot == 'partial'" decoration-danger="readiness_state_snapshot == 'gap'" decoration-muted="readiness_state_snapshot == 'not_applicable'">
                 <field name="assessment_id"/>
                 <field name="control_code_snapshot"/>
                 <field name="control_name_snapshot"/>
@@ -89,10 +89,32 @@
         </field>
     </record>
 
+    <record id="view_pm_qms_readiness_assessment_search" model="ir.ui.view">
+        <field name="name">pm.qms.readiness.assessment.search</field>
+        <field name="model">pm.qms.readiness.assessment</field>
+        <field name="arch" type="xml">
+            <search string="Readiness Assessments">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="implementation_project_id"/>
+                <field name="assessor_id"/>
+                <filter name="completed" string="Completed" domain="[('state', '=', 'completed')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="group_implementation" string="Implementation" context="{'group_by': 'implementation_project_id'}"/>
+                <filter name="group_state" string="State" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="action_pm_qms_readiness_assessment" model="ir.actions.act_window">
         <field name="name">Readiness Assessments</field>
         <field name="res_model">pm.qms.readiness.assessment</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_readiness_assessment_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No readiness snapshots yet</p>
+            <p>Readiness snapshots preserve historical implementation status for review and assessment preparation.</p>
+        </field>
     </record>
 
     <record id="action_pm_qms_readiness_assessment_item" model="ir.actions.act_window">

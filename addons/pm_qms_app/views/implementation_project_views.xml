@@ -16,13 +16,23 @@
                     <button name="action_view_evidence" type="object" class="oe_stat_button" icon="fa-archive">
                         <field name="required_evidence" widget="statinfo" string="Evidence"/>
                     </button>
-                    <button name="action_view_readiness_assessments" type="object" class="oe_stat_button" icon="fa-line-chart">
+                    <button name="action_view_gaps" type="object" class="oe_stat_button" icon="fa-exclamation-triangle">
+                        <field name="gap_controls" widget="statinfo" string="Gaps"/>
+                    </button>
+                    <button name="action_open_readiness_center" type="object" class="oe_stat_button" icon="fa-line-chart">
                         <field name="readiness_percent" widget="statinfo" string="Readiness %"/>
+                    </button>
+                    <button name="action_view_readiness_assessments" type="object" class="oe_stat_button" icon="fa-history">
+                        <field name="accepted_evidence" widget="statinfo" string="Accepted Evidence"/>
                     </button>
                 </div>
             </xpath>
             <xpath expr="//field[@name='odoo_project_id']" position="attributes">
-                <attribute name="string">Underlying Odoo Project</attribute>
+                <attribute name="string">Execution Project</attribute>
+            </xpath>
+            <xpath expr="//field[@name='control_instance_id']" position="attributes">
+                <attribute name="string">Operational Control Record</attribute>
+                <attribute name="optional">hide</attribute>
             </xpath>
             <xpath expr="//page[field[@name='generated_task_ids']]" position="attributes">
                 <attribute name="string">Activities</attribute>
