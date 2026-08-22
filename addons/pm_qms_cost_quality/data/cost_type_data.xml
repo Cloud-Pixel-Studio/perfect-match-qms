@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cost_type_prevention" model="pm.qms.cost.type">
+        <field name="name">Prevention Cost</field>
+        <field name="code">PM-CQT-PREV</field>
+        <field name="category">prevention</field>
+        <field name="description">Planned activities that reduce quality risk before failures occur.</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="cost_type_appraisal" model="pm.qms.cost.type">
+        <field name="name">Appraisal Cost</field>
+        <field name="code">PM-CQT-APPR</field>
+        <field name="category">appraisal</field>
+        <field name="description">Inspection, verification, validation, and assessment activities.</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="cost_type_internal_failure" model="pm.qms.cost.type">
+        <field name="name">Internal Failure Cost</field>
+        <field name="code">PM-CQT-INTF</field>
+        <field name="category">internal_failure</field>
+        <field name="description">Failure costs found before delivery or external release.</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="cost_type_external_failure" model="pm.qms.cost.type">
+        <field name="name">External Failure Cost</field>
+        <field name="code">PM-CQT-EXTF</field>
+        <field name="category">external_failure</field>
+        <field name="description">Failure costs found after delivery or external release.</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+</odoo>

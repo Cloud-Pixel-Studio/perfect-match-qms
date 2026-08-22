@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="cost_type_prevention_training" model="pm.qms.cost.type">
+        <field name="name">Preventive training time</field>
+        <field name="code">PM-CQT-PREV-TRAIN</field>
+        <field name="category">prevention</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="cost_type_appraisal_review" model="pm.qms.cost.type">
+        <field name="name">Inspection and review effort</field>
+        <field name="code">PM-CQT-APP-REV</field>
+        <field name="category">appraisal</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="cost_type_internal_rework" model="pm.qms.cost.type">
+        <field name="name">Internal rework</field>
+        <field name="code">PM-CQT-IF-REWORK</field>
+        <field name="category">internal_failure</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+    <record id="cost_type_external_response" model="pm.qms.cost.type">
+        <field name="name">External customer response</field>
+        <field name="code">PM-CQT-EF-CUST</field>
+        <field name="category">external_failure</field>
+        <field name="company_id" ref="base.main_company"/>
+    </record>
+</odoo>

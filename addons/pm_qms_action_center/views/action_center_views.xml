@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_action_center_line_list" model="ir.ui.view">
+        <field name="name">pm.qms.action.center.line.list</field>
+        <field name="model">pm.qms.action.center.line</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false" decoration-danger="due_bucket == 'overdue'" decoration-warning="due_bucket in ('today', 'soon')">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh" class="btn-primary"/>
+                </header>
+                <field name="due_bucket"/>
+                <field name="due_date"/>
+                <field name="days_overdue"/>
+                <field name="category"/>
+                <field name="source_code"/>
+                <field name="title"/>
+                <field name="action_kind"/>
+                <field name="owner_user_id"/>
+                <field name="person_id"/>
+                <field name="organization_id"/>
+                <field name="source_state_label"/>
+                <field name="normalized_priority"/>
+                <button name="action_open_source" type="object" string="Open Source" class="btn-link"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_pm_qms_action_center_line_form" model="ir.ui.view">
+        <field name="name">pm.qms.action.center.line.form</field>
+        <field name="model">pm.qms.action.center.line</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <header>
+                    <button name="action_open_source" type="object" string="Open Source" class="btn-primary"/>
+                    <button name="action_refresh" type="object" string="Refresh"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="title"/>
+                            <field name="source_code"/>
+                            <field name="category"/>
+                            <field name="action_kind"/>
+                            <field name="source_state_label"/>
+                        </group>
+                        <group>
+                            <field name="due_bucket"/>
+                            <field name="due_date"/>
+                            <field name="days_overdue"/>
+                            <field name="normalized_priority"/>
+                            <field name="owner_user_id"/>
+                            <field name="person_id"/>
+                        </group>
+                    </group>
+                    <group string="Source">
+                        <field name="source_model"/>
+                        <field name="source_id"/>
+                        <field name="source_key"/>
+                        <field name="source_module"/>
+                        <field name="organization_id"/>
+                        <field name="company_id"/>
+                        <field name="process_id"/>
+                    </group>
+                    <group string="Description">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_pm_qms_action_center_line_search" model="ir.ui.view">
+        <field name="name">pm.qms.action.center.line.search</field>
+        <field name="model">pm.qms.action.center.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="title"/>
+                <field name="source_code"/>
+                <filter name="open" string="My Refresh" domain="[('create_uid', '=', uid)]"/>
+                <filter name="overdue" string="Overdue" domain="[('due_bucket', '=', 'overdue')]"/>
+                <filter name="today" string="Due Today" domain="[('due_bucket', '=', 'today')]"/>
+                <filter name="soon" string="Due Soon" domain="[('due_bucket', '=', 'soon')]"/>
+            </search>
+        </field>
+    </record>
+    <record id="view_pm_qms_action_center_line_pivot" model="ir.ui.view">
+        <field name="name">pm.qms.action.center.line.pivot</field>
+        <field name="model">pm.qms.action.center.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Unified Action Center">
+                <field name="category" type="row"/>
+                <field name="due_bucket" type="col"/>
+                <field name="id" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_pm_qms_action_center_line_graph" model="ir.ui.view">
+        <field name="name">pm.qms.action.center.line.graph</field>
+        <field name="model">pm.qms.action.center.line</field>
+        <field name="arch" type="xml">
+            <graph string="Unified Action Center" type="bar">
+                <field name="category"/>
+                <field name="due_bucket"/>
+            </graph>
+        </field>
+    </record>
+    <record id="action_pm_qms_action_center_server" model="ir.actions.server">
+        <field name="name">Unified Action Center</field>
+        <field name="model_id" ref="model_pm_qms_action_center_line"/>
+        <field name="state">code</field>
+        <field name="code">action = env['pm.qms.action.center.line'].action_open_center()</field>
+    </record>
+</odoo>

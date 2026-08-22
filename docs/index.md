@@ -42,3 +42,6 @@
 - [ADR-051: Equipment, Monitoring Resources and Calibration Architecture](DECISIONS/ADR-051-equipment-calibration-architecture.md)
 - [Customer and Supplier Quality](CUSTOMER_SUPPLIER_QUALITY.md)
 - [ADR-052: Customer and Supplier Quality Architecture](DECISIONS/ADR-052-customer-supplier-quality-architecture.md)
+- [Cost of Quality and Unified Action Center](COST_QUALITY_ACTION_CENTER.md)
+- [ADR-053: Unified Action Center Aggregation Architecture](DECISIONS/ADR-053-unified-action-center-aggregation.md)
+- [ADR-054: Cost of Quality Data and Source Traceability Architecture](DECISIONS/ADR-054-cost-of-quality-traceability.md)

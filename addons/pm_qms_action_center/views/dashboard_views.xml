@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_dashboard_form_action_center" model="ir.ui.view">
+        <field name="name">pm.qms.dashboard.form.action.center</field>
+        <field name="model">pm.qms.dashboard</field>
+        <field name="inherit_id" ref="pm_qms_app.view_pm_qms_dashboard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_unified_actions" type="object" class="oe_stat_button" icon="fa-tasks">
+                    <field name="unified_action_count" widget="statinfo" string="Actions"/>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='open_calibration_impact_assessments']/.." position="after">
+                <group string="Unified Action Center">
+                    <button name="action_view_unified_actions" type="object" string="Open Action Center" class="oe_link"/>
+                    <field name="unified_action_count"/>
+                    <field name="my_action_count"/>
+                    <field name="overdue_action_count"/>
+                    <field name="due_soon_action_count"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
