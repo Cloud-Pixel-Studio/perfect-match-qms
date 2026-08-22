@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_pm_qms_customer_complaint" model="ir.sequence">
+        <field name="name">QMS Customer Complaint</field>
+        <field name="code">pm.qms.customer.complaint</field>
+        <field name="prefix">CC-%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_pm_qms_quality_alert" model="ir.sequence">
+        <field name="name">QMS Quality Alert</field>
+        <field name="code">pm.qms.quality.alert</field>
+        <field name="prefix">QA-%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_pm_qms_root_cause_analysis" model="ir.sequence">
+        <field name="name">QMS Root Cause Analysis</field>
+        <field name="code">pm.qms.root.cause.analysis</field>
+        <field name="prefix">RCA-%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_pm_qms_eight_d" model="ir.sequence">
+        <field name="name">QMS 8D Case</field>
+        <field name="code">pm.qms.eight.d</field>
+        <field name="prefix">8D-%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_pm_qms_supplier_issue" model="ir.sequence">
+        <field name="name">QMS Supplier Issue</field>
+        <field name="code">pm.qms.supplier.issue</field>
+        <field name="prefix">SI-%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_pm_qms_scar" model="ir.sequence">
+        <field name="name">QMS SCAR</field>
+        <field name="code">pm.qms.scar</field>
+        <field name="prefix">SCAR-%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

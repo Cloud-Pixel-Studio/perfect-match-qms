@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_capa_form_customer_quality" model="ir.ui.view">
+        <field name="name">pm.qms.capa.form.customer.quality</field>
+        <field name="model">pm.qms.capa</field>
+        <field name="inherit_id" ref="pm_qms_capa.view_pm_qms_capa_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[field[@name='related_control_instance_ids']]" position="inside">
+                <group string="Customer / Supplier Quality">
+                    <field name="customer_complaint_id"/>
+                    <field name="supplier_issue_id"/>
+                    <field name="eight_d_id"/>
+                    <field name="scar_id"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

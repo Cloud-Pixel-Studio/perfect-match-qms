@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_quality_alert_list" model="ir.ui.view">
+        <field name="name">pm.qms.quality.alert.list</field>
+        <field name="model">pm.qms.quality.alert</field>
+        <field name="arch" type="xml">
+            <list decoration-warning="state == 'published'" decoration-success="state == 'closed'" decoration-muted="state in ('expired', 'cancelled')">
+                <field name="code"/><field name="name"/><field name="effective_date"/><field name="review_date"/><field name="owner_id"/><field name="affected_reference"/><field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_pm_qms_quality_alert_form" model="ir.ui.view">
+        <field name="name">pm.qms.quality.alert.form</field>
+        <field name="model">pm.qms.quality.alert</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" type="object" string="Publish" invisible="state != 'draft'"/>
+                    <button name="action_expire" type="object" string="Expire" invisible="state != 'published'"/>
+                    <button name="action_close" type="object" string="Close" invisible="state not in ('published', 'expired')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('closed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published,expired,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1><h2><field name="code"/></h2></div>
+                    <group>
+                        <group><field name="organization_id"/><field name="company_id" groups="base.group_multi_company"/><field name="effective_date"/><field name="review_date"/><field name="owner_id"/></group>
+                        <group><field name="affected_area"/><field name="affected_reference"/><field name="complaint_id"/><field name="ncr_id"/><field name="supplier_issue_id"/><field name="scar_id"/></group>
+                    </group>
+                    <notebook>
+                        <page string="Alert"><field name="description"/><field name="audience_notes"/></page>
+                        <page string="Attachments"><field name="attachment_ids" widget="many2many_binary"/></page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_pm_qms_quality_alert_search" model="ir.ui.view">
+        <field name="name">pm.qms.quality.alert.search</field><field name="model">pm.qms.quality.alert</field>
+        <field name="arch" type="xml"><search><field name="code"/><field name="name"/><filter name="published" string="Published" domain="[('state','=','published')]"/><filter name="group_state" string="Status" context="{'group_by':'state'}"/></search></field>
+    </record>
+    <record id="action_pm_qms_quality_alert" model="ir.actions.act_window">
+        <field name="name">Quality Alerts</field><field name="res_model">pm.qms.quality.alert</field><field name="view_mode">list,form</field><field name="search_view_id" ref="view_pm_qms_quality_alert_search"/>
+    </record>
+</odoo>

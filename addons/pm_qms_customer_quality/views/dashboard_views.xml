@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_dashboard_form_customer_quality" model="ir.ui.view">
+        <field name="name">pm.qms.dashboard.form.customer.quality</field>
+        <field name="model">pm.qms.dashboard</field>
+        <field name="inherit_id" ref="pm_qms_app.view_pm_qms_dashboard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[field[@name='attention_overdue_activities']]/.." position="inside">
+                <group string="Customer &amp; Supplier Quality">
+                    <field name="open_customer_complaints"/>
+                    <field name="overdue_customer_responses"/>
+                    <field name="open_quality_alerts"/>
+                    <field name="open_eight_d_cases"/>
+                    <field name="overdue_eight_d_cases"/>
+                    <field name="open_supplier_issues"/>
+                    <field name="open_scar"/>
+                    <field name="overdue_scar"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

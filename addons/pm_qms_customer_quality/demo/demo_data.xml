@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="demo_customer_quality_org" model="pm.qms.organization">
+        <field name="name">Perfect Match Customer Quality Demo Organization</field>
+        <field name="code">PM-CQ-DEMO-ORG</field>
+    </record>
+
+    <record id="demo_customer_quality_process" model="pm.qms.process">
+        <field name="name">Customer and Supplier Quality Response</field>
+        <field name="code">PM-CQ-DEMO-PROC</field>
+        <field name="organization_id" ref="demo_customer_quality_org"/>
+    </record>
+
+    <record id="demo_customer_quality_customer" model="res.partner">
+        <field name="name">Fictional Apex Mobility</field>
+        <field name="is_company">True</field>
+    </record>
+
+    <record id="demo_customer_quality_supplier" model="res.partner">
+        <field name="name">Fictional Northstar Components</field>
+        <field name="is_company">True</field>
+    </record>
+
+    <record id="demo_customer_complaint" model="pm.qms.customer.complaint">
+        <field name="name">Label adhesive failure reported by customer</field>
+        <field name="organization_id" ref="demo_customer_quality_org"/>
+        <field name="process_id" ref="demo_customer_quality_process"/>
+        <field name="customer_id" ref="demo_customer_quality_customer"/>
+        <field name="received_date">2026-08-21</field>
+        <field name="channel">email</field>
+        <field name="description">Fictional customer reported labels lifting during incoming inspection.</field>
+        <field name="customer_reference">FIC-CUST-2026-001</field>
+        <field name="product_reference">Demo label kit</field>
+        <field name="order_reference">DEMO-PO-1001</field>
+        <field name="quantity_affected">12</field>
+        <field name="severity">high</field>
+        <field name="priority">high</field>
+        <field name="response_due_date">2026-08-28</field>
+        <field name="containment_required">True</field>
+        <field name="containment_action">Hold demo shipment and inspect retained samples.</field>
+    </record>
+
+    <record id="demo_quality_alert" model="pm.qms.quality.alert">
+        <field name="name">Inspect demo label adhesion before shipment</field>
+        <field name="organization_id" ref="demo_customer_quality_org"/>
+        <field name="description">Temporary fictional alert to inspect demo label kits before shipment.</field>
+        <field name="complaint_id" ref="demo_customer_complaint"/>
+        <field name="affected_reference">Demo label kit</field>
+    </record>
+
+    <record id="demo_eight_d" model="pm.qms.eight.d">
+        <field name="name">8D for demo label adhesive failure</field>
+        <field name="organization_id" ref="demo_customer_quality_org"/>
+        <field name="process_id" ref="demo_customer_quality_process"/>
+        <field name="source_type">complaint</field>
+        <field name="complaint_id" ref="demo_customer_complaint"/>
+        <field name="customer_id" ref="demo_customer_quality_customer"/>
+        <field name="problem_statement">Fictional labels lifted during incoming inspection.</field>
+        <field name="d2_problem_description">The issue affects a fictional demo label kit only.</field>
+        <field name="d3_containment">Hold demo shipment and inspect retained samples.</field>
+    </record>
+
+    <record id="demo_supplier_issue" model="pm.qms.supplier.issue">
+        <field name="name">Supplier certificate missing for demo shipment</field>
+        <field name="organization_id" ref="demo_customer_quality_org"/>
+        <field name="process_id" ref="demo_customer_quality_process"/>
+        <field name="supplier_id" ref="demo_customer_quality_supplier"/>
+        <field name="issue_date">2026-08-21</field>
+        <field name="description">Fictional supplier shipment arrived without the expected demo certificate.</field>
+        <field name="supplier_reference">FIC-SUP-2026-001</field>
+        <field name="severity">medium</field>
+        <field name="scar_required">True</field>
+        <field name="containment_required">True</field>
+        <field name="containment_action">Hold fictional lot until supplier provides corrected certificate.</field>
+    </record>
+
+    <record id="demo_scar" model="pm.qms.scar">
+        <field name="name">SCAR for missing demo supplier certificate</field>
+        <field name="organization_id" ref="demo_customer_quality_org"/>
+        <field name="process_id" ref="demo_customer_quality_process"/>
+        <field name="supplier_id" ref="demo_customer_quality_supplier"/>
+        <field name="supplier_issue_id" ref="demo_supplier_issue"/>
+        <field name="issue_date">2026-08-21</field>
+        <field name="response_due_date">2026-09-04</field>
+        <field name="description">Fictional SCAR requesting supplier containment and corrective response.</field>
+        <field name="supplier_reference">FIC-SCAR-2026-001</field>
+    </record>
+</odoo>

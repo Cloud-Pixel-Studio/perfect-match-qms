@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_customer_complaint_list" model="ir.ui.view">
+        <field name="name">pm.qms.customer.complaint.list</field>
+        <field name="model">pm.qms.customer.complaint</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="is_response_overdue or severity == 'critical'" decoration-success="state == 'closed'" decoration-muted="state == 'cancelled'">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="received_date"/>
+                <field name="response_due_date"/>
+                <field name="is_response_overdue"/>
+                <field name="severity"/>
+                <field name="priority"/>
+                <field name="owner_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_customer_complaint_form" model="ir.ui.view">
+        <field name="name">pm.qms.customer.complaint.form</field>
+        <field name="model">pm.qms.customer.complaint</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_under_review" type="object" string="Review" invisible="state != 'new'"/>
+                    <button name="action_start_containment" type="object" string="Containment" invisible="state not in ('new', 'under_review')"/>
+                    <button name="action_complete_containment" type="object" string="Complete Containment" invisible="state != 'containment'"/>
+                    <button name="action_start_investigation" type="object" string="Investigate" invisible="state not in ('under_review', 'containment')"/>
+                    <button name="action_create_ncr" type="object" string="Create / Open NCR" class="btn-secondary"/>
+                    <button name="action_create_eight_d" type="object" string="Create / Open 8D" class="btn-secondary"/>
+                    <button name="action_create_quality_alert" type="object" string="Quality Alert" class="btn-secondary"/>
+                    <button name="action_corrective_action" type="object" string="Corrective Action" invisible="state != 'investigation'"/>
+                    <button name="action_await_customer" type="object" string="Await Customer" invisible="state not in ('corrective_action', 'effectiveness_review')"/>
+                    <button name="action_record_customer_response" type="object" string="Record Response" invisible="state != 'awaiting_customer'"/>
+                    <button name="action_close" type="object" string="Close" invisible="state not in ('effectiveness_review', 'awaiting_customer')"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('closed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="new,under_review,containment,investigation,corrective_action,awaiting_customer,effectiveness_review,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                        <h2><field name="code"/></h2>
+                    </div>
+                    <group>
+                        <group string="Customer Intake">
+                            <field name="customer_id"/>
+                            <field name="customer_contact_id"/>
+                            <field name="received_date"/>
+                            <field name="received_by_id"/>
+                            <field name="channel"/>
+                            <field name="customer_reference"/>
+                        </group>
+                        <group string="Control">
+                            <field name="organization_id"/>
+                            <field name="process_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="owner_id"/>
+                            <field name="severity"/>
+                            <field name="priority"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Complaint">
+                            <field name="description"/>
+                            <group>
+                                <field name="product_reference"/>
+                                <field name="order_reference"/>
+                                <field name="lot_serial_reference"/>
+                                <field name="quantity_affected"/>
+                                <field name="unit_of_measure_text"/>
+                            </group>
+                        </page>
+                        <page string="Containment">
+                            <group>
+                                <field name="containment_required"/>
+                                <field name="containment_status"/>
+                                <field name="containment_owner_id"/>
+                                <field name="containment_due_date"/>
+                                <field name="containment_completion_date"/>
+                            </group>
+                            <field name="containment_action"/>
+                            <field name="containment_verification"/>
+                        </page>
+                        <page string="Customer Response">
+                            <group>
+                                <field name="response_due_date"/>
+                                <field name="is_response_overdue"/>
+                                <field name="days_response_overdue"/>
+                                <field name="customer_response_date"/>
+                                <field name="response_owner_id"/>
+                                <field name="customer_acceptance"/>
+                            </group>
+                            <field name="customer_response_summary"/>
+                        </page>
+                        <page string="QMS Links">
+                            <group>
+                                <field name="ncr_id"/>
+                                <field name="capa_id"/>
+                                <field name="eight_d_id"/>
+                                <field name="root_cause_analysis_id"/>
+                            </group>
+                            <field name="quality_alert_ids"/>
+                            <field name="related_document_ids"/>
+                            <field name="related_evidence_ids"/>
+                        </page>
+                        <page string="Closure">
+                            <field name="closure_notes"/>
+                            <field name="lessons_learned"/>
+                        </page>
+                        <page string="Attachments">
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_customer_complaint_search" model="ir.ui.view">
+        <field name="name">pm.qms.customer.complaint.search</field>
+        <field name="model">pm.qms.customer.complaint</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="owner_id"/>
+                <filter name="open" string="Open" domain="[('state', 'not in', ('closed', 'cancelled'))]"/>
+                <filter name="overdue" string="Overdue Response" domain="[('is_response_overdue', '=', True)]"/>
+                <filter name="critical" string="Critical" domain="[('severity', '=', 'critical')]"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_customer" string="Customer" context="{'group_by': 'customer_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_customer_complaint" model="ir.actions.act_window">
+        <field name="name">Customer Complaints</field>
+        <field name="res_model">pm.qms.customer.complaint</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pm_qms_customer_complaint_search"/>
+    </record>
+</odoo>
