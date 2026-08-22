@@ -1,0 +1,63 @@
+name: pmqms-demo
+
+services:
+  postgres-demo:
+    image: postgres:15
+    container_name: pmqms-postgres-demo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/odoo_pg_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pmqms_demo_postgres:/var/lib/postgresql/data/pgdata
+    secrets:
+      - odoo_pg_password
+    networks:
+      - pmqms_demo_network
+
+  odoo-demo:
+    image: odoo:19.0
+    container_name: pmqms-odoo-demo
+    restart: unless-stopped
+    depends_on:
+      postgres-demo:
+        condition: service_healthy
+    ports:
+      - "${ODOO_DEMO_HTTP_BIND:-0.0.0.0}:${ODOO_DEMO_HTTP_PORT:-8170}:8069"
+      - "${ODOO_DEMO_LONGPOLLING_BIND:-0.0.0.0}:${ODOO_DEMO_LONGPOLLING_PORT:-8173}:8072"
+    environment:
+      HOST: postgres-demo
+      PORT: "5432"
+      USER: odoo
+      PASSWORD_FILE: /run/secrets/odoo_pg_password
+    command: ["odoo", "--log-level=info"]
+    volumes:
+      - ../../../addons:/mnt/extra-addons:rw
+      - ${ODOO_DEMO_CONFIG_DIR:-/opt/perfect-match/secrets/odoo-demo/config}:/etc/odoo:ro
+      - pmqms_demo_odoo_data:/var/lib/odoo
+    secrets:
+      - odoo_pg_password
+    networks:
+      - pmqms_demo_network
+
+secrets:
+  odoo_pg_password:
+    file: ${ODOO_DEMO_PG_PASSWORD_FILE:-/opt/perfect-match/secrets/odoo-demo/odoo_pg_password}
+
+volumes:
+  pmqms_demo_postgres:
+    name: pmqms_demo_postgres
+  pmqms_demo_odoo_data:
+    name: pmqms_demo_odoo_data
+
+networks:
+  pmqms_demo_network:
+    name: pmqms_demo_network
+    driver: bridge
