@@ -71,7 +71,13 @@
                             <field name="root_cause_method"/>
                             <field name="root_cause_analysis"/>
                             <field name="root_cause"/>
-                            <field name="why_ids"/>
+                            <field name="why_ids">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="question"/>
+                                    <field name="answer"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Actions">
                             <field name="action_plan"/>

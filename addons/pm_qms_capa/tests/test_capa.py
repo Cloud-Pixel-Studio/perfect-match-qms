@@ -1,3 +1,5 @@
+from lxml import etree
+
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -130,6 +132,16 @@ class TestPmQmsCapa(TransactionCase):
         }
         values.update(extra_values)
         return values
+
+    def test_capa_why_inline_list_shows_analysis_columns(self):
+        view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
+        arch = etree.fromstring(view.arch_db.encode())
+        why_field = arch.xpath("//field[@name='why_ids']")
+        self.assertTrue(why_field)
+        why_list = why_field[0].xpath("./list")
+        self.assertTrue(why_list)
+        columns = why_list[0].xpath("./field/@name")
+        self.assertEqual(columns, ["sequence", "question", "answer"])
 
     def test_capa_creation_5why_multiple_actions_effectiveness_and_history(self):
         manager = self._create_test_user("pmqms.capa.manager", self.qms_manager_group)
