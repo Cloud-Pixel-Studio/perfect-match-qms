@@ -36,6 +36,8 @@ MISSION15_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION15_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_migration,/pm_qms_people,/pm_qms_calibration,/pm_qms_app"
 MISSION16_ADDONS="$MISSION15_ADDONS,pm_qms_customer_quality"
 MISSION16_TEST_TAGS="$MISSION15_TEST_TAGS,/pm_qms_customer_quality"
+MISSION17_ADDONS="$MISSION16_ADDONS,pm_qms_action_center,pm_qms_cost_quality"
+MISSION17_TEST_TAGS="$MISSION16_TEST_TAGS,/pm_qms_action_center,/pm_qms_cost_quality"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -241,6 +243,12 @@ Commands:
                 Upgrade full QMS stack including Customer Quality, 8D, Supplier Quality, and SCAR in pmqms_dev.
   test-mission16
                 Run Mission 16 full-stack Odoo tests in pmqms_test.
+  install-mission17
+                Install full QMS stack including Action Center and Cost of Quality in pmqms_dev.
+  update-mission17
+                Upgrade full QMS stack including Action Center and Cost of Quality in pmqms_dev.
+  test-mission17
+                Run Mission 17 full-stack Odoo tests in pmqms_test.
 EOF
 }
 
@@ -537,6 +545,23 @@ case "$command" in
     ;;
   test-mission16)
     run_odoo_tests "$MISSION16_ADDONS" "$MISSION16_TEST_TAGS" "Mission 16"
+    ;;
+  install-mission17)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION16_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "pm_qms_action_center,pm_qms_cost_quality" --without-demo=all --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "pm_qms_app" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION17_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission17)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION17_ADDONS" --stop-after-init
+    ;;
+  test-mission17)
+    run_odoo_tests "$MISSION17_ADDONS" "$MISSION17_TEST_TAGS" "Mission 17"
     ;;
   ""|help|-h|--help)
     usage
