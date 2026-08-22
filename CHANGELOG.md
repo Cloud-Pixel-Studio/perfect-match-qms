@@ -5,6 +5,23 @@
 ### Added
 - Mission 13 product visual surface: dashboard operational navigation, implementation gap/readiness stats, control evidence actions, search views, Odoo-native state decorations, and product visual architecture documentation.
 
+## 1.0.0-rc4 - 2026-08-22
+
+- Added `pm_qms_customer_quality` with customer complaints, quality alerts, 8D cases, supplier issues, SCAR, supplier response history, and controlled closure workflows.
+- Preserved NCR and CAPA as authoritative engines while linking customer and supplier quality records to them.
+- Integrated customer and supplier quality signals into dashboard and management review.
+- Fixed CAPA 5 Why inline list display so sequence, question, and answer columns are visible instead of a generic ID row.
+- Validated the current stack with 110 Odoo post-tests, DEV install/update, GitHub Actions, and Oliva pilot-safe update/health checks.
+- Added RC4 release notes, release baseline, and release work item.
+- Recorded non-blocking GitHub Actions Node.js runtime warnings as release technical debt.
+
+## 1.0.0-rc3 - 2026-08-21
+
+- Added QMS People with people records, roles, competencies, competency matrix, assessments, training, qualifications, and revision-specific document acknowledgments.
+- Added equipment, monitoring resources, calibration planning, calibration events, evidence traceability, due/overdue monitoring, out-of-tolerance workflow, quarantine, impact assessment, and NCR/CAPA traceability.
+- Validated the operational expansion with 103 Odoo post-tests, GitHub Actions, and Oliva pilot-safe update/health checks.
+- Added RC3 release notes and baseline documentation.
+
 ## 1.0.0-rc2 - 2026-08-21
 
 - Added the Perfect Match QMS product application shell as the coherent user entry point for the current QMS baseline.
