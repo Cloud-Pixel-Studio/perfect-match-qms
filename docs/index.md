@@ -45,3 +45,8 @@
 - [Cost of Quality and Unified Action Center](COST_QUALITY_ACTION_CENTER.md)
 - [ADR-053: Unified Action Center Aggregation Architecture](DECISIONS/ADR-053-unified-action-center-aggregation.md)
 - [ADR-054: Cost of Quality Data and Source Traceability Architecture](DECISIONS/ADR-054-cost-of-quality-traceability.md)
+
+- [Demo Environment](DEMO_ENVIRONMENT.md)
+- [Demo Guide](DEMO_GUIDE.md)
+- [Demo Coverage Matrix](DEMO_COVERAGE_MATRIX.md)
+- [ADR-055: Dedicated Product Demo Environment](DECISIONS/ADR-055-dedicated-product-demo-environment.md)
