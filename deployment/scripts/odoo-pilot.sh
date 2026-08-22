@@ -15,6 +15,7 @@ MISSION10_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qm
 MISSION11_ADDONS="$MISSION10_ADDONS,pm_qms_app"
 MISSION14_ADDONS="$MISSION10_ADDONS,pm_qms_people,pm_qms_app"
 MISSION15_ADDONS="$MISSION10_ADDONS,pm_qms_people,pm_qms_calibration,pm_qms_app"
+MISSION16_ADDONS="$MISSION15_ADDONS,pm_qms_customer_quality"
 
 export ODOO_OLIVA_PILOT_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_OLIVA_PILOT_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -132,6 +133,13 @@ update_qms_stack() {
     run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init
   else
     run_odoo -d "$DB_NAME" --init pm_qms_app --without-demo=all --stop-after-init
+  fi
+  local customer_quality_state
+  customer_quality_state="$(odoo_module_state pm_qms_customer_quality)"
+  if [[ "$customer_quality_state" == "installed" ]]; then
+    run_odoo -d "$DB_NAME" --update pm_qms_customer_quality --stop-after-init
+  else
+    run_odoo -d "$DB_NAME" --init pm_qms_customer_quality --without-demo=all --stop-after-init
   fi
 }
 
@@ -253,7 +261,7 @@ Commands:
   init-db            Initialize pilot database with base.
   configure-company  Rename initial Odoo company to Oliva Torras USA, Inc.
   install            Install full QMS stack including people and the application shell.
-  update             Update full QMS stack including people and the application shell.
+  update             Update full QMS stack including customer/supplier quality and the application shell.
   configure-client   Create/verify Oliva organization and generated project.
   run-readiness      Run a historical readiness assessment.
   health             Validate local pilot HTTP and container status.
@@ -312,7 +320,7 @@ case "${1:-}" in
     else
       run_odoo -d "$DB_NAME" --init base --without-demo=all --stop-after-init
       configure_company
-      run_odoo -d "$DB_NAME" --init "$MISSION15_ADDONS" --without-demo=all --stop-after-init
+      run_odoo -d "$DB_NAME" --init "$MISSION16_ADDONS" --without-demo=all --stop-after-init
     fi
     ;;
   update)

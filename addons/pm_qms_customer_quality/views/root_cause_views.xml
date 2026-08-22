@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_root_cause_analysis_list" model="ir.ui.view">
+        <field name="name">pm.qms.root.cause.analysis.list</field><field name="model">pm.qms.root.cause.analysis</field>
+        <field name="arch" type="xml"><list decoration-success="state == 'approved'" decoration-muted="state == 'cancelled'"><field name="code"/><field name="name"/><field name="method"/><field name="organization_id"/><field name="process_id"/><field name="reviewer_id"/><field name="state"/></list></field>
+    </record>
+    <record id="view_pm_qms_root_cause_analysis_form" model="ir.ui.view">
+        <field name="name">pm.qms.root.cause.analysis.form</field><field name="model">pm.qms.root.cause.analysis</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit_review" type="object" string="Submit Review" invisible="state != 'draft'"/>
+                    <button name="action_approve" type="object" string="Approve" invisible="state != 'in_review'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('approved', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_review,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1><h2><field name="code"/></h2></div>
+                    <group><group><field name="organization_id"/><field name="process_id"/><field name="company_id" groups="base.group_multi_company"/><field name="method"/><field name="reviewer_id"/></group><group><field name="complaint_id"/><field name="ncr_id"/><field name="eight_d_id"/><field name="supplier_issue_id"/><field name="scar_id"/></group></group>
+                    <notebook>
+                        <page string="Problem"><field name="problem_statement"/></page>
+                        <page string="Analysis"><field name="why_line_ids"><list editable="bottom"><field name="sequence"/><field name="question"/><field name="answer"/><field name="evidence"/></list></field></page>
+                        <page string="Conclusion"><field name="root_cause"/><field name="contributing_causes"/><field name="evidence_summary"/><group><field name="approved_by_id"/><field name="approved_on"/></group></page>
+                        <page string="Evidence"><field name="related_evidence_ids"/><field name="attachment_ids" widget="many2many_binary"/></page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_pm_qms_root_cause_analysis_search" model="ir.ui.view">
+        <field name="name">pm.qms.root.cause.analysis.search</field><field name="model">pm.qms.root.cause.analysis</field>
+        <field name="arch" type="xml"><search><field name="code"/><field name="name"/><filter name="approved" string="Approved" domain="[('state','=','approved')]"/><filter name="group_method" string="Method" context="{'group_by':'method'}"/></search></field>
+    </record>
+    <record id="action_pm_qms_root_cause_analysis" model="ir.actions.act_window">
+        <field name="name">Root Cause</field><field name="res_model">pm.qms.root.cause.analysis</field><field name="view_mode">list,form</field><field name="search_view_id" ref="view_pm_qms_root_cause_analysis_search"/>
+    </record>
+</odoo>

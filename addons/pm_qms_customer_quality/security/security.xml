@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_customer_complaint_company" model="ir.rule">
+        <field name="name">QMS customer complaint company boundary</field>
+        <field name="model_id" ref="model_pm_qms_customer_complaint"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_quality_alert_company" model="ir.rule">
+        <field name="name">QMS quality alert company boundary</field>
+        <field name="model_id" ref="model_pm_qms_quality_alert"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_root_cause_analysis_company" model="ir.rule">
+        <field name="name">QMS root cause analysis company boundary</field>
+        <field name="model_id" ref="model_pm_qms_root_cause_analysis"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_root_cause_line_company" model="ir.rule">
+        <field name="name">QMS root cause line company boundary</field>
+        <field name="model_id" ref="model_pm_qms_root_cause_line"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_eight_d_company" model="ir.rule">
+        <field name="name">QMS 8D company boundary</field>
+        <field name="model_id" ref="model_pm_qms_eight_d"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_supplier_issue_company" model="ir.rule">
+        <field name="name">QMS supplier issue company boundary</field>
+        <field name="model_id" ref="model_pm_qms_supplier_issue"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_scar_company" model="ir.rule">
+        <field name="name">QMS SCAR company boundary</field>
+        <field name="model_id" ref="model_pm_qms_scar"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_scar_response_company" model="ir.rule">
+        <field name="name">QMS SCAR response company boundary</field>
+        <field name="model_id" ref="model_pm_qms_scar_response"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+</odoo>

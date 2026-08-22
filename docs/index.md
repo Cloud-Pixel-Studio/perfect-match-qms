@@ -38,3 +38,5 @@
 - [ADR-050: QMS People, Training and Competency Architecture](DECISIONS/ADR-050-qms-people-training-competency-architecture.md)
 - [Equipment, Monitoring Resources and Calibration](EQUIPMENT_CALIBRATION.md)
 - [ADR-051: Equipment, Monitoring Resources and Calibration Architecture](DECISIONS/ADR-051-equipment-calibration-architecture.md)
+- [Customer and Supplier Quality](CUSTOMER_SUPPLIER_QUALITY.md)
+- [ADR-052: Customer and Supplier Quality Architecture](DECISIONS/ADR-052-customer-supplier-quality-architecture.md)

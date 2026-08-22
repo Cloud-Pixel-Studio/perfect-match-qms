@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_nonconformity_form_customer_quality" model="ir.ui.view">
+        <field name="name">pm.qms.nonconformity.form.customer.quality</field>
+        <field name="model">pm.qms.nonconformity</field>
+        <field name="inherit_id" ref="pm_qms_ncr.view_pm_qms_nonconformity_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[field[@name='related_control_instance_ids']]" position="inside">
+                <group string="Customer / Supplier Quality">
+                    <field name="customer_complaint_id"/>
+                    <field name="supplier_issue_id"/>
+                    <field name="eight_d_id"/>
+                    <field name="scar_id"/>
+                </group>
+            </xpath>
+            <xpath expr="//header/button[@name='action_require_action']" position="after">
+                <button name="action_create_eight_d" type="object" string="Create / Open 8D" class="btn-secondary"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
