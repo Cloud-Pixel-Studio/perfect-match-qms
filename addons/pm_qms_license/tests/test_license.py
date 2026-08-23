@@ -13,6 +13,7 @@ from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
 from ..services.environment import ensure_environment_id, read_environment_id, short_environment_id
+from ..services import license_service
 from ..services.license_service import issue_license, validate_document
 
 
@@ -68,7 +69,7 @@ class TestPmQmsCommercialLicensing(TransactionCase):
 
     def _import(self, **overrides):
         document = self._document(**overrides)
-        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+        with patch.object(license_service, "load_public_keys", return_value={"test-key": self.public_key_b64}):
             return self.env["pm.qms.license"].import_document(document, expected_environment_id=self.environment_id)
 
     def test_environment_identity_is_stable_and_shortened(self):
@@ -82,7 +83,7 @@ class TestPmQmsCommercialLicensing(TransactionCase):
 
     def test_valid_signature_and_tamper_rejection(self):
         document = self._document()
-        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+        with patch.object(license_service, "load_public_keys", return_value={"test-key": self.public_key_b64}):
             result = validate_document(document, expected_environment_id=self.environment_id)
             self.assertEqual(result["state"], "valid")
             altered = json.loads(json.dumps(document))
@@ -96,7 +97,7 @@ class TestPmQmsCommercialLicensing(TransactionCase):
 
     def test_wrong_environment_unknown_key_and_malformed_license_rejected(self):
         document = self._document()
-        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+        with patch.object(license_service, "load_public_keys", return_value={"test-key": self.public_key_b64}):
             with self.assertRaises(ValueError):
                 validate_document(document, expected_environment_id="22222222-2222-4222-8222-222222222222")
             unknown = json.loads(json.dumps(document))
@@ -149,6 +150,15 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
         inspector_group = self.env.ref("pm_qms_core.group_qms_quality_inspector")
         User = self.env["res.users"].with_context(pmqms_enforce_license=True)
+        regular = User.create(
+            {
+                "name": "Mission 20 Regular User",
+                "login": "m20.regular",
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set([base_group.id])],
+            }
+        )
         user = User.create(
             {
                 "name": "Mission 20 Named User",
@@ -170,13 +180,13 @@ class TestPmQmsCommercialLicensing(TransactionCase):
                 }
             )
         with self.assertRaises(AccessError):
-            user.with_user(self.env.ref("base.user_demo")).write({"pmqms_license_exempt": True})
+            user.with_user(regular).write({"pmqms_license_exempt": True})
 
     def test_invalid_import_does_not_replace_current_license(self):
         current = self._import()
         broken = self._document(license_revision=2)
         broken["signature"] = base64.b64encode(b"bad" * 20).decode()
-        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+        with patch.object(license_service, "load_public_keys", return_value={"test-key": self.public_key_b64}):
             with self.assertRaises(UserError):
                 self.env["pm.qms.license"].import_document(broken, expected_environment_id=self.environment_id)
         self.assertEqual(self.env["pm.qms.license"].current(), current)
