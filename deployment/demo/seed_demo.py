@@ -1,3 +1,4 @@
+import base64
 import os
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -148,6 +149,10 @@ def call(record, *names):
 company = env.company
 usd = env.ref("base.USD", raise_if_not_found=False)
 company_vals = {"name": COMPANY_NAME}
+logo_path = "/mnt/extra-addons/pm_qms_app/static/description/perfect_match_logo_master.png"
+if os.path.exists(logo_path):
+    with open(logo_path, "rb") as logo_file:
+        company_vals["logo"] = base64.b64encode(logo_file.read()).decode("ascii")
 if usd:
     company_vals["currency_id"] = usd.id
 company.write(company_vals)

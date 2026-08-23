@@ -1,0 +1,73 @@
+:root {
+    --pmqms-navy: #082078;
+    --pmqms-magenta: #c01068;
+    --pmqms-purple: #902898;
+    --pmqms-green: #b0c848;
+    --pmqms-off-white: #f7f8fa;
+    --pmqms-charcoal: #252a34;
+}
+
+.o_web_login {
+    background: var(--pmqms-off-white);
+
+    .oe_login_form {
+        border-top: 4px solid var(--pmqms-navy);
+        box-shadow: 0 12px 32px rgba(8, 32, 120, 0.12);
+        color: var(--pmqms-charcoal);
+    }
+
+    .btn-primary {
+        background-color: var(--pmqms-magenta);
+        border-color: var(--pmqms-magenta);
+
+        &:hover,
+        &:focus {
+            background-color: #a80e59;
+            border-color: #a80e59;
+        }
+    }
+
+    .form-control:focus {
+        border-color: var(--pmqms-navy);
+        box-shadow: 0 0 0 0.2rem rgba(8, 32, 120, 0.15);
+    }
+}
+
+.o_main_navbar {
+    background-color: var(--pmqms-navy);
+
+    .o_menu_brand,
+    .o_nav_entry,
+    .o_menu_sections .dropdown-toggle {
+        color: #ffffff;
+    }
+
+    .o_menu_brand:hover,
+    .o_nav_entry:hover,
+    .o_menu_sections .dropdown-toggle:hover {
+        background-color: var(--pmqms-purple);
+    }
+}
+
+
+main .o_database_list {
+    border-top: 4px solid var(--pmqms-navy);
+    box-shadow: 0 12px 32px rgba(8, 32, 120, 0.12);
+    color: var(--pmqms-charcoal);
+}
+
+main .o_database_list .btn-primary {
+    background-color: var(--pmqms-magenta);
+    border-color: var(--pmqms-magenta);
+
+    &:hover,
+    &:focus {
+        background-color: #a80e59;
+        border-color: #a80e59;
+    }
+}
+
+main .o_database_list .form-control:focus {
+    border-color: var(--pmqms-navy);
+    box-shadow: 0 0 0 0.2rem rgba(8, 32, 120, 0.15);
+}
