@@ -183,6 +183,16 @@ organization = upsert(
     },
 )
 
+# The framework/library organization is internal product content, not a
+# separately licensed customer company. Normalize the legacy demo row so the
+# Mission 20 company entitlement remains idempotent across upgrades.
+if model_exists("pm.qms.organization") and "organization_kind" in env["pm.qms.organization"]._fields:
+    framework_organization = env["pm.qms.organization"].search(
+        [("code", "=", "PM-QMS-FRAMEWORK")], limit=1
+    )
+    if framework_organization:
+        framework_organization.write({"organization_kind": "framework"})
+
 site_specs = [
     (
         "APEX-HQ",
