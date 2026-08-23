@@ -6,7 +6,7 @@ Perfect Match QMS provides the customer-facing application shell, dashboard,
 and unified navigation for the reusable Perfect Match Digital QMS product.
 Technical addons remain modular underneath this product entry point.
 """,
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Operations/Quality",
     "author": "Perfect Match",
     "depends": [
@@ -31,6 +31,14 @@ Technical addons remain modular underneath this product entry point.
         "views/implementation_project_views.xml",
         "views/menu_views.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "pm_qms_app/static/src/scss/brand.scss",
+        ],
+        "web.assets_frontend": [
+            "pm_qms_app/static/src/scss/brand.scss",
+        ],
+    },
     "application": True,
     "installable": True,
     "license": "LGPL-3",

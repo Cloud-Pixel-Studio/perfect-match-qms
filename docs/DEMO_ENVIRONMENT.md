@@ -9,7 +9,8 @@ The demo environment is the official fictional Perfect Match QMS product tour an
 | Item | Value |
 | --- | --- |
 | Database | `pmqms_demo` |
-| URL | `http://192.168.68.151:8170/web/login?db=pmqms_demo` |
+| URL | `https://demo.invperfectmatch.com/web/login?db=pmqms_demo` |
+| Internal URL | `http://192.168.68.151:8170/web/login?db=pmqms_demo` |
 | HTTP port | `8170` |
 | Longpolling port | `8173` |
 | Odoo container | `pmqms-odoo-demo` |
@@ -49,6 +50,16 @@ The password is generated locally and stored outside Git:
 ```
 
 Use `./deployment/scripts/odoo-demo.sh credentials` to print the URL, login, and password file path.
+
+## Perfect Match Brand
+
+The demo login uses the approved Perfect Match Investments LLC primary logo from the brand manual. The logo is loaded into the demo company through Odoo ORM from:
+
+```text
+addons/pm_qms_app/static/description/perfect_match_logo_master.png
+```
+
+The demo visual layer uses the approved blue as the dominant UI color, magenta for primary actions, and the documented white/off-white operational surfaces. The Oliva pilot remains unbranded by this demo seed.
 
 ## Fictional Data
 
