@@ -1,5 +1,8 @@
 # Oliva Migration Inventory Template
 
+> **Historical, retired in RC6.** This template is an archival artifact and is
+> not evidence of an active Oliva deployment or production approval.
+
 Use these columns for customer-authorized migration inventories. Do not add
 external standard requirement text or unapproved customer data.
 

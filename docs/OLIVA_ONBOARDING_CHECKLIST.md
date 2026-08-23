@@ -1,5 +1,8 @@
 # Oliva Torras Onboarding Checklist
 
+> **Historical, retired in RC6.** Retained for audit traceability only; do not
+> use it to start or restore a runtime.
+
 Use this checklist when Oliva authorizes real onboarding work.
 
 ## Authorization

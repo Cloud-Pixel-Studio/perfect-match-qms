@@ -2,10 +2,10 @@
 
 Plane is available at `https://plane.cloudpixelstudio.agency`.
 
-Odoo currently has two VM-local Docker Compose environments:
+Odoo currently has two active VM-local Docker Compose environments:
 
 - DEV under `deployment/docker/dev/`
-- Oliva technical pilot under `deployment/docker/pilot/`
+- Demo under `deployment/docker/demo/`
 
 Neither Odoo environment is exposed directly to the Internet by default.
 
@@ -24,28 +24,22 @@ DEV uses:
 - HTTP: `127.0.0.1:8069`
 - Network: `pmqms_dev_network`
 
-## Oliva Pilot
+## Demo
 
-```bash
-cd /opt/perfect-match/perfect-match-qms
-./deployment/scripts/odoo-pilot.sh config
-./deployment/scripts/odoo-pilot.sh up
-./deployment/scripts/odoo-pilot.sh health
-```
+The public Demo uses the dedicated `pmqms_demo` database and the
+`demo.invperfectmatch.com` HTTPS route. It is fictional product data only and
+must remain isolated from DEV and Plane. See `docs/DEMO_ENVIRONMENT.md` for
+operational commands and secret locations.
 
-The Oliva pilot uses:
-
-- Database: `pmqms_oliva_pilot`
-- HTTP: `127.0.0.1:8169`
-- Network: `pmqms_oliva_pilot_network`
-
-Public DNS and TLS routing for the pilot require a separate controlled reverse
-proxy change. Do not route pilot traffic through Plane's database, network, or
-volumes.
+The Oliva Torras pilot was retired in RC6. Its database, containers, volumes,
+network, secrets, and localhost ports were removed after a validated local
+backup. Historical Oliva runbooks remain reference material and are not active
+deployment instructions.
 
 ## Future Production
 
 Future production deployment should use Docker Compose or an approved
 orchestrator, PostgreSQL with managed backups, Nginx reverse proxy, TLS
 certificates, environment-variable based configuration, monitored backup
-retention, and separate DEV, STAGING, PILOT, and PRODUCTION environments.
+retention, and separate engineering, Demo, and customer production
+environments.

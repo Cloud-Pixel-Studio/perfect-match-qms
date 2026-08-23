@@ -2,7 +2,10 @@
 
 ## Purpose
 
-The demo environment is the official fictional Perfect Match QMS product tour and smoke-test environment. It is separate from the Oliva Torras pilot and must never contain real customer records.
+The demo environment is the official fictional Perfect Match QMS product tour,
+smoke-test, and customer-facing validation environment. It must never contain
+real customer records. The Oliva Torras pilot is retired and is not an active
+peer environment.
 
 ## Runtime
 
@@ -59,7 +62,7 @@ The demo login uses the approved Perfect Match Investments LLC primary logo from
 addons/pm_qms_app/static/description/perfect_match_logo_master.png
 ```
 
-The demo visual layer uses the approved blue as the dominant UI color, magenta for primary actions, and the documented white/off-white operational surfaces. The Oliva pilot remains unbranded by this demo seed.
+The demo visual layer uses the approved blue as the dominant UI color, magenta for primary actions, and the documented white/off-white operational surfaces. Historical Oliva pilot records were not part of this demo seed.
 
 ## Fictional Data
 
@@ -67,18 +70,15 @@ The demo company is `Apex Precision Systems, Inc.`, a fictional US precision man
 
 No copyrighted standards text, real customer claims, real supplier data, real employees, ITAR, CUI, or confidential files are used.
 
-## Isolation From Oliva
+## Retired Pilot Boundary
 
-Oliva remains separate:
+The former Oliva pilot was retired in RC6 after a validated local backup. Its
+runtime database, containers, volumes, network, secrets, and ports were
+removed. The final archive is retained outside Git under the VM retirement
+backup directory and must never be committed or uploaded.
 
-| Item | Oliva Pilot | Demo |
-| --- | --- | --- |
-| Database | `pmqms_oliva_pilot` | `pmqms_demo` |
-| HTTP port | `8169` | `8170` |
-| Purpose | Real pilot validation | Fictional product demonstration |
-| Demo data | Never | Yes |
-
-The demo script refuses `pmqms_oliva_pilot`, `pmqms_dev`, `pmqms_test`, and unknown database names.
+The demo script refuses retired or non-Demo database names, including
+`pmqms_oliva_pilot`, `pmqms_dev`, `pmqms_test`, and unknown database names.
 
 ## Security Rules
 
@@ -90,4 +90,4 @@ The demo script refuses `pmqms_oliva_pilot`, `pmqms_dev`, `pmqms_test`, and unkn
 
 ## Backup Policy
 
-Demo backups, when needed, are stored under `/opt/perfect-match/backups/odoo-demo/` and do not mix with Oliva pilot backups.
+Demo backups, when needed, are stored under `/opt/perfect-match/backups/odoo-demo/`.

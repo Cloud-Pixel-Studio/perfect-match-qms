@@ -21,10 +21,12 @@
 - [Release Notes v1.0.0-rc3](RELEASE_NOTES_v1.0.0-rc3.md)
 - [Release Notes v1.0.0-rc4](RELEASE_NOTES_v1.0.0-rc4.md)
 - [Release Notes v1.0.0-rc5](RELEASE_NOTES_v1.0.0-rc5.md)
+- [Release Notes v1.0.0-rc6](RELEASE_NOTES_v1.0.0-rc6.md)
 - [Release Baseline v1.0.0-rc2](RELEASE_BASELINE_v1.0.0-rc2.md)
 - [Release Baseline v1.0.0-rc3](RELEASE_BASELINE_v1.0.0-rc3.md)
 - [Release Baseline v1.0.0-rc4](RELEASE_BASELINE_v1.0.0-rc4.md)
 - [Release Baseline v1.0.0-rc5](RELEASE_BASELINE_v1.0.0-rc5.md)
+- [Release Baseline v1.0.0-rc6](RELEASE_BASELINE_v1.0.0-rc6.md)
 - [IP And Standards Policy](IP_AND_STANDARDS_POLICY.md)
 - [Development Workflow](DEVELOPMENT_WORKFLOW.md)
 - [Deployment](DEPLOYMENT.md)
@@ -58,3 +60,8 @@
 - [Standalone Product Architecture](STANDALONE_PRODUCT_ARCHITECTURE.md)
 - [ADR-056: Standalone Product Organization and Site Foundation](DECISIONS/ADR-056-standalone-product-organization-site-foundation.md)
 - [ADR-057: Users, Roles, Permissions and Site Scope](DECISIONS/ADR-057-users-roles-permissions-site-scope.md)
+- [ADR-058: RC6 Lifecycle and Oliva Pilot Retirement](DECISIONS/ADR-058-rc6-lifecycle-and-oliva-retirement.md)
+
+The Oliva pilot runbook, implementation guide, onboarding checklist, and
+migration template are historical records only. They do not describe an active
+runtime.
