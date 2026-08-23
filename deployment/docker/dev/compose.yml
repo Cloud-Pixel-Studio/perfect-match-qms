@@ -37,6 +37,7 @@ services:
       PORT: "5432"
       USER: odoo
       PASSWORD_FILE: /run/secrets/odoo_pg_password
+      PMQMS_ENVIRONMENT_ID_FILE: /etc/odoo/environment_id
     command: ["odoo", "--dev=reload,qweb,werkzeug,xml", "--log-level=info"]
     volumes:
       - ../../../addons:/mnt/extra-addons:rw

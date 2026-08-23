@@ -24,6 +24,7 @@ Technical addons remain modular underneath this product entry point.
         "pm_qms_pack_quality",
         "pm_qms_migration",
         "pm_qms_calibration",
+        "pm_qms_license",
     ],
     "data": [
         "security/mission19_security.xml",

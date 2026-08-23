@@ -1,0 +1,182 @@
+import base64
+import json
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from unittest.mock import patch
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from odoo import Command, fields
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import tagged
+from odoo.tests.common import TransactionCase
+
+from ..services.environment import ensure_environment_id, read_environment_id, short_environment_id
+from ..services.license_service import issue_license, validate_document
+
+
+@tagged("-at_install", "post_install")
+class TestPmQmsCommercialLicensing(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.env.company
+        cls.organization = cls.env["pm.qms.organization"].create(
+            {"name": "Mission 20 Customer", "code": "M20-CUSTOMER", "company_id": cls.company.id}
+        )
+        cls.private_key = Ed25519PrivateKey.generate()
+        cls.public_key = cls.private_key.public_key()
+        cls.public_key_b64 = base64.b64encode(
+            cls.public_key.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        ).decode()
+        cls.environment_id = "11111111-1111-4111-8111-111111111111"
+
+    def _payload(self, **overrides):
+        now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        payload = {
+            "schema_version": 1,
+            "license_id": "PMQMS-M20-TEST",
+            "license_revision": 1,
+            "customer_name": "Mission 20 Customer",
+            "edition": "professional",
+            "environment_id": self.environment_id,
+            "company_limit": 1,
+            "site_limit": 3,
+            "named_user_limit": 1,
+            "issued_at": now,
+            "not_before": now,
+            "expires_at": None,
+            "perpetual": True,
+            "key_id": "test-key",
+            "metadata": {"test": True},
+        }
+        payload.update(overrides)
+        return payload
+
+    def _document(self, **overrides):
+        with tempfile.TemporaryDirectory() as directory:
+            private_path = Path(directory) / "private.pem"
+            private_path.write_bytes(
+                self.private_key.private_bytes(
+                    serialization.Encoding.PEM,
+                    serialization.PrivateFormat.PKCS8,
+                    serialization.NoEncryption(),
+                )
+            )
+            return issue_license(self._payload(**overrides), private_path, Path(directory) / "license.pmql")
+
+    def _import(self, **overrides):
+        document = self._document(**overrides)
+        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+            return self.env["pm.qms.license"].import_document(document, expected_environment_id=self.environment_id)
+
+    def test_environment_identity_is_stable_and_shortened(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "environment_id"
+            first = ensure_environment_id(path)
+            second = ensure_environment_id(path)
+            self.assertEqual(first, second)
+            self.assertEqual(read_environment_id(path), first)
+            self.assertEqual(short_environment_id(first), first.replace("-", "")[:8].upper())
+
+    def test_valid_signature_and_tamper_rejection(self):
+        document = self._document()
+        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+            result = validate_document(document, expected_environment_id=self.environment_id)
+            self.assertEqual(result["state"], "valid")
+            altered = json.loads(json.dumps(document))
+            altered["payload"]["site_limit"] = 99
+            with self.assertRaises(ValueError):
+                validate_document(altered, expected_environment_id=self.environment_id)
+            altered_signature = json.loads(json.dumps(document))
+            altered_signature["signature"] = base64.b64encode(b"x" * 64).decode()
+            with self.assertRaises(ValueError):
+                validate_document(altered_signature, expected_environment_id=self.environment_id)
+
+    def test_wrong_environment_unknown_key_and_malformed_license_rejected(self):
+        document = self._document()
+        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+            with self.assertRaises(ValueError):
+                validate_document(document, expected_environment_id="22222222-2222-4222-8222-222222222222")
+            unknown = json.loads(json.dumps(document))
+            unknown["payload"]["key_id"] = "unknown"
+            with self.assertRaises(ValueError):
+                validate_document(unknown, expected_environment_id=self.environment_id)
+            with self.assertRaises(ValueError):
+                validate_document("not json", expected_environment_id=self.environment_id)
+
+    def test_revision_replacement_and_older_revision_rejection(self):
+        self._import()
+        with self.assertRaises(UserError):
+            self._import()
+        replacement = self._import(license_revision=2, site_limit=4)
+        self.assertEqual(replacement.license_revision, 2)
+        self.assertFalse(self.env["pm.qms.license"].search([("license_revision", "=", 1), ("is_current", "=", True)]))
+
+    def test_site_capacity_archive_and_reactivation(self):
+        self._import()
+        Site = self.env["pm.qms.site"].with_context(pm_qms_enforce_license=True)
+        sites = Site.create(
+            [
+                {"name": "M20 HQ", "code": "M20-HQ", "organization_id": self.organization.id, "site_type": "headquarters"},
+                {"name": "M20 Plant", "code": "M20-PLANT", "organization_id": self.organization.id, "site_type": "manufacturing"},
+                {"name": "M20 Inspection", "code": "M20-INSP", "organization_id": self.organization.id, "site_type": "inspection"},
+            ]
+        )
+        with self.assertRaises(UserError):
+            Site.create({"name": "M20 Overflow", "code": "M20-OVER", "organization_id": self.organization.id, "site_type": "office"})
+        sites[0].active = False
+        extra = Site.create({"name": "M20 Replacement", "code": "M20-REPL", "organization_id": self.organization.id, "site_type": "office"})
+        with self.assertRaises(UserError):
+            sites[0].active = True
+        self.assertTrue(extra.active)
+
+    def test_framework_organization_does_not_consume_company_capacity(self):
+        self._import()
+        framework = self.env["pm.qms.organization"].with_context(pm_qms_enforce_license=True).create(
+            {"name": "M20 Framework", "code": "M20-FRAMEWORK", "company_id": self.company.id, "organization_kind": "framework"}
+        )
+        self.assertEqual(framework.organization_kind, "framework")
+        with self.assertRaises(UserError):
+            self.env["pm.qms.organization"].with_context(pm_qms_enforce_license=True).create(
+                {"name": "M20 Second Customer", "code": "M20-SECOND", "company_id": self.company.id}
+            )
+
+    def test_named_user_is_counted_once_and_exemption_is_protected(self):
+        self._import()
+        base_group = self.env.ref("base.group_user")
+        manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
+        inspector_group = self.env.ref("pm_qms_core.group_qms_quality_inspector")
+        User = self.env["res.users"].with_context(pmqms_enforce_license=True)
+        user = User.create(
+            {
+                "name": "Mission 20 Named User",
+                "login": "m20.named",
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set([base_group.id, manager_group.id, inspector_group.id])],
+            }
+        )
+        self.assertEqual(self.env["pm.qms.entitlement.service"].usage(self.company)["named_user"]["used"], 1)
+        with self.assertRaises(UserError):
+            User.create(
+                {
+                    "name": "Mission 20 Second User",
+                    "login": "m20.second",
+                    "company_id": self.company.id,
+                    "company_ids": [Command.set([self.company.id])],
+                    "group_ids": [Command.set([base_group.id, self.env.ref("pm_qms_core.group_qms_viewer").id])],
+                }
+            )
+        with self.assertRaises(AccessError):
+            user.with_user(self.env.ref("base.user_demo")).write({"pmqms_license_exempt": True})
+
+    def test_invalid_import_does_not_replace_current_license(self):
+        current = self._import()
+        broken = self._document(license_revision=2)
+        broken["signature"] = base64.b64encode(b"bad" * 20).decode()
+        with patch("addons.pm_qms_license.services.license_service.load_public_keys", return_value={"test-key": self.public_key_b64}):
+            with self.assertRaises(UserError):
+                self.env["pm.qms.license"].import_document(broken, expected_environment_id=self.environment_id)
+        self.assertEqual(self.env["pm.qms.license"].current(), current)

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_license_list" model="ir.ui.view">
+        <field name="name">pm.qms.license.list</field>
+        <field name="model">pm.qms.license</field>
+        <field name="arch" type="xml">
+            <list string="Commercial License History">
+                <field name="license_id"/>
+                <field name="license_revision"/>
+                <field name="customer_name"/>
+                <field name="edition"/>
+                <field name="environment_short"/>
+                <field name="state"/>
+                <field name="is_current"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_license_form" model="ir.ui.view">
+        <field name="name">pm.qms.license.form</field>
+        <field name="model">pm.qms.license</field>
+        <field name="arch" type="xml">
+            <form string="Commercial License">
+                <header>
+                    <button name="action_open_import_wizard" type="object" string="Import Updated License" class="oe_highlight" groups="pm_qms_license.group_pm_qms_license_admin"/>
+                    <button name="action_generate_activation_request" type="object" string="Generate Activation Request" groups="pm_qms_license.group_pm_qms_license_admin"/>
+                    <button name="action_view_history" type="object" string="License History"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1>Perfect Match QMS License</h1></div>
+                    <div class="alert alert-info" role="alert" invisible="state not in ('valid', 'expiring')">
+                        This signed license is verified locally. No Internet connection is required for normal operation.
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="state in ('valid', 'expiring')">
+                        This environment needs a valid signed commercial license before additional capacity can be activated. Existing QMS data remains readable and exportable.
+                    </div>
+                    <group>
+                        <group string="License">
+                            <field name="state" widget="badge" decoration-success="state == 'valid'" decoration-warning="state in ('expiring', 'not_yet_valid')" decoration-danger="state in ('expired', 'invalid_signature', 'wrong_environment', 'invalid_format')"/>
+                            <field name="license_id"/>
+                            <field name="license_revision"/>
+                            <field name="customer_name"/>
+                            <field name="edition"/>
+                        </group>
+                        <group string="Validity">
+                            <field name="environment_short"/>
+                            <field name="environment_id" password="True"/>
+                            <field name="issued_at"/>
+                            <field name="not_before"/>
+                            <field name="expires_at"/>
+                            <field name="perpetual"/>
+                        </group>
+                    </group>
+                    <separator string="Commercial Capacity"/>
+                    <group>
+                        <group string="Licensed Limits">
+                            <field name="company_limit"/>
+                            <field name="site_limit"/>
+                            <field name="named_user_limit"/>
+                        </group>
+                        <group string="Current Usage">
+                            <field name="company_usage"/>
+                            <field name="site_usage"/>
+                            <field name="named_user_usage"/>
+                        </group>
+                    </group>
+                    <separator string="Verification"/>
+                    <group>
+                        <field name="key_id"/>
+                        <field name="public_key_fingerprint"/>
+                        <field name="fingerprint"/>
+                        <field name="is_current"/>
+                    </group>
+                    <notebook>
+                        <page string="Signed Payload" groups="pm_qms_license.group_pm_qms_license_admin">
+                            <field name="payload_json" nolabel="1"/>
+                        </page>
+                        <page string="Activation Requests">
+                            <field name="activation_request_ids" readonly="1">
+                                <list><field name="name"/><field name="requested_at"/><field name="environment_short"/><field name="state"/></list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_license" model="ir.actions.act_window">
+        <field name="name">Commercial License</field>
+        <field name="res_model">pm.qms.license</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_pm_qms_license_form"/>
+        <field name="context">{'search_default_is_current': 1}</field>
+    </record>
+    <record id="action_pm_qms_license_history" model="ir.actions.act_window">
+        <field name="name">License History</field>
+        <field name="res_model">pm.qms.license</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_pm_qms_license_list"/>
+    </record>
+
+    <record id="view_pm_qms_license_import_form" model="ir.ui.view">
+        <field name="name">pm.qms.license.import.wizard.form</field>
+        <field name="model">pm.qms.license.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Updated License">
+                <sheet>
+                    <div class="alert alert-info" role="alert">The license is validated before the current license is replaced. Invalid files leave the current license unchanged.</div>
+                    <group><field name="license_file" filename="filename"/><field name="filename" invisible="1"/></group>
+                </sheet>
+                <footer>
+                    <button name="action_import" type="object" string="Validate and Import" class="oe_highlight"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_pm_qms_license_import" model="ir.actions.act_window">
+        <field name="name">Import Updated License</field>
+        <field name="res_model">pm.qms.license.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_pm_qms_license_import_form"/>
+        <field name="target">new</field>
+    </record>
+</odoo>

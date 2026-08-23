@@ -8,6 +8,7 @@ SECRETS_DIR="${PMQMS_ODOO_DEV_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-dev}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
+ENVIRONMENT_ID_FILE="$CONFIG_DIR/environment_id"
 MISSION03_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence"
 MISSION03_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence"
 MISSION04_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa"
@@ -40,6 +41,8 @@ MISSION17_ADDONS="$MISSION16_ADDONS,pm_qms_action_center,pm_qms_cost_quality"
 MISSION17_TEST_TAGS="$MISSION16_TEST_TAGS,/pm_qms_action_center,/pm_qms_cost_quality"
 MISSION18_ADDONS="$MISSION17_ADDONS"
 MISSION18_TEST_TAGS="$MISSION17_TEST_TAGS,/pm_qms_core"
+MISSION20_ADDONS="$MISSION18_ADDONS"
+MISSION20_TEST_TAGS="$MISSION18_TEST_TAGS,/pm_qms_license"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -67,6 +70,11 @@ init_secrets() {
   if [[ ! -f "$ADMIN_PASSWORD_FILE" ]]; then
     random_secret > "$ADMIN_PASSWORD_FILE"
     chmod 600 "$ADMIN_PASSWORD_FILE"
+  fi
+
+  if [[ ! -f "$ENVIRONMENT_ID_FILE" ]]; then
+    python3 -c 'import uuid; print(uuid.uuid4())' > "$ENVIRONMENT_ID_FILE"
+    chmod 600 "$ENVIRONMENT_ID_FILE"
   fi
 
   if [[ ! -f "$CONFIG_DIR/odoo.conf" ]]; then
@@ -258,7 +266,13 @@ Commands:
   update-mission18
                 Upgrade the Mission 18 standalone foundation in pmqms_dev.
   test-mission18
-                Run Mission 18 focused/full-stack Odoo tests in pmqms_test.
+    Run Mission 18 focused/full-stack Odoo tests in pmqms_test.
+  install-mission20
+                Install/update the full QMS stack including commercial licensing.
+  update-mission20
+                Upgrade the full QMS stack including commercial licensing.
+  test-mission20
+                Run Mission 20 licensing and full-stack Odoo tests in pmqms_test.
 EOF
 }
 
@@ -590,6 +604,21 @@ case "$command" in
     ;;
   test-mission18)
     run_odoo_tests "$MISSION18_ADDONS" "$MISSION18_TEST_TAGS" "Mission 18"
+    ;;
+  install-mission20)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION20_ADDONS" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION20_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission20)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION20_ADDONS" --stop-after-init
+    ;;
+  test-mission20)
+    run_odoo_tests "$MISSION20_ADDONS" "$MISSION20_TEST_TAGS" "Mission 20"
     ;;
   ""|help|-h|--help)
     usage

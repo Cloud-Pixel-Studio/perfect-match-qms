@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_activation_request_list" model="ir.ui.view">
+        <field name="name">pm.qms.activation.request.list</field>
+        <field name="model">pm.qms.activation.request</field>
+        <field name="arch" type="xml">
+            <list string="Activation Requests">
+                <field name="name"/><field name="requested_at"/><field name="customer_name"/><field name="environment_short"/><field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_pm_qms_activation_request_form" model="ir.ui.view">
+        <field name="name">pm.qms.activation.request.form</field>
+        <field name="model">pm.qms.activation.request</field>
+        <field name="arch" type="xml">
+            <form string="Offline Activation Request">
+                <sheet>
+                    <div class="oe_title"><h1>Offline Activation Request</h1></div>
+                    <div class="alert alert-info" role="alert">Send this request JSON to an authorized Perfect Match licensing operator. It contains the stable environment identity and requested capacity context, not a secret.</div>
+                    <group>
+                        <group><field name="name"/><field name="requested_at"/><field name="requested_by_id"/></group>
+                        <group><field name="customer_name"/><field name="environment_short"/><field name="state"/></group>
+                    </group>
+                    <group string="Current Capacity Context"><field name="company_count"/><field name="site_count"/><field name="named_user_count"/></group>
+                    <field name="request_json" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_pm_qms_activation_request" model="ir.actions.act_window">
+        <field name="name">Activation Requests</field>
+        <field name="res_model">pm.qms.activation.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_pm_qms_activation_request_list"/>
+    </record>
+</odoo>
