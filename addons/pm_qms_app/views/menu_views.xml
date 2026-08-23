@@ -13,7 +13,7 @@
         parent="pm_qms_core.menu_pm_qms_root"
         action="action_pm_qms_dashboard"
         sequence="1"
-        groups="pm_qms_core.group_pm_qms_user"/>
+        groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
 
     <record id="pm_qms_core.menu_pm_qms_implementation" model="ir.ui.menu">
         <field name="name">Implementations</field>

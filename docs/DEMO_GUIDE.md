@@ -37,3 +37,28 @@ Distribution Center.
 | Cost Events | Perfect Match QMS > Cost of Quality > Cost Events | APEX-CQ-001 - Dimensional complaint quality cost story | Confirmed cost event with prevention, appraisal, internal failure, external failure, and recovery lines. |
 | Cost Analytics | Perfect Match QMS > Cost of Quality > Analytics | Apex quality cost analytics | Gross quality cost, COPQ, recoveries, net cost, category breakdown, and source breakdown. |
 | Management Review | Perfect Match QMS > Management Review | APEX-MR-001 - Apex QMS Management Review - Demo | Inputs, snapshot behavior where supported, decisions, and review actions. |
+
+## Mission 19 security walkthrough
+
+Use `Configuration > Users & Access` to inspect the fictional Demo personas.
+Roles answer what a user may do; the selected organization, Sites, and
+Processes answer where the user may do it. Scope is enforced by Odoo ACLs and
+record rules, so a bookmarked URL or RPC call cannot bypass the same boundary.
+
+| Persona | Role and scope | Expected walkthrough |
+| --- | --- | --- |
+| Olivia Parker | Quality Manager, all Apex Sites and Processes | Full QMS navigation, Users & Access, Action Center, and Cost Analytics. |
+| Daniel Brooks | Quality Supervisor, `APEX-MFG` | Manufacturing records and actions; `APEX-INS` records are denied. |
+| Maria Lewis | Document Controller, organization-wide | Documents, revisions, and acknowledgments; unrelated operational administration is denied. |
+| James Carter | Internal Auditor, all Apex Sites and Processes | Audit programs, audits, findings, and evidence with independence controls. |
+| Emma Reed | Process Owner, selected Manufacturing and Inspection processes | Assigned process obligations only; unrelated process records are denied. |
+| Michael Stone | Management User, organization-wide | Dashboards, KPI, Management Review, and approved read-only Cost Analytics. |
+
+For negative validation, sign in as Daniel or Emma, open an allowed record,
+then attempt a known record from an unassigned Site or Process. The expected
+result is an Odoo access denial, not merely a hidden menu. The `QMS Viewer`
+role is read-only and receives only records allowed by its organization/Site/
+Process scope.
+
+Demo passwords are stored outside Git through the VM credential mechanism. Do
+not place persona passwords in this guide, Plane, commits, or screenshots.

@@ -3,7 +3,7 @@
 ## Scope
 
 This document defines the QMS security model for internal Odoo users through
-Mission 09.
+Mission 19.
 It does not implement customer portal access.
 
 ## Roles
@@ -130,6 +130,14 @@ Mission 09 extends this to:
 Organization isolation is enforced by model constraints where relationships
 must belong to the selected organization. Documents, evidence, and control
 instances reject mismatched process, organization, or company relationships.
+
+Mission 19 adds a fixed product role catalog and explicit user scope. See
+`SECURITY_BASELINE_MATRIX.md`, `USER_ROLES_PERMISSIONS.md`, and
+`DEMO_SECURITY_GUIDE.md`. Global organization/site/process rules are ANDed with
+the existing company rules so group-rule OR composition cannot broaden access.
+Empty scope fails closed. The dashboard, Action Center, and Cost of Quality
+continue to use the requesting user's ORM environment and source records check
+read access before navigation.
 
 ## Attachments
 

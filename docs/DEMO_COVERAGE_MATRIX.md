@@ -9,6 +9,7 @@
 | Core | Company Profile | Configuration > Company Profile | APEX | Fictional operational QMS organization, scope, and primary quality contact | COVERED |
 | Core | Sites | Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Exactly three deterministic Apex sites with one primary and no artificial limit | COVERED |
 | Core | Processes | Configuration > Processes | APEX-FIN, APEX-DOC, APEX-CAL | Standalone QMS process architecture with applicable Site scope | COVERED |
+| Security | Users & Access | Configuration > Users & Access | Olivia, Daniel, Maria, James, Emma, Michael | Fixed product roles, linked QMS Person, organization/site/process scope, effective access summary | COVERED |
 | Documents | Controlled documents | Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
 | Documents | Revisions | Documents > Revisions | Revision A records | Current revision context | COVERED |
 | Evidence | Evidence records | Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |

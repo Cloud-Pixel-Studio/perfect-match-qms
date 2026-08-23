@@ -6,6 +6,8 @@
 - [Roadmap](ROADMAP.md)
 - [Security](SECURITY.md)
 - [Security Architecture](SECURITY_ARCHITECTURE.md)
+- [Security Baseline Matrix](SECURITY_BASELINE_MATRIX.md)
+- [User Roles and Permissions](USER_ROLES_PERMISSIONS.md)
 - [Operational Hardening](OPERATIONAL_HARDENING.md)
 - [Testing](TESTING.md)
 - [CI](CI.md)
@@ -50,7 +52,9 @@
 
 - [Demo Environment](DEMO_ENVIRONMENT.md)
 - [Demo Guide](DEMO_GUIDE.md)
+- [Demo Security Guide](DEMO_SECURITY_GUIDE.md)
 - [Demo Coverage Matrix](DEMO_COVERAGE_MATRIX.md)
 - [ADR-055: Dedicated Product Demo Environment](DECISIONS/ADR-055-dedicated-product-demo-environment.md)
 - [Standalone Product Architecture](STANDALONE_PRODUCT_ARCHITECTURE.md)
 - [ADR-056: Standalone Product Organization and Site Foundation](DECISIONS/ADR-056-standalone-product-organization-site-foundation.md)
+- [ADR-057: Users, Roles, Permissions and Site Scope](DECISIONS/ADR-057-users-roles-permissions-site-scope.md)

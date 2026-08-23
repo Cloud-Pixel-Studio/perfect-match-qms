@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_pm_qms_dashboard_user,pm.qms.dashboard user,model_pm_qms_dashboard,pm_qms_core.group_pm_qms_user,1,1,1,1
+access_pm_qms_user_access_manager,QMS Users & Access,base.model_res_users,pm_qms_core.group_qms_quality_manager,1,1,1,0
+access_pm_qms_user_access_admin,QMS Users & Access administrator,base.model_res_users,pm_qms_core.group_pm_qms_administrator,1,1,1,0

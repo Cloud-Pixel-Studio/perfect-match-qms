@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_pm_qms_cost_quality" name="Cost of Quality" parent="pm_qms_core.menu_pm_qms_root" sequence="45" groups="pm_qms_core.group_pm_qms_user"/>
+    <menuitem id="menu_pm_qms_cost_quality" name="Cost of Quality" parent="pm_qms_core.menu_pm_qms_root" sequence="45" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
     <menuitem id="menu_pm_qms_cost_events" name="Cost Events" parent="menu_pm_qms_cost_quality" action="action_pm_qms_cost_event" sequence="10"/>
     <menuitem id="menu_pm_qms_cost_analytics" name="Cost Analytics" parent="menu_pm_qms_cost_quality" action="action_pm_qms_cost_event_official" sequence="20"/>
     <menuitem id="menu_pm_qms_cost_types" name="Cost Types" parent="menu_pm_qms_cost_quality" action="action_pm_qms_cost_type" sequence="90" groups="pm_qms_core.group_pm_qms_manager"/>

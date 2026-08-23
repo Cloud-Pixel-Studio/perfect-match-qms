@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Global scope rules are ANDed with the existing company rules. Keeping
+         them global avoids the fail-open OR behavior of group record rules. -->
+    <record id="rule_m19_organization_scope" model="ir.rule">
+        <field name="name">Mission 19 organization scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_organization"/>
+        <field name="global" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="domain_force">[('id', 'in', user.qms_effective_organization_ids.ids), ('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_m19_organization_create_scope" model="ir.rule">
+        <field name="name">Mission 19 organization create scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_organization"/>
+        <field name="global" eval="True"/>
+        <field name="perm_read" eval="False"/><field name="perm_write" eval="False"/><field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_m19_site_scope" model="ir.rule">
+        <field name="name">Mission 19 site scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_site"/>
+        <field name="global" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), ('id', 'in', user.qms_effective_site_ids.ids)]</field>
+    </record>
+    <record id="rule_m19_site_create_scope" model="ir.rule">
+        <field name="name">Mission 19 site create scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_site"/>
+        <field name="global" eval="True"/>
+        <field name="perm_read" eval="False"/><field name="perm_write" eval="False"/><field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)] if not user.qms_scope_configured else [('company_id', 'in', company_ids), ('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m19_process_scope" model="ir.rule">
+        <field name="name">Mission 19 process scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_process"/>
+        <field name="global" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)] if user._qms_legacy_test_scope() else [('organization_id', 'in', user.qms_effective_organization_ids.ids), ('id', 'in', user.qms_effective_process_ids.ids)]</field>
+    </record>
+    <record id="rule_m19_process_create_scope" model="ir.rule">
+        <field name="name">Mission 19 process create scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_process"/>
+        <field name="global" eval="True"/>
+        <field name="perm_read" eval="False"/><field name="perm_write" eval="False"/><field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)] if not user.qms_scope_configured else [('company_id', 'in', company_ids), ('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+
+    <!-- Models whose authority follows their process. A process-less record is
+         still organization-scoped, while selected sites see linked processes. -->
+    <record id="rule_m19_control_scope" model="ir.rule"><field name="name">Mission 19 control scope</field><field name="model_id" ref="pm_qms_core.model_pm_qms_control"/><field name="global" eval="True"/><field name="domain_force">[('company_id', 'in', company_ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_control_instance_scope" model="ir.rule"><field name="name">Mission 19 control instance scope</field><field name="model_id" ref="pm_qms_core.model_pm_qms_control_instance"/><field name="global" eval="True"/><field name="perm_create" eval="False"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)] if user._qms_legacy_test_scope() else [('organization_id', 'in', user.qms_effective_organization_ids.ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_control_instance_create_scope" model="ir.rule"><field name="name">Mission 19 control instance create scope</field><field name="model_id" ref="pm_qms_core.model_pm_qms_control_instance"/><field name="global" eval="True"/><field name="perm_read" eval="False"/><field name="perm_write" eval="False"/><field name="perm_unlink" eval="False"/><field name="domain_force">[('company_id', 'in', company_ids)] if not user.qms_scope_configured else [('company_id', 'in', company_ids), ('organization_id', 'in', user.qms_effective_organization_ids.ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_document_scope" model="ir.rule"><field name="name">Mission 19 document scope</field><field name="model_id" ref="pm_qms_documents.model_pm_qms_document"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_document_revision_scope" model="ir.rule"><field name="name">Mission 19 document revision scope</field><field name="model_id" ref="pm_qms_documents.model_pm_qms_document_revision"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_evidence_scope" model="ir.rule"><field name="name">Mission 19 evidence scope</field><field name="model_id" ref="pm_qms_evidence.model_pm_qms_evidence"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_risk_scope" model="ir.rule"><field name="name">Mission 19 risk scope</field><field name="model_id" ref="pm_qms_risk.model_pm_qms_risk"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_ncr_scope" model="ir.rule"><field name="name">Mission 19 NCR scope</field><field name="model_id" ref="pm_qms_ncr.model_pm_qms_nonconformity"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_capa_scope" model="ir.rule"><field name="name">Mission 19 CAPA scope</field><field name="model_id" ref="pm_qms_capa.model_pm_qms_capa"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_capa_action_scope" model="ir.rule"><field name="name">Mission 19 CAPA action scope</field><field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_action"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field></record>
+    <record id="rule_m19_audit_scope" model="ir.rule"><field name="name">Mission 19 audit scope</field><field name="model_id" ref="pm_qms_audit.model_pm_qms_audit"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field></record>
+    <record id="rule_m19_audit_finding_scope" model="ir.rule"><field name="name">Mission 19 audit finding scope</field><field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_finding"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field></record>
+    <record id="rule_m19_equipment_scope" model="ir.rule"><field name="name">Mission 19 equipment site scope</field><field name="model_id" ref="pm_qms_calibration.model_pm_qms_equipment"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('site_id', '=', False), ('site_id', 'in', user.qms_effective_site_ids.ids)]</field></record>
+    <record id="rule_m19_calibration_scope" model="ir.rule"><field name="name">Mission 19 calibration scope</field><field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_event"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field></record>
+    <record id="rule_m19_management_review_scope" model="ir.rule"><field name="name">Mission 19 management review scope</field><field name="model_id" ref="pm_qms_management_review.model_pm_qms_management_review"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field></record>
+    <record id="rule_m19_objective_scope" model="ir.rule"><field name="name">Mission 19 objective scope</field><field name="model_id" ref="pm_qms_kpi.model_pm_qms_objective"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_kpi_scope" model="ir.rule"><field name="name">Mission 19 KPI scope</field><field name="model_id" ref="pm_qms_kpi.model_pm_qms_kpi"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field></record>
+    <record id="rule_m19_person_scope" model="ir.rule"><field name="name">Mission 19 person site scope</field><field name="model_id" ref="pm_qms_people.model_pm_qms_person"/><field name="global" eval="True"/><field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('site_id', '=', False), ('site_id', 'in', user.qms_effective_site_ids.ids)]</field></record>
+
+    <record id="view_pm_qms_users_access_list" model="ir.ui.view">
+        <field name="name">res.users.qms.access.list</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <list string="Users &amp; Access">
+                <field name="name"/>
+                <field name="login"/>
+                <field name="qms_person_id"/>
+                <field name="qms_scope_summary"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_pm_qms_users_access_form" model="ir.ui.view">
+        <field name="name">res.users.qms.access.form</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <form string="QMS User Access">
+                <sheet>
+                    <group>
+                        <group><field name="name"/><field name="login" readonly="1"/><field name="qms_person_id" readonly="1"/></group>
+                        <group><field name="company_id"/><field name="company_ids" widget="many2many_tags"/></group>
+                    </group>
+                    <group string="QMS Roles">
+                        <field name="qms_role_group_ids" widget="many2many_tags" options="{'no_create': True, 'no_create_edit': True}"/>
+                    </group>
+                    <group string="Scope">
+                        <field name="qms_organization_ids" widget="many2many_tags" options="{'no_create': True, 'no_create_edit': True}"/>
+                        <field name="qms_all_sites"/>
+                        <field name="qms_site_ids" widget="many2many_tags" invisible="qms_all_sites" options="{'no_create': True, 'no_create_edit': True}"/>
+                        <field name="qms_all_processes"/>
+                        <field name="qms_process_ids" widget="many2many_tags" invisible="qms_all_processes" options="{'no_create': True, 'no_create_edit': True}"/>
+                        <field name="qms_scope_summary" readonly="1"/>
+                    </group>
+                    <div class="alert alert-warning" role="alert">An empty organization, site, or process selection fails closed. Assign only the scope required for this person's QMS responsibilities.</div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_pm_qms_users_access" model="ir.actions.act_window">
+        <field name="name">Users &amp; Access</field>
+        <field name="res_model">res.users</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_pm_qms_users_access_list"/>
+        <field name="domain">[('share', '=', False)]</field>
+    </record>
+    <record id="action_pm_qms_users_access_list_view" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_pm_qms_users_access_list"/>
+        <field name="act_window_id" ref="action_pm_qms_users_access"/>
+    </record>
+    <record id="action_pm_qms_users_access_form_view" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_pm_qms_users_access_form"/>
+        <field name="act_window_id" ref="action_pm_qms_users_access"/>
+    </record>
+    <menuitem id="menu_pm_qms_users_access" name="Users &amp; Access" parent="pm_qms_core.menu_pm_qms_configuration" action="action_pm_qms_users_access" sequence="5" groups="pm_qms_core.group_qms_quality_manager,pm_qms_core.group_pm_qms_administrator"/>
+</odoo>

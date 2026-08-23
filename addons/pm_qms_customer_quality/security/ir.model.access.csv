@@ -2,22 +2,32 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_pm_qms_customer_complaint_user,pm.qms.customer.complaint user,model_pm_qms_customer_complaint,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_customer_complaint_manager,pm.qms.customer.complaint manager,model_pm_qms_customer_complaint,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_customer_complaint_admin,pm.qms.customer.complaint admin,model_pm_qms_customer_complaint,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_customer_complaint,viewer customer complaint,model_pm_qms_customer_complaint,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_quality_alert_user,pm.qms.quality.alert user,model_pm_qms_quality_alert,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_quality_alert_manager,pm.qms.quality.alert manager,model_pm_qms_quality_alert,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_quality_alert_admin,pm.qms.quality.alert admin,model_pm_qms_quality_alert,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_quality_alert,viewer quality alert,model_pm_qms_quality_alert,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_root_cause_analysis_user,pm.qms.root.cause.analysis user,model_pm_qms_root_cause_analysis,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_root_cause_analysis_manager,pm.qms.root.cause.analysis manager,model_pm_qms_root_cause_analysis,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_root_cause_analysis_admin,pm.qms.root.cause.analysis admin,model_pm_qms_root_cause_analysis,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_root_cause_analysis,viewer root cause analysis,model_pm_qms_root_cause_analysis,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_root_cause_line_user,pm.qms.root.cause.line user,model_pm_qms_root_cause_line,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_root_cause_line_manager,pm.qms.root.cause.line manager,model_pm_qms_root_cause_line,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_root_cause_line_admin,pm.qms.root.cause.line admin,model_pm_qms_root_cause_line,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_root_cause_line,viewer root cause line,model_pm_qms_root_cause_line,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_eight_d_user,pm.qms.eight.d user,model_pm_qms_eight_d,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_eight_d_manager,pm.qms.eight.d manager,model_pm_qms_eight_d,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_eight_d_admin,pm.qms.eight.d admin,model_pm_qms_eight_d,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_eight_d,viewer eight d,model_pm_qms_eight_d,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_supplier_issue_user,pm.qms.supplier.issue user,model_pm_qms_supplier_issue,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_supplier_issue_manager,pm.qms.supplier.issue manager,model_pm_qms_supplier_issue,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_supplier_issue_admin,pm.qms.supplier.issue admin,model_pm_qms_supplier_issue,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_supplier_issue,viewer supplier issue,model_pm_qms_supplier_issue,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_scar_user,pm.qms.scar user,model_pm_qms_scar,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_scar_manager,pm.qms.scar manager,model_pm_qms_scar,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_scar_admin,pm.qms.scar admin,model_pm_qms_scar,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_scar,viewer scar,model_pm_qms_scar,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_scar_response_user,pm.qms.scar.response user,model_pm_qms_scar_response,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_scar_response_manager,pm.qms.scar.response manager,model_pm_qms_scar_response,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_scar_response_admin,pm.qms.scar.response admin,model_pm_qms_scar_response,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_viewer_scar_response,viewer scar response,model_pm_qms_scar_response,pm_qms_core.group_qms_viewer,1,0,0,0

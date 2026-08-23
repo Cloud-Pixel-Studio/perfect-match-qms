@@ -2,6 +2,8 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_pm_qms_document_user,pm.qms.document user,model_pm_qms_document,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_document_manager,pm.qms.document manager,model_pm_qms_document,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_document_admin,pm.qms.document admin,model_pm_qms_document,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_document_controller,pm.qms.document controller,model_pm_qms_document,pm_qms_core.group_qms_document_controller,1,1,1,0
 access_pm_qms_document_revision_user,pm.qms.document.revision user,model_pm_qms_document_revision,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_document_revision_manager,pm.qms.document.revision manager,model_pm_qms_document_revision,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_document_revision_admin,pm.qms.document.revision admin,model_pm_qms_document_revision,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_document_revision_controller,pm.qms.document.revision controller,model_pm_qms_document_revision,pm_qms_core.group_qms_document_controller,1,1,1,0
