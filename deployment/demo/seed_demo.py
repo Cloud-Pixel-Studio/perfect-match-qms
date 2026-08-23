@@ -159,10 +159,17 @@ company.write(company_vals)
 
 qms_manager = ref("pm_qms_core.group_pm_qms_manager")
 qms_admin = ref("pm_qms_core.group_pm_qms_administrator")
+system_admin = ref("base.group_system")
 base_user = ref("base.group_user")
-group_links = [Command.link(g.id) for g in (base_user, qms_manager, qms_admin) if g]
-if group_links:
-    env.user.write({"group_ids": group_links})
+role_group_xmlids = {
+    "Quality Manager": "pm_qms_core.group_qms_quality_manager",
+    "Quality Supervisor": "pm_qms_core.group_qms_quality_supervisor",
+    "Document Controller": "pm_qms_core.group_qms_document_controller",
+    "Internal Auditor": "pm_qms_core.group_qms_internal_auditor",
+    "Process Owner": "pm_qms_core.group_qms_process_owner",
+    "Management User": "pm_qms_core.group_qms_management_user",
+}
+role_groups = {role: ref(xmlid) for role, xmlid in role_group_xmlids.items() if ref(xmlid)}
 
 organization = upsert(
     "pm.qms.organization",
@@ -227,13 +234,18 @@ user_specs = [
     ("Maria Lewis", "maria.lewis.demo@perfectmatch.local", "Document Controller"),
     ("James Carter", "james.carter.demo@perfectmatch.local", "Internal Auditor"),
     ("Emma Reed", "emma.reed.demo@perfectmatch.local", "Process Owner"),
-    ("Michael Stone", "michael.stone.demo@perfectmatch.local", "Management Representative"),
+    ("Michael Stone", "michael.stone.demo@perfectmatch.local", "Management User"),
 ]
 users = {}
 for full_name, login, role in user_specs:
     vals = {"name": full_name, "login": login, "email": login, "company_id": company.id, "company_ids": [Command.link(company.id)]}
-    if group_links:
-        vals["group_ids"] = group_links
+    assigned_groups = [g.id for g in (base_user, role_groups.get(role)) if g]
+    if login == ADMIN_LOGIN and qms_admin:
+        assigned_groups.append(qms_admin.id)
+    if login == ADMIN_LOGIN and system_admin:
+        assigned_groups.append(system_admin.id)
+    if assigned_groups:
+        vals["group_ids"] = [Command.set(sorted(set(assigned_groups)))]
     if login == ADMIN_LOGIN and ADMIN_PASSWORD:
         vals["password"] = ADMIN_PASSWORD
     user = env["res.users"].with_context(no_reset_password=True).search([("login", "=", login)], limit=1)
@@ -307,6 +319,32 @@ for code, name, kind in process_specs:
             )
         processes.append(proc)
 
+# Mission 19 access is explicit and idempotent. Scope is applied after the
+# process/site graph exists so selected-site and selected-process assignments
+# can be checked by the same constraints used by the customer-facing UI.
+process_by_code = {process.code: process for process in processes}
+scope_by_role = {
+    "Quality Manager": {"all_sites": True, "all_processes": True},
+    "Quality Supervisor": {"site_codes": ["APEX-MFG"], "process_codes": [code for code, sites_for_process in process_site_codes.items() if "APEX-MFG" in sites_for_process]},
+    "Document Controller": {"all_sites": True, "all_processes": True},
+    "Internal Auditor": {"all_sites": True, "all_processes": True},
+    "Process Owner": {"site_codes": ["APEX-MFG", "APEX-INS"], "process_codes": ["APEX-PROD", "APEX-FIN"]},
+    "Management User": {"all_sites": True, "all_processes": True},
+}
+for role, user in users.items():
+    scope = scope_by_role[role]
+    site_ids = [site_by_code[code].id for code in scope.get("site_codes", []) if code in site_by_code]
+    process_ids = [process_by_code[code].id for code in scope.get("process_codes", []) if code in process_by_code]
+    user.with_context(pm_qms_demo_seed=True).write(
+        {
+            "qms_organization_ids": [Command.set([organization.id])],
+            "qms_all_sites": scope.get("all_sites", False),
+            "qms_site_ids": [Command.set(site_ids)],
+            "qms_all_processes": scope.get("all_processes", False),
+            "qms_process_ids": [Command.set(process_ids)],
+        }
+    )
+
 persons = []
 role_records = []
 person_site_codes = {
@@ -315,7 +353,7 @@ person_site_codes = {
     "Document Controller": "APEX-HQ",
     "Internal Auditor": "APEX-HQ",
     "Process Owner": "APEX-MFG",
-    "Management Representative": "APEX-HQ",
+    "Management User": "APEX-HQ",
 }
 for full_name, login, role_name in user_specs:
     role = upsert("pm.qms.role", code=role_name.upper().replace(" ", "-")[:30], name=role_name, vals={"name": role_name, "company_id": company.id}, required=False)
@@ -343,6 +381,18 @@ for full_name, login, role_name in user_specs:
         persons.append(person)
         if role:
             upsert("pm.qms.person.role.assignment", vals={"person_id": person.id, "role_id": role.id, "organization_id": organization.id, "company_id": company.id, "effective_date": today, "start_date": today}, extra_domain=[("person_id", "=", person.id), ("role_id", "=", role.id), ("effective_date", "=", today)], required=False)
+
+# Older Demo seeds used a temporary demo.qm identity without a primary site.
+# Retire that identity and place its historical person record in the HQ scope so
+# existing training/qualification records remain readable by the new admin.
+legacy_user = env["res.users"].search([("login", "=", "demo.qm@perfectmatch.local")], limit=1)
+if legacy_user and legacy_user.id != users["Quality Manager"].id:
+    legacy_user.write({"active": False})
+legacy_persons = env["pm.qms.person"].search(
+    [("organization_id", "=", organization.id), ("site_id", "=", False)]
+)
+if legacy_persons and site_by_code.get("APEX-HQ"):
+    legacy_persons.write({"site_id": site_by_code["APEX-HQ"].id, "active": False})
 
 # Implementation project from the existing Perfect Match Quality Pack.
 pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") else False
@@ -499,7 +549,7 @@ review = upsert(
     vals={
         "organization_id": organization.id,
         "company_id": company.id,
-        "chair_id": users["Management Representative"].id,
+        "chair_id": users["Management User"].id,
         "planned_date": today,
         "actual_date": today,
         "period_start": today - relativedelta(months=3),

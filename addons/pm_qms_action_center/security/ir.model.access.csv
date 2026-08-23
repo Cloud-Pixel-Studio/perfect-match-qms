@@ -1,4 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_pm_qms_action_center_line_user,pm.qms.action.center.line user,model_pm_qms_action_center_line,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_action_center_line_viewer,pm.qms.action.center.line viewer,model_pm_qms_action_center_line,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_action_center_line_manager,pm.qms.action.center.line manager,model_pm_qms_action_center_line,pm_qms_core.group_pm_qms_manager,1,1,1,1
 access_pm_qms_action_center_line_admin,pm.qms.action.center.line admin,model_pm_qms_action_center_line,pm_qms_core.group_pm_qms_administrator,1,1,1,1

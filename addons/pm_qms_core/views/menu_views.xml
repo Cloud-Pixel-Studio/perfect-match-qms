@@ -4,7 +4,7 @@
         id="menu_pm_qms_root"
         name="Perfect Match QMS"
         sequence="60"
-        groups="pm_qms_core.group_pm_qms_user"/>
+        groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
 
     <menuitem
         id="menu_pm_qms_implementation"

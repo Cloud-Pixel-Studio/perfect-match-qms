@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_pm_qms_customer_quality" name="Customer Quality" parent="pm_qms_core.menu_pm_qms_root" sequence="32" groups="pm_qms_core.group_pm_qms_user"/>
+    <menuitem id="menu_pm_qms_customer_quality" name="Customer Quality" parent="pm_qms_core.menu_pm_qms_root" sequence="32" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
     <menuitem id="menu_pm_qms_customer_complaints" name="Complaints" parent="menu_pm_qms_customer_quality" action="action_pm_qms_customer_complaint" sequence="10"/>
     <menuitem id="menu_pm_qms_quality_alerts" name="Quality Alerts" parent="menu_pm_qms_customer_quality" action="action_pm_qms_quality_alert" sequence="20"/>
     <menuitem id="menu_pm_qms_root_cause" name="Root Cause" parent="menu_pm_qms_customer_quality" action="action_pm_qms_root_cause_analysis" sequence="30"/>
     <menuitem id="menu_pm_qms_eight_d" name="8D Cases" parent="menu_pm_qms_customer_quality" action="action_pm_qms_eight_d" sequence="40"/>
 
-    <menuitem id="menu_pm_qms_supplier_quality" name="Supplier Quality" parent="pm_qms_core.menu_pm_qms_root" sequence="33" groups="pm_qms_core.group_pm_qms_user"/>
+    <menuitem id="menu_pm_qms_supplier_quality" name="Supplier Quality" parent="pm_qms_core.menu_pm_qms_root" sequence="33" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
     <menuitem id="menu_pm_qms_supplier_issues" name="Supplier Issues" parent="menu_pm_qms_supplier_quality" action="action_pm_qms_supplier_issue" sequence="10"/>
     <menuitem id="menu_pm_qms_scar" name="SCAR" parent="menu_pm_qms_supplier_quality" action="action_pm_qms_scar" sequence="20"/>
     <menuitem id="menu_pm_qms_supplier_quality_root_cause" name="Root Cause" parent="menu_pm_qms_supplier_quality" action="action_pm_qms_root_cause_analysis" sequence="30"/>
