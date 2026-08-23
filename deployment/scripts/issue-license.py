@@ -12,7 +12,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from addons.pm_qms_license.services.license_service import issue_license  # noqa: E402
+from odoo.addons.pm_qms_license.services.license_service import issue_license  # noqa: E402
 
 
 def parse_args():
