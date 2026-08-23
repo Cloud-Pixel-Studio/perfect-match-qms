@@ -56,7 +56,7 @@ class PmQmsEntitlementService(models.AbstractModel):
                 ("company_id", "=", company.id),
                 ("pmqms_license_account_type", "=", "customer"),
                 ("pmqms_license_exempt", "=", False),
-                ("groups_id", "in", role_groups.ids),
+                ("group_ids", "in", role_groups.ids),
             ]
         )
 
