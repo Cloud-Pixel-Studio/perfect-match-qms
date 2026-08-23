@@ -10,9 +10,10 @@ record rules.
 Each installation has one UUID in the deployment secret/configuration area,
 outside the normal database. The active Compose stacks mount it read-only at
 `/etc/odoo/environment_id`; `PMQMS_ENVIRONMENT_ID_FILE` can override the path.
-The file is created once with owner-only permissions and is not derived from a
-container ID, hostname, IP, MAC, disk, or CPU. Container recreation and normal
-upgrades therefore preserve the identity.
+The file is created once in the deployment-managed secret/configuration area
+and is not derived from a container ID, hostname, IP, MAC, disk, or CPU. It is
+not a credential; the runtime receives read-only access to the identifier.
+Container recreation and normal upgrades therefore preserve the identity.
 
 For a server migration, copy the identity file through the approved secret
 backup process before starting the new stack. If the installation is intended

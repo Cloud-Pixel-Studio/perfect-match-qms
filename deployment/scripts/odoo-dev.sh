@@ -101,9 +101,9 @@ prepare_runtime_permissions() {
       -v "$SECRETS_DIR:/secrets" \
       --entrypoint sh \
       odoo:19.0 \
-      -lc "chown 100:101 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 600 /secrets/odoo_pg_password /secrets/config/odoo.conf"
+      -lc "chown 100:101 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 600 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 644 /secrets/config/environment_id"
   else
-    chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf"
+    chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
   fi
 }
 

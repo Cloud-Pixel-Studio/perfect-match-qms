@@ -81,7 +81,7 @@ EOF
 
 prepare_runtime_permissions() {
   init_secrets
-  chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf"
+  chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
 }
 
 compose() {
