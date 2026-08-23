@@ -37,13 +37,13 @@ Run from `/opt/perfect-match/perfect-match-qms`.
 
 ## Login
 
-The default demo login is:
+The default demo administrator login is:
 
 ```text
-demo.qm@perfectmatch.local
+admin
 ```
 
-The password is generated locally and stored outside Git:
+The demo administrator password is stored outside Git:
 
 ```text
 /opt/perfect-match/secrets/odoo-demo/demo_admin_password
