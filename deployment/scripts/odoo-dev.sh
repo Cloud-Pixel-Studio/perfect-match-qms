@@ -163,8 +163,17 @@ provision_license() {
   set +e
   compose run --rm -v "$DEV_LICENSE_FILE:/run/pmqms-dev-license.pmql:ro" \
     odoo-dev odoo shell -d pmqms_dev --log-level=error <<'PY'
+import json
 from pathlib import Path
-record = env["pm.qms.license"].import_document(Path("/run/pmqms-dev-license.pmql").read_bytes())
+license_path = Path("/run/pmqms-dev-license.pmql")
+document = json.loads(license_path.read_text(encoding="utf-8"))
+payload = document.get("payload", {})
+current = env["pm.qms.license"].sudo().search([("is_current", "=", True)], limit=1)
+if current and current.license_id == payload.get("license_id") and current.license_revision == payload.get("license_revision") and current.signature == document.get("signature"):
+    record = current
+    print("DEV_LICENSE_ALREADY_CURRENT")
+else:
+    record = env["pm.qms.license"].import_document(license_path.read_bytes())
 env.cr.commit()
 print(f"DEV_LICENSE_IMPORTED license_id={record.license_id} revision={record.license_revision} state={record.state} environment={record.environment_short}")
 PY
