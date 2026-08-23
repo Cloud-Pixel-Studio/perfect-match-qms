@@ -73,6 +73,23 @@ require(count("pm.qms.supplier.issue", org_domain) >= 1, "expected demo supplier
 require(count("pm.qms.scar", org_domain) >= 1, "expected demo SCAR")
 require(count("pm.qms.management.review", org_domain) >= 1, "expected demo management review")
 
+if "pm.qms.license" in env:
+    license_record = env["pm.qms.license"].search([("is_current", "=", True)], order="id desc", limit=1)
+    require(bool(license_record), "current Demo commercial license missing")
+    if license_record:
+        summary["license.state"] = license_record.state
+        summary["license.environment"] = license_record.environment_short
+        summary["license.company"] = f"{license_record.company_usage}/{license_record.company_limit}"
+        summary["license.site"] = f"{license_record.site_usage}/{license_record.site_limit}"
+        summary["license.named_user"] = f"{license_record.named_user_usage}/{license_record.named_user_limit}"
+        require(license_record.state in ("valid", "expiring"), f"Demo commercial license is not usable: {license_record.state}")
+        require(license_record.company_usage == 1, "Demo license usage must report one operational company")
+        require(license_record.site_usage == 3, "Demo license usage must report three active sites")
+        require(license_record.site_usage <= license_record.site_limit, "Demo site entitlement is exceeded")
+        require(license_record.named_user_usage <= license_record.named_user_limit, "Demo named-user entitlement is exceeded")
+else:
+    errors.append("missing model: pm.qms.license")
+
 if "pm.qms.cost.event" in env:
     confirmed_events = env["pm.qms.cost.event"].search_count(org_domain + [("state", "=", "confirmed")])
     summary["pm.qms.cost.event.confirmed"] = confirmed_events

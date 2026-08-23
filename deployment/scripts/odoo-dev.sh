@@ -9,6 +9,7 @@ CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
 ENVIRONMENT_ID_FILE="$CONFIG_DIR/environment_id"
+DEV_LICENSE_FILE="${PMQMS_DEV_LICENSE_FILE:-$SECRETS_DIR/dev_license.pmql}"
 MISSION03_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence"
 MISSION03_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence"
 MISSION04_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa"
@@ -153,6 +154,20 @@ health() {
   compose ps
 }
 
+provision_license() {
+  prepare_runtime_permissions
+  [[ -f "$DEV_LICENSE_FILE" ]] || { echo "DEV license file not found: $DEV_LICENSE_FILE" >&2; exit 1; }
+  compose up -d postgres-dev >/dev/null
+  wait_for_postgres
+  compose run --rm -v "$DEV_LICENSE_FILE:/run/pmqms-dev-license.pmql:ro" \
+    odoo-dev odoo shell -d pmqms_dev --log-level=error <<'PY'
+from pathlib import Path
+record = env["pm.qms.license"].import_document(Path("/run/pmqms-dev-license.pmql").read_bytes())
+env.cr.commit()
+print(f"DEV_LICENSE_IMPORTED license_id={record.license_id} revision={record.license_revision} state={record.state} environment={record.environment_short}")
+PY
+}
+
 usage() {
   cat <<'EOF'
 Usage: ./deployment/scripts/odoo-dev.sh <command>
@@ -273,6 +288,8 @@ Commands:
                 Upgrade the full QMS stack including commercial licensing.
   test-mission20
                 Run Mission 20 licensing and full-stack Odoo tests in pmqms_test.
+  provision-license
+                Import the externally issued DEV license from the secrets directory.
 EOF
 }
 
@@ -619,6 +636,9 @@ case "$command" in
     ;;
   test-mission20)
     run_odoo_tests "$MISSION20_ADDONS" "$MISSION20_TEST_TAGS" "Mission 20"
+    ;;
+  provision-license)
+    provision_license
     ;;
   ""|help|-h|--help)
     usage

@@ -124,6 +124,9 @@ install_or_update() {
   else
     run_odoo -d "$DB_NAME" --init "$DEMO_ADDONS" --stop-after-init
   fi
+  if [[ -f "$DEMO_LICENSE_FILE" ]]; then
+    provision_license
+  fi
   seed_demo
 }
 

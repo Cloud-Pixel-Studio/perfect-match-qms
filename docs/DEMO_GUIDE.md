@@ -9,6 +9,13 @@ organization and exactly three operational Sites: `APEX-HQ` Headquarters &
 Quality Center, `APEX-MFG` Manufacturing Plant, and `APEX-INS` Inspection &
 Distribution Center.
 
+The Demo also carries a signed offline commercial license. Open **Perfect Match
+QMS > Commercial License** as an administrator to see customer, edition,
+environment short ID, validity, capacity usage, and revision history. The
+canonical Demo license is intentionally sized for the three seeded Sites and
+all fictional walkthrough personas. Use **Generate Activation Request** for an
+offline renewal request and **Import Updated License** for a signed replacement.
+
 | Product Area | Menu Path | Demo Record | What To Show |
 | --- | --- | --- | --- |
 | Dashboard | Perfect Match QMS > Dashboard | Apex metrics | Readiness, actions, customer quality, calibration, and quality cost indicators populated from source records. |
@@ -62,3 +69,11 @@ Process scope.
 
 Demo passwords are stored outside Git through the VM credential mechanism. Do
 not place persona passwords in this guide, Plane, commits, or screenshots.
+
+## Commercial license walkthrough
+
+The expected Demo status is `Valid` or `Expiring`, with one operational company,
+three active Sites, and named-user usage at or below the license limit. The
+environment identity is provisioned outside PostgreSQL and remains stable when
+the Odoo container is recreated. License failure is non-destructive: records,
+attachments, exports, and backups remain available.

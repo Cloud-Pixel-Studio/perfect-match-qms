@@ -15,6 +15,23 @@ class PmQmsEntitlementService(models.AbstractModel):
         return self.env["pm.qms.license"].sudo().search([("is_current", "=", True)], order="id desc", limit=1)
 
     @api.model
+    def _locked_current_license(self):
+        """Serialize capacity checks around the current license row.
+
+        The row lock makes concurrent activation attempts re-read usage after
+        the transaction that won the lock commits. It does not lock customer
+        data globally and is intentionally limited to entitlement checks.
+        """
+        license_record = self.current_license()
+        if license_record:
+            self.env.cr.execute(
+                "SELECT id FROM pm_qms_license WHERE id = %s FOR UPDATE",
+                (license_record.id,),
+            )
+            license_record.invalidate_recordset()
+        return license_record
+
+    @api.model
     def _enforcement_enabled(self):
         if not config["test_enable"]:
             return True
@@ -89,6 +106,7 @@ class PmQmsEntitlementService(models.AbstractModel):
     def enforce_organization(self, organizations):
         if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
             return
+        self._locked_current_license()
         for organization in organizations:
             if organization.organization_kind != "operational" or not organization.active:
                 continue
@@ -103,6 +121,7 @@ class PmQmsEntitlementService(models.AbstractModel):
     def enforce_sites(self, sites):
         if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
             return
+        self._locked_current_license()
         for site in sites:
             if not site.active or site.organization_id.organization_kind != "operational":
                 continue
@@ -116,6 +135,7 @@ class PmQmsEntitlementService(models.AbstractModel):
     def enforce_named_users(self, users):
         if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
             return
+        self._locked_current_license()
         companies = users.mapped("company_id")
         for company in companies:
             usage = self.usage(company)

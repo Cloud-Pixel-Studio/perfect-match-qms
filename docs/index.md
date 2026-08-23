@@ -61,6 +61,10 @@
 - [ADR-056: Standalone Product Organization and Site Foundation](DECISIONS/ADR-056-standalone-product-organization-site-foundation.md)
 - [ADR-057: Users, Roles, Permissions and Site Scope](DECISIONS/ADR-057-users-roles-permissions-site-scope.md)
 - [ADR-058: RC6 Lifecycle and Oliva Pilot Retirement](DECISIONS/ADR-058-rc6-lifecycle-and-oliva-retirement.md)
+- [Commercial Licensing Architecture](LICENSING_ARCHITECTURE.md)
+- [License Issuance Runbook](LICENSE_ISSUANCE_RUNBOOK.md)
+- [Commercial Entitlements](COMMERCIAL_ENTITLEMENTS.md)
+- [ADR-059: Signed Offline Commercial Licensing](DECISIONS/ADR-059-signed-offline-commercial-licensing.md)
 
 The Oliva pilot runbook, implementation guide, onboarding checklist, and
 migration template are historical records only. They do not describe an active
