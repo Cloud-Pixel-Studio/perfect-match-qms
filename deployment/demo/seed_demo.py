@@ -171,6 +171,17 @@ role_group_xmlids = {
 }
 role_groups = {role: ref(xmlid) for role, xmlid in role_group_xmlids.items() if ref(xmlid)}
 
+# The framework/library organization is internal product content, not a
+# separately licensed customer company. Normalize the legacy demo row before
+# touching the operational organization so the Mission 20 company entitlement
+# remains idempotent across upgrades.
+if model_exists("pm.qms.organization") and "organization_kind" in env["pm.qms.organization"]._fields:
+    framework_organization = env["pm.qms.organization"].search(
+        [("code", "=", "PM-QMS-FRAMEWORK")], limit=1
+    )
+    if framework_organization:
+        framework_organization.write({"organization_kind": "framework"})
+
 organization = upsert(
     "pm.qms.organization",
     code=ORG_CODE,
@@ -182,16 +193,6 @@ organization = upsert(
         "description": "Fictional precision manufacturing company used only for Perfect Match QMS product demonstrations.",
     },
 )
-
-# The framework/library organization is internal product content, not a
-# separately licensed customer company. Normalize the legacy demo row so the
-# Mission 20 company entitlement remains idempotent across upgrades.
-if model_exists("pm.qms.organization") and "organization_kind" in env["pm.qms.organization"]._fields:
-    framework_organization = env["pm.qms.organization"].search(
-        [("code", "=", "PM-QMS-FRAMEWORK")], limit=1
-    )
-    if framework_organization:
-        framework_organization.write({"organization_kind": "framework"})
 
 site_specs = [
     (
