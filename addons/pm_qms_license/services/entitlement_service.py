@@ -16,7 +16,12 @@ class PmQmsEntitlementService(models.AbstractModel):
 
     @api.model
     def _enforcement_enabled(self):
-        return not config["test_enable"] or self.env.context.get("pmqms_enforce_license")
+        if not config["test_enable"]:
+            return True
+        # Existing regression fixtures predate licensing and have no license.
+        # Once a test explicitly installs a license, capacity enforcement must
+        # remain active even when an inherited ORM wrapper drops custom context.
+        return bool(self.current_license()) or self.env.context.get("pmqms_enforce_license")
 
     @api.model
     def _license_or_raise(self):
