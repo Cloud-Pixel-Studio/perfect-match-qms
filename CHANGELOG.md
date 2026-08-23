@@ -1,9 +1,24 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-rc5 - 2026-08-23
 
-### Added
-- Mission 13 product visual surface: dashboard operational navigation, implementation gap/readiness stats, control evidence actions, search views, Odoo-native state decorations, and product visual architecture documentation.
+- Froze the current Perfect Match QMS baseline through Mission 17, including the
+  Unified Action Center, source-authoritative actions, due-date buckets, and
+  source navigation.
+- Added Cost of Quality and COPQ with prevention, appraisal, internal failure,
+  external failure, recoveries, gross cost, and net quality cost analytics.
+- Included dashboard and Management Review integration for Action Center and
+  Cost of Quality signals.
+- Established the isolated `pmqms_demo` Full Product Demo Environment with
+  dedicated containers, database, filestore, idempotent seed/update, validation,
+  reset protection, fictional interconnected examples, and Perfect Match brand
+  treatment.
+- Updated the Demo Guide and Demo Coverage Matrix for the current customer-facing
+  product surface.
+- Validated the complete Mission 17 stack with 120 Odoo post-tests, 0 failures,
+  0 errors, DEV update, clean installation, standalone dependency review, and
+  release quality gates.
+- Added RC5 release notes and release baseline documentation.
 
 ## 1.0.0-rc4 - 2026-08-22
 
