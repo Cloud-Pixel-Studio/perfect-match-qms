@@ -70,6 +70,7 @@
         <field name="active" eval="False"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_organizations" model="ir.ui.menu">
+        <field name="name">Company Profile</field>
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">10</field>
     </record>
@@ -77,6 +78,13 @@
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">20</field>
     </record>
+    <menuitem
+        id="menu_pm_qms_sites"
+        name="Sites"
+        parent="pm_qms_core.menu_pm_qms_configuration"
+        action="pm_qms_core.action_pm_qms_site"
+        sequence="30"
+        groups="pm_qms_core.group_pm_qms_manager"/>
     <record id="pm_qms_migration.menu_pm_qms_migration" model="ir.ui.menu">
         <field name="name">Administration / Migration</field>
         <field name="sequence">80</field>

@@ -26,6 +26,29 @@ if organization:
     require("Apex Precision Systems" in organization.name, "APEX organization does not use fictional demo company name")
     require(not env["pm.qms.organization"].search_count([("name", "ilike", "Oliva Torras"), ("company_id", "=", organization.company_id.id)]), "Oliva name found inside demo company organizations")
 
+if "pm.qms.site" in env and organization:
+    sites = env["pm.qms.site"].search([("organization_id", "=", organization.id)])
+    summary["pm.qms.site"] = len(sites)
+    expected_sites = {
+        "APEX-HQ": "Headquarters & Quality Center",
+        "APEX-MFG": "Manufacturing Plant",
+        "APEX-INS": "Inspection & Distribution Center",
+    }
+    require(len(sites) == 3, f"expected exactly 3 Apex demo sites, found {len(sites)}")
+    require(
+        {site.code: site.name for site in sites} == expected_sites,
+        "Apex demo sites do not match the canonical three-site seed",
+    )
+    require(sum(1 for site in sites if site.active and site.is_primary) == 1, "expected exactly one active primary demo site")
+    require(all(site.company_id == organization.company_id for site in sites), "demo site company alignment failed")
+    for code in expected_sites:
+        duplicates = env["pm.qms.site"].search_count(
+            [("organization_id", "=", organization.id), ("code", "=", code)]
+        )
+        require(duplicates == 1, f"site idempotency failed for {code}: {duplicates}")
+elif "pm.qms.site" not in env:
+    errors.append("missing model: pm.qms.site")
+
 org_domain = [("organization_id", "=", organization.id)] if organization else []
 company_domain = [("company_id", "=", organization.company_id.id)] if organization else []
 

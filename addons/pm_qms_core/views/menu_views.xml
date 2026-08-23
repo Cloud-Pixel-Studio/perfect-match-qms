@@ -67,6 +67,13 @@
         sequence="20"/>
 
     <menuitem
+        id="menu_pm_qms_sites"
+        name="Sites"
+        parent="menu_pm_qms_organization"
+        action="action_pm_qms_site"
+        sequence="30"/>
+
+    <menuitem
         id="menu_pm_qms_configuration"
         name="Configuration"
         parent="menu_pm_qms_root"

@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class PmQmsProcess(models.Model):
@@ -13,6 +14,14 @@ class PmQmsProcess(models.Model):
     description = fields.Text()
     process_owner_id = fields.Many2one("res.users", string="Process Owner", tracking=True)
     organization_id = fields.Many2one("pm.qms.organization", string="Organization", index=True)
+    site_ids = fields.Many2many(
+        "pm.qms.site",
+        "pm_qms_process_site_rel",
+        "process_id",
+        "site_id",
+        string="Applicable Sites",
+        domain="[('organization_id', '=', organization_id)]",
+    )
     company_id = fields.Many2one(
         "res.company",
         required=True,
@@ -45,3 +54,14 @@ class PmQmsProcess(models.Model):
         "UNIQUE(code, company_id)",
         "Process code must be unique per company.",
     )
+
+    @api.constrains("organization_id", "company_id", "site_ids")
+    def _check_site_alignment(self):
+        for process in self:
+            if process.organization_id and process.organization_id.company_id != process.company_id:
+                raise ValidationError("Process organization must belong to the same company.")
+            if process.site_ids and not process.organization_id:
+                raise ValidationError("Applicable sites require an organization.")
+            for site in process.site_ids:
+                if site.organization_id != process.organization_id or site.company_id != process.company_id:
+                    raise ValidationError("Applicable sites must belong to the process organization and company.")

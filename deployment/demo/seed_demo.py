@@ -176,12 +176,50 @@ organization = upsert(
     },
 )
 
-# The current product has no site model. Capture the demo site concept as metadata
-# without inventing unsupported site records or companies.
-env["ir.config_parameter"].sudo().set_param(
-    "pmqms.demo.sites",
-    "Headquarters & Quality Center | Manufacturing Plant | Inspection & Distribution Center",
-)
+site_specs = [
+    (
+        "APEX-HQ",
+        "Headquarters & Quality Center",
+        "headquarters",
+        True,
+        "Leadership, QMS governance, document control, audit coordination, and training administration.",
+    ),
+    (
+        "APEX-MFG",
+        "Manufacturing Plant",
+        "manufacturing",
+        False,
+        "Receiving, production, calibration, and process-owner activities for fictional Apex operations.",
+    ),
+    (
+        "APEX-INS",
+        "Inspection & Distribution Center",
+        "inspection",
+        False,
+        "Final inspection, customer release, shipping, and distribution activities.",
+    ),
+]
+sites = []
+if model_exists("pm.qms.site") and organization:
+    for code, name, site_type, is_primary, description in site_specs:
+        site = upsert(
+            "pm.qms.site",
+            code=code,
+            name=name,
+            vals={
+                "name": name,
+                "code": code,
+                "organization_id": organization.id,
+                "site_type": site_type,
+                "is_primary": is_primary,
+                "timezone": "America/New_York",
+                "description": description,
+            },
+            required=False,
+        )
+        if site:
+            sites.append(site)
+site_by_code = {site.code: site for site in sites}
 
 user_specs = [
     ("Olivia Parker", ADMIN_LOGIN, "Quality Manager"),
@@ -207,6 +245,13 @@ for full_name, login, role in user_specs:
     users[role] = user
 
 demo_user = users["Quality Manager"]
+if organization and "quality_contact_id" in organization._fields:
+    organization.write(
+        {
+            "quality_contact_id": demo_user.id,
+            "qms_scope": "Fictional Apex precision manufacturing QMS covering leadership, production, inspection, customer quality, supplier quality, and support processes.",
+        }
+    )
 customer = env["res.partner"].search([("name", "=", "Nova Aero Components LLC"), ("company_id", "in", [False, company.id])], limit=1)
 if not customer:
     customer = env["res.partner"].create({"name": "Nova Aero Components LLC", "email": "quality@nova-aero.example", "company_id": company.id})
@@ -228,6 +273,20 @@ process_specs = [
     ("APEX-TRN", "Training & Competency", "support"),
     ("APEX-CAL", "Calibration", "support"),
 ]
+process_site_codes = {
+    "APEX-LEAD": ["APEX-HQ"],
+    "APEX-QMS": ["APEX-HQ"],
+    "APEX-CUST": ["APEX-INS"],
+    "APEX-SUP": ["APEX-MFG"],
+    "APEX-REC": ["APEX-MFG"],
+    "APEX-PROD": ["APEX-MFG"],
+    "APEX-FIN": ["APEX-INS"],
+    "APEX-SHIP": ["APEX-INS"],
+    "APEX-DOC": ["APEX-HQ"],
+    "APEX-AUD": ["APEX-HQ"],
+    "APEX-TRN": ["APEX-HQ"],
+    "APEX-CAL": ["APEX-MFG", "APEX-INS"],
+}
 processes = []
 for code, name, kind in process_specs:
     proc_model = env["pm.qms.process"] if model_exists("pm.qms.process") else None
@@ -236,10 +295,28 @@ for code, name, kind in process_specs:
         vals["process_type"] = best_selection(proc_model, "process_type", (kind, "core", "support", "management"))
     proc = upsert("pm.qms.process", code=code, name=name, vals=vals)
     if proc:
+        if "site_ids" in proc._fields and site_by_code:
+            proc.write(
+                {
+                    "site_ids": [
+                        Command.set(
+                            [site_by_code[site_code].id for site_code in process_site_codes.get(code, []) if site_code in site_by_code]
+                        )
+                    ]
+                }
+            )
         processes.append(proc)
 
 persons = []
 role_records = []
+person_site_codes = {
+    "Quality Manager": "APEX-HQ",
+    "Quality Supervisor": "APEX-MFG",
+    "Document Controller": "APEX-HQ",
+    "Internal Auditor": "APEX-HQ",
+    "Process Owner": "APEX-MFG",
+    "Management Representative": "APEX-HQ",
+}
 for full_name, login, role_name in user_specs:
     role = upsert("pm.qms.role", code=role_name.upper().replace(" ", "-")[:30], name=role_name, vals={"name": role_name, "company_id": company.id}, required=False)
     if role:
@@ -255,6 +332,9 @@ for full_name, login, role_name in user_specs:
             "organization_id": organization.id,
             "company_id": company.id,
             "active": True,
+            "site_id": site_by_code.get(person_site_codes.get(role_name)).id
+            if site_by_code.get(person_site_codes.get(role_name))
+            else False,
         },
         extra_domain=[("email", "=", login)] if model_exists("pm.qms.person") and "email" in env["pm.qms.person"]._fields else None,
         required=False,
@@ -365,7 +445,8 @@ etype = upsert("pm.qms.equipment.type", code="APEX-EQTYPE-001", name="Dimensiona
 provider = upsert("pm.qms.calibration.provider", code="APEX-CAL-PROV-001", name="Metro Calibration Labs", vals={"company_id": company.id, "partner_id": supplier.id, "description": "Fictional external calibration provider."}, required=False)
 equipment_records = []
 for code, name, status_date in [("EQ-0001", "Digital Caliper", overdue), ("EQ-0002", "Micrometer", due_soon), ("EQ-0003", "Height Gauge", next_month), ("EQ-0004", "Torque Tester", due_today)]:
-    eq = upsert("pm.qms.equipment", code=code, name=name, vals={"organization_id": organization.id, "company_id": company.id, "process_id": next((p.id for p in processes if p.code == "APEX-CAL"), processes[0].id), "equipment_type_id": etype.id if etype else False, "responsible_person_id": persons[1].id if len(persons) > 1 else False, "calibration_required": True, "next_due_date": status_date, "calibration_interval_days": 90, "calibration_provider_id": provider.id if provider else False, "calibration_notes": "Fictional calibration status for demo."}, required=False)
+    eq_site = "APEX-MFG" if code in ("EQ-0001", "EQ-0002") else "APEX-INS"
+    eq = upsert("pm.qms.equipment", code=code, name=name, vals={"organization_id": organization.id, "company_id": company.id, "site_id": site_by_code.get(eq_site).id if site_by_code.get(eq_site) else False, "process_id": next((p.id for p in processes if p.code == "APEX-CAL"), processes[0].id), "type_id": etype.id if etype else False, "responsible_person_id": persons[1].id if len(persons) > 1 else False, "calibration_required": True, "next_due_date": status_date, "frequency_interval": 90, "default_provider_id": provider.id if provider else False, "notes": "Fictional calibration status for demo."}, required=False)
     if eq:
         equipment_records.append(eq)
 cal_event = upsert("pm.qms.calibration.event", code="APEX-CAL-EVT-001", name="Digital caliper failed calibration", vals={"equipment_id": equipment_records[0].id if equipment_records else False, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id if provider else False, "calibration_date": today - relativedelta(days=2), "result": best_selection(env["pm.qms.calibration.event"], "result", ("out_of_tolerance", "fail", "failed")) if model_exists("pm.qms.calibration.event") and "result" in env["pm.qms.calibration.event"]._fields else False, "notes": "Fictional OOT scenario for Lot L-24017 / Inspection Record IR-0087."}, required=False)
@@ -461,7 +542,7 @@ if model_exists("pm.qms.action.center.line"):
 env.cr.commit()
 
 summary_models = [
-    "pm.qms.organization", "pm.qms.process", "pm.qms.document", "pm.qms.evidence", "pm.qms.risk", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.audit", "pm.qms.audit.finding", "pm.qms.objective", "pm.qms.kpi.measurement", "pm.qms.person", "pm.qms.training.record", "pm.qms.qualification.record", "pm.qms.equipment", "pm.qms.customer.complaint", "pm.qms.quality.alert", "pm.qms.eight.d", "pm.qms.supplier.issue", "pm.qms.scar", "pm.qms.cost.event", "pm.qms.cost.line", "pm.qms.management.review",
+    "pm.qms.organization", "pm.qms.site", "pm.qms.process", "pm.qms.document", "pm.qms.evidence", "pm.qms.risk", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.audit", "pm.qms.audit.finding", "pm.qms.objective", "pm.qms.kpi.measurement", "pm.qms.person", "pm.qms.training.record", "pm.qms.qualification.record", "pm.qms.equipment", "pm.qms.customer.complaint", "pm.qms.quality.alert", "pm.qms.eight.d", "pm.qms.supplier.issue", "pm.qms.scar", "pm.qms.cost.event", "pm.qms.cost.line", "pm.qms.management.review",
 ]
 print("DEMO_SEED_SUMMARY")
 print(f"database={env.cr.dbname}")

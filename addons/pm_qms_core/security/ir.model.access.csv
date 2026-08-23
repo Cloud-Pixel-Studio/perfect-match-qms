@@ -23,3 +23,6 @@ access_pm_qms_external_mapping_admin,pm.qms.external.mapping admin,model_pm_qms_
 access_pm_qms_event_user,pm.qms.event user,model_pm_qms_event,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_event_manager,pm.qms.event manager,model_pm_qms_event,pm_qms_core.group_pm_qms_manager,1,0,0,0
 access_pm_qms_event_admin,pm.qms.event admin,model_pm_qms_event,pm_qms_core.group_pm_qms_administrator,1,0,0,0
+access_pm_qms_site_user,pm.qms.site user,model_pm_qms_site,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_site_manager,pm.qms.site manager,model_pm_qms_site,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_site_admin,pm.qms.site admin,model_pm_qms_site,pm_qms_core.group_pm_qms_administrator,1,1,1,1

@@ -6,9 +6,9 @@
 | Dashboard | Product metrics | Dashboard | Apex populated dashboard | Metrics are source-driven, not hard-coded | COVERED |
 | Implementation | Project generation | Implementations | Apex Precision QMS Demo Implementation | Quality pack creates controls and activities | COVERED |
 | Implementation | Readiness and gaps | Readiness Center | Apex implementation | Mixed evidence/gap state | COVERED |
-| Core | Organizations | Configuration | APEX | Fictional company only | COVERED |
-| Core | Sites | Not yet modeled | Metadata: Headquarters, Manufacturing Plant, Inspection & Distribution Center | Intended future license concept is documented; no Site model exists | PARTIAL |
-| Core | Processes | Configuration > Processes | APEX-FIN, APEX-DOC, APEX-CAL | Standalone QMS process architecture | COVERED |
+| Core | Company Profile | Configuration > Company Profile | APEX | Fictional operational QMS organization, scope, and primary quality contact | COVERED |
+| Core | Sites | Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Exactly three deterministic Apex sites with one primary and no artificial limit | COVERED |
+| Core | Processes | Configuration > Processes | APEX-FIN, APEX-DOC, APEX-CAL | Standalone QMS process architecture with applicable Site scope | COVERED |
 | Documents | Controlled documents | Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
 | Documents | Revisions | Documents > Revisions | Revision A records | Current revision context | COVERED |
 | Evidence | Evidence records | Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |

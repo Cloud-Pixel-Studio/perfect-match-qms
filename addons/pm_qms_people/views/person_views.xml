@@ -8,6 +8,7 @@
                 <field name="code"/>
                 <field name="name"/>
                 <field name="organization_id"/>
+                <field name="site_id"/>
                 <field name="partner_id"/>
                 <field name="user_id"/>
                 <field name="competency_gap_count"/>
@@ -37,6 +38,7 @@
                         <group>
                             <field name="code"/>
                             <field name="organization_id"/>
+                            <field name="site_id"/>
                             <field name="partner_id"/>
                             <field name="user_id"/>
                         </group>
@@ -86,6 +88,7 @@
                 <field name="name"/>
                 <field name="code"/>
                 <field name="organization_id"/>
+                <field name="site_id"/>
                 <field name="user_id"/>
                 <filter name="active" string="Active" domain="[('active', '=', True)]"/>
                 <filter name="group_org" string="Organization" context="{'group_by': 'organization_id'}"/>
