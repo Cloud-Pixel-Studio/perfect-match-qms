@@ -2,17 +2,28 @@
 """Issue a signed offline Perfect Match license using an external private key."""
 
 import argparse
+import importlib.util
 import json
 import sys
+import types
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT))
-
-from odoo.addons.pm_qms_license.services.license_service import issue_license  # noqa: E402
+SERVICE_DIR = REPO_ROOT / "addons" / "pm_qms_license" / "services"
+SERVICE_PACKAGE = "_pmqms_license_services"
+service_package = types.ModuleType(SERVICE_PACKAGE)
+service_package.__path__ = [str(SERVICE_DIR)]
+sys.modules[SERVICE_PACKAGE] = service_package
+service_spec = importlib.util.spec_from_file_location(
+    f"{SERVICE_PACKAGE}.license_service", SERVICE_DIR / "license_service.py"
+)
+license_service = importlib.util.module_from_spec(service_spec)
+sys.modules[service_spec.name] = license_service
+service_spec.loader.exec_module(license_service)
+issue_license = license_service.issue_license
 
 
 def parse_args():
