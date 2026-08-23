@@ -17,7 +17,7 @@ class PmQmsLicense(models.Model):
     license_revision = fields.Integer(required=True, readonly=True)
     customer_name = fields.Char(required=True, readonly=True)
     edition = fields.Char(required=True, readonly=True)
-    environment_id = fields.Char(required=True, readonly=True)
+    environment_id = fields.Char(string="Environment ID", required=True, readonly=True)
     environment_short = fields.Char(compute="_compute_environment_short", string="Environment", readonly=True)
     company_limit = fields.Integer(required=True, readonly=True)
     site_limit = fields.Integer(required=True, readonly=True)

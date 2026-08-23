@@ -2,7 +2,7 @@
 <odoo>
     <record id="group_pm_qms_license_admin" model="res.groups">
         <field name="name">QMS Licensing Administrator</field>
-        <field name="category_id" ref="pm_qms_core.module_category_pm_qms"/>
+        <field name="privilege_id" ref="pm_qms_core.privilege_pm_qms"/>
         <field name="implied_ids" eval="[Command.link(ref('pm_qms_core.group_pm_qms_administrator'))]"/>
     </record>
 
