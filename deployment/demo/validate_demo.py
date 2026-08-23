@@ -1,6 +1,7 @@
 import os
 
 EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
+EXPECTED_ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
     raise RuntimeError(f"Demo validation refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")
 
@@ -63,7 +64,7 @@ else:
     errors.append("missing model: pm.qms.cost.line")
 
 if "pm.qms.action.center.line" in env and organization:
-    demo_user = env["res.users"].search([("login", "=", "demo.qm@perfectmatch.local")], limit=1)
+    demo_user = env["res.users"].search([("login", "=", EXPECTED_ADMIN_LOGIN)], limit=1)
     values = env["pm.qms.action.center.line"].with_user(demo_user or env.user)._collect_action_values(organization)
     summary["pm.qms.action.center.source_values"] = len(values)
     require(len(values) >= 8, "expected source-driven Action Center values")
