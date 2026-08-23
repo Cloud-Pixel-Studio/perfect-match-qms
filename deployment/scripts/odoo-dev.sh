@@ -38,6 +38,8 @@ MISSION16_ADDONS="$MISSION15_ADDONS,pm_qms_customer_quality"
 MISSION16_TEST_TAGS="$MISSION15_TEST_TAGS,/pm_qms_customer_quality"
 MISSION17_ADDONS="$MISSION16_ADDONS,pm_qms_action_center,pm_qms_cost_quality"
 MISSION17_TEST_TAGS="$MISSION16_TEST_TAGS,/pm_qms_action_center,/pm_qms_cost_quality"
+MISSION18_ADDONS="$MISSION17_ADDONS"
+MISSION18_TEST_TAGS="$MISSION17_TEST_TAGS,/pm_qms_core"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -148,6 +150,8 @@ usage() {
 Usage: ./deployment/scripts/odoo-dev.sh <command>
 
 Commands:
+  standalone-check
+                Verify no addon depends on functional ERP modules.
   init-secrets   Generate local DEV secrets outside Git.
   config         Validate the Docker Compose file.
   pull           Pull Odoo and PostgreSQL images.
@@ -249,6 +253,12 @@ Commands:
                 Upgrade full QMS stack including Action Center and Cost of Quality in pmqms_dev.
   test-mission17
                 Run Mission 17 full-stack Odoo tests in pmqms_test.
+  install-mission18
+                Upgrade/install the Mission 18 standalone foundation in pmqms_dev.
+  update-mission18
+                Upgrade the Mission 18 standalone foundation in pmqms_dev.
+  test-mission18
+                Run Mission 18 focused/full-stack Odoo tests in pmqms_test.
 EOF
 }
 
@@ -278,6 +288,9 @@ run_odoo_tests() {
 
 command="${1:-}"
 case "$command" in
+  standalone-check)
+    python3 "$REPO_ROOT/deployment/scripts/standalone-dependency-check.py"
+    ;;
   init-secrets)
     init_secrets
     echo "Odoo DEV secrets initialized in $SECRETS_DIR"
@@ -562,6 +575,21 @@ case "$command" in
     ;;
   test-mission17)
     run_odoo_tests "$MISSION17_ADDONS" "$MISSION17_TEST_TAGS" "Mission 17"
+    ;;
+  install-mission18)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION18_ADDONS" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION18_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission18)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION18_ADDONS" --stop-after-init
+    ;;
+  test-mission18)
+    run_odoo_tests "$MISSION18_ADDONS" "$MISSION18_TEST_TAGS" "Mission 18"
     ;;
   ""|help|-h|--help)
     usage

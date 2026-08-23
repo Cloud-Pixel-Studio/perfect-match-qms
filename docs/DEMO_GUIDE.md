@@ -4,11 +4,16 @@ Open the demo at `https://demo.invperfectmatch.com/web/login?db=pmqms_demo` and
 log in as `admin`. The credential file is kept outside Git; retrieve its path
 with `./deployment/scripts/odoo-demo.sh credentials` on the demo VM.
 
-The fictional company is `Apex Precision Systems, Inc.`. The intended site concept is Headquarters & Quality Center, Manufacturing Plant, and Inspection & Distribution Center; the current product does not yet have a dedicated Site model.
+The fictional company is `Apex Precision Systems, Inc.`. The demo contains one
+organization and exactly three operational Sites: `APEX-HQ` Headquarters &
+Quality Center, `APEX-MFG` Manufacturing Plant, and `APEX-INS` Inspection &
+Distribution Center.
 
 | Product Area | Menu Path | Demo Record | What To Show |
 | --- | --- | --- | --- |
 | Dashboard | Perfect Match QMS > Dashboard | Apex metrics | Readiness, actions, customer quality, calibration, and quality cost indicators populated from source records. |
+| Company Profile | Perfect Match QMS > Configuration > Company Profile | APEX - Apex Precision Systems, Inc. | QMS scope, primary quality contact, technical company context, and linked Sites. |
+| Sites | Perfect Match QMS > Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Primary headquarters, manufacturing, inspection/distribution, archive state, and operational relationships. |
 | Guided Implementation | Perfect Match QMS > Implementations | Apex Precision QMS Demo Implementation | Generated areas, controls, activities, evidence requirements, gaps, and readiness. |
 | Documents | Perfect Match QMS > Documents | APEX-DOC-003 - SOP - Control of Nonconforming Outputs | Controlled document metadata and revision context using original fictional content. |
 | Evidence | Perfect Match QMS > Evidence | APEX-EV-003 - Evidence - SOP - Control of Nonconforming Outputs | Evidence linked to a control instance and requirement. |
@@ -21,7 +26,7 @@ The fictional company is `Apex Precision Systems, Inc.`. The intended site conce
 | People | Perfect Match QMS > People & Competency > People | Olivia Parker / Daniel Brooks / Maria Lewis | Fictional personas, QMS responsibilities, and linked user/person records. |
 | Training | Perfect Match QMS > People & Competency > Training | APEX-TRN-001 - Revised setup instruction refresher | Due, overdue, and completed training examples. |
 | Qualifications | Perfect Match QMS > People & Competency > Qualifications | APEX-QUAL-001 - Final Inspection Authorization | Expired, expiring, and current qualification examples. |
-| Calibration | Perfect Match QMS > Equipment & Calibration > Equipment | EQ-0001 - Digital Caliper | Current, due soon, overdue, and OOT scenario context. |
+| Calibration | Perfect Match QMS > Equipment & Calibration > Equipment | EQ-0001 - Digital Caliper | Current, due soon, overdue, OOT scenario context, and Site assignment. |
 | OOT Impact Assessment | Perfect Match QMS > Equipment & Calibration > Impact Assessments | APEX-OOT-001 - Digital caliper impact | Quarantine, exposure window, affected evidence, and NCR/CAPA traceability. |
 | Customer Complaints | Perfect Match QMS > Customer Quality > Complaints | APEX-CC-001 - Nova Aero dimensional nonconformance complaint | Response due date, containment, related NCR, and 8D relationship. |
 | Quality Alerts | Perfect Match QMS > Customer Quality > Quality Alerts | APEX-QA-001 - Dimensional verification alert for Lot L-24017 | Internal alert tied to the customer/NCR scenario. |

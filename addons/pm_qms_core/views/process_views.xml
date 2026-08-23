@@ -29,12 +29,24 @@
                         <group>
                             <field name="code"/>
                             <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="quality_contact_id"/>
                         </group>
                         <group>
                             <field name="active" optional="hide"/>
                         </group>
                     </group>
                     <notebook>
+                        <page string="Sites">
+                            <field name="site_ids" context="{'default_organization_id': id}">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="site_type"/>
+                                    <field name="is_primary"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Description">
                             <field name="description"/>
                         </page>
@@ -100,6 +112,9 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="active"/>
                         </group>
+                    </group>
+                    <group string="Operational Scope">
+                        <field name="site_ids" widget="many2many_tags"/>
                     </group>
                     <notebook>
                         <page string="Description">

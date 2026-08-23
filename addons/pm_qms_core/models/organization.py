@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class PmQmsOrganization(models.Model):
@@ -10,6 +11,13 @@ class PmQmsOrganization(models.Model):
     name = fields.Char(required=True, tracking=True)
     code = fields.Char(required=True, copy=False, tracking=True)
     description = fields.Text()
+    qms_scope = fields.Text(string="QMS Scope", tracking=True)
+    quality_contact_id = fields.Many2one(
+        "res.users",
+        string="Primary Quality Contact",
+        domain="[('company_ids', 'in', company_id)]",
+        tracking=True,
+    )
     company_id = fields.Many2one(
         "res.company",
         required=True,
@@ -17,6 +25,7 @@ class PmQmsOrganization(models.Model):
         index=True,
     )
     process_ids = fields.One2many("pm.qms.process", "organization_id", string="Processes")
+    site_ids = fields.One2many("pm.qms.site", "organization_id", string="Sites")
     control_instance_ids = fields.One2many(
         "pm.qms.control.instance",
         "organization_id",
@@ -28,3 +37,12 @@ class PmQmsOrganization(models.Model):
         "UNIQUE(code, company_id)",
         "Organization code must be unique per company.",
     )
+
+    @api.constrains("company_id", "quality_contact_id")
+    def _check_quality_contact_alignment(self):
+        for organization in self:
+            if (
+                organization.quality_contact_id
+                and organization.company_id not in organization.quality_contact_id.company_ids
+            ):
+                raise ValidationError("The primary quality contact must be allowed for the organization company.")

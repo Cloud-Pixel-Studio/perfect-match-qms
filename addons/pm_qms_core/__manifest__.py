@@ -19,6 +19,7 @@ separate from reusable framework controls.
         "security/ir.model.access.csv",
         "data/sequence_data.xml",
         "views/process_views.xml",
+        "views/site_views.xml",
         "views/control_views.xml",
         "views/control_instance_views.xml",
         "views/activity_views.xml",

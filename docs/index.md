@@ -52,3 +52,5 @@
 - [Demo Guide](DEMO_GUIDE.md)
 - [Demo Coverage Matrix](DEMO_COVERAGE_MATRIX.md)
 - [ADR-055: Dedicated Product Demo Environment](DECISIONS/ADR-055-dedicated-product-demo-environment.md)
+- [Standalone Product Architecture](STANDALONE_PRODUCT_ARCHITECTURE.md)
+- [ADR-056: Standalone Product Organization and Site Foundation](DECISIONS/ADR-056-standalone-product-organization-site-foundation.md)

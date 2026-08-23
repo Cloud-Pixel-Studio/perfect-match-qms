@@ -55,6 +55,13 @@ class PmQmsEquipment(models.Model):
     model = fields.Char()
     serial_number = fields.Char()
     organization_id = fields.Many2one("pm.qms.organization", required=True, ondelete="restrict", index=True)
+    site_id = fields.Many2one(
+        "pm.qms.site",
+        string="Site",
+        ondelete="restrict",
+        index=True,
+        domain="[('organization_id', '=', organization_id)]",
+    )
     company_id = fields.Many2one(related="organization_id.company_id", store=True, readonly=True, index=True)
     process_id = fields.Many2one("pm.qms.process", ondelete="restrict", index=True)
     location = fields.Char()
@@ -200,9 +207,14 @@ class PmQmsEquipment(models.Model):
             if equipment.due_soon_days < 0:
                 raise ValidationError("Due-soon threshold cannot be negative.")
 
-    @api.constrains("organization_id", "process_id", "type_id", "responsible_person_id", "default_provider_id", "document_ids")
+    @api.constrains("organization_id", "site_id", "process_id", "type_id", "responsible_person_id", "default_provider_id", "document_ids")
     def _check_alignment(self):
         for equipment in self:
+            if equipment.site_id and (
+                equipment.site_id.organization_id != equipment.organization_id
+                or equipment.site_id.company_id != equipment.company_id
+            ):
+                raise ValidationError("Equipment site must belong to the equipment organization and company.")
             if equipment.process_id:
                 if equipment.process_id.company_id != equipment.company_id:
                     raise ValidationError("Equipment process must belong to the same company.")

@@ -13,6 +13,13 @@ class PmQmsPerson(models.Model):
     partner_id = fields.Many2one("res.partner", string="Business Contact", ondelete="restrict", tracking=True)
     user_id = fields.Many2one("res.users", string="Odoo User", ondelete="restrict", tracking=True)
     organization_id = fields.Many2one("pm.qms.organization", required=True, ondelete="restrict", index=True)
+    site_id = fields.Many2one(
+        "pm.qms.site",
+        string="Primary Site",
+        ondelete="restrict",
+        index=True,
+        domain="[('organization_id', '=', organization_id)]",
+    )
     company_id = fields.Many2one(
         "res.company",
         related="organization_id.company_id",
@@ -89,13 +96,18 @@ class PmQmsPerson(models.Model):
                 [("person_id", "=", person.id), ("state", "=", "pending")]
             )
 
-    @api.constrains("organization_id", "partner_id", "user_id")
+    @api.constrains("organization_id", "partner_id", "user_id", "site_id")
     def _check_identity_alignment(self):
         for person in self:
             if person.partner_id.company_id and person.partner_id.company_id != person.company_id:
                 raise ValidationError("QMS person contact must belong to the same company as the organization.")
             if person.user_id and person.company_id not in person.user_id.company_ids:
                 raise ValidationError("Linked Odoo user must be allowed for the person's company.")
+            if person.site_id and (
+                person.site_id.organization_id != person.organization_id
+                or person.site_id.company_id != person.company_id
+            ):
+                raise ValidationError("Primary site must belong to the person's organization and company.")
 
     def action_sync_competency_matrix(self):
         return self.env["pm.qms.competency.matrix.line"].sync_for_people(self)
