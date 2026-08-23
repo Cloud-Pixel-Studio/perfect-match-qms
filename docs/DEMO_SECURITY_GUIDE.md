@@ -16,7 +16,7 @@ stored in this document or in Git.
 | Michael Stone | Management User | Apex organization, read-oriented management visibility |
 
 The seed is idempotent and is restricted to `pmqms_demo`. It must not be used
-against `pmqms_oliva_pilot`.
+against the retired `pmqms_oliva_pilot` database name or any non-Demo database.
 
 ## Validation scenarios
 

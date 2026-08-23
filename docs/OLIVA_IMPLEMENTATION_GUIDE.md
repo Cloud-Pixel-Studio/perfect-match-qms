@@ -1,5 +1,8 @@
 # Oliva Torras Implementation Guide
 
+> **Historical, retired in RC6.** This guide records the former pilot and is
+> not an active deployment or customer onboarding instruction.
+
 This guide describes the next controlled steps for turning the technical pilot
 into a real Oliva Torras implementation.
 

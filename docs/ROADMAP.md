@@ -16,20 +16,20 @@
 
 ## Current Phase Status
 
-Phase 6 is validated as a technical pilot in `v1.0.0-rc1`.
+Phase 6 was validated as a technical pilot in `v1.0.0-rc1` and retired in
+`v1.0.0-rc6` after a final local backup. It is no longer an active deployment
+track.
 
 Completed:
 
-- Isolated Oliva pilot stack.
-- Quality Pack v1.0 generated project.
+- Historical Quality Pack v1.0 generated project.
 - Controlled migration import foundation.
-- Pilot backup and restore tooling.
-- Pilot validation records labeled `PILOT VALIDATION`.
+- Final pilot backup and retirement evidence.
 
 Not complete:
 
 - Customer production go-live.
-- Public DNS/TLS routing for pilot Odoo.
+- Customer production deployment.
 - Customer portal.
 - Production n8n automation.
 - AI assistant workflow.

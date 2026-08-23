@@ -456,10 +456,11 @@ a framework-owned process, generation creates or reuses an equivalent process
 inside the selected client organization so operational control instances,
 documents, evidence, tasks, and readiness remain client-scoped.
 
-## Mission 10 Oliva Pilot And Migration Layer
+## Mission 10 Migration Layer And Retired Oliva Pilot
 
-Mission 10 adds a customer-specific technical pilot without changing the core
-Odoo architecture.
+Mission 10 added a customer-specific technical pilot without changing the core
+Odoo architecture. RC6 retired that runtime after a final validated local
+backup; the following details are historical traceability only.
 
 The pilot stack is isolated from DEV and Plane:
 

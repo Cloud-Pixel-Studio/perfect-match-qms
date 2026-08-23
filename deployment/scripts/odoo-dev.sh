@@ -210,9 +210,9 @@ Commands:
   test-mission09
                 Run Mission 09 addon tests in pmqms_test.
   install-mission10
-                Install core through migration/pilot validation addons in pmqms_dev.
+                Install core through migration validation addons in pmqms_dev.
   update-mission10
-                Upgrade core through migration/pilot validation addons in pmqms_dev.
+                Upgrade core through migration validation addons in pmqms_dev.
   test-mission10
                 Run Mission 10 addon tests in pmqms_test.
   install-mission11

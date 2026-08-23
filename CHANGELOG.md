@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0-rc6 - 2026-08-23
+
+- Established the standalone Perfect Match QMS organization and Site product
+  foundation with the Apex three-site Demo contract.
+- Added secure access, role, company, site, process-scope, equipment-scope,
+  Action Center, and Cost of Quality validation coverage from Missions 18 and
+  19.
+- Retired the Oliva Torras pilot runtime after a final validated local backup;
+  removed its active Compose files, scripts, database, volumes, network,
+  secrets, and ports while preserving historical documentation and Plane
+  traceability.
+- Made DEV and Demo the only active validation lifecycle environments.
+- Added RC6 release notes, baseline, and lifecycle ADR. Commercial licensing
+  and Mission 20 remain outside this release.
+
 ## 1.0.0-rc5 - 2026-08-23
 
 - Froze the current Perfect Match QMS baseline through Mission 17, including the

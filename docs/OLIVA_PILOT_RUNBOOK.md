@@ -1,5 +1,9 @@
 # Oliva Torras Pilot Runbook
 
+> **Historical, retired in RC6.** This document is preserved for traceability
+> only. The runtime, scripts, database, volumes, network, secrets, and ports
+> described below no longer exist and must not be recreated for routine work.
+
 This runbook operates the isolated technical pilot for `Oliva Torras USA, Inc.`
 
 The pilot is a validation environment for Perfect Match Digital QMS. It is not

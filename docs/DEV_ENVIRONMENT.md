@@ -100,23 +100,13 @@ docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo shell
 ./deployment/scripts/odoo-dev.sh update-mission10
 ```
 
-## Oliva Pilot Environment
+## Retired Oliva Pilot
 
-Mission 10 adds a separate customer-pilot stack:
-
-```bash
-./deployment/scripts/odoo-pilot.sh init-secrets
-./deployment/scripts/odoo-pilot.sh config
-./deployment/scripts/odoo-pilot.sh install
-./deployment/scripts/odoo-pilot.sh configure-client
-./deployment/scripts/odoo-pilot.sh run-readiness
-./deployment/scripts/odoo-pilot.sh health
-```
-
-The pilot uses `pmqms_oliva_pilot_network`,
-`pmqms_oliva_pilot_postgres`, and `pmqms_oliva_pilot_odoo_data`.
-It does not share the DEV database, DEV volumes, Plane database, or Plane
-network.
+The Oliva Torras technical pilot was retired in RC6. Its runtime resources were
+removed only after a validated local backup. The historical pilot documents in
+this repository are retained for traceability, but the pilot compose files,
+startup scripts, secrets, database, volumes, network, and ports are no longer
+available or supported.
 
 ## Health Checks
 
@@ -134,4 +124,5 @@ docker compose -f deployment/docker/dev/compose.yml logs --tail=100 odoo-dev
 - Do not commit generated config, database dumps, filestore content, or secrets.
 - Do not commit licensed external standard publications or copied external
   requirement text.
-- Do not represent Oliva pilot validation fixtures as production customer data.
+- Do not represent historical Oliva pilot validation fixtures as production
+  customer data.

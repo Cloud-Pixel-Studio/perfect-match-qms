@@ -556,7 +556,7 @@ review = upsert(
         "period_end": today,
         "objective": "Fictional management review drawing inputs from QMS performance, risks, audit, customer quality, calibration, training, and Cost of Quality.",
         "agenda_notes": "Review readiness, customer impact, supplier containment, training, calibration, and Cost of Quality signals.",
-        "general_notes": "Demo record only; not connected to the Oliva Torras pilot.",
+        "general_notes": "Demo record only; not connected to the retired pilot environment.",
         "conclusion": "Continue the fictional readiness program and rebalance effort toward prevention.",
         "next_review_date": next_month,
     },

@@ -59,42 +59,10 @@ or generated configuration into Git.
 Production backup, retention, encryption, offsite storage, and monitoring are
 future work. This Mission 04 gate is a DEV validation foundation.
 
-## Oliva Pilot Backup And Restore
+## Retired Oliva Pilot Archive
 
-Mission 10 adds backup and restore scripts for the isolated Oliva technical
-pilot.
-
-Create a backup:
-
-```bash
-cd /opt/perfect-match/perfect-match-qms
-./deployment/scripts/backup-oliva-pilot.sh backup
-```
-
-Backups are written outside Git under:
-
-```text
-/opt/perfect-match/backups/odoo-oliva-pilot
-```
-
-Validate a backup:
-
-```bash
-./deployment/scripts/backup-oliva-pilot.sh validate \
-  /opt/perfect-match/backups/odoo-oliva-pilot/pmqms-oliva-pilot-YYYYMMDDTHHMMSSZ.tar.gz
-```
-
-Restore to a disposable validation database:
-
-```bash
-./deployment/scripts/restore-oliva-pilot.sh \
-  --backup /opt/perfect-match/backups/odoo-oliva-pilot/pmqms-oliva-pilot-YYYYMMDDTHHMMSSZ.tar.gz \
-  --target-db pmqms_oliva_restore_m10 \
-  --confirm-target-db pmqms_oliva_restore_m10 \
-  --replace-existing \
-  --drop-after-restore
-```
-
-The restore script refuses to overwrite the active pilot database unless an
-explicit override is provided. Prefer disposable restore rehearsals for release
-validation.
+The Oliva backup and restore scripts and runtime were retired in RC6. The
+historical backup procedure is preserved in prior release documentation only.
+The final retirement archive is VM-local, checksum-validated, outside Git, and
+must not be uploaded to GitHub, Plane, or a release. Do not recreate the pilot
+runtime to perform routine validation; use DEV and Demo instead.

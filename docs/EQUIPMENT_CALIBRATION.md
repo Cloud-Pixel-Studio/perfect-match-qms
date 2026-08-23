@@ -203,5 +203,6 @@ cross-organization relationship mistakes inside a company.
 ## Demo Data
 
 Demo data is fictional and loaded only when Odoo demo data is enabled. The
-Oliva pilot and production-style scripts install the module without demo data,
-so no fictional calibration records are seeded into customer pilot data.
+Historical production-style validation installed the module without demo data,
+so no fictional calibration records were seeded into the retired pilot. Current
+validation uses DEV and the fictional Demo only.

@@ -10,9 +10,10 @@ Target workflow:
 6. UAT
 7. DONE
 
-Critical path: Architecture, Infrastructure, Odoo development environment, PM QMS Core, Controls, Evidence, Document Control, Risk/NCR/CAPA, Audits, KPI, Management Review, ISO 9001 Pack, Project Generator, Oliva Torras Pilot.
+Critical path: Architecture, Infrastructure, Odoo development environment, PM QMS Core, Controls, Evidence, Document Control, Risk/NCR/CAPA, Audits, KPI, Management Review, ISO 9001 Pack, Project Generator, standalone product foundation, and secure access.
 
-AI, multi-standard, and CMMC work come later.
+AI, multi-standard, CMMC, and commercial licensing work come later. The Oliva
+pilot is historical and retired.
 
 ## Local Odoo DEV Loop
 
