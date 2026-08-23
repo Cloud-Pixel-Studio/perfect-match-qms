@@ -151,7 +151,7 @@ provision_license() {
   [[ -f "$DEMO_LICENSE_FILE" ]] || { echo "Demo license file not found: $DEMO_LICENSE_FILE" >&2; exit 1; }
   compose up -d postgres-demo >/dev/null
   wait_postgres
-  compose run --rm -v "$DEMO_LICENSE_FILE:/run/pmqms-demo-license.pmql:ro" \
+  compose run --rm --user "$(id -u):$(id -g)" -v "$DEMO_LICENSE_FILE:/run/pmqms-demo-license.pmql:ro" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/import_license.py"
 }
 

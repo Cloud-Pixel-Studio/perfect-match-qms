@@ -159,7 +159,7 @@ provision_license() {
   [[ -f "$DEV_LICENSE_FILE" ]] || { echo "DEV license file not found: $DEV_LICENSE_FILE" >&2; exit 1; }
   compose up -d postgres-dev >/dev/null
   wait_for_postgres
-  compose run --rm -v "$DEV_LICENSE_FILE:/run/pmqms-dev-license.pmql:ro" \
+  compose run --rm --user "$(id -u):$(id -g)" -v "$DEV_LICENSE_FILE:/run/pmqms-dev-license.pmql:ro" \
     odoo-dev odoo shell -d pmqms_dev --log-level=error <<'PY'
 from pathlib import Path
 record = env["pm.qms.license"].import_document(Path("/run/pmqms-dev-license.pmql").read_bytes())
