@@ -6,7 +6,7 @@ from odoo import Command, fields
 
 EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
 COMPANY_NAME = os.getenv("PMQMS_DEMO_COMPANY_NAME", "Apex Precision Systems, Inc.")
-ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "demo.qm@perfectmatch.local")
+ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 ADMIN_PASSWORD = os.getenv("PMQMS_DEMO_ADMIN_PASSWORD")
 ORG_CODE = "APEX"
 

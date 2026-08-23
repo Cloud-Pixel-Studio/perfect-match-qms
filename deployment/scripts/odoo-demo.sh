@@ -12,7 +12,7 @@ DEMO_ADMIN_PASSWORD_FILE="$SECRETS_DIR/demo_admin_password"
 BACKUP_DIR="${PMQMS_DEMO_BACKUP_DIR:-/opt/perfect-match/backups/odoo-demo}"
 DB_NAME="${PMQMS_DEMO_DB:-pmqms_demo}"
 DEMO_COMPANY_NAME="${PMQMS_DEMO_COMPANY_NAME:-Apex Precision Systems, Inc.}"
-DEMO_ADMIN_LOGIN="${PMQMS_DEMO_ADMIN_LOGIN:-demo.qm@perfectmatch.local}"
+DEMO_ADMIN_LOGIN="${PMQMS_DEMO_ADMIN_LOGIN:-admin}"
 DEMO_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality"
 
 export ODOO_DEMO_CONFIG_DIR="$CONFIG_DIR"
