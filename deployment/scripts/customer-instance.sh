@@ -314,7 +314,9 @@ destroy() {
   local slug="$1"; shift; [[ "${1:-}" == --confirm-ephemeral ]] || die "destroy requires --confirm-ephemeral"
   local root; root="$(require_instance "$slug")"; load_instance "$root"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "destroy only accepts environment_type=test"
   [[ "$slug" == *test* || "$slug" == *recovery* ]] || die "destroy requires an explicit ephemeral slug"
-  compose "$root" down --volumes --remove-orphans >/dev/null 2>&1 || true; rm -rf -- "$root"; log "ephemeral instance removed: $slug"
+  compose "$root" down --volumes --remove-orphans >/dev/null 2>&1 || true
+  docker run --rm --user root -v "$root:/data" alpine:3.20 sh -c 'rm -rf /data/* /data/.[!.]* /data/..?*' >/dev/null
+  rmdir -- "$root"; log "ephemeral instance removed: $slug"
 }
 
 command="${1:-}"; shift || true
