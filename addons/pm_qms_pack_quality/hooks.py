@@ -744,36 +744,6 @@ def seed_quality_pack(env):
 
     seed_quality_guided_readiness(env)
 
-    profile = env["pm.qms.mapping.profile"].search(
-        [
-            ("code", "=", "PM-QMS-QUALITY-ISO9001"),
-            ("edition", "=", "2015"),
-            ("company_id", "=", company.id),
-        ],
-        limit=1,
-    )
-    if not profile:
-        profile = env["pm.qms.mapping.profile"].create(
-            {
-                "name": "ISO 9001 Current Published Edition Mapping",
-                "code": "PM-QMS-QUALITY-ISO9001",
-                "company_id": company.id,
-                "pack_id": pack.id,
-                "standard_name": "ISO 9001",
-                "edition": "2015",
-                "publisher": "ISO",
-                "notes": (
-                    "External standard references are provided for implementation traceability. "
-                    "This software does not include or replace the official publication. "
-                    "Organizations remain responsible for authorized copies of applicable standards."
-                ),
-            }
-        )
-    if profile.state == "draft":
-        profile.with_context(pm_qms_quality_seed=True).action_activate()
-
-
-
 def seed_quality_guided_readiness(env):
     company = env.ref("base.main_company")
     pack = env["pm.qms.framework.pack"].search(

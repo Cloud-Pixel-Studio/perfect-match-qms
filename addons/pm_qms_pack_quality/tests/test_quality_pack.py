@@ -31,14 +31,6 @@ class TestPmQmsQualityPack(TransactionCase):
             ],
             limit=1,
         )
-        cls.mapping_profile = cls.env["pm.qms.mapping.profile"].search(
-            [
-                ("code", "=", "PM-QMS-QUALITY-ISO9001"),
-                ("edition", "=", "2015"),
-                ("company_id", "=", cls.company.id),
-            ],
-            limit=1,
-        )
         cls.organization = cls.env["pm.qms.organization"].create(
             {"name": "Quality Demo Organization", "code": "PM-QUAL-DEMO", "company_id": cls.company.id}
         )
@@ -148,15 +140,12 @@ class TestPmQmsQualityPack(TransactionCase):
         with self.assertRaises(UserError):
             self.quality_pack.control_line_ids[:1].with_user(self.admin).write({"required": False})
 
-    def test_mapping_profile_metadata_starts_incomplete_without_invented_mappings(self):
-        self.assertTrue(self.mapping_profile)
-        self.assertEqual(self.mapping_profile.state, "active")
-        self.assertEqual(self.mapping_profile.standard_name, "ISO 9001")
-        self.assertEqual(self.mapping_profile.edition, "2015")
-        self.assertEqual(self.mapping_profile.publisher, "ISO")
-        self.assertEqual(self.mapping_profile.total_control_count, len(self.quality_pack.control_line_ids))
-        self.assertEqual(self.mapping_profile.mapped_control_count, 0)
-        self.assertEqual(self.mapping_profile.mapping_completeness_percent, 0.0)
+    def test_mapping_profile_infrastructure_stays_standard_neutral(self):
+        profile = self._example_profile("NEUTRAL")
+        self.assertEqual(profile.state, "active")
+        self.assertEqual(profile.standard_name, "Example Standard")
+        self.assertEqual(profile.mapped_control_count, 0)
+        self.assertEqual(profile.mapping_completeness_percent, 0.0)
 
     def test_mapping_import_validation_approval_and_security(self):
         profile = self._example_profile()
@@ -353,8 +342,9 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertEqual(line.readiness_state, "ready")
 
     def test_multicompany_mapping_and_pack_isolation(self):
+        profile = self._example_profile("COMPANY")
         self.assertFalse(
-            self.env["pm.qms.mapping.profile"].with_user(self.other_user).search([("id", "=", self.mapping_profile.id)])
+            self.env["pm.qms.mapping.profile"].with_user(self.other_user).search([("id", "=", profile.id)])
         )
         self.assertFalse(
             self.env["pm.qms.framework.pack"].with_user(self.other_user).search([("id", "=", self.quality_pack.id)])

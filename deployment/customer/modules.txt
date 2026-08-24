@@ -11,6 +11,7 @@ pm_qms_kpi
 pm_qms_management_review
 pm_qms_implementation
 pm_qms_pack_quality
+pm_qms_iso9001
 pm_qms_migration
 pm_qms_people
 pm_qms_calibration

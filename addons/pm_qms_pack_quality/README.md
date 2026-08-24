@@ -4,8 +4,8 @@
 management pack.
 
 It contains Perfect Match-authored quality controls, implementation activities,
-mandatory evidence expectations, a versioned framework pack, and a controlled
-external reference mapping workflow. It does not contain copied external
+mandatory evidence expectations, a versioned framework pack, and the generic
+external-reference mapping workflow. It does not contain copied external
 standard text and does not replace official publications.
 
 ## Architecture
@@ -45,25 +45,13 @@ external standard references.
 
 ## External Reference Mapping
 
-The addon adds `pm.qms.mapping.profile` and extends
-`pm.qms.external.mapping`.
+The addon provides the generic `pm.qms.mapping.profile` infrastructure and
+extends `pm.qms.external.mapping`. Standard-specific profile records belong to
+their standard addon. The current ISO 9001 profile is owned by
+`pm_qms_iso9001`, not by this standard-neutral pack.
 
-The seeded profile is:
-
-- Code: `PM-QMS-QUALITY-ISO9001`
-- Standard name: `ISO 9001`
-- Edition: `2015`
-- Publisher: `ISO`
-- State: active
-
-The profile starts with zero approved mappings. That is intentional. A mapping
-profile is not complete until a human reviewer imports or approves metadata
-against an authorized source.
-
-As checked against official ISO pages on 2026-08-15, ISO lists ISO 9001:2015
-as the current published edition and lists a successor project with an expected
-publication around September 2026. A later published edition should be handled
-with a new mapping profile instead of rewriting historical mappings in place.
+Mapping profiles start with no approved mappings unless approved metadata is
+provided by the owning standard addon or imported by an authorized reviewer.
 
 ## CSV Import
 

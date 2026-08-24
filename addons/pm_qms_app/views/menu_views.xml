@@ -68,8 +68,10 @@
     </record>
 
     <record id="pm_qms_core.menu_pm_qms_framework" model="ir.ui.menu">
-        <field name="sequence">80</field>
-        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_pm_qms_manager')])]"/>
+        <field name="name">Framework Administration</field>
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
+        <field name="sequence">70</field>
+        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_pm_qms_administrator')])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_controls" model="ir.ui.menu">
         <field name="name">Framework Controls</field>

@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
 COMPOSE_FILE="$REPO_ROOT/deployment/docker/dev/compose.yml"
 SECRETS_DIR="${PMQMS_ODOO_DEV_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-dev}"
 CONFIG_DIR="$SECRETS_DIR/config"
@@ -44,6 +45,8 @@ MISSION18_ADDONS="$MISSION17_ADDONS"
 MISSION18_TEST_TAGS="$MISSION17_TEST_TAGS,/pm_qms_core"
 MISSION20_ADDONS="$MISSION18_ADDONS"
 MISSION20_TEST_TAGS="$MISSION18_TEST_TAGS,/pm_qms_license"
+MISSION23_ADDONS="$(paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"))"
+MISSION23_TEST_TAGS="$(paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE" | sed 's/^/\//'))"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -303,6 +306,12 @@ Commands:
                 Upgrade the full QMS stack including commercial licensing.
   test-mission20
                 Run Mission 20 licensing and full-stack Odoo tests in pmqms_test.
+  install-mission23
+                Install/update the full QMS stack including the ISO 9001 standard add-on.
+  update-mission23
+                Upgrade the full QMS stack including the ISO 9001 standard add-on.
+  test-mission23
+                Run Mission 23 standard-boundary and full-stack Odoo tests in pmqms_test.
   provision-license
                 Import the externally issued DEV license from the secrets directory.
 EOF
@@ -651,6 +660,21 @@ case "$command" in
     ;;
   test-mission20)
     run_odoo_tests "$MISSION20_ADDONS" "$MISSION20_TEST_TAGS" "Mission 20"
+    ;;
+  install-mission23)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION23_ADDONS" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION23_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission23)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION23_ADDONS" --stop-after-init
+    ;;
+  test-mission23)
+    run_odoo_tests "$MISSION23_ADDONS" "$MISSION23_TEST_TAGS" "Mission 23"
     ;;
   provision-license)
     provision_license
