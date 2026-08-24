@@ -62,7 +62,7 @@ class PmQmsActivationRequest(models.Model):
                     "company_count": usage["company"]["used"],
                     "site_count": usage["site"]["used"],
                     "named_user_count": usage["named_user"]["used"],
-                    "requested_at": fields.Datetime.now(),
+                    "requested_at": fields.Datetime.to_string(fields.Datetime.now()),
                 },
                 sort_keys=True,
                 indent=2,
