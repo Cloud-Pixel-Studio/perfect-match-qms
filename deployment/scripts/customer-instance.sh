@@ -307,7 +307,8 @@ upgrade() {
 
 customer_ready() {
   local root; root="$(require_instance "$1")"; load_instance "$root"; local ok=1
-  health "$1" >/dev/null || ok=0; [[ -f "$root/license/active.pmql" ]] || ok=0; [[ -f "$root/config/environment_id" ]] || ok=0; [[ -f "$root/secrets/postgres_password" && -f "$root/secrets/odoo_master_password" ]] || ok=0
+  health "$1" >/dev/null || ok=0
+  docker run --rm --user 100:101 -v "$root/license:/license:ro" -v "$root/config:/config:ro" -v "$root/secrets:/secrets:ro" alpine:3.20 sh -c 'test -f /license/active.pmql && test -f /config/environment_id && test -f /secrets/postgres_password && test -f /secrets/odoo_master_password' || ok=0
   compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY' || ok=0
 organization = env["pm.qms.organization"].sudo().search([("organization_kind", "=", "operational")], limit=1)
 if not organization: raise RuntimeError("No operational organization")
