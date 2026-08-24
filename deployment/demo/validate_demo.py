@@ -2,6 +2,13 @@ import os
 
 EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
 EXPECTED_ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
+EXPECTED_QMS_PERSONAS = {
+    "Quality Manager": os.getenv("PMQMS_DEMO_QUALITY_MANAGER_LOGIN", "olivia.parker.demo@perfectmatch.local"),
+    "Quality Supervisor": "daniel.brooks.demo@perfectmatch.local",
+    "Internal Auditor": "james.carter.demo@perfectmatch.local",
+    "Process Owner": "emma.reed.demo@perfectmatch.local",
+    "Management User": "michael.stone.demo@perfectmatch.local",
+}
 if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
     raise RuntimeError(f"Demo validation refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")
 
@@ -89,6 +96,12 @@ if "pm.qms.license" in env:
         require(license_record.named_user_usage <= license_record.named_user_limit, "Demo named-user entitlement is exceeded")
 else:
     errors.append("missing model: pm.qms.license")
+
+for role, login in EXPECTED_QMS_PERSONAS.items():
+    persona = env["res.users"].search([("login", "=", login)], limit=1)
+    require(bool(persona), f"Demo persona missing: {role}")
+    if persona:
+        require(not persona.has_group("base.group_system"), f"QMS persona is System Administrator: {role}")
 
 if "pm.qms.cost.event" in env:
     confirmed_events = env["pm.qms.cost.event"].search_count(org_domain + [("state", "=", "confirmed")])

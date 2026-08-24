@@ -9,12 +9,14 @@ CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
 DEMO_ADMIN_PASSWORD_FILE="$SECRETS_DIR/demo_admin_password"
+PERSONA_PASSWORD_DIR="$SECRETS_DIR/personas"
 ENVIRONMENT_ID_FILE="$CONFIG_DIR/environment_id"
 DEMO_LICENSE_FILE="${PMQMS_DEMO_LICENSE_FILE:-$SECRETS_DIR/demo_license.pmql}"
 BACKUP_DIR="${PMQMS_DEMO_BACKUP_DIR:-/opt/perfect-match/backups/odoo-demo}"
 DB_NAME="${PMQMS_DEMO_DB:-pmqms_demo}"
 DEMO_COMPANY_NAME="${PMQMS_DEMO_COMPANY_NAME:-Apex Precision Systems, Inc.}"
 DEMO_ADMIN_LOGIN="${PMQMS_DEMO_ADMIN_LOGIN:-admin}"
+DEMO_QUALITY_MANAGER_LOGIN="${PMQMS_DEMO_QUALITY_MANAGER_LOGIN:-olivia.parker.demo@perfectmatch.local}"
 DEMO_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality"
 
 export ODOO_DEMO_CONFIG_DIR="$CONFIG_DIR"
@@ -65,6 +67,22 @@ init_secrets() {
     python3 -c 'import uuid; print(uuid.uuid4())' > "$ENVIRONMENT_ID_FILE"
     chmod 600 "$ENVIRONMENT_ID_FILE"
   fi
+  mkdir -p "$PERSONA_PASSWORD_DIR"
+  chmod 700 "$PERSONA_PASSWORD_DIR"
+  declare -A persona_logins=(
+    [quality-manager]="$DEMO_QUALITY_MANAGER_LOGIN"
+    [quality-supervisor]="daniel.brooks.demo@perfectmatch.local"
+    [document-controller]="maria.lewis.demo@perfectmatch.local"
+    [internal-auditor]="james.carter.demo@perfectmatch.local"
+    [process-owner]="emma.reed.demo@perfectmatch.local"
+    [management-user]="michael.stone.demo@perfectmatch.local"
+  )
+  for persona in "${!persona_logins[@]}"; do
+    if [[ ! -f "$PERSONA_PASSWORD_DIR/$persona" ]]; then
+      random_secret > "$PERSONA_PASSWORD_DIR/$persona"
+    fi
+    chmod 600 "$PERSONA_PASSWORD_DIR/$persona"
+  done
   cat > "$CONFIG_DIR/odoo.conf" <<EOF
 [options]
 addons_path = /usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons
@@ -141,6 +159,9 @@ seed_demo() {
     -e PMQMS_DEMO_DB="$DB_NAME" \
     -e PMQMS_DEMO_COMPANY_NAME="$DEMO_COMPANY_NAME" \
     -e PMQMS_DEMO_ADMIN_LOGIN="$DEMO_ADMIN_LOGIN" \
+    -e PMQMS_DEMO_QUALITY_MANAGER_LOGIN="$DEMO_QUALITY_MANAGER_LOGIN" \
+    -e PMQMS_DEMO_PERSONA_PASSWORD_DIR=/run/pmqms-demo-persona-passwords \
+    -v "$PERSONA_PASSWORD_DIR:/run/pmqms-demo-persona-passwords:ro" \
     -e PMQMS_DEMO_ADMIN_PASSWORD="$password" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/seed_demo.py"
 }
@@ -223,6 +244,13 @@ credentials() {
   echo "demo_database=$DB_NAME"
   echo "demo_login=$DEMO_ADMIN_LOGIN"
   echo "demo_password_file=$DEMO_ADMIN_PASSWORD_FILE"
+  echo "technical_admin_login=$DEMO_ADMIN_LOGIN"
+  echo "quality_manager_login=$DEMO_QUALITY_MANAGER_LOGIN"
+  echo "persona_password_dir=$PERSONA_PASSWORD_DIR"
+  echo "quality_supervisor_login=daniel.brooks.demo@perfectmatch.local"
+  echo "internal_auditor_login=james.carter.demo@perfectmatch.local"
+  echo "process_owner_login=emma.reed.demo@perfectmatch.local"
+  echo "management_user_login=michael.stone.demo@perfectmatch.local"
 }
 
 usage() {
