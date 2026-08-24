@@ -286,7 +286,7 @@ bundle() {
   (cd "$tmp" && find addons deployment -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
   mkdir -p "$(dirname "$output")"; tar -C "$tmp" -czf "$output" .; sha256sum "$output" > "$output.sha256"
   if tar -xOzf "$output" ./manifest.json 2>/dev/null | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
-  if grep -RInaE 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" "$tmp/deployment" >/dev/null 2>&1; then die "Demo content detected in bundle"; fi
+  if grep -RInaE --exclude='customer-instance.sh' 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" "$tmp/deployment" >/dev/null 2>&1; then die "Demo content detected in bundle"; fi
   echo "bundle=$output"; echo "checksum=$output.sha256"; echo "source_sha=$sha"
 }
 
