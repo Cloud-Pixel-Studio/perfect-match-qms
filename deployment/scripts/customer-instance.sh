@@ -186,15 +186,16 @@ PY
 
 import_license() {
   local root; root="$(require_instance "$1")"; load_instance "$root"; local license="$2"
-  [[ -f "$license" ]] || die "license not found"; install -m 600 "$license" "$root/license/active.pmql"
-  docker run --rm --user root -v "$root/license:/license" odoo:19.0 sh -lc 'chown 100:101 /license/active.pmql && chmod 600 /license/active.pmql'
+  [[ -f "$license" ]] || die "license not found"; local license_id; license_id="$(jq -r '.payload.license_id' "$license")"
+  [[ -n "$license_id" && "$license_id" != null ]] || die "license payload has no license_id"
+  docker run --rm --user root -e LICENSE_NAME="$(basename "$license")" -v "$root/license:/license" -v "$(dirname "$license"):/input:ro" alpine:3.20 sh -lc 'cp "/input/$LICENSE_NAME" /license/active.pmql && chown 100:101 /license/active.pmql && chmod 600 /license/active.pmql'
   compose "$root" run --rm -v "$root/license:/var/lib/pmqms-license:ro" odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
 from pathlib import Path
 record = env["pm.qms.license"].sudo().import_document(Path("/var/lib/pmqms-license/active.pmql").read_bytes())
 env.cr.commit()
 print("license_id=%s revision=%s state=%s environment=%s" % (record.license_id, record.license_revision, record.state, record.environment_short))
 PY
-  jq --arg id "$(jq -r '.payload.license_id' "$root/license/active.pmql")" '.license_id=$id | .deployment_state="licensed"' "$root/config/deployment-manifest.json" > "$root/config/deployment-manifest.json.tmp"
+  jq --arg id "$license_id" '.license_id=$id | .deployment_state="licensed"' "$root/config/deployment-manifest.json" > "$root/config/deployment-manifest.json.tmp"
   mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"; chmod 600 "$root/config/deployment-manifest.json"
 }
 
