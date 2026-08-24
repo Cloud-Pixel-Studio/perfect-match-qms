@@ -203,6 +203,14 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertTrue(action.with_user(self.quality_manager).read())
         self.assertTrue(action.with_user(self.env.user).read())
 
+    def test_viewer_can_open_read_only_dashboard_transient(self):
+        dashboard = self.env["pm.qms.dashboard"].with_user(self.viewer).create(
+            {"organization_id": self.organization.id}
+        )
+        self.assertTrue(dashboard)
+        with self.assertRaises(AccessError):
+            dashboard.with_user(self.viewer).write({"organization_id": self.organization.id})
+
     def test_optional_platform_roots_are_restricted_when_installed(self):
         menu = self.env.ref("project_todo.menu_todo_todos", raise_if_not_found=False)
         if not menu:

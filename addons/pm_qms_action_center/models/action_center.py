@@ -111,7 +111,9 @@ class PmQmsActionCenterLine(models.TransientModel):
             for record in model.search(domain, order=spec.get("order") or "id"):
                 if not self._record_matches_provider(record, spec):
                     continue
-                values.append(self._line_values_from_record(record, spec))
+                line_values = self._line_values_from_record(record, spec)
+                if line_values:
+                    values.append(line_values)
         return values
 
     @api.model
@@ -130,6 +132,14 @@ class PmQmsActionCenterLine(models.TransientModel):
         state_label = self._selection_label(record, spec.get("state_field"), state)
         owner = self._field_value(record, spec.get("owner_field"))
         person = self._field_value(record, spec.get("person_field"))
+        if person:
+            try:
+                person.check_access("read")
+            except AccessError:
+                # A source record can be in the user's organization while its
+                # assigned person belongs to another site scope. Do not leak
+                # that person through a derived action-center row.
+                return False
         if not owner and person and "user_id" in person._fields:
             owner = person.user_id
         return {

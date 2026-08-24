@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="access_pm_qms_viewer_dashboard" model="ir.model.access"><field name="name">Viewer dashboard</field><field name="model_id" ref="pm_qms_app.model_pm_qms_dashboard"/><field name="group_id" ref="pm_qms_core.group_qms_viewer"/><field name="perm_read" eval="1"/></record>
+        <record id="access_pm_qms_viewer_dashboard" model="ir.model.access"><field name="name">Viewer dashboard</field><field name="model_id" ref="pm_qms_app.model_pm_qms_dashboard"/><field name="group_id" ref="pm_qms_core.group_qms_viewer"/><field name="perm_read" eval="1"/><field name="perm_create" eval="1"/></record>
         <record id="access_pm_qms_viewer_audit_program" model="ir.model.access"><field name="name">Viewer audit program</field><field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_program"/><field name="group_id" ref="pm_qms_core.group_qms_viewer"/><field name="perm_read" eval="1"/></record>
         <record id="access_pm_qms_viewer_audit" model="ir.model.access"><field name="name">Viewer audit</field><field name="model_id" ref="pm_qms_audit.model_pm_qms_audit"/><field name="group_id" ref="pm_qms_core.group_qms_viewer"/><field name="perm_read" eval="1"/></record>
         <record id="access_pm_qms_viewer_audit_scope" model="ir.model.access"><field name="name">Viewer audit scope</field><field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_scope"/><field name="group_id" ref="pm_qms_core.group_qms_viewer"/><field name="perm_read" eval="1"/></record>
