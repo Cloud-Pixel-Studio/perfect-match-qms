@@ -272,7 +272,7 @@ bundle() {
   [[ -n "$output" ]] || die "--output is required"; git -C "$REPO_ROOT" rev-parse "$release^{commit}" >/dev/null 2>&1 || die "release tag not found"
   local tmp; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
   git -C "$REPO_ROOT" archive "$release" addons deployment/customer deployment/docker/customer deployment/nginx/customer.conf.example deployment/scripts/customer-instance.sh | tar -x -C "$tmp"
-  rm -rf "$tmp/deployment/demo" "$tmp/deployment/docker/demo"; find "$tmp/addons" -type d -name __pycache__ -prune -exec rm -rf {} +; find "$tmp/addons" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+  rm -rf "$tmp/deployment/demo" "$tmp/deployment/docker/demo"; find "$tmp/addons" -type d \( -name __pycache__ -o -name demo \) -prune -exec rm -rf {} +; find "$tmp/addons" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
   local sha; sha="$(git -C "$REPO_ROOT" rev-parse "$release^{commit}")"
   printf '{\n  "product_version": "%s",\n  "source_sha": "%s",\n  "built_at": "%s",\n  "environment_types": ["customer", "test"],\n  "contains_demo_data": false,\n  "contains_private_signing_key": false\n}\n' "$release" "$sha" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$tmp/manifest.json"
   (cd "$tmp" && find addons deployment -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
