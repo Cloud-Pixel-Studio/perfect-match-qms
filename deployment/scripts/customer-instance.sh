@@ -35,7 +35,12 @@ load_instance() {
 }
 compose() {
   local root="$1"; shift
+  prepare_permissions "$root"
   docker compose --project-name "pmqms-customer-${INSTANCE_SLUG}" --env-file "$root/config/instance.env" -f "$root/runtime/compose.yml" "$@"
+}
+prepare_permissions() {
+  local root="$1"
+  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" odoo:19.0 sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /license 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license 2>/dev/null || true'
 }
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
@@ -179,6 +184,7 @@ PY
 import_license() {
   local root; root="$(require_instance "$1")"; load_instance "$root"; local license="$2"
   [[ -f "$license" ]] || die "license not found"; install -m 600 "$license" "$root/license/active.pmql"
+  docker run --rm --user root -v "$root/license:/license" odoo:19.0 sh -lc 'chown 100:101 /license/active.pmql && chmod 600 /license/active.pmql'
   compose "$root" run --rm -v "$root/license:/var/lib/pmqms-license:ro" odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
 from pathlib import Path
 record = env["pm.qms.license"].sudo().import_document(Path("/var/lib/pmqms-license/active.pmql").read_bytes())
