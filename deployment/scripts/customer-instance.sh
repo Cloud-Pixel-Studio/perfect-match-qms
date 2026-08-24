@@ -40,7 +40,7 @@ compose() {
 }
 prepare_permissions() {
   local root="$1"
-  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" odoo:19.0 sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /license 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license 2>/dev/null || true'
+  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" -v "$root/activation:/activation" odoo:19.0 sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /license /activation 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license /activation 2>/dev/null || true'
 }
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
