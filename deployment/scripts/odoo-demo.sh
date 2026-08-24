@@ -156,7 +156,10 @@ seed_demo() {
   password="$(cat "$DEMO_ADMIN_PASSWORD_FILE")"
   compose up -d postgres-demo >/dev/null
   wait_postgres
-  compose run --rm \
+  # Persona files remain operator-owned (0700/0600). The one-shot seed runs
+  # as container root only to read the read-only secret mount; Odoo itself
+  # continues to run as its normal unprivileged container user.
+  compose run --rm --user root \
     -e PMQMS_DEMO_DB="$DB_NAME" \
     -e PMQMS_DEMO_COMPANY_NAME="$DEMO_COMPANY_NAME" \
     -e PMQMS_DEMO_ADMIN_LOGIN="$DEMO_ADMIN_LOGIN" \
