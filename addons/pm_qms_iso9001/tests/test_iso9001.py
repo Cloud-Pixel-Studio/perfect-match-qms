@@ -56,6 +56,15 @@ class TestPmQmsIso9001(TransactionCase):
         self.assertEqual(menu.name, "Standards")
         self.assertFalse(self.env["ir.ui.menu"].search([("name", "in", ["ISO 14001", "ISO 45001", "AS9100", "AS9120", "IATF 16949"])]))
 
+    def test_iso9001_overview_opens_existing_profile_list(self):
+        action = self.env.ref("pm_qms_iso9001.action_pm_qms_iso9001_overview")
+        list_view = self.env.ref("pm_qms_iso9001.view_pm_qms_iso9001_profile_list")
+        self.assertEqual(action.res_model, "pm.qms.mapping.profile")
+        self.assertEqual(action.view_mode, "list,form")
+        self.assertEqual(action.view_id, list_view)
+        self.assertEqual(action.domain, "[('code', '=', 'PM-QMS-QUALITY-ISO9001'), ('edition', '=', '2015')]")
+        self.assertEqual(self._profile().name, "ISO 9001 Current Published Edition Mapping")
+
     def test_standards_menu_is_visible_to_qms_personas_and_admin(self):
         menu_id = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards").id
         for user in (self.admin, self.manager):
