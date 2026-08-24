@@ -664,14 +664,14 @@ case "$command" in
   install-mission23)
     prepare_runtime_permissions
     if database_exists pmqms_dev; then
-      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION23_ADDONS" --stop-after-init
+      compose run --rm odoo-dev odoo -d pmqms_dev --init pm_qms_iso9001 --update "$MISSION23_ADDONS" --stop-after-init
     else
       compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION23_ADDONS" --without-demo=all --stop-after-init
     fi
     ;;
   update-mission23)
     prepare_runtime_permissions
-    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION23_ADDONS" --stop-after-init
+    compose run --rm odoo-dev odoo -d pmqms_dev --init pm_qms_iso9001 --update "$MISSION23_ADDONS" --stop-after-init
     ;;
   test-mission23)
     run_odoo_tests "$MISSION23_ADDONS" "$MISSION23_TEST_TAGS" "Mission 23"
