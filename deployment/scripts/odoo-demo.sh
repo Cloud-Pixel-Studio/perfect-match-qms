@@ -141,7 +141,9 @@ install_or_update() {
   compose up -d postgres-demo >/dev/null
   wait_postgres
   if database_exists; then
-    run_odoo -d "$DB_NAME" --update "$DEMO_ADDONS" --stop-after-init
+    # --init is idempotent for installed modules and also installs new modules
+    # added to the canonical manifest during a release upgrade.
+    run_odoo -d "$DB_NAME" --init "$DEMO_ADDONS" --update "$DEMO_ADDONS" --stop-after-init
   else
     run_odoo -d "$DB_NAME" --init "$DEMO_ADDONS" --stop-after-init
   fi
