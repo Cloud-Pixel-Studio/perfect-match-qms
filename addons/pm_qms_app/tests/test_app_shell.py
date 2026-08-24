@@ -178,6 +178,15 @@ class TestPmQmsAppShell(TransactionCase):
             visible_menus = self.env["ir.ui.menu"].with_user(self.manager).load_menus(False)
             self.assertNotIn(menu.id, visible_menus, xmlid)
 
+    def test_optional_platform_roots_are_restricted_when_installed(self):
+        menu = self.env.ref("project_todo.menu_todo_todos", raise_if_not_found=False)
+        if not menu:
+            self.skipTest("Optional project_todo module is not installed in this bundle")
+        technical_group = self.env.ref("base.group_system")
+        self.assertEqual(menu.group_ids, technical_group)
+        visible_menus = self.env["ir.ui.menu"].with_user(self.manager).load_menus(False)
+        self.assertNotIn(menu.id, visible_menus)
+
     def test_quality_manager_role_is_not_system_administrator(self):
         quality_manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
         quality_manager = self._create_user("app_shell_quality_manager", quality_manager_group, self.company)

@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from odoo import Command, fields
+from odoo.addons.pm_qms_app.hooks import restrict_optional_platform_menus
 
 EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
 COMPANY_NAME = os.getenv("PMQMS_DEMO_COMPANY_NAME", "Apex Precision Systems, Inc.")
@@ -15,6 +16,8 @@ ORG_CODE = "APEX"
 
 if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
     raise RuntimeError(f"Demo seed refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")
+
+restrict_optional_platform_menus(env)
 
 now = fields.Datetime.now()
 today = fields.Date.context_today(env["res.company"])

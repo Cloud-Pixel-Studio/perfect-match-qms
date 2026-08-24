@@ -44,6 +44,7 @@ Technical addons remain modular underneath this product entry point.
             "pm_qms_app/static/src/scss/brand.scss",
         ],
     },
+    "post_init_hook": "post_init_hook",
     "application": True,
     "installable": True,
     "license": "LGPL-3",
