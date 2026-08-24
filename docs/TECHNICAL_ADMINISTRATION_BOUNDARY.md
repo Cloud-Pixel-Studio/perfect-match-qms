@@ -22,7 +22,9 @@ troubleshooting, and other runtime maintenance surfaces through
 Menu grouping is only the navigation layer. Access is enforced by Odoo groups,
 ACLs, record rules, and action security. The Demo administrator is a separate
 technical account and is exempt from named customer-user license consumption;
-the seeded Quality Manager is not a System Administrator.
+the seeded Quality Manager is not a System Administrator. Cost Analytics is
+restricted to Quality Manager and Management User personas; QMS Viewer does
+not receive financial-quality cost records or the Cost of Quality menu.
 
 ## Operations
 

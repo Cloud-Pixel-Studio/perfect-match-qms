@@ -25,7 +25,9 @@ same Odoo security rules.
 ## Visual acceptance
 
 Validate the shell at desktop and narrow widths for login, dashboard, root
-navigation, Configuration, Action Center, Cost Analytics, source links,
-denied technical routes, and major existing QMS menus. Confirm no horizontal
-overflow, broken assets, visible traceback, or browser-console error is
-introduced by the shell assets.
+navigation, Configuration, Action Center, Cost Analytics for permitted
+management roles, source links, denied technical routes, and major existing
+QMS menus. Cost Analytics is intentionally outside the QMS Viewer persona's
+surface because it contains sensitive quality-cost amounts. Confirm no
+horizontal overflow, broken assets, visible traceback, or browser-console
+error is introduced by the shell assets.

@@ -11,7 +11,7 @@
 | Core | Processes | Configuration > Processes | APEX-FIN, APEX-DOC, APEX-CAL | Standalone QMS process architecture with applicable Site scope | COVERED |
 | Security | Users & Access | Configuration > Users & Access | Olivia, Daniel, Maria, James, Emma, Michael, Victor | Fixed product roles, linked QMS Person, organization/site/process scope, effective access summary | COVERED |
 | Product Shell | Customer entry and technical boundary | Login / Perfect Match QMS | Product identity and technical admin boundary | Normal QMS users enter the product shell; generic technical roots are reserved for System Administrators | COVERED |
-| Product Shell | Persona access | Login / QMS menus | Seven fictional Demo personas | Each persona is validated without `base.group_system`; direct-route access remains security-enforced | PENDING VISUAL |
+| Product Shell | Persona access | Login / QMS menus | Seven fictional Demo personas | Each persona is validated without `base.group_system`; direct-route access remains security-enforced | COVERED |
 | Documents | Controlled documents | Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
 | Documents | Revisions | Documents > Revisions | Revision A records | Current revision context | COVERED |
 | Evidence | Evidence records | Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |
@@ -35,7 +35,7 @@
 | Supplier Quality | SCAR | Supplier Quality > SCAR | APEX-SCAR-001 | Supplier corrective action response | COVERED |
 | Action Center | Source-driven actions | Action Center | My Actions | Multiple action kinds and due buckets | COVERED |
 | Cost of Quality | Cost events | Cost of Quality > Cost Events | APEX-CQ-001 / APEX-CQ-002 | Prevention, appraisal, failures, recoveries | COVERED |
-| Cost of Quality | Analytics | Cost of Quality > Analytics | Apex confirmed events | Gross cost, COPQ, recovery, net cost | COVERED |
+| Cost of Quality | Analytics | Cost of Quality > Analytics | Apex confirmed events | Gross cost, COPQ, recovery, net cost; restricted from QMS Viewer | COVERED |
 | Management Review | Review, decisions, actions | Management Review | APEX-MR-001 | Inputs from QMS modules and action follow-up | COVERED |
 | Commercial Licensing | License status and capacity | Commercial License | Signed Demo `.pmql` | Validity, environment, company/site/user usage, revision history | COVERED |
 | Commercial Licensing | Offline activation workflow | Commercial License > Activation Request | Demo activation request | External request generation and signed replacement import | COVERED |

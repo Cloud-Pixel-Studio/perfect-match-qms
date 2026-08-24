@@ -1,13 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_pm_qms_cost_type_user,pm.qms.cost.type user,model_pm_qms_cost_type,pm_qms_core.group_pm_qms_user,1,0,0,0
-access_pm_qms_cost_type_manager,pm.qms.cost.type manager,model_pm_qms_cost_type,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_cost_type_quality_manager,pm.qms.cost.type quality manager,model_pm_qms_cost_type,pm_qms_core.group_qms_quality_manager,1,1,1,0
+access_pm_qms_cost_type_management,pm.qms.cost.type management,model_pm_qms_cost_type,pm_qms_core.group_qms_management_user,1,0,0,0
 access_pm_qms_cost_type_admin,pm.qms.cost.type admin,model_pm_qms_cost_type,pm_qms_core.group_pm_qms_administrator,1,1,1,1
-access_pm_qms_viewer_cost_type,viewer cost type,model_pm_qms_cost_type,pm_qms_core.group_qms_viewer,1,0,0,0
-access_pm_qms_cost_event_user,pm.qms.cost.event user,model_pm_qms_cost_event,pm_qms_core.group_pm_qms_user,1,0,0,0
-access_pm_qms_cost_event_manager,pm.qms.cost.event manager,model_pm_qms_cost_event,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_cost_event_quality_manager,pm.qms.cost.event quality manager,model_pm_qms_cost_event,pm_qms_core.group_qms_quality_manager,1,1,1,0
+access_pm_qms_cost_event_management,pm.qms.cost.event management,model_pm_qms_cost_event,pm_qms_core.group_qms_management_user,1,0,0,0
 access_pm_qms_cost_event_admin,pm.qms.cost.event admin,model_pm_qms_cost_event,pm_qms_core.group_pm_qms_administrator,1,1,1,1
-access_pm_qms_viewer_cost_event,viewer cost event,model_pm_qms_cost_event,pm_qms_core.group_qms_viewer,1,0,0,0
-access_pm_qms_cost_line_user,pm.qms.cost.line user,model_pm_qms_cost_line,pm_qms_core.group_pm_qms_user,1,0,0,0
-access_pm_qms_cost_line_manager,pm.qms.cost.line manager,model_pm_qms_cost_line,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_cost_line_quality_manager,pm.qms.cost.line quality manager,model_pm_qms_cost_line,pm_qms_core.group_qms_quality_manager,1,1,1,0
+access_pm_qms_cost_line_management,pm.qms.cost.line management,model_pm_qms_cost_line,pm_qms_core.group_qms_management_user,1,0,0,0
 access_pm_qms_cost_line_admin,pm.qms.cost.line admin,model_pm_qms_cost_line,pm_qms_core.group_pm_qms_administrator,1,1,1,1
-access_pm_qms_viewer_cost_line,viewer cost line,model_pm_qms_cost_line,pm_qms_core.group_qms_viewer,1,0,0,0
