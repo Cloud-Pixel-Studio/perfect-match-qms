@@ -15,7 +15,23 @@ class TestPmQmsIso9001(TransactionCase):
             [("code", "=", "PM-QMS-QUALITY"), ("version", "=", "1.0"), ("company_id", "=", cls.company.id)],
             limit=1,
         )
-        cls.admin = cls.env.ref("base.user_admin")
+        cls.admin = cls.env["res.users"].create(
+            {
+                "name": "ISO 9001 Test Administrator",
+                "login": "iso9001.test.administrator",
+                "email": "iso9001.test.administrator@example.invalid",
+                "group_ids": [
+                    (
+                        6,
+                        0,
+                        [
+                            cls.env.ref("base.group_user").id,
+                            cls.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ],
+                    )
+                ],
+            }
+        )
         cls.manager = cls.env["res.users"].create(
             {
                 "name": "ISO 9001 Test Manager",
