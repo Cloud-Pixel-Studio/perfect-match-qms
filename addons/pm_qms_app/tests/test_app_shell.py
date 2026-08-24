@@ -1,4 +1,5 @@
 from odoo import Command, fields
+from odoo.exceptions import AccessError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 from odoo.tools.safe_eval import safe_eval
@@ -15,8 +16,12 @@ class TestPmQmsAppShell(TransactionCase):
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
         cls.qms_admin_group = cls.env.ref("pm_qms_core.group_pm_qms_administrator")
+        cls.quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
         cls.user = cls._create_user("app_shell_user", cls.qms_user_group, cls.company)
         cls.manager = cls._create_user("app_shell_manager", cls.qms_manager_group, cls.company)
+        cls.quality_manager = cls._create_user(
+            "app_shell_quality_manager", cls.quality_manager_group, cls.company
+        )
         cls.viewer = cls._create_user(
             "app_shell_viewer", cls.env.ref("pm_qms_core.group_qms_viewer"), cls.company
         )
@@ -191,6 +196,13 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertEqual(modules.with_user(self.viewer).search_count([]), 0)
         self.assertGreater(modules.with_user(self.env.user).search_count([]), 0)
 
+    def test_users_access_action_is_restricted_server_side(self):
+        action = self.env.ref("pm_qms_app.action_pm_qms_users_access")
+        with self.assertRaises(AccessError):
+            action.with_user(self.manager).read()
+        self.assertTrue(action.with_user(self.quality_manager).read())
+        self.assertTrue(action.with_user(self.env.user).read())
+
     def test_optional_platform_roots_are_restricted_when_installed(self):
         menu = self.env.ref("project_todo.menu_todo_todos", raise_if_not_found=False)
         if not menu:
@@ -201,10 +213,8 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertNotIn(menu.id, visible_menus)
 
     def test_quality_manager_role_is_not_system_administrator(self):
-        quality_manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
-        quality_manager = self._create_user("app_shell_quality_manager", quality_manager_group, self.company)
-        self.assertTrue(quality_manager.has_group("pm_qms_core.group_qms_quality_manager"))
-        self.assertFalse(quality_manager.has_group("base.group_system"))
+        self.assertTrue(self.quality_manager.has_group("pm_qms_core.group_qms_quality_manager"))
+        self.assertFalse(self.quality_manager.has_group("base.group_system"))
 
     def test_product_identity_templates_are_loaded(self):
         layout = self.env.ref("pm_qms_app.pm_qms_web_layout_branding")
