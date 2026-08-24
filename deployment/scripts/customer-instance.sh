@@ -125,7 +125,7 @@ init_instance() {
   random_secret > "$root/secrets/initial_admin_password"
   if command -v uuidgen >/dev/null 2>&1; then uuidgen > "$root/config/environment_id"; else cat /proc/sys/kernel/random/uuid > "$root/config/environment_id"; fi
   chmod 600 "$root/secrets"/* "$root/config/environment_id"
-  write_manifest; render_files "$root"; cp "$MODULES_FILE" "$root/runtime/modules.txt"; chmod 600 "$root/runtime/modules.txt"
+  write_manifest "$root"; render_files "$root"; cp "$MODULES_FILE" "$root/runtime/modules.txt"; chmod 600 "$root/runtime/modules.txt"
   log "initialized $slug ($type) at $root"
 }
 
@@ -278,7 +278,7 @@ bundle() {
   (cd "$tmp" && find addons deployment -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
   mkdir -p "$(dirname "$output")"; tar -C "$tmp" -czf "$output" .; sha256sum "$output" > "$output.sha256"
   tar -tzf "$output" | grep -E '(^|/)(demo|pmqms_demo|pmqms_oliva|\.env$|.*\.pem$|.*\.key$)' && die "forbidden bundle path detected" || true
-  if tar -xOzf "$output" manifest.json | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
+  if tar -xOzf "$output" ./manifest.json 2>/dev/null | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
   echo "bundle=$output"; echo "checksum=$output.sha256"; echo "source_sha=$sha"
 }
 
