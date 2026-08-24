@@ -216,8 +216,10 @@ bootstrap_customer() {
   docker run --rm --user 100:101 -v "$root/license:/license:ro" alpine:3.20 test -f /license/active.pmql || die "import a signed license before customer bootstrap"
   if [[ -z "$password_file" ]]; then password_file="$root/secrets/quality_manager_password"; [[ -f "$password_file" ]] || random_secret > "$password_file"; chmod 600 "$password_file"; fi
   [[ -f "$password_file" ]] || die "quality manager password file not found"
-  local mount="/var/lib/pmqms-bootstrap"; mkdir -p "$root/activation"
-  compose "$root" run --rm -v "$password_file:$mount/password:ro" odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<PY
+  local mount="/var/lib/pmqms-bootstrap"; local staged_password="$root/activation/bootstrap-password"
+  docker run --rm --user root -v "$password_file:/input/password:ro" -v "$root/activation:/activation" alpine:3.20 sh -lc 'cp /input/password /activation/bootstrap-password && chown 100:101 /activation/bootstrap-password && chmod 600 /activation/bootstrap-password'
+  local bootstrap_status=0
+  compose "$root" run --rm -v "$staged_password:$mount/password:ro" odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<PY || bootstrap_status=$?
 from pathlib import Path
 company = env.company
 Organization = env["pm.qms.organization"].sudo()
@@ -234,6 +236,8 @@ organization.write({"quality_contact_id": user.id})
 env.cr.commit()
 print("operational_organization=%s quality_manager=%s system_admin=%s" % (organization.code, user.login, bool(user.has_group("base.group_system"))))
 PY
+  docker run --rm --user root -v "$root/activation:/activation" alpine:3.20 rm -f /activation/bootstrap-password || true
+  (( bootstrap_status == 0 )) || return "$bootstrap_status"
   log "customer bootstrap complete for $slug; retrieve credentials with credentials"
 }
 
