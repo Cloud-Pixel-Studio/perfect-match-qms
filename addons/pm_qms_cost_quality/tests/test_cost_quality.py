@@ -1,4 +1,4 @@
-from odoo import fields
+from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import TransactionCase, tagged
 
@@ -93,3 +93,28 @@ class TestPmQmsCostQuality(TransactionCase):
         event = self.env["pm.qms.cost.event"].create({"name": "Empty", "organization_id": self.organization.id})
         with self.assertRaises(UserError):
             event.action_confirm()
+
+    def test_cost_quality_is_not_exposed_to_qms_viewers(self):
+        base_user = self.env.ref("base.group_user")
+        quality_manager = self.env.ref("pm_qms_core.group_qms_quality_manager")
+        management_user = self.env.ref("pm_qms_core.group_qms_management_user")
+        viewer = self.env.ref("pm_qms_core.group_qms_viewer")
+        users = {
+            "manager": self.env["res.users"].with_context(no_reset_password=True).create(
+                {"name": "Cost Quality Manager", "login": "cost-quality-manager", "group_ids": [Command.set([base_user.id, quality_manager.id])]}
+            ),
+            "management": self.env["res.users"].with_context(no_reset_password=True).create(
+                {"name": "Cost Quality Management", "login": "cost-quality-management", "group_ids": [Command.set([base_user.id, management_user.id])]}
+            ),
+            "viewer": self.env["res.users"].with_context(no_reset_password=True).create(
+                {"name": "Cost Quality Viewer", "login": "cost-quality-viewer", "group_ids": [Command.set([base_user.id, viewer.id])]}
+            ),
+        }
+        cost_event = self.env.ref("pm_qms_cost_quality.menu_pm_qms_cost_quality")
+        self.assertIn(quality_manager, cost_event.group_ids)
+        self.assertIn(management_user, cost_event.group_ids)
+        self.assertNotIn(viewer, cost_event.group_ids)
+        for user in (users["manager"], users["management"]):
+            self.env["pm.qms.cost.event"].with_user(user).check_access_rights("read", raise_exception=True)
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.cost.event"].with_user(users["viewer"]).check_access_rights("read", raise_exception=True)
