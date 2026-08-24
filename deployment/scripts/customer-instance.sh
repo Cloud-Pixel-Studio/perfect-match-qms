@@ -147,7 +147,8 @@ provision() {
   init_instance "$slug" --type "$type"
   local root; root="$(require_instance "$slug")"; load_instance "$root"; local tmp; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
   tar -xzf "$bundle" -C "$tmp"; [[ -d "$tmp/addons" ]] || die "bundle has no addons"
-  rm -rf "$root/runtime/addons"; mkdir -p "$root/runtime/addons"; cp -a "$tmp/addons/." "$root/runtime/addons/"; cp "$tmp/manifest.json" "$root/config/product-manifest.json"; chmod -R a-w "$root/runtime/addons"
+  rm -rf "$root/runtime/addons"; mkdir -p "$root/runtime/addons"; cp -a "$tmp/addons/." "$root/runtime/addons/"; cp "$tmp/manifest.json" "$root/config/product-manifest.json"
+  find "$root/runtime/addons" -type d -exec chmod 755 {} +; find "$root/runtime/addons" -type f -exec chmod 644 {} +; chmod -R a-w "$root/runtime/addons"
   log "provisioned runtime assets for $slug"
 }
 
