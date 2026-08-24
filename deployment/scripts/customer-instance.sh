@@ -275,6 +275,7 @@ restore_validate() {
   local target; target="$(require_instance "$recovery")"; load_instance "$target"; local tmp; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN; tar -xzf "$archive" -C "$tmp"
   cp "$tmp/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$tmp/active.pmql" ]] && cp "$tmp/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
   cp -a "$source/runtime/addons/." "$target/runtime/addons/"; compose "$target" up -d postgres >/dev/null
+  for _ in {1..30}; do compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1 && break; sleep 1; done
   compose "$target" exec -T postgres createdb -U odoo "$DATABASE_NAME" 2>/dev/null || true
   compose "$target" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$tmp/db.dump"
   health "$recovery"; license_status "$recovery"; destroy "$recovery" --confirm-ephemeral
