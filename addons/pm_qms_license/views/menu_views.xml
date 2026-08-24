@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_pm_qms_license" name="Commercial License" parent="pm_qms_core.menu_pm_qms_root" action="action_pm_qms_license" sequence="95" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+    <menuitem id="menu_pm_qms_activation_requests" name="Activation Requests" parent="pm_qms_core.menu_pm_qms_root" action="action_pm_qms_activation_request" sequence="96" groups="pm_qms_license.group_pm_qms_license_admin"/>
+</odoo>

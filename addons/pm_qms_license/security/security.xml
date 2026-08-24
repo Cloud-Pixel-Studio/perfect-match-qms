@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_pm_qms_license_admin" model="res.groups">
+        <field name="name">QMS Licensing Administrator</field>
+        <field name="privilege_id" ref="pm_qms_core.privilege_pm_qms"/>
+        <field name="implied_ids" eval="[Command.link(ref('pm_qms_core.group_pm_qms_administrator'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_license_qms" model="ir.rule">
+        <field name="name">Commercial license is visible to QMS users</field>
+        <field name="model_id" ref="model_pm_qms_license"/>
+        <field name="domain_force">[("is_current", "=", True)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_license_admin_history" model="ir.rule">
+        <field name="name">Licensing administrators can review license history</field>
+        <field name="model_id" ref="model_pm_qms_license"/>
+        <field name="domain_force">[("id", "!=", 0)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_license.group_pm_qms_license_admin'))]"/>
+    </record>
+    <record id="rule_pm_qms_activation_request_qms" model="ir.rule">
+        <field name="name">Activation requests are visible to QMS users</field>
+        <field name="model_id" ref="model_pm_qms_activation_request"/>
+        <field name="domain_force">[("requested_by_id", "=", user.id)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+    <record id="rule_pm_qms_activation_request_admin" model="ir.rule">
+        <field name="name">Licensing administrators can review activation requests</field>
+        <field name="model_id" ref="model_pm_qms_activation_request"/>
+        <field name="domain_force">[("id", "!=", 0)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_license.group_pm_qms_license_admin'))]"/>
+    </record>
+</odoo>

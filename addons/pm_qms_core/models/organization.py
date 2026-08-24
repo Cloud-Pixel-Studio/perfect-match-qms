@@ -12,6 +12,16 @@ class PmQmsOrganization(models.Model):
     code = fields.Char(required=True, copy=False, tracking=True)
     description = fields.Text()
     qms_scope = fields.Text(string="QMS Scope", tracking=True)
+    organization_kind = fields.Selection(
+        [
+            ("operational", "Operational Customer Organization"),
+            ("framework", "Framework / Internal Organization"),
+        ],
+        required=True,
+        default="operational",
+        tracking=True,
+        help="Only operational customer organizations consume a commercial company entitlement.",
+    )
     quality_contact_id = fields.Many2one(
         "res.users",
         string="Primary Quality Contact",

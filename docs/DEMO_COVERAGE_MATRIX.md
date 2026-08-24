@@ -35,5 +35,7 @@
 | Cost of Quality | Cost events | Cost of Quality > Cost Events | APEX-CQ-001 / APEX-CQ-002 | Prevention, appraisal, failures, recoveries | COVERED |
 | Cost of Quality | Analytics | Cost of Quality > Analytics | Apex confirmed events | Gross cost, COPQ, recovery, net cost | COVERED |
 | Management Review | Review, decisions, actions | Management Review | APEX-MR-001 | Inputs from QMS modules and action follow-up | COVERED |
+| Commercial Licensing | License status and capacity | Commercial License | Signed Demo `.pmql` | Validity, environment, company/site/user usage, revision history | COVERED |
+| Commercial Licensing | Offline activation workflow | Commercial License > Activation Request | Demo activation request | External request generation and signed replacement import | COVERED |
 | External ERP | Sales/Purchase/Inventory/MRP/HR/Odoo Quality | Not used | Not applicable | QMS demo remains standalone | NOT APPLICABLE |
 | AI / n8n / Portal | Future functionality | Not used | Not applicable | Outside mission scope | NOT APPLICABLE |

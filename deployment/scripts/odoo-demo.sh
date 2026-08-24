@@ -9,11 +9,13 @@ CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
 DEMO_ADMIN_PASSWORD_FILE="$SECRETS_DIR/demo_admin_password"
+ENVIRONMENT_ID_FILE="$CONFIG_DIR/environment_id"
+DEMO_LICENSE_FILE="${PMQMS_DEMO_LICENSE_FILE:-$SECRETS_DIR/demo_license.pmql}"
 BACKUP_DIR="${PMQMS_DEMO_BACKUP_DIR:-/opt/perfect-match/backups/odoo-demo}"
 DB_NAME="${PMQMS_DEMO_DB:-pmqms_demo}"
 DEMO_COMPANY_NAME="${PMQMS_DEMO_COMPANY_NAME:-Apex Precision Systems, Inc.}"
 DEMO_ADMIN_LOGIN="${PMQMS_DEMO_ADMIN_LOGIN:-admin}"
-DEMO_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality"
+DEMO_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality"
 
 export ODOO_DEMO_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEMO_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -59,6 +61,10 @@ init_secrets() {
     random_secret > "$DEMO_ADMIN_PASSWORD_FILE"
     chmod 600 "$DEMO_ADMIN_PASSWORD_FILE"
   fi
+  if [[ ! -f "$ENVIRONMENT_ID_FILE" ]]; then
+    python3 -c 'import uuid; print(uuid.uuid4())' > "$ENVIRONMENT_ID_FILE"
+    chmod 600 "$ENVIRONMENT_ID_FILE"
+  fi
   cat > "$CONFIG_DIR/odoo.conf" <<EOF
 [options]
 addons_path = /usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons
@@ -75,7 +81,7 @@ EOF
 
 prepare_runtime_permissions() {
   init_secrets
-  chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf"
+  chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
 }
 
 compose() {
@@ -118,6 +124,9 @@ install_or_update() {
   else
     run_odoo -d "$DB_NAME" --init "$DEMO_ADDONS" --stop-after-init
   fi
+  if [[ -f "$DEMO_LICENSE_FILE" ]]; then
+    provision_license
+  fi
   seed_demo
 }
 
@@ -134,6 +143,22 @@ seed_demo() {
     -e PMQMS_DEMO_ADMIN_LOGIN="$DEMO_ADMIN_LOGIN" \
     -e PMQMS_DEMO_ADMIN_PASSWORD="$password" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/seed_demo.py"
+}
+
+provision_license() {
+  assert_demo_database
+  prepare_runtime_permissions
+  [[ -f "$DEMO_LICENSE_FILE" ]] || { echo "Demo license file not found: $DEMO_LICENSE_FILE" >&2; exit 1; }
+  compose up -d postgres-demo >/dev/null
+  wait_postgres
+  chmod 644 "$DEMO_LICENSE_FILE"
+  set +e
+  compose run --rm -v "$DEMO_LICENSE_FILE:/run/pmqms-demo-license.pmql:ro" \
+    odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/import_license.py"
+  local rc=$?
+  set -e
+  chmod 600 "$DEMO_LICENSE_FILE"
+  return "$rc"
 }
 
 validate_demo() {
@@ -220,6 +245,8 @@ Commands:
   reset-demo     Delete only demo volumes, rebuild pmqms_demo, install, and seed.
   seed-demo      Reseed fictional demo data idempotently.
   validate-demo  Validate expected fictional demo records and metrics.
+  provision-license
+                Import the externally issued Demo license from the secrets directory.
   backup         Create a demo-only backup archive.
   health         Validate demo HTTP and container status.
   credentials    Print demo URL/login and local password file path.
@@ -241,6 +268,7 @@ case "${1:-}" in
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
+  provision-license) provision_license ;;
   validate-demo) validate_demo ;;
   backup) backup_demo ;;
   health) health ;;

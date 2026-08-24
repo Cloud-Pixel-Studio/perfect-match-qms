@@ -8,6 +8,8 @@ SECRETS_DIR="${PMQMS_ODOO_DEV_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-dev}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
 ADMIN_PASSWORD_FILE="$SECRETS_DIR/odoo_admin_password"
+ENVIRONMENT_ID_FILE="$CONFIG_DIR/environment_id"
+DEV_LICENSE_FILE="${PMQMS_DEV_LICENSE_FILE:-$SECRETS_DIR/dev_license.pmql}"
 MISSION03_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence"
 MISSION03_TEST_TAGS="/pm_qms_core,/pm_qms_documents,/pm_qms_evidence"
 MISSION04_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa"
@@ -40,6 +42,8 @@ MISSION17_ADDONS="$MISSION16_ADDONS,pm_qms_action_center,pm_qms_cost_quality"
 MISSION17_TEST_TAGS="$MISSION16_TEST_TAGS,/pm_qms_action_center,/pm_qms_cost_quality"
 MISSION18_ADDONS="$MISSION17_ADDONS"
 MISSION18_TEST_TAGS="$MISSION17_TEST_TAGS,/pm_qms_core"
+MISSION20_ADDONS="$MISSION18_ADDONS"
+MISSION20_TEST_TAGS="$MISSION18_TEST_TAGS,/pm_qms_license"
 
 export ODOO_DEV_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -69,6 +73,11 @@ init_secrets() {
     chmod 600 "$ADMIN_PASSWORD_FILE"
   fi
 
+  if [[ ! -f "$ENVIRONMENT_ID_FILE" ]]; then
+    python3 -c 'import uuid; print(uuid.uuid4())' > "$ENVIRONMENT_ID_FILE"
+    chmod 600 "$ENVIRONMENT_ID_FILE"
+  fi
+
   if [[ ! -f "$CONFIG_DIR/odoo.conf" ]]; then
     cat > "$CONFIG_DIR/odoo.conf" <<EOF
 [options]
@@ -92,9 +101,9 @@ prepare_runtime_permissions() {
       -v "$SECRETS_DIR:/secrets" \
       --entrypoint sh \
       odoo:19.0 \
-      -lc "chown 100:101 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 600 /secrets/odoo_pg_password /secrets/config/odoo.conf"
+      -lc "chown 100:101 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 600 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 644 /secrets/config/environment_id"
   else
-    chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf"
+    chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
   fi
 }
 
@@ -143,6 +152,35 @@ health() {
   done
   echo "odoo_dev_http=$code"
   compose ps
+}
+
+provision_license() {
+  prepare_runtime_permissions
+  [[ -f "$DEV_LICENSE_FILE" ]] || { echo "DEV license file not found: $DEV_LICENSE_FILE" >&2; exit 1; }
+  compose up -d postgres-dev >/dev/null
+  wait_for_postgres
+  chmod 644 "$DEV_LICENSE_FILE"
+  set +e
+  compose run --rm -v "$DEV_LICENSE_FILE:/run/pmqms-dev-license.pmql:ro" \
+    odoo-dev odoo shell -d pmqms_dev --log-level=error <<'PY'
+import json
+from pathlib import Path
+license_path = Path("/run/pmqms-dev-license.pmql")
+document = json.loads(license_path.read_text(encoding="utf-8"))
+payload = document.get("payload", {})
+current = env["pm.qms.license"].sudo().search([("is_current", "=", True)], limit=1)
+if current and current.license_id == payload.get("license_id") and current.license_revision == payload.get("license_revision") and current.signature == document.get("signature"):
+    record = current
+    print("DEV_LICENSE_ALREADY_CURRENT")
+else:
+    record = env["pm.qms.license"].import_document(license_path.read_bytes())
+env.cr.commit()
+print(f"DEV_LICENSE_IMPORTED license_id={record.license_id} revision={record.license_revision} state={record.state} environment={record.environment_short}")
+PY
+  local rc=$?
+  set -e
+  chmod 600 "$DEV_LICENSE_FILE"
+  return "$rc"
 }
 
 usage() {
@@ -258,7 +296,15 @@ Commands:
   update-mission18
                 Upgrade the Mission 18 standalone foundation in pmqms_dev.
   test-mission18
-                Run Mission 18 focused/full-stack Odoo tests in pmqms_test.
+    Run Mission 18 focused/full-stack Odoo tests in pmqms_test.
+  install-mission20
+                Install/update the full QMS stack including commercial licensing.
+  update-mission20
+                Upgrade the full QMS stack including commercial licensing.
+  test-mission20
+                Run Mission 20 licensing and full-stack Odoo tests in pmqms_test.
+  provision-license
+                Import the externally issued DEV license from the secrets directory.
 EOF
 }
 
@@ -590,6 +636,24 @@ case "$command" in
     ;;
   test-mission18)
     run_odoo_tests "$MISSION18_ADDONS" "$MISSION18_TEST_TAGS" "Mission 18"
+    ;;
+  install-mission20)
+    prepare_runtime_permissions
+    if database_exists pmqms_dev; then
+      compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION20_ADDONS" --stop-after-init
+    else
+      compose run --rm odoo-dev odoo -d pmqms_dev --init "$MISSION20_ADDONS" --without-demo=all --stop-after-init
+    fi
+    ;;
+  update-mission20)
+    prepare_runtime_permissions
+    compose run --rm odoo-dev odoo -d pmqms_dev --update "$MISSION20_ADDONS" --stop-after-init
+    ;;
+  test-mission20)
+    run_odoo_tests "$MISSION20_ADDONS" "$MISSION20_TEST_TAGS" "Mission 20"
+    ;;
+  provision-license)
+    provision_license
     ;;
   ""|help|-h|--help)
     usage
