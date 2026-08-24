@@ -129,6 +129,7 @@ init_instance() {
   random_secret > "$root/secrets/odoo_master_password"
   random_secret > "$root/secrets/initial_admin_password"
   if command -v uuidgen >/dev/null 2>&1; then uuidgen > "$root/config/environment_id"; else cat /proc/sys/kernel/random/uuid > "$root/config/environment_id"; fi
+  chmod 755 "$root/config" "$root/secrets" "$root/license" "$root/activation"
   chmod 600 "$root/secrets"/* "$root/config/environment_id"
   write_manifest "$root"; render_files "$root"; cp "$MODULES_FILE" "$root/runtime/modules.txt"; chmod 600 "$root/runtime/modules.txt"
   log "initialized $slug ($type) at $root"
