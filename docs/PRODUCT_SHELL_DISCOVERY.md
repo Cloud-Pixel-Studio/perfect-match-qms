@@ -19,13 +19,16 @@ The current Odoo root surface contains:
 | --- | --- | --- | --- |
 | Perfect Match QMS | `pm_qms_core.menu_pm_qms_root` | QMS User / QMS Viewer | Keep as the primary product entry |
 | Discuss | `mail.menu_root_discuss` | Role / User | Technical-admin navigation only; preserve mail/chatter infrastructure |
-| To-do | `project_todo.menu_todo_todos` | No group | Technical-admin navigation only |
+| To-do | `project_todo.menu_todo_todos` | No group in the optional Demo module | Restrict to technical admins when installed; the clean customer bundle does not depend on `project_todo` |
 | Project | `project.menu_main_pm` | User / Administrator | Technical-admin navigation only; QMS implementation actions remain under Perfect Match |
 | Apps | `base.menu_management` | No group | Technical-admin navigation only |
 | Settings | `base.menu_administration` | Access Rights / Role / Administrator | Keep technical access; do not expose to normal QMS users |
 | Tests | `base.menu_tests` | No group | Technical-admin navigation only |
 
-The ungrouped roots are the main customer-facing shell leak. The current
+The ungrouped roots are the main customer-facing shell leak. Optional ERP roots
+are handled without adding an application dependency: when an optional module
+is installed, `pm_qms_app` restricts its known root menu by XML ID; when it is
+absent, the customer bundle remains clean. The current
 Perfect Match root also contains valid functionality, but the domain is
 spread across many technical-sounding children such as Framework, External
 Mappings, Operational Events, and Administration / Migration. Those remain
