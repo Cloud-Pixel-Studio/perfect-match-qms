@@ -28,6 +28,7 @@ Technical addons remain modular underneath this product entry point.
     ],
     "data": [
         "security/mission19_security.xml",
+        "security/platform_security.xml",
         "security/ir.model.access.csv",
         "security/mission19_viewer_access.xml",
         "security/mission19_manager_access.xml",

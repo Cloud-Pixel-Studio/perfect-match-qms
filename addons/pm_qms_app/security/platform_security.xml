@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The Apps catalog is a technical platform surface. Menu groups alone
+         do not protect a direct /odoo/apps action URL, so customer QMS roles
+         must also receive no module records from the ORM. -->
+    <record id="rule_pm_qms_customer_hide_modules" model="ir.rule">
+        <field name="name">QMS customer roles cannot browse installed modules</field>
+        <field name="model_id" ref="base.model_ir_module_module"/>
+        <field name="domain_force">[('id', '=', 0)]</field>
+        <field name="groups" eval="[
+            (4, ref('pm_qms_core.group_pm_qms_user')),
+            (4, ref('pm_qms_core.group_qms_viewer'))
+        ]"/>
+    </record>
+</odoo>
