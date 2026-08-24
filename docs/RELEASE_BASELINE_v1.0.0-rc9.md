@@ -49,5 +49,4 @@ The final RC9 report must include PASS/PARTIAL/FAIL results for:
 ## Deliberate Non-Claims
 
 RC9 is not an ISO certification, customer production approval, billing release,
-ERP replacement, or implementation of ISO 14001, ISO 45001, AS9100, AS9120,
-IATF, or another standard.
+ERP replacement, or implementation of any standard beyond ISO 9001.

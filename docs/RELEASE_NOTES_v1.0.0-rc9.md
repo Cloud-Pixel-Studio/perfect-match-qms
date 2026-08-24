@@ -53,4 +53,5 @@ console/traceback checks.
 - DEV is the engineering and regression environment.
 - Demo is the fictional public validation environment.
 - Customer validation uses disposable fictional test instances only.
-- The Oliva Torras pilot remains retired and is not part of RC9 deployment.
+- Historical customer-specific pilot environments remain retired and are not
+  part of RC9 deployment.
