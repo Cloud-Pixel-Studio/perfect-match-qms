@@ -9,7 +9,9 @@
 | Core | Company Profile | Configuration > Company Profile | APEX | Fictional operational QMS organization, scope, and primary quality contact | COVERED |
 | Core | Sites | Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Exactly three deterministic Apex sites with one primary and no artificial limit | COVERED |
 | Core | Processes | Configuration > Processes | APEX-FIN, APEX-DOC, APEX-CAL | Standalone QMS process architecture with applicable Site scope | COVERED |
-| Security | Users & Access | Configuration > Users & Access | Olivia, Daniel, Maria, James, Emma, Michael | Fixed product roles, linked QMS Person, organization/site/process scope, effective access summary | COVERED |
+| Security | Users & Access | Configuration > Users & Access | Olivia, Daniel, Maria, James, Emma, Michael, Victor | Fixed product roles, linked QMS Person, organization/site/process scope, effective access summary | COVERED |
+| Product Shell | Customer entry and technical boundary | Login / Perfect Match QMS | Product identity and technical admin boundary | Normal QMS users enter the product shell; generic technical roots are reserved for System Administrators | COVERED |
+| Product Shell | Persona access | Login / QMS menus | Seven fictional Demo personas | Each persona is validated without `base.group_system`; direct-route access remains security-enforced | PENDING VISUAL |
 | Documents | Controlled documents | Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
 | Documents | Revisions | Documents > Revisions | Revision A records | Current revision context | COVERED |
 | Evidence | Evidence records | Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |
@@ -20,7 +22,7 @@
 | Audit | Audit findings | Audit > Findings | APEX-AF-001 / APEX-AF-002 | One actionable finding, one contextual finding | COVERED |
 | Performance | Objectives | Performance > Objectives | APEX-OBJ-001 | Dimensional escape reduction | COVERED |
 | Performance | KPI measurements | Performance > KPI | APEX-KPI-001 | Monthly trend values | COVERED |
-| People | Personas | People & Competency > People | Olivia, Daniel, Maria, James, Emma, Michael | Fictional QMS roles | COVERED |
+| People | Personas | People & Competency > People | Olivia, Daniel, Maria, James, Emma, Michael, Victor | Fictional QMS roles | COVERED |
 | People | Training | People & Competency > Training | APEX-TRN-001 | Due, overdue, and completed training | COVERED |
 | People | Qualifications | People & Competency > Qualifications | APEX-QUAL-001 | Expired, expiring, current records | COVERED |
 | People | Document acknowledgment | People & Competency > Acknowledgments | Maria pending SOP acknowledgment | Pending acknowledgment action | COVERED |

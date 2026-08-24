@@ -171,6 +171,7 @@ role_group_xmlids = {
     "Internal Auditor": "pm_qms_core.group_qms_internal_auditor",
     "Process Owner": "pm_qms_core.group_qms_process_owner",
     "Management User": "pm_qms_core.group_qms_management_user",
+    "QMS Viewer": "pm_qms_core.group_qms_viewer",
 }
 role_groups = {role: ref(xmlid) for role, xmlid in role_group_xmlids.items() if ref(xmlid)}
 
@@ -275,6 +276,7 @@ user_specs = [
     ("James Carter", "james.carter.demo@perfectmatch.local", "Internal Auditor"),
     ("Emma Reed", "emma.reed.demo@perfectmatch.local", "Process Owner"),
     ("Michael Stone", "michael.stone.demo@perfectmatch.local", "Management User"),
+    ("Victor Lee", "qms.viewer.demo@perfectmatch.local", "QMS Viewer"),
 ]
 users = {}
 for full_name, login, role in user_specs:
@@ -367,6 +369,7 @@ scope_by_role = {
     "Internal Auditor": {"all_sites": True, "all_processes": True},
     "Process Owner": {"site_codes": ["APEX-MFG", "APEX-INS"], "process_codes": ["APEX-PROD", "APEX-FIN"]},
     "Management User": {"all_sites": True, "all_processes": True},
+    "QMS Viewer": {"all_sites": True, "all_processes": True},
 }
 for role, user in users.items():
     scope = scope_by_role[role]
@@ -391,6 +394,7 @@ person_site_codes = {
     "Internal Auditor": "APEX-HQ",
     "Process Owner": "APEX-MFG",
     "Management User": "APEX-HQ",
+    "QMS Viewer": "APEX-HQ",
 }
 for full_name, login, role_name in user_specs:
     role = upsert("pm.qms.role", code=role_name.upper().replace(" ", "-")[:30], name=role_name, vals={"name": role_name, "company_id": company.id}, required=False)

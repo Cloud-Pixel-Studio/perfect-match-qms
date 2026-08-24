@@ -8,6 +8,7 @@ EXPECTED_QMS_PERSONAS = {
     "Internal Auditor": "james.carter.demo@perfectmatch.local",
     "Process Owner": "emma.reed.demo@perfectmatch.local",
     "Management User": "michael.stone.demo@perfectmatch.local",
+    "QMS Viewer": "qms.viewer.demo@perfectmatch.local",
 }
 if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
     raise RuntimeError(f"Demo validation refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")

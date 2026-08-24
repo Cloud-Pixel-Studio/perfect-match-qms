@@ -14,9 +14,13 @@ stored in this document or in Git.
 | James Carter | Internal Auditor | Apex organization, all sites and processes |
 | Emma Reed | Process Owner | Production and Final Inspection processes |
 | Michael Stone | Management User | Apex organization, read-oriented management visibility |
+| Victor Lee | QMS Viewer | Apex organization, read-only visibility |
 
 The seed is idempotent and is restricted to `pmqms_demo`. It must not be used
 against the retired `pmqms_oliva_pilot` database name or any non-Demo database.
+
+The `admin` login is the technical Demo administrator. It is not the customer
+Quality Manager persona and must not be used as the long-term public password.
 
 ## Validation scenarios
 

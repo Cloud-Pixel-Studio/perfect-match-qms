@@ -62,6 +62,9 @@ role. It is not an Odoo System Administrator.
 
 The generated Quality Manager password is available only through the local
 credentials mechanism. Rotate it through the normal Odoo user security flow.
+The customer Quality Manager is not an Odoo System Administrator; platform
+maintenance remains with the technical operator using the existing secrets
+mechanism.
 
 ## 5. HTTPS and handoff
 

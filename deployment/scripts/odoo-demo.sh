@@ -76,6 +76,7 @@ init_secrets() {
     [internal-auditor]="james.carter.demo@perfectmatch.local"
     [process-owner]="emma.reed.demo@perfectmatch.local"
     [management-user]="michael.stone.demo@perfectmatch.local"
+    [qms-viewer]="qms.viewer.demo@perfectmatch.local"
   )
   for persona in "${!persona_logins[@]}"; do
     if [[ ! -f "$PERSONA_PASSWORD_DIR/$persona" ]]; then
@@ -251,6 +252,7 @@ credentials() {
   echo "internal_auditor_login=james.carter.demo@perfectmatch.local"
   echo "process_owner_login=emma.reed.demo@perfectmatch.local"
   echo "management_user_login=michael.stone.demo@perfectmatch.local"
+  echo "qms_viewer_login=qms.viewer.demo@perfectmatch.local"
 }
 
 usage() {
