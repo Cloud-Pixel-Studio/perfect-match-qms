@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/deployment/docker/demo/compose.yml"
+MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
 SECRETS_DIR="${PMQMS_DEMO_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-demo}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
@@ -17,7 +18,8 @@ DB_NAME="${PMQMS_DEMO_DB:-pmqms_demo}"
 DEMO_COMPANY_NAME="${PMQMS_DEMO_COMPANY_NAME:-Apex Precision Systems, Inc.}"
 DEMO_ADMIN_LOGIN="${PMQMS_DEMO_ADMIN_LOGIN:-admin}"
 DEMO_QUALITY_MANAGER_LOGIN="${PMQMS_DEMO_QUALITY_MANAGER_LOGIN:-olivia.parker.demo@perfectmatch.local}"
-DEMO_ADDONS="pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality"
+module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
+DEMO_ADDONS="${PMQMS_DEMO_ADDONS:-$(module_list)}"
 
 export ODOO_DEMO_CONFIG_DIR="$CONFIG_DIR"
 export ODOO_DEMO_PG_PASSWORD_FILE="$PG_PASSWORD_FILE"
@@ -139,7 +141,9 @@ install_or_update() {
   compose up -d postgres-demo >/dev/null
   wait_postgres
   if database_exists; then
-    run_odoo -d "$DB_NAME" --update "$DEMO_ADDONS" --stop-after-init
+    # --init is idempotent for installed modules and also installs new modules
+    # added to the canonical manifest during a release upgrade.
+    run_odoo -d "$DB_NAME" --init "$DEMO_ADDONS" --update "$DEMO_ADDONS" --stop-after-init
   else
     run_odoo -d "$DB_NAME" --init "$DEMO_ADDONS" --stop-after-init
   fi

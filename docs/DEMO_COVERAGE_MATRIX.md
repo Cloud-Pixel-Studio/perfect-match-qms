@@ -12,6 +12,8 @@
 | Security | Users & Access | Configuration > Users & Access | Olivia, Daniel, Maria, James, Emma, Michael, Victor | Fixed product roles, linked QMS Person, organization/site/process scope, effective access summary | COVERED |
 | Product Shell | Customer entry and technical boundary | Login / Perfect Match QMS | Product identity and technical admin boundary | Normal QMS users enter the product shell; generic technical roots are reserved for System Administrators | COVERED |
 | Product Shell | Persona access | Login / QMS menus | Seven fictional Demo personas | Each persona is validated without `base.group_system`; direct-route access remains security-enforced | COVERED |
+| Standards | ISO 9001 profile | Standards > ISO 9001 > Overview | ISO 9001 / 2015 profile | Active profile, zero seeded approved mappings, no copied standard text, no unfinished other standards | COVERED |
+| Framework | Administration boundary | Configuration > Framework Administration | PM-QMS-QUALITY master data | QMS Administrator only; normal QMS roles use implementation records | COVERED |
 | Documents | Controlled documents | Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
 | Documents | Revisions | Documents > Revisions | Revision A records | Current revision context | COVERED |
 | Evidence | Evidence records | Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |

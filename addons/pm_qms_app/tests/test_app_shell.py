@@ -158,7 +158,6 @@ class TestPmQmsAppShell(TransactionCase):
             "Audit",
             "Performance",
             "Management Review",
-            "Framework",
             "Configuration",
         }
         self.assertTrue(expected.issubset(child_names))
@@ -168,8 +167,12 @@ class TestPmQmsAppShell(TransactionCase):
 
     def test_menu_permissions_keep_framework_out_of_user_navigation(self):
         framework = self.env.ref("pm_qms_core.menu_pm_qms_framework")
-        self.assertIn(self.qms_manager_group, framework.group_ids)
+        administrator_group = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+        configuration = self.env.ref("pm_qms_core.menu_pm_qms_configuration")
+        self.assertIn(administrator_group, framework.group_ids)
+        self.assertNotIn(self.qms_manager_group, framework.group_ids)
         self.assertNotIn(self.qms_user_group, framework.group_ids)
+        self.assertEqual(framework.parent_id, configuration)
         visible_menus = self.env["ir.ui.menu"].with_user(self.user).load_menus(False)
         self.assertNotIn(framework.id, visible_menus)
 

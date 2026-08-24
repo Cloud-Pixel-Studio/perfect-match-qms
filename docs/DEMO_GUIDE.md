@@ -17,6 +17,11 @@ canonical Demo license is intentionally sized for the three seeded Sites and
 all fictional walkthrough personas. Use **Generate Activation Request** for an
 offline renewal request and **Import Updated License** for a signed replacement.
 
+The Demo installs the ISO 9001 standard add-on. Open **Perfect Match QMS >
+Standards > ISO 9001 > Overview** to see the active ISO 9001 / 2015 profile and
+its current zero-approved-mapping state. The Demo does not implement or display
+any other management-system standard.
+
 | Product Area | Menu Path | Demo Record | What To Show |
 | --- | --- | --- | --- |
 | Dashboard | Perfect Match QMS > Dashboard | Apex metrics | Readiness, actions, customer quality, calibration, and quality cost indicators populated from source records. |

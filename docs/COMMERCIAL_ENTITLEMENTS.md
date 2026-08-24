@@ -28,3 +28,10 @@ boundary for this release.
 License revisions are monotonic per license ID. Importing a newer signed
 revision updates limits; older or equal revisions are rejected. Replacement is
 atomic and the previous license remains in history for authorized users.
+
+Mission 23 does not add standard-feature licensing. The current capacity
+entitlements remain environment, operational company, Sites, and named QMS
+users. A future commercial decision may entitle an installed standard add-on,
+but that decision must be represented in the signed license contract and
+enforced separately from user roles; no such entitlement exists in this
+release.

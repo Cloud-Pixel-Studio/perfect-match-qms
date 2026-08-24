@@ -5,6 +5,12 @@ application boundary. Odoo remains the supported runtime, ORM, authentication
 framework, security engine, menu/action framework, attachment store, scheduler,
 and web client.
 
+When a standard add-on is installed, it contributes only its own customer
+surface. The current ISO add-on contributes **Standards > ISO 9001 > Overview**;
+no uninstalled or unfinished standards are displayed. Framework master-data
+navigation is labeled **Framework Administration** and is under Configuration
+for QMS Administrators.
+
 ## Boundary
 
 - `pm_qms_app` owns the product root, dashboard entry, identity assets, login

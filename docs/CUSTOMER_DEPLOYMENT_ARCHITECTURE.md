@@ -43,6 +43,16 @@ users, sites, Demo actions, or Demo license. Product/framework definitions may
 be included by the approved module set; customer operational records are
 created during bootstrap.
 
+## Module selection
+
+`deployment/customer/modules.txt` is the ordered customer product manifest and
+now includes the ISO 9001 add-on after `pm_qms_pack_quality`. It is consumed by
+the customer bundler and Demo tooling, so dependency order does not drift
+between environments. The generic base remains installable without
+`pm_qms_iso9001`; the current commercial/Demo bundle is ISO-enabled. Standard
+add-ons do not bring Demo records or copied standard text into a clean
+customer database.
+
 ## Reverse proxy and TLS
 
 DNS is an external prerequisite. `deployment/nginx/customer.conf.example`

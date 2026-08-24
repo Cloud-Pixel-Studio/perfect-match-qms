@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_iso9001_profile_form" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.mapping.profile.form</field>
+        <field name="model">pm.qms.mapping.profile</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="standard_name"/>
+                            <field name="edition"/>
+                            <field name="publisher"/>
+                            <field name="state"/>
+                        </group>
+                        <group string="Coverage">
+                            <field name="total_control_count"/>
+                            <field name="mapped_control_count"/>
+                            <field name="unmapped_control_count"/>
+                            <field name="pending_mapping_count"/>
+                            <field name="rejected_mapping_count"/>
+                            <field name="mapping_completeness_percent"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Reference Mapping">
+                            <field name="mapping_ids" readonly="1">
+                                <list create="0" edit="0" delete="0">
+                                    <field name="control_id"/>
+                                    <field name="reference"/>
+                                    <field name="mapping_type"/>
+                                    <field name="review_status"/>
+                                    <field name="reviewed_by_id"/>
+                                    <field name="review_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_iso9001_overview" model="ir.actions.act_window">
+        <field name="name">ISO 9001</field>
+        <field name="res_model">pm.qms.mapping.profile</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_pm_qms_iso9001_profile_form"/>
+        <field name="domain">[('code', '=', 'PM-QMS-QUALITY-ISO9001'), ('edition', '=', '2015')]</field>
+    </record>
+
+    <menuitem id="menu_pm_qms_standards" name="Standards" parent="pm_qms_core.menu_pm_qms_root" sequence="35" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+    <menuitem id="menu_pm_qms_iso9001" name="ISO 9001" parent="menu_pm_qms_standards" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+    <menuitem id="menu_pm_qms_iso9001_overview" name="Overview" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_overview" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+</odoo>

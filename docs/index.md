@@ -4,6 +4,9 @@
 - [Application Shell](APPLICATION_SHELL.md)
 - [Product Shell Discovery](PRODUCT_SHELL_DISCOVERY.md)
 - [Product Shell Architecture](PRODUCT_SHELL_ARCHITECTURE.md)
+- [Standard Add-on Architecture](STANDARD_ADDON_ARCHITECTURE.md)
+- [ISO 9001 Add-on](ISO9001_ADDON.md)
+- [Framework Architecture](FRAMEWORK_ARCHITECTURE.md)
 - [Customer User Experience](CUSTOMER_USER_EXPERIENCE.md)
 - [Technical Administration Boundary](TECHNICAL_ADMINISTRATION_BOUNDARY.md)
 - [Architecture](ARCHITECTURE.md)
@@ -78,6 +81,7 @@
 - [ADR-059: Signed Offline Commercial Licensing](DECISIONS/ADR-059-signed-offline-commercial-licensing.md)
 - [ADR-060: Isolated Customer Deployment Foundation](DECISIONS/ADR-060-customer-deployment-foundation.md)
 - [ADR-061: Product Shell and Customer Experience Boundary](DECISIONS/ADR-061-product-shell-customer-experience.md)
+- [ADR-062: Standard Add-on Architecture and ISO 9001 Separation](DECISIONS/ADR-062-mission23-standard-addon-architecture.md)
 
 The Oliva pilot runbook, implementation guide, onboarding checklist, and
 migration template are historical records only. They do not describe an active
