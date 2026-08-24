@@ -75,7 +75,7 @@
                         <page string="Signed Payload" groups="pm_qms_license.group_pm_qms_license_admin">
                             <field name="payload_json" nolabel="1"/>
                         </page>
-                        <page string="Activation Requests">
+                        <page string="Activation Requests" groups="pm_qms_license.group_pm_qms_license_admin">
                             <field name="activation_request_ids" readonly="1">
                                 <list><field name="name"/><field name="requested_at"/><field name="environment_short"/><field name="state"/></list>
                             </field>
