@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0-rc7 - 2026-08-23
+
+- Froze the standalone Perfect Match QMS baseline after Mission 20 with signed
+  offline licensing, environment binding, activation requests, atomic license
+  replacement, revision protection, and commercial entitlement enforcement.
+- Documented operational company, active Site, and active named-user capacity,
+  including framework exclusion, archive/reactivation behavior, one-seat
+  multi-role counting, and protected exemptions.
+- Validated cryptographic tamper rejection, wrong-environment rejection,
+  invalid replacement safety, Mission 19 security behavior, standalone
+  installation/upgrade paths, and the isolated fictional Demo.
+- Added the RC7 release notes and immutable release baseline documentation.
+- RC7 does not include online licensing, billing, a customer installer, or
+  Mission 21.
+
 ## 1.0.0-rc6 - 2026-08-23
 
 - Established the standalone Perfect Match QMS organization and Site product
