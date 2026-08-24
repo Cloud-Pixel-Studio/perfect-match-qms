@@ -15,7 +15,23 @@ class TestPmQmsIso9001(TransactionCase):
             [("code", "=", "PM-QMS-QUALITY"), ("version", "=", "1.0"), ("company_id", "=", cls.company.id)],
             limit=1,
         )
-        cls.admin = cls.env.ref("base.user_admin")
+        cls.admin = cls.env["res.users"].create(
+            {
+                "name": "ISO 9001 Test Administrator",
+                "login": "iso9001.test.administrator",
+                "email": "iso9001.test.administrator@example.invalid",
+                "group_ids": [
+                    (
+                        6,
+                        0,
+                        [
+                            cls.env.ref("base.group_user").id,
+                            cls.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ],
+                    )
+                ],
+            }
+        )
         cls.manager = cls.env["res.users"].create(
             {
                 "name": "ISO 9001 Test Manager",
@@ -55,6 +71,15 @@ class TestPmQmsIso9001(TransactionCase):
         menu = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards")
         self.assertEqual(menu.name, "Standards")
         self.assertFalse(self.env["ir.ui.menu"].search([("name", "in", ["ISO 14001", "ISO 45001", "AS9100", "AS9120", "IATF 16949"])]))
+
+    def test_iso9001_overview_opens_existing_profile_list(self):
+        action = self.env.ref("pm_qms_iso9001.action_pm_qms_iso9001_overview")
+        list_view = self.env.ref("pm_qms_iso9001.view_pm_qms_iso9001_profile_list")
+        self.assertEqual(action.res_model, "pm.qms.mapping.profile")
+        self.assertEqual(action.view_mode, "list,form")
+        self.assertEqual(action.view_id, list_view)
+        self.assertEqual(action.domain, "[('code', '=', 'PM-QMS-QUALITY-ISO9001'), ('edition', '=', '2015')]")
+        self.assertEqual(self._profile().name, "ISO 9001 Current Published Edition Mapping")
 
     def test_standards_menu_is_visible_to_qms_personas_and_admin(self):
         menu_id = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards").id
