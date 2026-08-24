@@ -15,6 +15,13 @@ log() { echo "CUSTOMER: $*"; }
 random_secret() { openssl rand -base64 48 | tr -d '\n'; }
 slug_ok() { [[ "$1" =~ ^[a-z0-9]+([a-z0-9-]*[a-z0-9])?$ ]]; }
 instance_dir() { echo "$INSTANCE_ROOT_BASE/$1"; }
+new_temp_dir() { mktemp -d "${TMPDIR:-/tmp}/pmqms-customer-instance.XXXXXX"; }
+cleanup_temp_dir() {
+  local temp_dir="${1:-}" temp_root="${TMPDIR:-/tmp}"
+  [[ -n "$temp_dir" && "$temp_dir" == "$temp_root"/pmqms-customer-instance.* ]] || return 0
+  [[ -d "$temp_dir" ]] || return 0
+  rm -rf -- "$temp_dir"
+}
 protected_slug() {
   case "$1" in pmqms_demo|pmqms_dev|pmqms_test|pmqms_oliva_pilot|demo|dev|oliva*) return 0;; esac
   return 1
@@ -140,17 +147,17 @@ credentials() {
   echo "instance_slug=$INSTANCE_SLUG"; echo "environment_type=$ENVIRONMENT_TYPE"; echo "database=$DATABASE_NAME"; echo "technical_login=admin"; echo "technical_password_file=$root/secrets/initial_admin_password"; echo "environment_id_file=$root/config/environment_id"
 }
 
-provision() {
+provision() (
   local slug="$1"; shift; local bundle="" type="test"
   while [[ $# -gt 0 ]]; do case "$1" in --bundle) bundle="${2:-}"; shift 2;; --type) type="${2:-}"; shift 2;; *) die "unknown provision option: $1";; esac; done
   [[ -f "$bundle" ]] || die "bundle not found"; [[ "$type" == test || "$type" == customer ]] || die "invalid type"
   init_instance "$slug" --type "$type"
-  local root; root="$(require_instance "$slug")"; load_instance "$root"; local tmp; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
+  local root; root="$(require_instance "$slug")"; load_instance "$root"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
   tar -xzf "$bundle" -C "$tmp"; [[ -d "$tmp/addons" ]] || die "bundle has no addons"
   rm -rf "$root/runtime/addons"; mkdir -p "$root/runtime/addons"; cp -a "$tmp/addons/." "$root/runtime/addons/"; cp "$tmp/manifest.json" "$root/config/product-manifest.json"
   find "$root/runtime/addons" -type d -exec chmod 755 {} +; find "$root/runtime/addons" -type f -exec chmod 644 {} +; chmod -R a-w "$root/runtime/addons"
   log "provisioned runtime assets for $slug"
-}
+)
 
 up() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" up -d; }
 down() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" down; }
@@ -255,24 +262,24 @@ print("site=%s" % site.code)
 PY
 }
 
-backup() {
+backup() (
   local root; root="$(require_instance "$1")"; load_instance "$root"; mkdir -p "$root/backups"; chmod 700 "$root/backups"
   compose "$root" up -d postgres >/dev/null
-  local stamp archive tmp; stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.gz"; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
+  local stamp archive tmp=""; stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.gz"; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
   compose "$root" exec -T postgres pg_dump -U odoo -d "$DATABASE_NAME" --format=custom > "$tmp/db.dump"
   docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$tmp:/backup" alpine:3.20 sh -c "cd /odoo-data && if [ -d filestore/$DATABASE_NAME ]; then tar -czf /backup/filestore.tar.gz filestore/$DATABASE_NAME; else tar -czf /backup/filestore.tar.gz --files-from /dev/null; fi"
   cp "$root/config/environment_id" "$tmp/environment_id"; [[ -f "$root/license/active.pmql" ]] && cp "$root/license/active.pmql" "$tmp/active.pmql" || true
   printf 'instance_slug=%s\nproduct_version=%s\ndatabase=%s\nbackup_created_utc=%s\n' "$INSTANCE_SLUG" "$PRODUCT_VERSION" "$DATABASE_NAME" "$stamp" > "$tmp/manifest.txt"
   tar -C "$tmp" -czf "$archive" .; sha256sum "$archive" > "$archive.sha256"; tar -tzf "$archive" >/dev/null
   echo "backup=$archive"; echo "checksum=$archive.sha256"
-}
+)
 
-restore_validate() {
+restore_validate() (
   local source_slug="$1" archive="$2"; local source; source="$(require_instance "$source_slug")"; load_instance "$source"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
   [[ -f "$archive" && -f "$archive.sha256" ]] || die "backup archive/checksum not found"; sha256sum -c "$archive.sha256" >/dev/null 2>&1 || die "backup checksum failed"
   local recovery="${source_slug}-recovery"; [[ ! -e "$(instance_dir "$recovery")" ]] || die "recovery instance already exists"
   init_instance "$recovery" --type test --port "$((HTTP_PORT + 1))" --release "$PRODUCT_VERSION"
-  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local tmp; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN; tar -xzf "$archive" -C "$tmp"
+  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"; tar -xzf "$archive" -C "$tmp"
   cp "$tmp/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$tmp/active.pmql" ]] && cp "$tmp/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
   cp -a "$source/runtime/addons/." "$target/runtime/addons/"; compose "$target" up -d postgres >/dev/null
   for _ in {1..30}; do compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1 && break; sleep 1; done
@@ -280,13 +287,13 @@ restore_validate() {
   compose "$target" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$tmp/db.dump"
   health "$recovery"; license_status "$recovery"; destroy "$recovery" --confirm-ephemeral
   echo "restore_validation=pass"
-}
+)
 
-bundle() {
+bundle() (
   local output="" release="$DEFAULT_RELEASE"
   while [[ $# -gt 0 ]]; do case "$1" in --output) output="${2:-}"; shift 2;; --release) release="${2:-}"; shift 2;; *) die "unknown bundle option: $1";; esac; done
   [[ -n "$output" ]] || die "--output is required"; git -C "$REPO_ROOT" rev-parse "$release^{commit}" >/dev/null 2>&1 || die "release tag not found"
-  local tmp; tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' RETURN
+  local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
   git -C "$REPO_ROOT" archive "$release" addons deployment/customer deployment/docker/customer deployment/nginx/customer.conf.example deployment/scripts/customer-instance.sh | tar -x -C "$tmp"
   rm -rf "$tmp/deployment/demo" "$tmp/deployment/docker/demo"; find "$tmp/addons" -type d -name __pycache__ -prune -exec rm -rf {} +; find "$tmp/addons" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
   local sha; sha="$(git -C "$REPO_ROOT" rev-parse "$release^{commit}")"
@@ -296,7 +303,7 @@ bundle() {
   if tar -xOzf "$output" ./manifest.json 2>/dev/null | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
   if grep -RInaE --exclude='customer-instance.sh' 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" "$tmp/deployment" >/dev/null 2>&1; then die "Demo content detected in bundle"; fi
   echo "bundle=$output"; echo "checksum=$output.sha256"; echo "source_sha=$sha"
-}
+)
 
 upgrade() {
   local slug="$1"; shift; local target_release="$(read_option --to "$@" || true)"
@@ -330,6 +337,8 @@ destroy() {
   rmdir -- "$root"; log "ephemeral instance removed: $slug"
 }
 
-command="${1:-}"; shift || true
-case "$command" in
-  init) init_instance "$@";; provision) provision "$@";; credentials) credentials "$@";; config) config "$@";; up) up "$@";; down) down "$@";; health) health "$@";; bootstrap) bootstrap "$@";; activation-request) activation_request "$@";; import-license) import_license "$@";; license-status) license_status "$@";; bootstrap-customer) bootstrap_customer "$@";; create-site) create_site "$@";; backup) backup "$@";; restore-validate) restore_validate "$@";; upgrade) upgrade "$@";; customer-ready) customer_ready "$@";; bundle) bundle "$@";; destroy) destroy "$@";; help|-h|--help) usage;; *) usage; exit 2;; esac
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  command="${1:-}"; shift || true
+  case "$command" in
+    init) init_instance "$@";; provision) provision "$@";; credentials) credentials "$@";; config) config "$@";; up) up "$@";; down) down "$@";; health) health "$@";; bootstrap) bootstrap "$@";; activation-request) activation_request "$@";; import-license) import_license "$@";; license-status) license_status "$@";; bootstrap-customer) bootstrap_customer "$@";; create-site) create_site "$@";; backup) backup "$@";; restore-validate) restore_validate "$@";; upgrade) upgrade "$@";; customer-ready) customer_ready "$@";; bundle) bundle "$@";; destroy) destroy "$@";; help|-h|--help) usage;; *) usage; exit 2;; esac
+fi

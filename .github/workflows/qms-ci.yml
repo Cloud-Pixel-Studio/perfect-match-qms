@@ -43,6 +43,9 @@ jobs:
       - name: Validate Docker Compose configuration
         run: bash deployment/scripts/odoo-dev.sh config
 
+      - name: Run customer deployment script regressions
+        run: bash deployment/scripts/tests/test_customer_instance_cleanup.sh
+
       - name: Pull DEV runtime images
         run: bash deployment/scripts/odoo-dev.sh pull
 
