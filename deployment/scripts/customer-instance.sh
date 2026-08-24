@@ -40,7 +40,7 @@ compose() {
 }
 prepare_permissions() {
   local root="$1"
-  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" -v "$root/activation:/activation" odoo:19.0 sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /license /activation 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license /activation 2>/dev/null || true'
+  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" -v "$root/activation:/activation" odoo:19.0 sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /license /activation 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license 2>/dev/null || true; chmod 755 /activation 2>/dev/null || true'
 }
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
@@ -180,7 +180,8 @@ Path("/var/lib/pmqms-activation/activation-request.json").write_text(request.req
 env.cr.commit()
 print("activation_request_id=%s" % request.id)
 PY
-  chmod 600 "$root/activation/activation-request.json"; echo "activation_request=$root/activation/activation-request.json"
+  docker run --rm --user root -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -v "$root/activation:/activation" alpine:3.20 sh -c 'chown "$HOST_UID:$HOST_GID" /activation/activation-request.json && chmod 600 /activation/activation-request.json'
+  echo "activation_request=$root/activation/activation-request.json"
 }
 
 import_license() {
