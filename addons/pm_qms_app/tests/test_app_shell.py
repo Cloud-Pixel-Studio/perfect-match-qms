@@ -213,10 +213,8 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertNotIn(menu.id, visible_menus)
 
     def test_quality_manager_role_is_not_system_administrator(self):
-        quality_manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
-        quality_manager = self._create_user("app_shell_quality_manager", quality_manager_group, self.company)
-        self.assertTrue(quality_manager.has_group("pm_qms_core.group_qms_quality_manager"))
-        self.assertFalse(quality_manager.has_group("base.group_system"))
+        self.assertTrue(self.quality_manager.has_group("pm_qms_core.group_qms_quality_manager"))
+        self.assertFalse(self.quality_manager.has_group("base.group_system"))
 
     def test_product_identity_templates_are_loaded(self):
         layout = self.env.ref("pm_qms_app.pm_qms_web_layout_branding")

@@ -19,4 +19,6 @@ class IrActionsActWindow(models.Model):
             )
         ):
             raise AccessError("Users & Access is restricted to QMS administrators.")
+        if users_access_action and users_access_action.id in self.ids:
+            return super(IrActionsActWindow, self.sudo()).read(fields=fields, load=load)
         return super().read(fields=fields, load=load)
