@@ -53,7 +53,7 @@
         <field name="domain">[('code', '=', 'PM-QMS-QUALITY-ISO9001'), ('edition', '=', '2015')]</field>
     </record>
 
-    <menuitem id="menu_pm_qms_standards" name="Standards" parent="pm_qms_core.menu_pm_qms_root" sequence="35" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
-    <menuitem id="menu_pm_qms_iso9001" name="ISO 9001" parent="menu_pm_qms_standards" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
-    <menuitem id="menu_pm_qms_iso9001_overview" name="Overview" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_overview" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+    <menuitem id="menu_pm_qms_standards" name="Standards" parent="pm_qms_core.menu_pm_qms_root" sequence="35" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
+    <menuitem id="menu_pm_qms_iso9001" name="ISO 9001" parent="menu_pm_qms_standards" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
+    <menuitem id="menu_pm_qms_iso9001_overview" name="Overview" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_overview" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
 </odoo>
