@@ -30,6 +30,7 @@
     <record id="action_pm_qms_activation_request" model="ir.actions.act_window">
         <field name="name">Activation Requests</field>
         <field name="res_model">pm.qms.activation.request</field>
+        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_license.group_pm_qms_license_admin'), ref('base.group_system')])]"/>
         <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_pm_qms_activation_request_list"/>
     </record>

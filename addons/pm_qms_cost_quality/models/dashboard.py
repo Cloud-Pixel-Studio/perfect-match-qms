@@ -1,4 +1,5 @@
 from odoo import fields, models
+from odoo.exceptions import AccessError
 
 
 class PmQmsDashboard(models.TransientModel):
@@ -19,6 +20,17 @@ class PmQmsDashboard(models.TransientModel):
     def _metric_fields(self):
         return super()._metric_fields() + ["quality_cost_event_count"]
 
+    def _can_view_cost_quality(self):
+        return any(
+            self.env.user.has_group(group)
+            for group in (
+                "pm_qms_core.group_qms_quality_manager",
+                "pm_qms_core.group_qms_management_user",
+                "pm_qms_core.group_pm_qms_administrator",
+                "base.group_system",
+            )
+        )
+
     def _compute_dashboard(self):
         super()._compute_dashboard()
         CostEvent = self.env["pm.qms.cost.event"]
@@ -29,6 +41,8 @@ class PmQmsDashboard(models.TransientModel):
             dashboard.dashboard_recovery_total = 0.0
             if not dashboard.organization_id:
                 continue
+            if not dashboard._can_view_cost_quality():
+                continue
             events = CostEvent.search(dashboard._base_domain() + [("state", "=", "confirmed")])
             dashboard.quality_cost_event_count = len(events)
             dashboard.dashboard_quality_cost_total = sum(events.mapped("quality_cost_total"))
@@ -37,6 +51,8 @@ class PmQmsDashboard(models.TransientModel):
 
     def action_view_cost_quality(self):
         self.ensure_one()
+        if not self._can_view_cost_quality():
+            raise AccessError("Cost of Quality is restricted to authorized QMS management users.")
         return self._action_for_xmlid(
             "pm_qms_cost_quality.action_pm_qms_cost_event_official",
             domain=self._base_domain() + [("state", "=", "confirmed")],

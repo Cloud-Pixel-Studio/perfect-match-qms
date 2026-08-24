@@ -18,7 +18,9 @@ class PmQmsManagementReview(models.Model):
         return result
 
     def _snapshot_cost_quality(self, snapshot_date):
-        Event = self.env["pm.qms.cost.event"]
+        # Management review snapshots are controlled summaries; the source
+        # records remain hidden from ordinary operational roles.
+        Event = self.env["pm.qms.cost.event"].sudo()
         domain = [
             ("company_id", "=", self.company_id.id),
             ("organization_id", "=", self.organization_id.id),

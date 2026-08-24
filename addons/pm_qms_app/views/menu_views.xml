@@ -6,6 +6,15 @@
     <record id="base.menu_management" model="ir.ui.menu">
         <field name="group_ids" eval="[(6, 0, [ref('base.group_system')])]"/>
     </record>
+    <record id="base.menu_apps" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    <record id="base.menu_module_tree" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
+    <record id="base.open_module_tree" model="ir.actions.act_window">
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_system')])]"/>
+    </record>
     <record id="base.menu_tests" model="ir.ui.menu">
         <field name="group_ids" eval="[(6, 0, [ref('base.group_system')])]"/>
     </record>

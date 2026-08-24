@@ -6,12 +6,12 @@
         <field name="inherit_id" ref="pm_qms_app.view_pm_qms_dashboard_form"/>
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
-                <button name="action_view_cost_quality" type="object" class="oe_stat_button" icon="fa-money">
+                <button name="action_view_cost_quality" type="object" class="oe_stat_button" icon="fa-money" groups="pm_qms_core.group_qms_quality_manager,pm_qms_core.group_qms_management_user,pm_qms_core.group_pm_qms_administrator,base.group_system">
                     <field name="dashboard_copq_amount" widget="statinfo" string="COPQ"/>
                 </button>
             </xpath>
             <xpath expr="//field[@name='supplier_performance_issues']/.." position="after">
-                <group string="Cost of Quality">
+                <group string="Cost of Quality" groups="pm_qms_core.group_qms_quality_manager,pm_qms_core.group_qms_management_user,pm_qms_core.group_pm_qms_administrator,base.group_system">
                     <button name="action_view_cost_quality" type="object" string="Open Cost Analytics" class="oe_link"/>
                     <field name="quality_cost_event_count"/>
                     <field name="dashboard_quality_cost_total"/>
