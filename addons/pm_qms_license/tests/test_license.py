@@ -72,6 +72,19 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         with patch.object(license_service, "load_public_keys", return_value={"test-key": self.public_key_b64}):
             return self.env["pm.qms.license"].import_document(document, expected_environment_id=self.environment_id)
 
+    def _user(self, login, *groups):
+        base_user = self.env.ref("base.group_user")
+        group_ids = [base_user.id, *(group.id for group in groups)]
+        return self.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": login,
+                "login": login,
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set(sorted(set(group_ids)))],
+            }
+        )
+
     def test_environment_identity_is_stable_and_shortened(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "environment_id"
@@ -200,3 +213,39 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertNotIn(viewer, license_menu.group_ids)
         self.assertIn(quality_manager, license_action.group_ids)
         self.assertNotIn(viewer, license_action.group_ids)
+
+    def test_license_form_respects_activation_request_authority(self):
+        quality_manager = self.env.ref("pm_qms_core.group_qms_quality_manager")
+        licensing_admin = self.env.ref("pm_qms_license.group_pm_qms_license_admin")
+        technical_admin = self.env.ref("base.group_system")
+        viewer = self.env.ref("pm_qms_core.group_qms_viewer")
+        quality_manager_user = self._user("m20-license-quality-manager", quality_manager)
+        licensing_admin_user = self._user("m20-license-admin", licensing_admin)
+        technical_admin_user = self._user("m20-license-technical-admin", technical_admin)
+        viewer_user = self._user("m20-license-viewer", viewer)
+        license_record = self._import()
+        license_view = self.env.ref("pm_qms_license.view_pm_qms_license_form")
+
+        quality_manager_arch = self.env["pm.qms.license"].with_user(quality_manager_user).get_view(
+            view_id=license_view.id, view_type="form"
+        )["arch"]
+        licensing_admin_arch = self.env["pm.qms.license"].with_user(licensing_admin_user).get_view(
+            view_id=license_view.id, view_type="form"
+        )["arch"]
+
+        self.assertNotIn("activation_request_ids", quality_manager_arch)
+        self.assertNotIn("Activation Requests", quality_manager_arch)
+        self.assertIn("activation_request_ids", licensing_admin_arch)
+        self.assertIn("Activation Requests", licensing_admin_arch)
+        self.assertTrue(
+            license_record.with_user(quality_manager_user).read(
+                ["license_id", "state", "company_limit", "site_limit", "named_user_limit"]
+            )
+        )
+        with self.assertRaises(AccessError):
+            license_record.with_user(quality_manager_user).read(["activation_request_ids"])
+        self.assertTrue(license_record.with_user(licensing_admin_user).read(["activation_request_ids"]))
+        with self.assertRaises(AccessError):
+            license_record.with_user(technical_admin_user).read(["license_id"])
+        with self.assertRaises(AccessError):
+            license_record.with_user(viewer_user).read(["license_id"])
