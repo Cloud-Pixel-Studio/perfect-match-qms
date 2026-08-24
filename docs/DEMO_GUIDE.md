@@ -1,8 +1,9 @@
 # Perfect Match QMS Demo Guide
 
 Open the demo at `https://demo.invperfectmatch.com/web/login?db=pmqms_demo` and
-log in as `admin`. The credential file is kept outside Git; retrieve its path
-with `./deployment/scripts/odoo-demo.sh credentials` on the demo VM.
+use a persona credential supplied through the Demo secret mechanism. The
+technical administrator credential is kept outside Git; retrieve only its
+path with `./deployment/scripts/odoo-demo.sh credentials` on the Demo VM.
 
 The fictional company is `Apex Precision Systems, Inc.`. The demo contains one
 organization and exactly three operational Sites: `APEX-HQ` Headquarters &
@@ -30,7 +31,7 @@ offline renewal request and **Import Updated License** for a signed replacement.
 | CAPA | Perfect Match QMS > Risk & Improvement > CAPA | APEX-CAPA-001 - Repeated inspection escape from outdated setup instruction | Root cause, 5 Why, CAPA actions, target dates, and effectiveness review date. |
 | Audit | Perfect Match QMS > Audit | APEX-AUD-001 - Document control and final inspection audit | Program/audit context, scope, criteria, and findings. |
 | Performance | Perfect Match QMS > Performance | APEX-KPI-001 - First-pass final inspection yield | Objective, KPI, and monthly measurement trend. |
-| People | Perfect Match QMS > People & Competency > People | Olivia Parker / Daniel Brooks / Maria Lewis | Fictional personas, QMS responsibilities, and linked user/person records. |
+| People | Perfect Match QMS > People & Competency > People | Olivia Parker / Daniel Brooks / Maria Lewis / James Carter / Emma Reed / Michael Stone / Victor Lee | Fictional personas, QMS responsibilities, and linked user/person records. |
 | Training | Perfect Match QMS > People & Competency > Training | APEX-TRN-001 - Revised setup instruction refresher | Due, overdue, and completed training examples. |
 | Qualifications | Perfect Match QMS > People & Competency > Qualifications | APEX-QUAL-001 - Final Inspection Authorization | Expired, expiring, and current qualification examples. |
 | Calibration | Perfect Match QMS > Equipment & Calibration > Equipment | EQ-0001 - Digital Caliper | Current, due soon, overdue, OOT scenario context, and Site assignment. |

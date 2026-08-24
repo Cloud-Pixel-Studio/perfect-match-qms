@@ -1,5 +1,6 @@
 import base64
 import os
+from pathlib import Path
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from odoo import Command, fields
@@ -8,6 +9,8 @@ EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
 COMPANY_NAME = os.getenv("PMQMS_DEMO_COMPANY_NAME", "Apex Precision Systems, Inc.")
 ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 ADMIN_PASSWORD = os.getenv("PMQMS_DEMO_ADMIN_PASSWORD")
+QUALITY_MANAGER_LOGIN = os.getenv("PMQMS_DEMO_QUALITY_MANAGER_LOGIN", "olivia.parker.demo@perfectmatch.local")
+PERSONA_PASSWORD_DIR = Path(os.getenv("PMQMS_DEMO_PERSONA_PASSWORD_DIR", "/run/pmqms-demo-persona-passwords"))
 ORG_CODE = "APEX"
 
 if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
@@ -168,8 +171,35 @@ role_group_xmlids = {
     "Internal Auditor": "pm_qms_core.group_qms_internal_auditor",
     "Process Owner": "pm_qms_core.group_qms_process_owner",
     "Management User": "pm_qms_core.group_qms_management_user",
+    "QMS Viewer": "pm_qms_core.group_qms_viewer",
 }
 role_groups = {role: ref(xmlid) for role, xmlid in role_group_xmlids.items() if ref(xmlid)}
+
+if ADMIN_LOGIN == QUALITY_MANAGER_LOGIN:
+    raise RuntimeError("Demo technical admin and Quality Manager logins must be different.")
+
+# Keep the externally managed Demo admin as a technical account. The named
+# Quality Manager is a separate fictional persona and is never a System Admin.
+technical_admin = env["res.users"].with_context(no_reset_password=True).search(
+    [("login", "=", ADMIN_LOGIN)], limit=1
+)
+technical_admin_values = {
+    "name": "Perfect Match Technical Administrator",
+    "email": ADMIN_LOGIN,
+    "company_id": company.id,
+    "pmqms_license_account_type": "technical",
+    "pmqms_license_exempt": True,
+    "pmqms_license_exemption_reason": "Technical Demo administration; does not consume a customer QMS seat.",
+}
+if base_user and system_admin and qms_admin:
+    technical_admin_values["group_ids"] = [Command.set([base_user.id, system_admin.id, qms_admin.id])]
+if ADMIN_PASSWORD:
+    technical_admin_values["password"] = ADMIN_PASSWORD
+if technical_admin:
+    technical_admin.write(technical_admin_values)
+else:
+    technical_admin_values["login"] = ADMIN_LOGIN
+    technical_admin = env["res.users"].with_context(no_reset_password=True).create(technical_admin_values)
 
 # The framework/library organization is internal product content, not a
 # separately licensed customer company. Normalize the legacy demo row before
@@ -240,25 +270,23 @@ if model_exists("pm.qms.site") and organization:
 site_by_code = {site.code: site for site in sites}
 
 user_specs = [
-    ("Olivia Parker", ADMIN_LOGIN, "Quality Manager"),
+    ("Olivia Parker", QUALITY_MANAGER_LOGIN, "Quality Manager"),
     ("Daniel Brooks", "daniel.brooks.demo@perfectmatch.local", "Quality Supervisor"),
     ("Maria Lewis", "maria.lewis.demo@perfectmatch.local", "Document Controller"),
     ("James Carter", "james.carter.demo@perfectmatch.local", "Internal Auditor"),
     ("Emma Reed", "emma.reed.demo@perfectmatch.local", "Process Owner"),
     ("Michael Stone", "michael.stone.demo@perfectmatch.local", "Management User"),
+    ("Victor Lee", "qms.viewer.demo@perfectmatch.local", "QMS Viewer"),
 ]
 users = {}
 for full_name, login, role in user_specs:
     vals = {"name": full_name, "login": login, "email": login, "company_id": company.id, "company_ids": [Command.link(company.id)]}
     assigned_groups = [g.id for g in (base_user, role_groups.get(role)) if g]
-    if login == ADMIN_LOGIN and qms_admin:
-        assigned_groups.append(qms_admin.id)
-    if login == ADMIN_LOGIN and system_admin:
-        assigned_groups.append(system_admin.id)
     if assigned_groups:
         vals["group_ids"] = [Command.set(sorted(set(assigned_groups)))]
-    if login == ADMIN_LOGIN and ADMIN_PASSWORD:
-        vals["password"] = ADMIN_PASSWORD
+    persona_password_file = PERSONA_PASSWORD_DIR / role.lower().replace(" ", "-")
+    if persona_password_file.is_file():
+        vals["password"] = persona_password_file.read_text(encoding="utf-8").strip()
     user = env["res.users"].with_context(no_reset_password=True).search([("login", "=", login)], limit=1)
     if user:
         writable = {k: v for k, v in vals.items() if k != "login"}
@@ -341,6 +369,7 @@ scope_by_role = {
     "Internal Auditor": {"all_sites": True, "all_processes": True},
     "Process Owner": {"site_codes": ["APEX-MFG", "APEX-INS"], "process_codes": ["APEX-PROD", "APEX-FIN"]},
     "Management User": {"all_sites": True, "all_processes": True},
+    "QMS Viewer": {"all_sites": True, "all_processes": True},
 }
 for role, user in users.items():
     scope = scope_by_role[role]
@@ -365,6 +394,7 @@ person_site_codes = {
     "Internal Auditor": "APEX-HQ",
     "Process Owner": "APEX-MFG",
     "Management User": "APEX-HQ",
+    "QMS Viewer": "APEX-HQ",
 }
 for full_name, login, role_name in user_specs:
     role = upsert("pm.qms.role", code=role_name.upper().replace(" ", "-")[:30], name=role_name, vals={"name": role_name, "company_id": company.id}, required=False)

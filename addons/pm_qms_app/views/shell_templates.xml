@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Product identity is layered onto supported Odoo templates. Odoo's
+         legal promotion/footer remains intact. -->
+    <template id="pm_qms_web_layout_branding" inherit_id="web.layout">
+        <xpath expr="//title" position="replace">
+            <title t-esc="title or 'Perfect Match QMS'"/>
+        </xpath>
+        <xpath expr="//link[@rel='shortcut icon']" position="attributes">
+            <attribute name="t-att-href">x_icon or '/pm_qms_app/static/description/icon.svg'</attribute>
+        </xpath>
+    </template>
+
+    <template id="pm_qms_login_branding" inherit_id="web.login_layout">
+        <xpath expr="//t[@t-out='0']" position="before">
+            <div class="pm_qms_login_identity" aria-label="Perfect Match QMS">
+                <strong>Perfect Match QMS</strong>
+                <span>Quality management, clearly controlled.</span>
+            </div>
+        </xpath>
+    </template>
+</odoo>

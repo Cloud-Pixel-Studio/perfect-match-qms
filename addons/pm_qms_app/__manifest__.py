@@ -31,6 +31,7 @@ Technical addons remain modular underneath this product entry point.
         "security/ir.model.access.csv",
         "security/mission19_viewer_access.xml",
         "security/mission19_manager_access.xml",
+        "views/shell_templates.xml",
         "views/dashboard_views.xml",
         "views/implementation_project_views.xml",
         "views/menu_views.xml",

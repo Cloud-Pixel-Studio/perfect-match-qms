@@ -2,6 +2,10 @@
 
 - [Product Vision](PRODUCT_VISION.md)
 - [Application Shell](APPLICATION_SHELL.md)
+- [Product Shell Discovery](PRODUCT_SHELL_DISCOVERY.md)
+- [Product Shell Architecture](PRODUCT_SHELL_ARCHITECTURE.md)
+- [Customer User Experience](CUSTOMER_USER_EXPERIENCE.md)
+- [Technical Administration Boundary](TECHNICAL_ADMINISTRATION_BOUNDARY.md)
 - [Architecture](ARCHITECTURE.md)
 - [Roadmap](ROADMAP.md)
 - [Security](SECURITY.md)
@@ -72,6 +76,8 @@
 - [Customer Upgrade Runbook](CUSTOMER_UPGRADE_RUNBOOK.md)
 - [Customer Handoff Checklist](CUSTOMER_HANDOFF_CHECKLIST.md)
 - [ADR-059: Signed Offline Commercial Licensing](DECISIONS/ADR-059-signed-offline-commercial-licensing.md)
+- [ADR-060: Isolated Customer Deployment Foundation](DECISIONS/ADR-060-customer-deployment-foundation.md)
+- [ADR-061: Product Shell and Customer Experience Boundary](DECISIONS/ADR-061-product-shell-customer-experience.md)
 
 The Oliva pilot runbook, implementation guide, onboarding checklist, and
 migration template are historical records only. They do not describe an active

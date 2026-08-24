@@ -7,6 +7,26 @@
     --pmqms-charcoal: #252a34;
 }
 
+.pm_qms_login_identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0 0 1rem;
+    color: var(--pmqms-navy);
+    text-align: center;
+    letter-spacing: 0;
+
+    strong {
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    span {
+        color: var(--pmqms-charcoal);
+        font-size: 0.75rem;
+    }
+}
+
 .o_web_login {
     background: var(--pmqms-off-white);
 

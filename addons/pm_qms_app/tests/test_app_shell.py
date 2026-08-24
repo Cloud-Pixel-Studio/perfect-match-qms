@@ -165,6 +165,31 @@ class TestPmQmsAppShell(TransactionCase):
         visible_menus = self.env["ir.ui.menu"].with_user(self.user).load_menus(False)
         self.assertNotIn(framework.id, visible_menus)
 
+    def test_platform_roots_are_reserved_for_technical_administrators(self):
+        technical_group = self.env.ref("base.group_system")
+        for xmlid in (
+            "base.menu_management",
+            "base.menu_tests",
+            "project.menu_main_pm",
+            "mail.menu_root_discuss",
+        ):
+            menu = self.env.ref(xmlid)
+            self.assertEqual(menu.group_ids, technical_group, xmlid)
+            visible_menus = self.env["ir.ui.menu"].with_user(self.manager).load_menus(False)
+            self.assertNotIn(menu.id, visible_menus, xmlid)
+
+    def test_quality_manager_role_is_not_system_administrator(self):
+        quality_manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
+        quality_manager = self._create_user("app_shell_quality_manager", quality_manager_group, self.company)
+        self.assertTrue(quality_manager.has_group("pm_qms_core.group_qms_quality_manager"))
+        self.assertFalse(quality_manager.has_group("base.group_system"))
+
+    def test_product_identity_templates_are_loaded(self):
+        layout = self.env.ref("pm_qms_app.pm_qms_web_layout_branding")
+        login = self.env.ref("pm_qms_app.pm_qms_login_branding")
+        self.assertIn("Perfect Match QMS", layout.arch)
+        self.assertIn("Perfect Match QMS", login.arch)
+
     def test_dashboard_uses_live_readiness_and_security_scoped_counts(self):
         dashboard = self.env["pm.qms.dashboard"].with_user(self.user).create(
             {"organization_id": self.organization.id, "implementation_project_id": self.project.id}
