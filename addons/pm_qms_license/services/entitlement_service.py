@@ -5,6 +5,17 @@ from odoo.tools import config
 
 USABLE_STATES = ("valid", "expiring")
 
+QMS_ROLE_XMLIDS = (
+    "pm_qms_core.group_qms_quality_manager",
+    "pm_qms_core.group_qms_quality_supervisor",
+    "pm_qms_core.group_qms_quality_inspector",
+    "pm_qms_core.group_qms_document_controller",
+    "pm_qms_core.group_qms_internal_auditor",
+    "pm_qms_core.group_qms_process_owner",
+    "pm_qms_core.group_qms_management_user",
+    "pm_qms_core.group_qms_viewer",
+)
+
 
 class PmQmsEntitlementService(models.AbstractModel):
     _name = "pm.qms.entitlement.service"
@@ -67,8 +78,24 @@ class PmQmsEntitlementService(models.AbstractModel):
         )
 
     @api.model
+    def _qms_role_groups(self):
+        """Resolve approved QMS roles without depending on the app shell.
+
+        Licensing is loaded before ``pm_qms_app`` in a clean customer database,
+        so it cannot call an extension that is registered by that later module.
+        Keeping this lookup local also lets the entitlement service remain
+        usable by standalone deployment and migration flows.
+        """
+        groups = self.env["res.groups"].sudo().browse()
+        for xmlid in QMS_ROLE_XMLIDS:
+            group = self.env.ref(xmlid, raise_if_not_found=False)
+            if group:
+                groups |= group
+        return groups
+
+    @api.model
     def _named_users(self, company):
-        role_groups = self.env["res.users"]._qms_role_groups()
+        role_groups = self._qms_role_groups()
         if not role_groups:
             return self.env["res.users"].sudo().browse()
         return self.env["res.users"].sudo().search(

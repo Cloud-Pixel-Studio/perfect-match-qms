@@ -13,8 +13,8 @@ EXCLUDED_DIRS = {".git", "__pycache__", ".mypy_cache", ".pytest_cache"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".gz", ".tgz"}
 PATTERNS = [
     re.compile(r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |)PRIVATE KEY-----"),
-    re.compile(r"(?i)(?:api[_-]?key|api[_-]?token|access[_-]?token|password|passwd|secret)\s*[:=]\s*['\"][^'\"]{12,}['\"]"),
-    re.compile(r"(?i)(?:api[_-]?key|api[_-]?token|access[_-]?token|password|passwd|secret)\s*=\s*[A-Za-z0-9_./+@!#$%^&*=-]{16,}"),
+    re.compile(r"(?i)(?:api[_-]?key|api[_-]?token|access[_-]?token|password|passwd|secret)\s*[:=]\s*['\"](?!__)(?!\$)[^'\"]{12,}['\"]"),
+    re.compile(r"(?i)(?:api[_-]?key|api[_-]?token|access[_-]?token|password|passwd|secret)\s*=\s*(?!__)(?!\$)[A-Za-z0-9_./+@!#$%^&*=-]{16,}"),
 ]
 
 
