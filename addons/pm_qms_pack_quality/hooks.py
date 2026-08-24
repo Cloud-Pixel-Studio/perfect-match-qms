@@ -631,6 +631,7 @@ def seed_quality_pack(env):
             "name": "Perfect Match QMS Framework Library",
             "code": "PM-QMS-FRAMEWORK",
             "description": "Perfect Match proprietary framework library for reusable QMS implementation controls.",
+            "organization_kind": "framework",
             "company_id": company.id,
         },
     )
