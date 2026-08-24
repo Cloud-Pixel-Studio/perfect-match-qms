@@ -55,3 +55,17 @@ class TestPmQmsIso9001(TransactionCase):
         menu = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards")
         self.assertEqual(menu.name, "Standards")
         self.assertFalse(self.env["ir.ui.menu"].search([("name", "in", ["ISO 14001", "ISO 45001", "AS9100", "AS9120", "IATF 16949"])]))
+
+    def test_standards_menu_is_visible_to_qms_personas_and_admin(self):
+        menu_id = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards").id
+        for user in (self.admin, self.manager):
+            self.assertIn(menu_id, self.env["ir.ui.menu"].with_user(user).load_menus(False))
+        viewer = self.env["res.users"].create(
+            {
+                "name": "ISO 9001 Test Viewer",
+                "login": "iso9001.test.viewer",
+                "email": "iso9001.test.viewer@example.invalid",
+                "group_ids": [(6, 0, [self.env.ref("base.group_user").id, self.env.ref("pm_qms_core.group_qms_viewer").id])],
+            }
+        )
+        self.assertIn(menu_id, self.env["ir.ui.menu"].with_user(viewer).load_menus(False))
