@@ -212,7 +212,8 @@ bootstrap_customer() {
   local slug="$1"; shift; local company_name="" company_code="" user_login="" user_name="" password_file="" email=""
   while [[ $# -gt 0 ]]; do case "$1" in --company-name) company_name="${2:-}"; shift 2;; --company-code) company_code="${2:-}"; shift 2;; --user-login) user_login="${2:-}"; shift 2;; --user-name) user_name="${2:-}"; shift 2;; --user-email) email="${2:-}"; shift 2;; --user-password-file) password_file="${2:-}"; shift 2;; *) die "unknown bootstrap-customer option: $1";; esac; done
   [[ -n "$company_name" && -n "$company_code" && -n "$user_login" && -n "$user_name" ]] || die "company and first user fields are required"
-  local root; root="$(require_instance "$slug")"; load_instance "$root"; [[ -f "$root/license/active.pmql" ]] || die "import a signed license before customer bootstrap"
+  local root; root="$(require_instance "$slug")"; load_instance "$root"
+  docker run --rm --user 100:101 -v "$root/license:/license:ro" alpine:3.20 test -f /license/active.pmql || die "import a signed license before customer bootstrap"
   if [[ -z "$password_file" ]]; then password_file="$root/secrets/quality_manager_password"; [[ -f "$password_file" ]] || random_secret > "$password_file"; chmod 600 "$password_file"; fi
   [[ -f "$password_file" ]] || die "quality manager password file not found"
   local mount="/var/lib/pmqms-bootstrap"; mkdir -p "$root/activation"
