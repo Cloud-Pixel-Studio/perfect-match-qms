@@ -1,0 +1,21 @@
+# Canonical standalone Perfect Match QMS customer module set.
+# Keep this list ordered by dependency and consume it from customer tooling.
+pm_qms_core
+pm_qms_documents
+pm_qms_evidence
+pm_qms_risk
+pm_qms_ncr
+pm_qms_capa
+pm_qms_audit
+pm_qms_kpi
+pm_qms_management_review
+pm_qms_implementation
+pm_qms_pack_quality
+pm_qms_migration
+pm_qms_people
+pm_qms_calibration
+pm_qms_license
+pm_qms_app
+pm_qms_customer_quality
+pm_qms_action_center
+pm_qms_cost_quality

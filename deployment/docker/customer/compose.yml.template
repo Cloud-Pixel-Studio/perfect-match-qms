@@ -1,0 +1,61 @@
+name: pmqms-customer-__INSTANCE_SLUG__
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/odoo_pg_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - pmqms___INSTANCE_SLUG___postgres:/var/lib/postgresql/data/pgdata
+    secrets:
+      - odoo_pg_password
+    networks:
+      - pmqms___INSTANCE_SLUG___network
+
+  odoo:
+    image: odoo:19.0
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:__HTTP_PORT__:8069"
+    environment:
+      HOST: postgres
+      PORT: "5432"
+      USER: odoo
+      PASSWORD_FILE: /run/secrets/odoo_pg_password
+      PMQMS_ENVIRONMENT_ID_FILE: /etc/odoo/environment_id
+    command: ["odoo", "--log-level=info"]
+    volumes:
+      - __INSTANCE_ROOT__/runtime/addons:/mnt/extra-addons:ro
+      - __INSTANCE_ROOT__/config:/etc/odoo:ro
+      - pmqms___INSTANCE_SLUG___odoo_data:/var/lib/odoo
+    secrets:
+      - odoo_pg_password
+    networks:
+      - pmqms___INSTANCE_SLUG___network
+
+secrets:
+  odoo_pg_password:
+    file: __INSTANCE_ROOT__/secrets/postgres_password
+
+volumes:
+  pmqms___INSTANCE_SLUG___postgres:
+    name: pmqms___INSTANCE_SLUG___postgres
+  pmqms___INSTANCE_SLUG___odoo_data:
+    name: pmqms___INSTANCE_SLUG___odoo_data
+
+networks:
+  pmqms___INSTANCE_SLUG___network:
+    name: pmqms___INSTANCE_SLUG___network
+    driver: bridge

@@ -66,6 +66,11 @@
 - [Commercial Licensing Architecture](LICENSING_ARCHITECTURE.md)
 - [License Issuance Runbook](LICENSE_ISSUANCE_RUNBOOK.md)
 - [Commercial Entitlements](COMMERCIAL_ENTITLEMENTS.md)
+- [Customer Deployment Architecture](CUSTOMER_DEPLOYMENT_ARCHITECTURE.md)
+- [Customer Deployment Runbook](CUSTOMER_DEPLOYMENT_RUNBOOK.md)
+- [Customer Backup and Restore Runbook](CUSTOMER_BACKUP_RESTORE_RUNBOOK.md)
+- [Customer Upgrade Runbook](CUSTOMER_UPGRADE_RUNBOOK.md)
+- [Customer Handoff Checklist](CUSTOMER_HANDOFF_CHECKLIST.md)
 - [ADR-059: Signed Offline Commercial Licensing](DECISIONS/ADR-059-signed-offline-commercial-licensing.md)
 
 The Oliva pilot runbook, implementation guide, onboarding checklist, and

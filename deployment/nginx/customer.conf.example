@@ -1,0 +1,22 @@
+# Operator-managed example. DNS and certificate issuance remain external prerequisites.
+# Replace the placeholders per customer; never hard-code Demo domains in customer tooling.
+server {
+    listen 80;
+    server_name customer.example.invalid;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name customer.example.invalid;
+    ssl_certificate /etc/letsencrypt/live/customer.example.invalid/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/customer.example.invalid/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:__CUSTOMER_HTTP_PORT__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
