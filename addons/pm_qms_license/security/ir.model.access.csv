@@ -1,6 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_pm_qms_license_user,pm.qms.license user,model_pm_qms_license,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_license_quality_manager,pm.qms.license quality manager,model_pm_qms_license,pm_qms_core.group_qms_quality_manager,1,0,0,0
 access_pm_qms_license_admin,pm.qms.license admin,model_pm_qms_license,pm_qms_license.group_pm_qms_license_admin,1,1,1,1
-access_pm_qms_activation_request_user,pm.qms.activation.request user,model_pm_qms_activation_request,pm_qms_core.group_pm_qms_user,1,0,0,0
 access_pm_qms_activation_request_admin,pm.qms.activation.request admin,model_pm_qms_activation_request,pm_qms_license.group_pm_qms_license_admin,1,1,1,1
 access_pm_qms_license_import_admin,pm.qms.license.import.wizard admin,model_pm_qms_license_import_wizard,pm_qms_license.group_pm_qms_license_admin,1,1,1,1

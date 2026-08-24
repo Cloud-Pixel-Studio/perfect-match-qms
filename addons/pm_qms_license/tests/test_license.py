@@ -190,3 +190,13 @@ class TestPmQmsCommercialLicensing(TransactionCase):
             with self.assertRaises(UserError):
                 self.env["pm.qms.license"].import_document(broken, expected_environment_id=self.environment_id)
         self.assertEqual(self.env["pm.qms.license"].current(), current)
+
+    def test_license_surface_is_reserved_for_quality_manager_and_admin(self):
+        quality_manager = self.env.ref("pm_qms_core.group_qms_quality_manager")
+        viewer = self.env.ref("pm_qms_core.group_qms_viewer")
+        license_menu = self.env.ref("pm_qms_license.menu_pm_qms_license")
+        license_action = self.env.ref("pm_qms_license.action_pm_qms_license")
+        self.assertIn(quality_manager, license_menu.group_ids)
+        self.assertNotIn(viewer, license_menu.group_ids)
+        self.assertIn(quality_manager, license_action.group_ids)
+        self.assertNotIn(viewer, license_action.group_ids)

@@ -169,6 +169,8 @@ class TestPmQmsAppShell(TransactionCase):
         technical_group = self.env.ref("base.group_system")
         for xmlid in (
             "base.menu_management",
+            "base.menu_apps",
+            "base.menu_module_tree",
             "base.menu_tests",
             "project.menu_main_pm",
             "mail.menu_root_discuss",
@@ -177,6 +179,8 @@ class TestPmQmsAppShell(TransactionCase):
             self.assertEqual(menu.group_ids, technical_group, xmlid)
             visible_menus = self.env["ir.ui.menu"].with_user(self.manager).load_menus(False)
             self.assertNotIn(menu.id, visible_menus, xmlid)
+        apps_action = self.env.ref("base.open_module_tree")
+        self.assertEqual(apps_action.group_ids, technical_group)
 
     def test_optional_platform_roots_are_restricted_when_installed(self):
         menu = self.env.ref("project_todo.menu_todo_todos", raise_if_not_found=False)
