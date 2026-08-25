@@ -162,14 +162,6 @@
         <field name="parent_id" ref="menu_pm_qms_assurance"/>
         <field name="sequence">30</field>
     </record>
-    <record id="pm_qms_customer_quality.menu_pm_qms_customer_quality" model="ir.ui.menu">
-        <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
-        <field name="sequence">20</field>
-    </record>
-    <record id="pm_qms_customer_quality.menu_pm_qms_supplier_quality" model="ir.ui.menu">
-        <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
-        <field name="sequence">30</field>
-    </record>
     <record id="pm_qms_calibration.menu_pm_qms_calibration" model="ir.ui.menu">
         <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
         <field name="sequence">40</field>

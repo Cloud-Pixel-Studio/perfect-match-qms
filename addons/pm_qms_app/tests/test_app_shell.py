@@ -171,7 +171,9 @@ class TestPmQmsAppShell(TransactionCase):
 
         quality_operations = self.env.ref("pm_qms_app.menu_pm_qms_quality_operations")
         self.assertEqual(self.env.ref("pm_qms_risk.menu_pm_qms_risk_improvement").parent_id, quality_operations)
-        self.assertEqual(self.env.ref("pm_qms_customer_quality.menu_pm_qms_customer_quality").parent_id, quality_operations)
+        customer_quality = self.env.ref("pm_qms_customer_quality.menu_pm_qms_customer_quality", raise_if_not_found=False)
+        if customer_quality:
+            self.assertEqual(customer_quality.parent_id, quality_operations)
         self.assertEqual(self.env.ref("pm_qms_calibration.menu_pm_qms_calibration").parent_id, quality_operations)
 
         assurance = self.env.ref("pm_qms_app.menu_pm_qms_assurance")
