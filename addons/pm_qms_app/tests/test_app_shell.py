@@ -148,6 +148,26 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertFalse(self.env["ir.module.module"].search([("name", "=", "pm_qms_core")], limit=1).application)
         self.assertTrue(self.env["ir.module.module"].search([("name", "=", "pm_qms_app")], limit=1).application)
 
+    def test_customer_navigation_uses_perfect_match_base_tokens(self):
+        addon_root = Path(__file__).parents[1]
+        source = (addon_root / "static/src/scss/brand.scss").read_text(
+            encoding="utf-8"
+        )
+        manifest = (addon_root / "__manifest__.py").read_text(encoding="utf-8")
+
+        self.assertIn('"pm_qms_app/static/src/scss/brand.scss"', manifest)
+        self.assertIn(
+            "--pmqms-navigation-entry: var(--pmqms-navigation-background);",
+            source,
+        )
+        self.assertIn(
+            "background-color: var(--pmqms-navigation-entry);",
+            source,
+        )
+        self.assertNotIn("#71639e", source)
+        self.assertIn("var(--pmqms-navigation-active)", source)
+        self.assertIn("var(--pmqms-focus)", source)
+
     def test_expected_navigation_hierarchy_is_installed(self):
         root = self.env.ref("pm_qms_core.menu_pm_qms_root")
         child_names = set(root.child_id.filtered("active").mapped("name"))
