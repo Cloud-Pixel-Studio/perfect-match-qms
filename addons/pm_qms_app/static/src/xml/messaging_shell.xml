@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="mail.MessagingMenu.content" t-inherit-mode="extension">
+        <xpath expr="//button[contains(@class, 'o-mail-MessagingMenu-headerFilter') and normalize-space(.)='Chats']" position="attributes">
+            <attribute name="t-if">!isQmsCustomerShell</attribute>
+        </xpath>
+        <xpath expr="//button[contains(@class, 'o-mail-MessagingMenu-headerFilter') and normalize-space(.)='Channels']" position="attributes">
+            <attribute name="t-if">!isQmsCustomerShell</attribute>
+        </xpath>
+        <xpath expr="//button[@t-on-click='onClickNewMessage']" position="attributes">
+            <attribute name="t-if">!isQmsCustomerShell</attribute>
+        </xpath>
+    </t>
+</templates>
