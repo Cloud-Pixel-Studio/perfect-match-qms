@@ -14,10 +14,6 @@
     <template id="pm_qms_login_branding" inherit_id="web.login_layout">
         <xpath expr="//t[@t-out='0']" position="before">
             <div class="pm_qms_login_identity" aria-label="Perfect Match QMS">
-                <img
-                    class="pm_qms_login_logo"
-                    src="/pm_qms_app/static/description/perfect_match_logo_master.png"
-                    alt="Perfect Match Investments LLC"/>
                 <strong>Perfect Match QMS</strong>
                 <span>Quality management, clearly controlled.</span>
             </div>

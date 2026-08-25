@@ -269,7 +269,8 @@ class TestPmQmsAppShell(TransactionCase):
         login = self.env.ref("pm_qms_app.pm_qms_login_branding")
         self.assertIn("Perfect Match QMS", layout.arch)
         self.assertIn("Perfect Match QMS", login.arch)
-        self.assertIn("perfect_match_logo_master.png", login.arch)
+        self.assertNotIn("pm_qms_login_logo", login.arch)
+        self.assertNotIn("Your logo", login.arch)
 
     def test_product_shell_asset_bundles_compile_without_css_fallback(self):
         for bundle_name in ("web.assets_frontend", "web.assets_backend"):
