@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from odoo import Command, fields
 from odoo.exceptions import AccessError
 from odoo.tests import tagged
@@ -263,6 +265,56 @@ class TestPmQmsAppShell(TransactionCase):
     def test_quality_manager_role_is_not_system_administrator(self):
         self.assertTrue(self.quality_manager.has_group("pm_qms_core.group_qms_quality_manager"))
         self.assertFalse(self.quality_manager.has_group("base.group_system"))
+
+    def test_customer_messaging_shell_contract_preserves_qms_mail(self):
+        static_root = Path(__file__).parents[1] / "static" / "src"
+        helper = (static_root / "js" / "customer_shell.js").read_text(encoding="utf-8")
+        messaging = (static_root / "js" / "messaging_shell.js").read_text(encoding="utf-8")
+        template = (static_root / "xml" / "messaging_shell.xml").read_text(encoding="utf-8")
+
+        for group in (
+            "pm_qms_core.group_pm_qms_user",
+            "pm_qms_core.group_qms_viewer",
+            "base.group_system",
+        ):
+            self.assertIn(group, helper)
+        self.assertIn('new Set(["chat", "channel"])', messaging)
+        self.assertIn('"notification"', messaging)
+        self.assertIn("onWillStart", messaging)
+        self.assertIn("await resolveQmsCustomerShell()", messaging)
+        self.assertIn("mail.MessagingMenu.content", template)
+        self.assertIn("!isQmsCustomerShell", template)
+        self.assertIn("mail.DiscussSearch", template)
+        self.assertIn("mail.DiscussSearch.newMeeting", template)
+        self.assertIn("following-sibling::button[1]", template)
+        self.assertIn('!["chat", "channel"].includes(thread.channel_type)', messaging)
+        self.assertIn("Promise.all", helper)
+        self.assertIn("async function isQmsCustomerShell", helper)
+
+        user_menu = (static_root / "js" / "user_menu.js").read_text(encoding="utf-8")
+        self.assertIn("@web/webclient/user_menu/user_menu", user_menu)
+        self.assertIn("ImStatusDropdown", user_menu)
+        self.assertIn("onWillStart", user_menu)
+        self.assertIn("element.id !== \"account\"", user_menu)
+
+        self.assertTrue(self.quality_manager.has_group("pm_qms_core.group_pm_qms_user"))
+        self.assertTrue(self.viewer.has_group("pm_qms_core.group_qms_viewer"))
+        for customer in (self.quality_manager, self.manager, self.viewer):
+            self.assertFalse(customer.has_group("base.group_system"))
+            self.assertTrue(customer.with_user(customer).has_group("base.group_user"))
+        self.assertTrue(self.env.user.has_group("base.group_system"))
+
+        activity = self.control.activity_schedule(
+            "mail.mail_activity_data_todo",
+            summary="Customer shell mail activity regression",
+        )
+        self.assertTrue(activity)
+        self.assertEqual(activity.res_model, self.control._name)
+        self.control.message_subscribe(partner_ids=[self.manager.partner_id.id])
+        self.assertTrue(self.control.with_user(self.manager).message_follower_ids)
+        activity.action_done()
+        self.assertFalse(activity.active)
+        self.assertTrue(activity.date_done)
 
     def test_product_identity_templates_are_loaded(self):
         layout = self.env.ref("pm_qms_app.pm_qms_web_layout_branding")
