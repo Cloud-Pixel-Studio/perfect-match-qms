@@ -134,7 +134,7 @@ class TestPmQmsActionCenter(TransactionCase):
         )
 
         convert_file(
-            self.env.cr,
+            self.env,
             "pm_qms_action_center",
             "views/menu_views.xml",
             {},
