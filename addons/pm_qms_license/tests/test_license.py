@@ -215,6 +215,13 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertNotIn(viewer, license_action.group_ids)
 
     def test_license_form_respects_activation_request_authority(self):
+        """Exercise the compiled view metadata and web_read path used by the web client.
+
+        PR #41 checked the postprocessed XML arch, which hid the restricted page,
+        but did not check the model field metadata returned by get_views or the
+        nested relation read used to render a form. This regression covers both
+        layers so a restricted relation cannot leak back into the customer form.
+        """
         quality_manager = self.env.ref("pm_qms_core.group_qms_quality_manager")
         licensing_admin = self.env.ref("pm_qms_license.group_pm_qms_license_admin")
         technical_admin = self.env.ref("base.group_system")
@@ -226,25 +233,58 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         license_record = self._import()
         license_view = self.env.ref("pm_qms_license.view_pm_qms_license_form")
 
-        quality_manager_arch = self.env["pm.qms.license"].with_user(quality_manager_user).get_view(
+        quality_manager_views = self.env["pm.qms.license"].with_user(quality_manager_user).get_views(
+            [(license_view.id, "form")]
+        )
+        quality_manager_view = self.env["pm.qms.license"].with_user(quality_manager_user).get_view(
             view_id=license_view.id, view_type="form"
-        )["arch"]
-        licensing_admin_arch = self.env["pm.qms.license"].with_user(licensing_admin_user).get_view(
+        )
+        licensing_admin_views = self.env["pm.qms.license"].with_user(licensing_admin_user).get_views(
+            [(license_view.id, "form")]
+        )
+        licensing_admin_view = self.env["pm.qms.license"].with_user(licensing_admin_user).get_view(
             view_id=license_view.id, view_type="form"
-        )["arch"]
+        )
+        quality_manager_arch = quality_manager_views["views"]["form"]["arch"]
+        licensing_admin_arch = licensing_admin_views["views"]["form"]["arch"]
+        quality_manager_fields = quality_manager_views["models"]["pm.qms.license"]["fields"]
+        licensing_admin_fields = licensing_admin_views["models"]["pm.qms.license"]["fields"]
+        quality_manager_view_fields = quality_manager_view["models"]["pm.qms.license"]
+        licensing_admin_view_fields = licensing_admin_view["models"]["pm.qms.license"]
 
         self.assertNotIn("activation_request_ids", quality_manager_arch)
         self.assertNotIn("Activation Requests", quality_manager_arch)
+        self.assertNotIn("activation_request_ids", quality_manager_fields)
+        self.assertNotIn("activation_request_ids", quality_manager_view_fields)
         self.assertIn("activation_request_ids", licensing_admin_arch)
         self.assertIn("Activation Requests", licensing_admin_arch)
-        self.assertTrue(
-            license_record.with_user(quality_manager_user).read(
-                ["license_id", "state", "company_limit", "site_limit", "named_user_limit"]
-            )
+        self.assertIn("activation_request_ids", licensing_admin_fields)
+        self.assertIn("activation_request_ids", licensing_admin_view_fields)
+
+        quality_manager_read = license_record.with_user(quality_manager_user).web_read(
+            {field_name: {} for field_name in quality_manager_fields}
         )
+        self.assertEqual(quality_manager_read[0]["license_id"], license_record.license_id)
+        self.assertEqual(quality_manager_read[0]["state"], license_record.state)
+        self.assertEqual(quality_manager_read[0]["site_limit"], license_record.site_limit)
+        self.assertEqual(quality_manager_read[0]["named_user_limit"], license_record.named_user_limit)
+
         with self.assertRaises(AccessError):
             license_record.with_user(quality_manager_user).read(["activation_request_ids"])
-        self.assertTrue(license_record.with_user(licensing_admin_user).read(["activation_request_ids"]))
+
+        activation_request = self.env["pm.qms.activation.request"].with_user(licensing_admin_user).create(
+            {"license_id": license_record.id}
+        )
+        licensing_admin_read = license_record.with_user(licensing_admin_user).web_read(
+            {
+                "license_id": {},
+                "state": {},
+                "activation_request_ids": {
+                    "fields": {"id": {}, "name": {}, "requested_at": {}, "state": {}},
+                },
+            }
+        )
+        self.assertEqual(licensing_admin_read[0]["activation_request_ids"][0]["id"], activation_request.id)
         with self.assertRaises(AccessError):
             license_record.with_user(technical_admin_user).read(["license_id"])
         with self.assertRaises(AccessError):
