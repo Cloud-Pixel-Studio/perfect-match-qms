@@ -28,6 +28,7 @@ Technical addons remain modular underneath this product entry point.
         "pm_qms_license",
     ],
     "data": [
+        "data/assets.xml",
         "security/mission19_security.xml",
         "security/platform_security.xml",
         "security/ir.model.access.csv",
@@ -45,11 +46,6 @@ Technical addons remain modular underneath this product entry point.
             "pm_qms_app/static/src/js/customer_shell.js",
             "pm_qms_app/static/src/js/messaging_shell.js",
             "pm_qms_app/static/src/js/user_menu.js",
-            (
-                "after",
-                "mail/static/src/discuss/core/web/messaging_menu_patch.xml",
-                "pm_qms_app/static/src/xml/messaging_shell.xml",
-            ),
         ],
         "web.assets_frontend": [
             "pm_qms_app/static/src/scss/brand.scss",
