@@ -27,7 +27,8 @@
 
     .pm_qms_login_logo {
         display: block;
-        width: min(18rem, 72vw);
+        width: 18rem;
+        max-width: 72vw;
         height: auto;
         margin: 0 auto 0.8rem;
     }
