@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_pm_qms_action_center" name="Action Center" parent="pm_qms_core.menu_pm_qms_root" action="action_pm_qms_action_center_server" sequence="2" groups="pm_qms_core.group_pm_qms_user"/>
+    <record id="menu_pm_qms_action_center" model="ir.ui.menu">
+        <field name="name">Action Center</field>
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_root"/>
+        <field name="action" eval="'ir.actions.server,%d' % ref('action_pm_qms_action_center_server')"/>
+        <field name="sequence">2</field>
+        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_pm_qms_user')])]"/>
+    </record>
 </odoo>

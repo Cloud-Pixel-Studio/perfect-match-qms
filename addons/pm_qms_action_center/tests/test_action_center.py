@@ -1,5 +1,6 @@
 from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError
+from odoo.tools.convert import convert_file
 from odoo.tests import TransactionCase, tagged
 
 
@@ -10,6 +11,7 @@ class TestPmQmsActionCenter(TransactionCase):
         super().setUpClass()
         cls.company = cls.env.company
         cls.base_user_group = cls.env.ref("base.group_user")
+        cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
         cls.viewer_group = cls.env.ref("pm_qms_core.group_qms_viewer")
         cls.quality_manager = cls.env["res.users"].with_context(no_reset_password=True).create(
@@ -124,3 +126,31 @@ class TestPmQmsActionCenter(TransactionCase):
                     "title": "Viewer must not create action lines",
                 }
             )
+
+    def test_menu_upgrade_replaces_residual_viewer_group(self):
+        action_center = self.env.ref("pm_qms_action_center.menu_pm_qms_action_center")
+        action_center.write(
+            {"group_ids": [Command.set([self.qms_user_group.id, self.viewer_group.id])]}
+        )
+
+        convert_file(
+            self.env,
+            "pm_qms_action_center",
+            "views/menu_views.xml",
+            {},
+            mode="update",
+            kind="data",
+        )
+        action_center.invalidate_recordset(["group_ids"])
+
+        self.assertEqual(action_center.group_ids, self.env.ref("pm_qms_core.group_pm_qms_user"))
+        self.assertNotIn(self.viewer_group, action_center.group_ids)
+
+    def test_effective_menu_visibility_matches_customer_roles(self):
+        action_center = self.env.ref("pm_qms_action_center.menu_pm_qms_action_center")
+        manager_menus = self.env["ir.ui.menu"].with_user(self.quality_manager).load_menus(False)
+        viewer_menus = self.env["ir.ui.menu"].with_user(self.viewer).load_menus(False)
+
+        self.assertIn(action_center.id, manager_menus)
+        self.assertNotIn(action_center.id, viewer_menus)
+        self.assertFalse(self.env["pm.qms.action.center.line"].with_user(self.viewer).check_access_rights("create", raise_exception=False))
