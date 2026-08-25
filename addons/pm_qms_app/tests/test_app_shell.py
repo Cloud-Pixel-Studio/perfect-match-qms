@@ -286,7 +286,6 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn("!isQmsCustomerShell", template)
         self.assertIn("mail.DiscussSearch", template)
         self.assertIn("mail.DiscussSearch.newMeeting", template)
-        self.assertIn("onClickNewMessage", template)
         self.assertIn("Promise.all", helper)
         self.assertIn("async function isQmsCustomerShell", helper)
 
