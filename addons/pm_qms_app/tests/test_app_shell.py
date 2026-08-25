@@ -155,10 +155,16 @@ class TestPmQmsAppShell(TransactionCase):
             "Quality Operations",
             "Assurance",
             "Performance",
-            "Action Center",
             "Configuration",
         }
         self.assertTrue(expected.issubset(child_names))
+        for xmlid, name in (
+            ("pm_qms_action_center.menu_pm_qms_action_center", "Action Center"),
+            ("pm_qms_iso9001.menu_pm_qms_standards", "Standards"),
+        ):
+            menu = self.env.ref(xmlid, raise_if_not_found=False)
+            if menu and menu.active:
+                self.assertIn(name, child_names)
         self.assertNotIn("Implementations", child_names)
         self.assertNotIn("Risk & Improvement", child_names)
         self.assertNotIn("People & Competency", child_names)
