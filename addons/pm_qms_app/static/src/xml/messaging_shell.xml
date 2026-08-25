@@ -7,6 +7,9 @@
         <xpath expr="//button[contains(@class, 'o-mail-MessagingMenu-headerFilter') and normalize-space(.)='Channels']" position="attributes">
             <attribute name="t-if">!isQmsCustomerShell</attribute>
         </xpath>
+        <xpath expr="//button[contains(@t-on-click, 'onClickNewMessage')]" position="attributes">
+            <attribute name="t-if">!isQmsCustomerShell</attribute>
+        </xpath>
     </t>
 
     <t t-inherit="mail.DiscussSearch" t-inherit-mode="extension">

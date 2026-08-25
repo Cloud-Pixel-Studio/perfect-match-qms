@@ -10,6 +10,7 @@ Technical addons remain modular underneath this product entry point.
     "category": "Operations/Quality",
     "author": "Perfect Match",
     "depends": [
+        "mail",
         "pm_qms_core",
         "pm_qms_documents",
         "pm_qms_people",
