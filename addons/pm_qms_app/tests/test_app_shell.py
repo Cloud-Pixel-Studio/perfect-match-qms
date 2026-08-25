@@ -269,7 +269,27 @@ class TestPmQmsAppShell(TransactionCase):
         login = self.env.ref("pm_qms_app.pm_qms_login_branding")
         self.assertIn("Perfect Match QMS", layout.arch)
         self.assertIn("Perfect Match QMS", login.arch)
-        self.assertIn("perfect_match_logo_master.png", login.arch)
+        self.assertNotIn("pm_qms_login_logo", login.arch)
+        self.assertNotIn("Your logo", login.arch)
+
+    def test_product_shell_asset_bundles_compile_without_css_fallback(self):
+        for bundle_name in ("web.assets_frontend", "web.assets_backend"):
+            with self.subTest(bundle=bundle_name):
+                bundle = self.env["ir.qweb"]._get_asset_bundle(
+                    bundle_name,
+                    css=True,
+                    js=False,
+                )
+                attachment = bundle.css()
+                self.assertFalse(
+                    bundle.css_errors,
+                    f"{bundle_name} reported CSS errors: {bundle.css_errors}",
+                )
+                self.assertTrue(attachment.raw)
+                self.assertNotIn(
+                    b"A css error occured, using an old style to render this page",
+                    attachment.raw,
+                )
 
     def test_customer_shell_groups_are_visible_without_changing_authority(self):
         manager_menus = self.env["ir.ui.menu"].with_user(self.manager).load_menus(False)
