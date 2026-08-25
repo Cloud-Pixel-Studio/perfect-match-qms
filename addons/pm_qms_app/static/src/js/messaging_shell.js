@@ -1,25 +1,24 @@
 /** @odoo-module **/
 
 import { MessagingMenu } from "@mail/core/public_web/messaging_menu";
-import { useEffect } from "@odoo/owl";
-import { user } from "@web/core/user";
+import { DiscussSearch } from "@mail/core/public_web/discuss_search";
+import { onWillStart, useEffect, useState } from "@odoo/owl";
 import { patch } from "@web/core/utils/patch";
 
-import { isQmsCustomerShell } from "./customer_shell";
+import { resolveQmsCustomerShell } from "./customer_shell";
 
 const CUSTOMER_HIDDEN_TABS = new Set(["chat", "channel"]);
-
-function isCustomerShellUser() {
-    return isQmsCustomerShell((group) => user.hasGroup(group));
-}
 
 patch(MessagingMenu.prototype, {
     setup() {
         super.setup();
-        this.isQmsCustomerShell = isCustomerShellUser();
-        if (this.isQmsCustomerShell && CUSTOMER_HIDDEN_TABS.has(this.store.discuss.activeTab)) {
-            this.store.discuss.activeTab = "notification";
-        }
+        this.qmsCustomerShell = useState({ value: false });
+        onWillStart(async () => {
+            this.qmsCustomerShell.value = await resolveQmsCustomerShell();
+            if (this.isQmsCustomerShell && CUSTOMER_HIDDEN_TABS.has(this.store.discuss.activeTab)) {
+                this.store.discuss.activeTab = "notification";
+            }
+        });
         useEffect(
             () => {
                 if (
@@ -31,6 +30,10 @@ patch(MessagingMenu.prototype, {
             },
             () => [this.store.discuss.activeTab, this.isQmsCustomerShell]
         );
+    },
+
+    get isQmsCustomerShell() {
+        return this.qmsCustomerShell?.value || false;
     },
 
     get _tabs() {
@@ -49,10 +52,14 @@ patch(MessagingMenu.prototype, {
         return super.onClickNavTab(safeTabId);
     },
 
-    onClickNewMessage() {
-        if (this.isQmsCustomerShell) {
-            return;
-        }
-        return super.onClickNewMessage(...arguments);
+});
+
+patch(DiscussSearch.prototype, {
+    setup() {
+        super.setup();
+        this.qmsCustomerShell = false;
+        onWillStart(async () => {
+            this.qmsCustomerShell = await resolveQmsCustomerShell();
+        });
     },
 });

@@ -1,41 +1,29 @@
 /** @odoo-module **/
 
-import { browser } from "@web/core/browser/browser";
-import { _t } from "@web/core/l10n/translation";
-import { rpc } from "@web/core/network/rpc";
-import { registry } from "@web/core/registry";
-import { user } from "@web/core/user";
+import { onWillStart, useState } from "@odoo/owl";
 
 import { ImStatusDropdown } from "@mail/core/common/im_status_dropdown";
-import { isQmsCustomerShell } from "./customer_shell";
+import { UserMenu } from "@web/webclient/user_menu/user_menu";
+import { patch } from "@web/core/utils/patch";
 
-// Keep the technical Odoo account entry for system administrators only.
-function odooAccountItem() {
-    return {
-        type: "item",
-        id: "account",
-        description: _t("My Odoo.com Account"),
-        show: () => user.hasGroup("base.group_system"),
-        callback: () => {
-            rpc("/web/session/account")
-                .then((url) => browser.open(url, "_blank"))
-                .catch(() => browser.open("https://accounts.odoo.com/account", "_blank"));
-        },
-        sequence: 60,
-    };
-}
+import { resolveQmsCustomerShell } from "./customer_shell";
 
-registry.category("user_menuitems").add("odoo_account", odooAccountItem, { force: true });
+patch(UserMenu.prototype, {
+    setup() {
+        super.setup();
+        this.qmsCustomerShell = useState({ value: false });
+        onWillStart(async () => {
+            this.qmsCustomerShell.value = await resolveQmsCustomerShell();
+        });
+    },
 
-// Keep presence infrastructure active, but remove its generic status selector
-// from the customer-facing QMS shell.
-function imStatusItem() {
-    return {
-        type: "component",
-        contentComponent: ImStatusDropdown,
-        show: () => !isQmsCustomerShell((group) => user.hasGroup(group)),
-        sequence: 45,
-    };
-}
-
-registry.category("user_menuitems").add("im_status", imStatusItem, { force: true });
+    getElements() {
+        const elements = super.getElements();
+        if (!this.qmsCustomerShell?.value) {
+            return elements;
+        }
+        return elements.filter(
+            (element) => element.id !== "account" && element.contentComponent !== ImStatusDropdown
+        );
+    },
+});
