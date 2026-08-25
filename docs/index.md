@@ -4,6 +4,8 @@
 - [Application Shell](APPLICATION_SHELL.md)
 - [Product Shell Discovery](PRODUCT_SHELL_DISCOVERY.md)
 - [Product Shell Architecture](PRODUCT_SHELL_ARCHITECTURE.md)
+- [Navigation Architecture](NAVIGATION_ARCHITECTURE.md)
+- [Branding Architecture](BRANDING_ARCHITECTURE.md)
 - [Standard Add-on Architecture](STANDARD_ADDON_ARCHITECTURE.md)
 - [ISO 9001 Add-on](ISO9001_ADDON.md)
 - [Framework Architecture](FRAMEWORK_ARCHITECTURE.md)
@@ -82,6 +84,7 @@
 - [ADR-060: Isolated Customer Deployment Foundation](DECISIONS/ADR-060-customer-deployment-foundation.md)
 - [ADR-061: Product Shell and Customer Experience Boundary](DECISIONS/ADR-061-product-shell-customer-experience.md)
 - [ADR-062: Standard Add-on Architecture and ISO 9001 Separation](DECISIONS/ADR-062-mission23-standard-addon-architecture.md)
+- [ADR-063: Mission 24 Product Shell Navigation and Branding](DECISIONS/ADR-063-mission24-product-shell-navigation-branding.md)
 
 The Oliva pilot runbook, implementation guide, onboarding checklist, and
 migration template are historical records only. They do not describe an active

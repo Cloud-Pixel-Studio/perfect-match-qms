@@ -40,9 +40,23 @@
         sequence="1"
         groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
 
+    <menuitem
+        id="menu_pm_qms_quality_operations"
+        name="Quality Operations"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="20"
+        groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+
+    <menuitem
+        id="menu_pm_qms_assurance"
+        name="Assurance"
+        parent="pm_qms_core.menu_pm_qms_root"
+        sequence="30"
+        groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+
     <record id="pm_qms_core.menu_pm_qms_implementation" model="ir.ui.menu">
-        <field name="name">Implementations</field>
-        <field name="sequence">5</field>
+        <field name="name">Implementation</field>
+        <field name="sequence">10</field>
     </record>
     <record id="pm_qms_implementation.menu_pm_qms_project_generator" model="ir.ui.menu">
         <field name="name">New Implementation</field>
@@ -61,6 +75,7 @@
         <field name="sequence">30</field>
     </record>
     <record id="pm_qms_implementation.menu_pm_qms_readiness_assessments" model="ir.ui.menu">
+        <field name="name">Readiness</field>
         <field name="sequence">40</field>
     </record>
     <record id="pm_qms_core.menu_pm_qms_control_instances" model="ir.ui.menu">
@@ -114,27 +129,58 @@
         groups="pm_qms_core.group_pm_qms_manager"/>
     <record id="pm_qms_migration.menu_pm_qms_migration" model="ir.ui.menu">
         <field name="name">Administration / Migration</field>
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
         <field name="sequence">80</field>
         <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_pm_qms_administrator')])]"/>
     </record>
 
     <record id="pm_qms_documents.menu_pm_qms_documents" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_pm_qms_assurance"/>
         <field name="sequence">10</field>
     </record>
     <record id="pm_qms_evidence.menu_pm_qms_evidence" model="ir.ui.menu">
-        <field name="sequence">15</field>
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_implementation"/>
+        <field name="sequence">30</field>
     </record>
     <record id="pm_qms_risk.menu_pm_qms_risk_improvement" model="ir.ui.menu">
-        <field name="sequence">20</field>
+        <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
+        <field name="sequence">10</field>
     </record>
     <record id="pm_qms_audit.menu_pm_qms_audit" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_pm_qms_assurance"/>
         <field name="sequence">30</field>
     </record>
     <record id="pm_qms_kpi.menu_pm_qms_performance" model="ir.ui.menu">
         <field name="sequence">40</field>
     </record>
     <record id="pm_qms_management_review.menu_pm_qms_management_review" model="ir.ui.menu">
+        <field name="parent_id" ref="pm_qms_kpi.menu_pm_qms_performance"/>
         <field name="sequence">50</field>
+    </record>
+
+    <record id="pm_qms_people.menu_pm_qms_people" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_pm_qms_assurance"/>
+        <field name="sequence">30</field>
+    </record>
+    <record id="pm_qms_customer_quality.menu_pm_qms_customer_quality" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
+        <field name="sequence">20</field>
+    </record>
+    <record id="pm_qms_customer_quality.menu_pm_qms_supplier_quality" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
+        <field name="sequence">30</field>
+    </record>
+    <record id="pm_qms_calibration.menu_pm_qms_calibration" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_pm_qms_quality_operations"/>
+        <field name="sequence">40</field>
+    </record>
+    <record id="pm_qms_license.menu_pm_qms_license" model="ir.ui.menu">
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
+        <field name="sequence">50</field>
+    </record>
+    <record id="pm_qms_license.menu_pm_qms_activation_requests" model="ir.ui.menu">
+        <field name="parent_id" ref="pm_qms_license.menu_pm_qms_license"/>
+        <field name="sequence">10</field>
     </record>
 
     <record id="pm_qms_implementation.action_pm_qms_implementation_project" model="ir.actions.act_window">

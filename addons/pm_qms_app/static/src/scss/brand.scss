@@ -1,10 +1,19 @@
 :root {
-    --pmqms-navy: #082078;
+    --pmqms-primary: #082078;
+    --pmqms-primary-hover: #06175a;
+    --pmqms-navigation-background: #10233f;
+    --pmqms-navigation-text: #ffffff;
+    --pmqms-navigation-active: #c01068;
     --pmqms-magenta: #c01068;
     --pmqms-purple: #902898;
     --pmqms-green: #b0c848;
+    --pmqms-yellow: #ffd23f;
     --pmqms-off-white: #f7f8fa;
+    --pmqms-surface: #ffffff;
+    --pmqms-border: #d7dce5;
     --pmqms-charcoal: #252a34;
+    --pmqms-muted: #586274;
+    --pmqms-focus: #ffb000;
 }
 
 .pm_qms_login_identity {
@@ -12,9 +21,16 @@
     flex-direction: column;
     gap: 0.2rem;
     margin: 0 0 1rem;
-    color: var(--pmqms-navy);
+    color: var(--pmqms-primary);
     text-align: center;
     letter-spacing: 0;
+
+    .pm_qms_login_logo {
+        display: block;
+        width: min(18rem, 72vw);
+        height: auto;
+        margin: 0 auto 0.8rem;
+    }
 
     strong {
         font-size: 1.15rem;
@@ -31,7 +47,7 @@
     background: var(--pmqms-off-white);
 
     .oe_login_form {
-        border-top: 4px solid var(--pmqms-navy);
+        border-top: 4px solid var(--pmqms-primary);
         box-shadow: 0 12px 32px rgba(8, 32, 120, 0.12);
         color: var(--pmqms-charcoal);
     }
@@ -48,30 +64,75 @@
     }
 
     .form-control:focus {
-        border-color: var(--pmqms-navy);
+        border-color: var(--pmqms-primary);
         box-shadow: 0 0 0 0.2rem rgba(8, 32, 120, 0.15);
     }
 }
 
 .o_main_navbar {
-    background-color: var(--pmqms-navy);
+    background-color: var(--pmqms-navigation-background);
+    border-bottom: 3px solid var(--pmqms-magenta);
 
     .o_menu_brand,
     .o_nav_entry,
     .o_menu_sections .dropdown-toggle {
-        color: #ffffff;
+        color: var(--pmqms-navigation-text);
+    }
+
+    .o_menu_brand {
+        min-width: 12rem;
+        padding-left: 2.4rem;
+        background-image: url('/pm_qms_app/static/description/icon.svg');
+        background-repeat: no-repeat;
+        background-position: 0.55rem center;
+        background-size: 1.55rem 1.55rem;
+        font-weight: 700;
+        letter-spacing: 0;
     }
 
     .o_menu_brand:hover,
     .o_nav_entry:hover,
-    .o_menu_sections .dropdown-toggle:hover {
-        background-color: var(--pmqms-purple);
+    .o_menu_sections .dropdown-toggle:hover,
+    .o_menu_brand:focus-visible,
+    .o_nav_entry:focus-visible,
+    .o_menu_sections .dropdown-toggle:focus-visible {
+        background-color: var(--pmqms-navigation-active);
+        color: var(--pmqms-navigation-text);
+    }
+
+    .o_menu_sections .dropdown.show > .dropdown-toggle,
+    .o_menu_sections .o_nav_entry.active {
+        background-color: var(--pmqms-navigation-active);
+        color: var(--pmqms-navigation-text);
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+        outline: 3px solid var(--pmqms-focus);
+        outline-offset: -3px;
+    }
+}
+
+.o_main_navbar .dropdown-menu {
+    border: 1px solid var(--pmqms-border);
+    border-top: 3px solid var(--pmqms-magenta);
+    box-shadow: 0 0.5rem 1.5rem rgba(16, 35, 63, 0.18);
+
+    .dropdown-item {
+        color: var(--pmqms-charcoal);
+
+        &:hover,
+        &:focus,
+        &.active {
+            background-color: #fbe8f1;
+            color: var(--pmqms-primary);
+        }
     }
 }
 
 
 main .o_database_list {
-    border-top: 4px solid var(--pmqms-navy);
+    border-top: 4px solid var(--pmqms-primary);
     box-shadow: 0 12px 32px rgba(8, 32, 120, 0.12);
     color: var(--pmqms-charcoal);
 }
@@ -88,6 +149,6 @@ main .o_database_list .btn-primary {
 }
 
 main .o_database_list .form-control:focus {
-    border-color: var(--pmqms-navy);
+    border-color: var(--pmqms-primary);
     box-shadow: 0 0 0 0.2rem rgba(8, 32, 120, 0.15);
 }
