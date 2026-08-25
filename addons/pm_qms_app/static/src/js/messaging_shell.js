@@ -44,6 +44,14 @@ patch(MessagingMenu.prototype, {
         return tabs.filter((tab) => !CUSTOMER_HIDDEN_TABS.has(tab.id));
     },
 
+    get threads() {
+        const threads = super.threads;
+        if (!this.isQmsCustomerShell) {
+            return threads;
+        }
+        return threads.filter((thread) => !["chat", "channel"].includes(thread.channel_type));
+    },
+
     onClickNavTab(tabId) {
         const safeTabId =
             this.isQmsCustomerShell && CUSTOMER_HIDDEN_TABS.has(tabId)
