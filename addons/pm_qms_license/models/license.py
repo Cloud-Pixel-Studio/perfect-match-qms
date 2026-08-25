@@ -50,6 +50,40 @@ class PmQmsLicense(models.Model):
     named_user_usage = fields.Integer(compute="_compute_usage", string="Named Users", readonly=True)
     activation_request_ids = fields.One2many("pm.qms.activation.request", "license_id", readonly=True)
 
+    def _remove_unauthorized_activation_view_metadata(self, view_result):
+        """Keep the web client from requesting the restricted relation metadata."""
+        if self.env.user.has_group("pm_qms_license.group_pm_qms_license_admin"):
+            return view_result
+
+        result = dict(view_result)
+        models = dict(result.get("models", {}))
+        model_metadata = models.get(self._name)
+        if isinstance(model_metadata, dict) and "fields" in model_metadata:
+            model_metadata = dict(model_metadata)
+            model_metadata["fields"] = {
+                name: definition
+                for name, definition in model_metadata["fields"].items()
+                if name != "activation_request_ids"
+            }
+            models[self._name] = model_metadata
+        elif model_metadata is not None:
+            models[self._name] = tuple(
+                name for name in model_metadata if name != "activation_request_ids"
+            )
+        models.pop("pm.qms.activation.request", None)
+        result["models"] = models
+        return result
+
+    @api.model
+    def get_view(self, view_id=None, view_type="form", **options):
+        result = super().get_view(view_id=view_id, view_type=view_type, **options)
+        return self._remove_unauthorized_activation_view_metadata(result)
+
+    @api.model
+    def get_views(self, views, options=None):
+        result = super().get_views(views, options=options)
+        return self._remove_unauthorized_activation_view_metadata(result)
+
     _license_revision_check = models.Constraint(
         "CHECK(license_revision > 0)",
         "License revision must be positive.",

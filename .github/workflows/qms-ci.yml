@@ -51,3 +51,6 @@ jobs:
 
       - name: Run Odoo Mission 16 tests
         run: bash deployment/scripts/odoo-dev.sh test-mission16
+
+      - name: Run Odoo Mission 23 tests
+        run: bash deployment/scripts/odoo-dev.sh test-mission23
