@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_pm_qms_action_center" name="Action Center" parent="pm_qms_core.menu_pm_qms_root" action="action_pm_qms_action_center_server" sequence="2" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer"/>
+    <menuitem id="menu_pm_qms_action_center" name="Action Center" parent="pm_qms_core.menu_pm_qms_root" action="action_pm_qms_action_center_server" sequence="2" groups="pm_qms_core.group_pm_qms_user"/>
 </odoo>
