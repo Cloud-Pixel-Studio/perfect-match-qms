@@ -1,5 +1,5 @@
-from odoo import fields
-from odoo.exceptions import UserError
+from odoo import Command, fields
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -9,6 +9,29 @@ class TestPmQmsActionCenter(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.company = cls.env.company
+        cls.base_user_group = cls.env.ref("base.group_user")
+        cls.quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
+        cls.viewer_group = cls.env.ref("pm_qms_core.group_qms_viewer")
+        cls.quality_manager = cls.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Action Center Quality Manager",
+                "login": "action-center-quality-manager",
+                "email": "action-center-quality-manager@example.invalid",
+                "company_id": cls.company.id,
+                "company_ids": [Command.set([cls.company.id])],
+                "group_ids": [Command.set([cls.base_user_group.id, cls.quality_manager_group.id])],
+            }
+        )
+        cls.viewer = cls.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "Action Center Viewer",
+                "login": "action-center-viewer",
+                "email": "action-center-viewer@example.invalid",
+                "company_id": cls.company.id,
+                "company_ids": [Command.set([cls.company.id])],
+                "group_ids": [Command.set([cls.base_user_group.id, cls.viewer_group.id])],
+            }
+        )
         cls.organization = cls.env["pm.qms.organization"].create(
             {"name": "Action Center Org", "code": "PM-AC-ORG", "company_id": cls.company.id}
         )
@@ -79,3 +102,25 @@ class TestPmQmsActionCenter(TransactionCase):
         self.assertGreaterEqual(dashboard.my_action_count, 1)
         action = dashboard.action_view_unified_actions()
         self.assertEqual(action["res_model"], "pm.qms.action.center.line")
+
+    def test_menu_matches_viewer_permissions(self):
+        action_center = self.env.ref("pm_qms_action_center.menu_pm_qms_action_center")
+        action_lines = self.env["pm.qms.action.center.line"]
+
+        manager_menus = self.env["ir.ui.menu"].with_user(self.quality_manager).load_menus(False)
+        viewer_menus = self.env["ir.ui.menu"].with_user(self.viewer).load_menus(False)
+        self.assertIn(action_center.id, manager_menus)
+        self.assertNotIn(action_center.id, viewer_menus)
+
+        manager_action = action_lines.with_user(self.quality_manager).action_open_center()
+        self.assertEqual(manager_action["res_model"], "pm.qms.action.center.line")
+        with self.assertRaises(AccessError):
+            action_lines.with_user(self.viewer).create(
+                {
+                    "source_key": "pm.qms.nonconformity:1:ncr_closure",
+                    "source_model": "pm.qms.nonconformity",
+                    "source_id": 1,
+                    "action_kind": "ncr_closure",
+                    "title": "Viewer must not create action lines",
+                }
+            )
