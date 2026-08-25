@@ -5,6 +5,6 @@
         <field name="bundle">web.assets_backend</field>
         <field name="directive">append</field>
         <field name="path">pm_qms_app/static/src/xml/messaging_shell.xml</field>
-        <field name="sequence" eval="100"/>
+        <field name="sequence" eval="1000"/>
     </record>
 </odoo>
