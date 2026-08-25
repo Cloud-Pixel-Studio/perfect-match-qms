@@ -4,7 +4,7 @@
 | --- | --- | --- | --- | --- | --- |
 | App Shell | QMS navigation | Perfect Match QMS | Apex menu set | Full QMS surface visible from one app | COVERED |
 | Dashboard | Product metrics | Dashboard | Apex populated dashboard | Metrics are source-driven, not hard-coded | COVERED |
-| Implementation | Project generation | Implementations | Apex Precision QMS Demo Implementation | Quality pack creates controls and activities | COVERED |
+| Implementation | Project generation | Implementation | Apex Precision QMS Demo Implementation | Quality pack creates controls and activities | COVERED |
 | Implementation | Readiness and gaps | Readiness Center | Apex implementation | Mixed evidence/gap state | COVERED |
 | Core | Company Profile | Configuration > Company Profile | APEX | Fictional operational QMS organization, scope, and primary quality contact | COVERED |
 | Core | Sites | Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Exactly three deterministic Apex sites with one primary and no artificial limit | COVERED |
@@ -14,20 +14,20 @@
 | Product Shell | Persona access | Login / QMS menus | Seven fictional Demo personas | Each persona is validated without `base.group_system`; direct-route access remains security-enforced | COVERED |
 | Standards | ISO 9001 profile | Standards > ISO 9001 > Overview | ISO 9001 / 2015 profile | Active profile, zero seeded approved mappings, no copied standard text, no unfinished other standards | COVERED |
 | Framework | Administration boundary | Configuration > Framework Administration | PM-QMS-QUALITY master data | QMS Administrator only; normal QMS roles use implementation records | COVERED |
-| Documents | Controlled documents | Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
-| Documents | Revisions | Documents > Revisions | Revision A records | Current revision context | COVERED |
-| Evidence | Evidence records | Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |
-| Risk | Risk assessment | Risk & Improvement > Risks | APEX-RISK-001 / APEX-RISK-002 | Open and monitored risks | COVERED |
-| NCR | Nonconformance | Risk & Improvement > NCR | APEX-NCR-001 | Dimensional issue on Lot L-24017 | COVERED |
-| CAPA | Corrective action | Risk & Improvement > CAPA | APEX-CAPA-001 | Root cause, 5 Why, actions, effectiveness date | COVERED |
+| Documents | Controlled documents | Assurance > Documents | APEX-DOC-001 through APEX-DOC-006 | Fictional document set | COVERED |
+| Documents | Revisions | Assurance > Documents > Revisions | Revision A records | Current revision context | COVERED |
+| Evidence | Evidence records | Implementation > Evidence | APEX-EV-001 through APEX-EV-006 | Linked evidence and requirements | COVERED |
+| Risk | Risk assessment | Quality Operations > Risk & Improvement > Risks | APEX-RISK-001 / APEX-RISK-002 | Open and monitored risks | COVERED |
+| NCR | Nonconformance | Quality Operations > Risk & Improvement > NCR | APEX-NCR-001 | Dimensional issue on Lot L-24017 | COVERED |
+| CAPA | Corrective action | Quality Operations > Risk & Improvement > CAPA | APEX-CAPA-001 | Root cause, 5 Why, actions, effectiveness date | COVERED |
 | Audit | Audit program | Audit > Programs | APEX-AUD-PROG-2026 | Annual fictional program | COVERED |
 | Audit | Audit findings | Audit > Findings | APEX-AF-001 / APEX-AF-002 | One actionable finding, one contextual finding | COVERED |
 | Performance | Objectives | Performance > Objectives | APEX-OBJ-001 | Dimensional escape reduction | COVERED |
 | Performance | KPI measurements | Performance > KPI | APEX-KPI-001 | Monthly trend values | COVERED |
-| People | Personas | People & Competency > People | Olivia, Daniel, Maria, James, Emma, Michael, Victor | Fictional QMS roles | COVERED |
-| People | Training | People & Competency > Training | APEX-TRN-001 | Due, overdue, and completed training | COVERED |
-| People | Qualifications | People & Competency > Qualifications | APEX-QUAL-001 | Expired, expiring, current records | COVERED |
-| People | Document acknowledgment | People & Competency > Acknowledgments | Maria pending SOP acknowledgment | Pending acknowledgment action | COVERED |
+| People | Personas | Assurance > People & Competency > People | Olivia, Daniel, Maria, James, Emma, Michael, Victor | Fictional QMS roles | COVERED |
+| People | Training | Assurance > People & Competency > Training | APEX-TRN-001 | Due, overdue, and completed training | COVERED |
+| People | Qualifications | Assurance > People & Competency > Qualifications | APEX-QUAL-001 | Expired, expiring, current records | COVERED |
+| People | Document acknowledgment | Assurance > People & Competency > Acknowledgments | Maria pending SOP acknowledgment | Pending acknowledgment action | COVERED |
 | Calibration | Equipment | Equipment & Calibration > Equipment | EQ-0001 through EQ-0004 | Due, due soon, overdue, and current equipment | COVERED |
 | Calibration | OOT impact | Equipment & Calibration > Impact Assessments | APEX-OOT-001 | Digital caliper OOT impact scenario | COVERED |
 | Customer Quality | Complaint | Customer Quality > Complaints | APEX-CC-001 | Dimensional nonconformance complaint | COVERED |
@@ -36,9 +36,9 @@
 | Supplier Quality | Supplier issue | Supplier Quality > Supplier Issues | APEX-SI-001 | Certificate discrepancy | COVERED |
 | Supplier Quality | SCAR | Supplier Quality > SCAR | APEX-SCAR-001 | Supplier corrective action response | COVERED |
 | Action Center | Source-driven actions | Action Center | My Actions | Multiple action kinds and due buckets | COVERED |
-| Cost of Quality | Cost events | Cost of Quality > Cost Events | APEX-CQ-001 / APEX-CQ-002 | Prevention, appraisal, failures, recoveries | COVERED |
-| Cost of Quality | Analytics | Cost of Quality > Analytics | Apex confirmed events | Gross cost, COPQ, recovery, net cost; restricted from QMS Viewer | COVERED |
-| Management Review | Review, decisions, actions | Management Review | APEX-MR-001 | Inputs from QMS modules and action follow-up | COVERED |
+| Cost of Quality | Cost events | Performance > Cost of Quality > Cost Events | APEX-CQ-001 / APEX-CQ-002 | Prevention, appraisal, failures, recoveries | COVERED |
+| Cost of Quality | Analytics | Performance > Cost of Quality > Analytics | Apex confirmed events | Gross cost, COPQ, recovery, net cost; restricted from QMS Viewer | COVERED |
+| Management Review | Review, decisions, actions | Performance > Management Review | APEX-MR-001 | Inputs from QMS modules and action follow-up | COVERED |
 | Commercial Licensing | License status and capacity | Commercial License | Signed Demo `.pmql` | Validity, environment, company/site/user usage, revision history | COVERED |
 | Commercial Licensing | Offline activation workflow | Commercial License > Activation Request | Demo activation request | External request generation and signed replacement import | COVERED |
 | External ERP | Sales/Purchase/Inventory/MRP/HR/Odoo Quality | Not used | Not applicable | QMS demo remains standalone | NOT APPLICABLE |

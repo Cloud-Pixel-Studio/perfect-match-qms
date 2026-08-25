@@ -151,19 +151,56 @@ class TestPmQmsAppShell(TransactionCase):
         child_names = set(root.child_id.filtered("active").mapped("name"))
         expected = {
             "Dashboard",
-            "Implementations",
-            "Documents",
-            "Evidence",
-            "Risk & Improvement",
-            "Audit",
+            "Implementation",
+            "Quality Operations",
+            "Assurance",
             "Performance",
-            "Management Review",
             "Configuration",
         }
         self.assertTrue(expected.issubset(child_names))
+        for xmlid, name in (
+            ("pm_qms_action_center.menu_pm_qms_action_center", "Action Center"),
+            ("pm_qms_iso9001.menu_pm_qms_standards", "Standards"),
+        ):
+            menu = self.env.ref(xmlid, raise_if_not_found=False)
+            if menu and menu.active:
+                self.assertIn(name, child_names)
+        self.assertNotIn("Implementations", child_names)
+        self.assertNotIn("Risk & Improvement", child_names)
+        self.assertNotIn("People & Competency", child_names)
+
         implementation = self.env.ref("pm_qms_core.menu_pm_qms_implementation")
         self.assertIn("Activities", set(implementation.child_id.filtered("active").mapped("name")))
         self.assertIn("Controls", set(implementation.child_id.filtered("active").mapped("name")))
+        self.assertIn("Readiness", set(implementation.child_id.filtered("active").mapped("name")))
+        self.assertIn("Evidence", set(implementation.child_id.filtered("active").mapped("name")))
+
+        quality_operations = self.env.ref("pm_qms_app.menu_pm_qms_quality_operations")
+        self.assertEqual(self.env.ref("pm_qms_risk.menu_pm_qms_risk_improvement").parent_id, quality_operations)
+        customer_quality = self.env.ref("pm_qms_customer_quality.menu_pm_qms_customer_quality", raise_if_not_found=False)
+        if customer_quality:
+            self.assertEqual(customer_quality.parent_id, quality_operations)
+        self.assertEqual(self.env.ref("pm_qms_calibration.menu_pm_qms_calibration").parent_id, quality_operations)
+
+        assurance = self.env.ref("pm_qms_app.menu_pm_qms_assurance")
+        self.assertEqual(self.env.ref("pm_qms_documents.menu_pm_qms_documents").parent_id, assurance)
+        self.assertEqual(self.env.ref("pm_qms_audit.menu_pm_qms_audit").parent_id, assurance)
+        self.assertEqual(self.env.ref("pm_qms_people.menu_pm_qms_people").parent_id, assurance)
+
+        performance = self.env.ref("pm_qms_kpi.menu_pm_qms_performance")
+        self.assertEqual(self.env.ref("pm_qms_management_review.menu_pm_qms_management_review").parent_id, performance)
+        cost_quality = self.env.ref("pm_qms_cost_quality.menu_pm_qms_cost_quality", raise_if_not_found=False)
+        if cost_quality:
+            self.assertEqual(cost_quality.parent_id, performance)
+
+        configuration = self.env.ref("pm_qms_core.menu_pm_qms_configuration")
+        self.assertEqual(self.env.ref("pm_qms_core.menu_pm_qms_organizations").parent_id, configuration)
+        self.assertEqual(self.env.ref("pm_qms_core.menu_pm_qms_processes").parent_id, configuration)
+        self.assertEqual(self.env.ref("pm_qms_license.menu_pm_qms_license").parent_id, configuration)
+        self.assertEqual(
+            self.env.ref("pm_qms_license.menu_pm_qms_activation_requests").parent_id,
+            self.env.ref("pm_qms_license.menu_pm_qms_license"),
+        )
 
     def test_menu_permissions_keep_framework_out_of_user_navigation(self):
         framework = self.env.ref("pm_qms_core.menu_pm_qms_framework")
@@ -232,6 +269,22 @@ class TestPmQmsAppShell(TransactionCase):
         login = self.env.ref("pm_qms_app.pm_qms_login_branding")
         self.assertIn("Perfect Match QMS", layout.arch)
         self.assertIn("Perfect Match QMS", login.arch)
+        self.assertIn("perfect_match_logo_master.png", login.arch)
+
+    def test_customer_shell_groups_are_visible_without_changing_authority(self):
+        manager_menus = self.env["ir.ui.menu"].with_user(self.manager).load_menus(False)
+        viewer_menus = self.env["ir.ui.menu"].with_user(self.viewer).load_menus(False)
+        for xmlid in (
+            "pm_qms_app.menu_pm_qms_quality_operations",
+            "pm_qms_app.menu_pm_qms_assurance",
+        ):
+            menu = self.env.ref(xmlid)
+            self.assertIn(menu.id, manager_menus)
+            self.assertIn(menu.id, viewer_menus)
+
+        framework = self.env.ref("pm_qms_core.menu_pm_qms_framework")
+        self.assertNotIn(framework.id, manager_menus)
+        self.assertNotIn(framework.id, viewer_menus)
 
     def test_dashboard_uses_live_readiness_and_security_scoped_counts(self):
         dashboard = self.env["pm.qms.dashboard"].with_user(self.user).create(

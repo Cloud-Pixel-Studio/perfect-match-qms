@@ -1,41 +1,67 @@
 # Product Shell Architecture
 
-Mission 22 establishes `pm_qms_app` as the customer-facing Perfect Match QMS
-application boundary. Odoo remains the supported runtime, ORM, authentication
-framework, security engine, menu/action framework, attachment store, scheduler,
+Mission 24 hardens `pm_qms_app` as the customer-facing Perfect Match QMS
+application boundary. Odoo remains the runtime, ORM, authentication and
+authorization framework, menu/action framework, attachment store, scheduler,
 and web client.
 
-When a standard add-on is installed, it contributes only its own customer
-surface. The current ISO add-on contributes **Standards > ISO 9001 > Overview**;
-no uninstalled or unfinished standards are displayed. Framework master-data
-navigation is labeled **Framework Administration** and is under Configuration
-for QMS Administrators.
+## Customer information architecture
 
-## Boundary
+The product root presents these customer domains:
 
-- `pm_qms_app` owns the product root, dashboard entry, identity assets, login
-  presentation, and customer navigation.
-- Existing QMS addons retain their models, ACLs, record rules, actions, and
-  business workflows.
-- `base.group_system` remains the technical administration authority.
-- Shell presentation never replaces ACLs, record rules, or action security.
+1. Dashboard
+2. Implementation
+3. Quality Operations
+4. Assurance
+5. Performance
+6. Action Center
+7. Standards
+8. Configuration
 
-## Navigation
+The grouping reuses existing menu records and actions. It does not create a
+second implementation engine, duplicate actions, or change model ownership.
 
-Normal QMS users enter through **Perfect Match QMS**. Company Profile, Sites,
-Processes, Users & Access, and Commercial License remain under the QMS
-Configuration area. Generic Odoo roots such as Apps, Project, Discuss, Tests,
-and Settings are reserved for technical administrators by menu groups. The
-customer bundle does not add unrelated ERP applications merely to hide them.
+| Root | Existing capabilities |
+| --- | --- |
+| Dashboard | Executive dashboard and source-driven metrics |
+| Implementation | Implementation projects, controls, activities, readiness, and evidence |
+| Quality Operations | Risk, NCR, CAPA, customer quality, supplier quality, and equipment/calibration |
+| Assurance | Documents, audit, and people/competency |
+| Performance | KPI/performance, Cost of Quality, and Management Review |
+| Action Center | Cross-functional source-driven actions |
+| Standards | ISO 9001 only when the ISO add-on is installed |
+| Configuration | Company Profile, Sites, Processes, Users & Access, Commercial License, and Framework Administration |
 
-Database selection and database management remain deployment concerns. The
-customer configuration uses `list_db = False`, a database filter, and
-`proxy_mode = True`; these settings do not weaken application permissions.
+## Security boundary
 
-## Upgradeability and legal identity
+Menu visibility is presentation only. ACLs, record rules, action groups, and
+workflow authority remain authoritative. Mission 19 and Mission 20 security
+was not replaced by menu hiding.
 
-The implementation uses supported addon inheritance, QWeb templates, assets,
-and menu records. It does not modify or fork Odoo core. Odoo and third-party
-notices, licenses, and attribution remain part of the technical distribution.
-The product may present Perfect Match QMS as the customer identity while
-technical documentation continues to identify Odoo 19 as the runtime.
+Framework Administration remains restricted to the existing QMS Administrator
+group. Technical Administrators retain Odoo Apps, Settings, maintenance, and
+troubleshooting surfaces. Normal QMS users do not receive generic Apps,
+Project, Tests, or Discuss roots.
+
+Commercial License is under Configuration. Activation Requests is a child of
+Commercial License and keeps its Licensing Administrator group. The RC10
+effective-view and `activation_request_ids` protections remain unchanged.
+
+## Standards boundary
+
+The ISO 9001 add-on owns Standards navigation and remains the only implemented
+standard. Mission 24 changes only its placement order; it does not change ISO
+9001 content, controls, mappings, or profiles.
+
+## Mail versus Discuss
+
+Odoo mail infrastructure remains available for `mail.thread`, `mail.activity`,
+record chatter, notifications, and audit history. The generic Discuss root is
+restricted to Technical Administrators for the customer shell. Communication
+records are not deleted and QMS workflow notifications are not replaced.
+
+## Upgradeability
+
+The implementation uses supported addon menu records, inherited QWeb
+templates, and SCSS assets. It does not fork Odoo, edit Odoo source, patch
+minified vendor assets, or remove legal attribution.

@@ -312,6 +312,8 @@ Commands:
                 Upgrade the full QMS stack including the ISO 9001 standard add-on.
   test-mission23
                 Run Mission 23 standard-boundary and full-stack Odoo tests in pmqms_test.
+  test-mission24
+                Run Mission 24 product shell, branding, and full-stack Odoo tests in pmqms_test.
   provision-license
                 Import the externally issued DEV license from the secrets directory.
 EOF
@@ -675,6 +677,9 @@ case "$command" in
     ;;
   test-mission23)
     run_odoo_tests "$MISSION23_ADDONS" "$MISSION23_TEST_TAGS" "Mission 23"
+    ;;
+  test-mission24)
+    run_odoo_tests "$MISSION23_ADDONS" "$MISSION23_TEST_TAGS" "Mission 24"
     ;;
   provision-license)
     provision_license
