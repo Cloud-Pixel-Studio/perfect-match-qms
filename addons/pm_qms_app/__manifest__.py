@@ -43,6 +43,7 @@ Technical addons remain modular underneath this product entry point.
     "assets": {
         "web.assets_backend": [
             "pm_qms_app/static/src/scss/brand.scss",
+            "pm_qms_app/static/src/js/dashboard_view.js",
             "pm_qms_app/static/src/js/customer_shell.js",
             "pm_qms_app/static/src/js/messaging_shell.js",
             "pm_qms_app/static/src/js/user_menu.js",
