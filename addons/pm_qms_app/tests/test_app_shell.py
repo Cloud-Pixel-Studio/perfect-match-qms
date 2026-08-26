@@ -549,3 +549,36 @@ class TestPmQmsAppShell(TransactionCase):
             source,
         )
         self.assertNotIn("#71639e", source)
+
+    def test_dashboard_more_buttonbox_scope_is_registered(self):
+        addon_root = Path(__file__).parents[1]
+        dashboard_js = (addon_root / "static/src/js/dashboard_view.js").read_text(
+            encoding="utf-8"
+        )
+        button_box = (addon_root / "static/src/js/dashboard_button_box.js").read_text(
+            encoding="utf-8"
+        )
+        button_box_template = (
+            addon_root / "static/src/xml/dashboard_button_box.xml"
+        ).read_text(encoding="utf-8")
+        manifest = (addon_root / "__manifest__.py").read_text(encoding="utf-8")
+        source = (addon_root / "static/src/scss/brand.scss").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('import { FormController } from "@web/views/form/form_controller";', dashboard_js)
+        self.assertIn("class PerfectMatchDashboardController extends FormController", dashboard_js)
+        self.assertIn("ButtonBox: PerfectMatchDashboardButtonBox", dashboard_js)
+        self.assertIn("Controller: PerfectMatchDashboardController", dashboard_js)
+        self.assertIn('import { ButtonBox } from "@web/views/form/button_box/button_box";', button_box)
+        self.assertIn("class PerfectMatchDashboardButtonBox extends ButtonBox", button_box)
+        self.assertIn('static template = "pm_qms_app.DashboardButtonBox";', button_box)
+        self.assertIn('t-inherit="web.Form.ButtonBox"', button_box_template)
+        self.assertIn('t-inherit-mode="primary"', button_box_template)
+        self.assertIn("pm_qms_dashboard_stat_menu", button_box_template)
+        self.assertIn("menuClass", button_box_template)
+        self.assertIn('"pm_qms_app/static/src/xml/dashboard_button_box.xml"', manifest)
+        self.assertIn('"pm_qms_app/static/src/js/dashboard_button_box.js"', manifest)
+        self.assertIn(".pm_qms_dashboard_stat_menu", source)
+        self.assertNotIn(".o_dropdown_more .o_button_icon", source)
+        self.assertNotIn("oe_stat_button .o_button_icon", source)

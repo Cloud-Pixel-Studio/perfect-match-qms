@@ -135,6 +135,11 @@
     --o-stat-text-color: var(--pmqms-metric-default);
 }
 
+.pm_qms_dashboard_stat_menu {
+    --o-stat-button-color: var(--pmqms-metric-default);
+    --o-stat-text-color: var(--pmqms-metric-default);
+}
+
 main .o_database_list {
     border-top: 4px solid var(--pmqms-primary);
     box-shadow: 0 12px 32px rgba(8, 32, 120, 0.12);
