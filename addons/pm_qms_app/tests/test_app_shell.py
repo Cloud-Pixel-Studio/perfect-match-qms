@@ -168,6 +168,32 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn("var(--pmqms-navigation-active)", source)
         self.assertIn("var(--pmqms-focus)", source)
 
+    def test_customer_controls_use_scoped_perfect_match_tokens(self):
+        addon_root = Path(__file__).parents[1]
+        source = (addon_root / "static/src/scss/brand.scss").read_text(
+            encoding="utf-8"
+        )
+        helper = (addon_root / "static/src/js/customer_shell.js").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("o_pm_qms_customer_shell", helper)
+        self.assertIn("document.documentElement.classList.toggle", helper)
+        for selector in (
+            ".o_control_panel",
+            ".o_searchview",
+            ".o_pager",
+            ".o_cp_switch_buttons",
+            ".o_list_button",
+            ".modal-footer",
+        ):
+            self.assertIn(selector, source)
+        self.assertIn("var(--pmqms-magenta)", source)
+        self.assertIn("var(--pmqms-control-hover)", source)
+        self.assertIn("var(--pmqms-focus)", source)
+        self.assertNotIn("#71639e", source)
+        self.assertNotIn("!important", helper)
+
     def test_dashboard_stat_buttons_use_scoped_perfect_match_tokens(self):
         addon_root = Path(__file__).parents[1]
         source = (addon_root / "static/src/scss/brand.scss").read_text(
