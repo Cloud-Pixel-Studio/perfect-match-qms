@@ -19,7 +19,15 @@ let customerShellPromise;
 
 export function resolveQmsCustomerShell() {
     if (!customerShellPromise) {
-        customerShellPromise = isQmsCustomerShell((group) => user.hasGroup(group));
+        customerShellPromise = isQmsCustomerShell((group) => user.hasGroup(group)).then(
+            (isCustomerShell) => {
+                document.documentElement.classList.toggle(
+                    "o_pm_qms_customer_shell",
+                    isCustomerShell,
+                );
+                return isCustomerShell;
+            },
+        );
     }
     return customerShellPromise;
 }

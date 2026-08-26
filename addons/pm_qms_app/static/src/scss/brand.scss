@@ -161,3 +161,212 @@ main .o_database_list .form-control:focus {
     border-color: var(--pmqms-primary);
     box-shadow: 0 0 0 0.2rem rgba(8, 32, 120, 0.15);
 }
+
+// Keep the customer shell branded while leaving native technical Odoo surfaces intact.
+.o_pm_qms_customer_shell {
+    --pmqms-control-surface: var(--pmqms-surface);
+    --pmqms-control-border: #b9c4d8;
+    --pmqms-control-text: var(--pmqms-primary);
+    --pmqms-control-hover: #eef2fb;
+    --pmqms-control-active: #dfe7fa;
+
+    .o_control_panel {
+        background-color: var(--pmqms-off-white);
+        border-bottom: 1px solid var(--pmqms-border);
+
+        .o_control_panel_main_buttons,
+        .o_control_panel_actions,
+        .o_control_panel_navigation,
+        .o_cp_buttons {
+            .btn:not(.btn-link),
+            .o-dropdown-toggle {
+                border-color: var(--pmqms-control-border);
+                color: var(--pmqms-control-text);
+            }
+
+            .btn-secondary,
+            .btn-outline-secondary {
+                background-color: var(--pmqms-control-surface);
+            }
+
+            .btn-primary,
+            .btn-outline-primary {
+                background-color: var(--pmqms-magenta);
+                border-color: var(--pmqms-magenta);
+                color: var(--pmqms-navigation-text);
+            }
+
+            .btn-outline-primary {
+                background-color: transparent;
+                color: var(--pmqms-magenta);
+            }
+
+            .btn:not(.btn-link):not(:disabled):hover,
+            .btn:not(.btn-link):not(:disabled):focus-visible,
+            .o-dropdown-toggle:not(:disabled):hover,
+            .o-dropdown-toggle:not(:disabled):focus-visible {
+                background-color: var(--pmqms-control-hover);
+                border-color: var(--pmqms-primary);
+                color: var(--pmqms-primary);
+            }
+
+            .btn-primary:not(:disabled):hover,
+            .btn-primary:not(:disabled):focus-visible,
+            .btn-outline-primary:not(:disabled):hover,
+            .btn-outline-primary:not(:disabled):focus-visible {
+                background-color: var(--pmqms-primary-hover);
+                border-color: var(--pmqms-primary-hover);
+                color: var(--pmqms-navigation-text);
+            }
+        }
+
+        .o_searchview {
+            background-color: var(--pmqms-control-surface);
+            border-color: var(--pmqms-control-border) !important;
+            color: var(--pmqms-charcoal);
+
+            &:focus-within {
+                border-color: var(--pmqms-primary) !important;
+                box-shadow: 0 0 0 0.2rem rgba(8, 32, 120, 0.15);
+            }
+
+            .o_searchview_icon,
+            .o_searchview_input::placeholder {
+                color: var(--pmqms-muted);
+            }
+        }
+
+        .o_searchview_dropdown_toggler {
+            background-color: var(--pmqms-control-surface);
+        }
+
+        .o_pager {
+            color: var(--pmqms-control-text);
+
+            .btn-secondary {
+                background-color: var(--pmqms-control-surface);
+            }
+        }
+
+        .o_cp_switch_buttons {
+            .btn {
+                background-color: var(--pmqms-control-surface);
+                border-color: var(--pmqms-control-border);
+                color: var(--pmqms-control-text);
+            }
+
+            .btn.active {
+                background-color: var(--pmqms-primary);
+                border-color: var(--pmqms-primary);
+                color: var(--pmqms-navigation-text);
+            }
+
+            .btn:not(:disabled):hover,
+            .btn:not(:disabled):focus-visible {
+                background-color: var(--pmqms-control-active);
+                color: var(--pmqms-primary);
+            }
+
+            .btn.active:not(:disabled):hover,
+            .btn.active:not(:disabled):focus-visible {
+                background-color: var(--pmqms-primary-hover);
+                color: var(--pmqms-navigation-text);
+            }
+        }
+    }
+
+    .o_form_view,
+    .o_list_view,
+    .o_kanban_view {
+        .o_form_buttonbox .oe_stat_button,
+        .o_list_button,
+        .o_form_button_save,
+        .o_form_button_cancel,
+        .o_form_button_create,
+        .o_form_button_remove,
+        .o_kanban-button-new,
+        .oe_link {
+            color: var(--pmqms-control-text);
+        }
+
+        .btn-primary,
+        .btn-outline-primary {
+            background-color: var(--pmqms-magenta);
+            border-color: var(--pmqms-magenta);
+            color: var(--pmqms-navigation-text);
+        }
+
+        .btn-outline-primary {
+            background-color: transparent;
+            color: var(--pmqms-magenta);
+        }
+
+        .btn-secondary,
+        .btn-outline-secondary {
+            background-color: var(--pmqms-control-surface);
+            border-color: var(--pmqms-control-border);
+            color: var(--pmqms-control-text);
+        }
+
+        .btn-primary:not(:disabled):hover,
+        .btn-primary:not(:disabled):focus-visible,
+        .btn-outline-primary:not(:disabled):hover,
+        .btn-outline-primary:not(:disabled):focus-visible {
+            background-color: var(--pmqms-primary-hover);
+            border-color: var(--pmqms-primary-hover);
+            color: var(--pmqms-navigation-text);
+        }
+
+        .btn-secondary:not(:disabled):hover,
+        .btn-secondary:not(:disabled):focus-visible,
+        .btn-outline-secondary:not(:disabled):hover,
+        .btn-outline-secondary:not(:disabled):focus-visible,
+        .o_list_button:not(:disabled):hover,
+        .o_list_button:not(:disabled):focus-visible {
+            background-color: var(--pmqms-control-hover);
+            border-color: var(--pmqms-primary);
+            color: var(--pmqms-primary);
+        }
+    }
+
+    .modal-footer {
+        border-top-color: var(--pmqms-border);
+
+        .btn-primary {
+            background-color: var(--pmqms-magenta);
+            border-color: var(--pmqms-magenta);
+            color: var(--pmqms-navigation-text);
+        }
+
+        .btn-secondary {
+            background-color: var(--pmqms-control-surface);
+            border-color: var(--pmqms-control-border);
+            color: var(--pmqms-control-text);
+        }
+
+        .btn-primary:not(:disabled):hover,
+        .btn-primary:not(:disabled):focus-visible {
+            background-color: var(--pmqms-primary-hover);
+            border-color: var(--pmqms-primary-hover);
+        }
+
+        .btn-secondary:not(:disabled):hover,
+        .btn-secondary:not(:disabled):focus-visible {
+            background-color: var(--pmqms-control-hover);
+            border-color: var(--pmqms-primary);
+        }
+    }
+
+    .o_searchview_autocomplete,
+    .o_search_bar_menu,
+    .dropdown-menu {
+        border-color: var(--pmqms-border);
+
+        .dropdown-item:not(.disabled):hover,
+        .dropdown-item:not(.disabled):focus,
+        .dropdown-item.active {
+            background-color: var(--pmqms-control-hover);
+            color: var(--pmqms-primary);
+        }
+    }
+}
