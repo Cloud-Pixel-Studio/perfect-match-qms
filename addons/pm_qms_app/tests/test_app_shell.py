@@ -191,6 +191,11 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn("var(--pmqms-magenta)", source)
         self.assertIn("var(--pmqms-control-hover)", source)
         self.assertIn("var(--pmqms-focus)", source)
+        self.assertIn(".o_form_button_create.btn-outline-primary {", source)
+        self.assertIn(
+            ".o_form_button_create.btn-outline-primary:not(:disabled):active",
+            source,
+        )
         self.assertNotIn("#71639e", source)
         self.assertNotIn("!important", helper)
 
