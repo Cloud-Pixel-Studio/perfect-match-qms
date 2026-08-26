@@ -15,6 +15,7 @@
     --pmqms-muted: #586274;
     --pmqms-focus: #ffb000;
     --pmqms-navigation-entry: var(--pmqms-navigation-background);
+    --pmqms-metric-default: var(--pmqms-primary);
 }
 
 .pm_qms_login_identity {
@@ -129,6 +130,10 @@
     }
 }
 
+.pm_qms_dashboard_form .oe_button_box {
+    --o-stat-button-color: var(--pmqms-metric-default);
+    --o-stat-text-color: var(--pmqms-metric-default);
+}
 
 main .o_database_list {
     border-top: 4px solid var(--pmqms-primary);

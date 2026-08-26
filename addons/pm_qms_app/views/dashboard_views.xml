@@ -4,7 +4,7 @@
         <field name="name">pm.qms.dashboard.form</field>
         <field name="model">pm.qms.dashboard</field>
         <field name="arch" type="xml">
-            <form create="false" delete="false">
+            <form class="pm_qms_dashboard_form" create="false" delete="false">
                 <sheet>
                     <field name="organization_count" invisible="1"/>
                     <field name="has_multiple_organizations" invisible="1"/>

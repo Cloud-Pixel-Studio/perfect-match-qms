@@ -168,6 +168,23 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn("var(--pmqms-navigation-active)", source)
         self.assertIn("var(--pmqms-focus)", source)
 
+    def test_dashboard_stat_buttons_use_scoped_perfect_match_tokens(self):
+        addon_root = Path(__file__).parents[1]
+        source = (addon_root / "static/src/scss/brand.scss").read_text(
+            encoding="utf-8"
+        )
+        dashboard = (addon_root / "views/dashboard_views.xml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("--pmqms-metric-default: var(--pmqms-primary);", source)
+        self.assertIn('<form class="pm_qms_dashboard_form"', dashboard)
+        self.assertIn("--o-stat-button-color: var(--pmqms-metric-default);", source)
+        self.assertIn("--o-stat-text-color: var(--pmqms-metric-default);", source)
+        self.assertNotIn("#71639e", source)
+        self.assertNotIn("#71639e", dashboard)
+        self.assertNotIn(".o-form-buttonbox", source)
+
     def test_expected_navigation_hierarchy_is_installed(self):
         root = self.env.ref("pm_qms_core.menu_pm_qms_root")
         child_names = set(root.child_id.filtered("active").mapped("name"))
