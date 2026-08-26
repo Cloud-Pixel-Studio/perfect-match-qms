@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="pm_qms_app.DashboardButtonBox"
+       t-inherit="web.Form.ButtonBox"
+       t-inherit-mode="primary">
+        <xpath expr="//Dropdown" position="attributes">
+            <attribute name="menuClass" add="' pm_qms_dashboard_stat_menu'" separator=" + "/>
+        </xpath>
+    </t>
+</templates>
