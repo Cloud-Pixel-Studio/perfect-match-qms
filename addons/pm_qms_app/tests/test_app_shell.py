@@ -180,7 +180,7 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn("--pmqms-metric-default: var(--pmqms-primary);", source)
         self.assertIn('<form class="pm_qms_dashboard_form"', dashboard)
         self.assertIn(
-            ".pm_qms_dashboard_form .o-form-buttonbox",
+            ".o_pm_qms_dashboard_form_view .o-form-buttonbox",
             source,
         )
         self.assertIn("--o-stat-button-color: var(--pmqms-metric-default);", source)
@@ -515,3 +515,37 @@ class TestPmQmsAppShell(TransactionCase):
         evidence_action = self.line.action_open_evidence()
         self.assertEqual(evidence_action["res_model"], "pm.qms.evidence")
         self.assertIn(("control_instance_id", "=", self.line.control_instance_id.id), evidence_action["domain"])
+
+    def test_dashboard_uses_registered_js_view_scope(self):
+        addon_root = Path(__file__).parents[1]
+        dashboard = (addon_root / "views/dashboard_views.xml").read_text(
+            encoding="utf-8"
+        )
+        dashboard_js = (addon_root / "static/src/js/dashboard_view.js").read_text(
+            encoding="utf-8"
+        )
+        manifest = (addon_root / "__manifest__.py").read_text(encoding="utf-8")
+        source = (addon_root / "static/src/scss/brand.scss").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('js_class="pm_qms_dashboard_form"', dashboard)
+        self.assertIn('from "@web/views/form/form_view"', dashboard_js)
+        self.assertIn("...formView", dashboard_js)
+        self.assertIn(
+            'registry.category("views").add("pm_qms_dashboard_form"',
+            dashboard_js,
+        )
+        self.assertIn(
+            '"pm_qms_app/static/src/js/dashboard_view.js"',
+            manifest,
+        )
+        self.assertIn(
+            ".o_pm_qms_dashboard_form_view .o-form-buttonbox",
+            source,
+        )
+        self.assertNotIn(
+            ".pm_qms_dashboard_form .o-form-buttonbox",
+            source,
+        )
+        self.assertNotIn("#71639e", source)
