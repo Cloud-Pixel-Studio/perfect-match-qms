@@ -179,11 +179,15 @@ class TestPmQmsAppShell(TransactionCase):
 
         self.assertIn("--pmqms-metric-default: var(--pmqms-primary);", source)
         self.assertIn('<form class="pm_qms_dashboard_form"', dashboard)
+        self.assertIn(
+            ".pm_qms_dashboard_form .o-form-buttonbox",
+            source,
+        )
         self.assertIn("--o-stat-button-color: var(--pmqms-metric-default);", source)
         self.assertIn("--o-stat-text-color: var(--pmqms-metric-default);", source)
         self.assertNotIn("#71639e", source)
         self.assertNotIn("#71639e", dashboard)
-        self.assertNotIn(".o-form-buttonbox", source)
+        self.assertNotIn(".oe_button_box", source)
 
     def test_expected_navigation_hierarchy_is_installed(self):
         root = self.env.ref("pm_qms_core.menu_pm_qms_root")
