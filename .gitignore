@@ -42,5 +42,6 @@ backups/
 *.sqlite3
 standards-private/
 licensed-standards/
+methodology-workspaces/
 *ISO*9001*.pdf
 *iso*9001*.pdf

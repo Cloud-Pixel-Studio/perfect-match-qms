@@ -1,0 +1,12 @@
+Name,Parent Task Name,Stage Name,Description,Tags,Original Source ID,Assignees/Email,AI Prompt
+Define QMS Process Map,Define QMS Process Map,Context of the Organization,Establish the fictional process step.,2026,old-sub-001,person@example.invalid,
+Collect evidence,Define QMS Process Map,Context of the Organization,Retain a fictional evidence record.,,old-sub-002,person@example.invalid,
+Confirm success criterion,Define QMS Process Map,Context of the Organization,Confirm fictional acceptance criteria.,,old-sub-003,person@example.invalid,
+Produce deliverable,Define QMS Process Map,Context of the Organization,Produce a fictional output.,,old-sub-004,person@example.invalid,
+Schedule meeting,Project kickoff logistics,Project Initiation,Coordinate fictional meeting logistics.,,old-sub-005,person@example.invalid,
+Transition note,2026 transition planning,ISO 9001:2026 Transition Readiness,Keep transition content separate.,,old-sub-006,person@example.invalid,
+Document current gap,2026 transition planning,ISO 9001:2026 Transition Readiness,Preserve a fictional evidence expectation.,,old-sub-007,person@example.invalid,
+Crosswalk note,Review ISO 14001 crosswalk,Process Mapping,ISO 14001 reference for review.,,old-sub-008,person@example.invalid,
+AI guidance,Define QMS Process Map,Context of the Organization,Use a fictional guidance concept.,,old-sub-009,person@example.invalid,Fictional raw prompt must be excluded
+Protected text note,Define QMS Process Map,Context of the Organization,Copyright requirement text shall be reviewed.,,old-sub-010,person@example.invalid,
+Check item,Define QMS Process Map,Context of the Organization,An ambiguous fictional note.,,old-sub-011,person@example.invalid,

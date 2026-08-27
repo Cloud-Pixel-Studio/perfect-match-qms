@@ -1,0 +1,6 @@
+Name,External ID,Original Source ID,Sequence
+Project Initiation,fixture.stage.initiation,old-stage-001,1
+Context of the Organization,fixture.stage.context,old-stage-002,2
+Gap Assessment,fixture.stage.gap,old-stage-003,3
+Process Mapping,fixture.stage.process,old-stage-004,4
+ISO 9001:2026 Transition Readiness,fixture.stage.transition,old-stage-005,5
