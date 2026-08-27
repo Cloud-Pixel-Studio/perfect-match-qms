@@ -15,18 +15,7 @@
     "source_record_key": { "type": "string", "pattern": "^src-[a-f0-9]{20}$" },
     "source_stage": { "type": "string" },
     "source_title": { "type": "string" },
-    "classification": {
-      "enum": [
-        "QMS_IMPLEMENTATION",
-        "PROJECT_ADMINISTRATION",
-        "READINESS_ASSESSMENT",
-        "CERTIFICATION_PREPARATION",
-        "TRANSITION",
-        "GAP_REMEDIATION",
-        "OTHER",
-        "NEEDS_REVIEW"
-      ]
-    },
+    "classification": { "type": "string" },
     "initial_implementation_candidate": { "enum": ["YES", "NO", "REVIEW"] },
     "proposed_phase_key": { "type": "string" },
     "title": { "type": "string" },
@@ -56,5 +45,61 @@
       }
     },
     "content_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "required": ["kind"],
+            "properties": { "kind": { "const": "main" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": {
+            "enum": [
+              "QMS_IMPLEMENTATION",
+              "PROJECT_ADMINISTRATION",
+              "READINESS_ASSESSMENT",
+              "CERTIFICATION_PREPARATION",
+              "TRANSITION",
+              "GAP_REMEDIATION",
+              "OTHER",
+              "NEEDS_REVIEW"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance": {
+            "required": ["kind"],
+            "properties": { "kind": { "const": "subtask" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": {
+            "enum": [
+              "IMPLEMENTATION_STEP",
+              "GUIDANCE",
+              "DELIVERABLE",
+              "EVIDENCE_EXPECTATION",
+              "SUCCESS_CRITERION",
+              "DEPENDENCY",
+              "NEXT_ACTION",
+              "PROJECT_ADMINISTRATION",
+              "IGNORE_ARCHIVE",
+              "NEEDS_REVIEW"
+            ]
+          }
+        }
+      }
+    }
+  ]
 }

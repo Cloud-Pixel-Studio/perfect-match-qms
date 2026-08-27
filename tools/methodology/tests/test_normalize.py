@@ -1,3 +1,4 @@
+import csv
 import json
 import tempfile
 import unittest
@@ -8,6 +9,17 @@ from tools.methodology.normalize import normalize, sha256_file
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "source"
+SCHEMA = Path(__file__).parents[1] / "schema.json"
+MAIN_CLASSIFICATIONS = {
+    "QMS_IMPLEMENTATION", "PROJECT_ADMINISTRATION", "READINESS_ASSESSMENT",
+    "CERTIFICATION_PREPARATION", "TRANSITION", "GAP_REMEDIATION", "OTHER",
+    "NEEDS_REVIEW",
+}
+SUBTASK_CLASSIFICATIONS = {
+    "IMPLEMENTATION_STEP", "GUIDANCE", "DELIVERABLE", "EVIDENCE_EXPECTATION",
+    "SUCCESS_CRITERION", "DEPENDENCY", "NEXT_ACTION",
+    "PROJECT_ADMINISTRATION", "IGNORE_ARCHIVE", "NEEDS_REVIEW",
+}
 
 
 def fixture_zip(folder: Path) -> Path:
@@ -34,6 +46,46 @@ class NormalizerTests(unittest.TestCase):
 
     def load(self, filename):
         return json.loads((self.output / filename).read_text(encoding="utf-8"))
+
+    def assert_candidate_matches_schema(self, candidate, kind):
+        for key in (
+            "source_record_key", "classification",
+            "initial_implementation_candidate", "review_status",
+            "review_flags", "confidence", "provenance",
+        ):
+            self.assertIn(key, candidate)
+        self.assertRegex(candidate["source_record_key"], r"^src-[a-f0-9]{20}$")
+        allowed = MAIN_CLASSIFICATIONS if kind == "main" else SUBTASK_CLASSIFICATIONS
+        self.assertIn(candidate["classification"], allowed)
+        self.assertIn(candidate["initial_implementation_candidate"], {"YES", "NO", "REVIEW"})
+        self.assertIn(candidate["readiness_candidate"], {"TRUE", "FALSE", "REVIEW"})
+        self.assertIn(candidate["review_status"], {"UNREVIEWED", "REVIEW_REQUIRED"})
+        self.assertIsInstance(candidate["review_flags"], list)
+        self.assertIn(candidate["confidence"], {"HIGH", "MEDIUM", "LOW"})
+        self.assertEqual(candidate["provenance"]["kind"], kind)
+        self.assertEqual(candidate["provenance"]["source_key_basis"], "safe structural hash")
+
+    def test_generated_candidates_match_discriminated_schema(self):
+        self.run_normalizer()
+        schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+        self.assertEqual(len(schema["allOf"]), 2)
+        data = self.load("normalized_candidates.json")
+        for candidate in data["main_tasks"]:
+            self.assert_candidate_matches_schema(candidate, "main")
+        for candidate in data["subtasks"]:
+            self.assert_candidate_matches_schema(candidate, "subtask")
+
+    def test_fixture_manifest_counts_match_csv_contents(self):
+        manifest = json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))
+        archive = FIXTURE / "full_archive"
+
+        def rows(name):
+            with (archive / name).open(newline="", encoding="utf-8-sig") as stream:
+                return list(csv.DictReader(stream))
+
+        self.assertEqual(manifest["counts"]["stages"], len(rows("02_stages.csv")))
+        self.assertEqual(manifest["counts"]["main_tasks"], len(rows("04_main_tasks.csv")))
+        self.assertEqual(manifest["counts"]["subtasks"], len(rows("05_subtasks.csv")))
 
     def test_source_package_hash_verification(self):
         result = self.run_normalizer()

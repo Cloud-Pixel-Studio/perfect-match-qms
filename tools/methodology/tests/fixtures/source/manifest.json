@@ -6,9 +6,9 @@
   "generated_at": "2026-01-01T00:00:00Z",
   "counts": {
     "projects": 1,
-    "stages": 2,
-    "main_tasks": 8,
-    "subtasks": 9,
+    "stages": 5,
+    "main_tasks": 10,
+    "subtasks": 11,
     "tags": 4,
     "chatter": 1,
     "dependencies": 0,
