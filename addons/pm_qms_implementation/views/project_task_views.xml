@@ -130,17 +130,40 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="Activity Guide">
+                            <group>
+                                <group string="What am I trying to achieve?">
+                                    <field name="pm_activity_objective" nolabel="1" readonly="1"/>
+                                </group>
+                                <group string="Why does it matter?">
+                                    <field name="pm_activity_why_it_matters" nolabel="1" readonly="1"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="pm_activity_responsible_role" string="Responsible Role" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Implementation">
+                            <group>
+                                <field name="pm_activity_implementation_steps" string="Implementation Steps" nolabel="1" readonly="1"/>
+                                <field name="pm_activity_expected_output" string="Expected Output" nolabel="1" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Evidence &amp; Completion">
+                            <group>
+                                <field name="pm_activity_evidence_expectations" string="Evidence Expectations" nolabel="1" readonly="1"/>
+                                <field name="pm_activity_success_criteria" string="Success Criteria" nolabel="1" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Control Guidance">
+                            <group>
+                                <field name="pm_implementation_guidance" nolabel="1" readonly="1"/>
+                                <field name="pm_recommended_steps" nolabel="1" readonly="1"/>
+                                <field name="pm_evidence_guidance" nolabel="1" readonly="1"/>
+                            </group>
+                        </page>
                         <page string="Activity Description">
                             <field name="description" nolabel="1"/>
-                        </page>
-                        <page string="Implementation Guidance">
-                            <field name="pm_implementation_guidance" nolabel="1" readonly="1"/>
-                        </page>
-                        <page string="Recommended Steps">
-                            <field name="pm_recommended_steps" nolabel="1" readonly="1"/>
-                        </page>
-                        <page string="Evidence Guidance">
-                            <field name="pm_evidence_guidance" nolabel="1" readonly="1"/>
                         </page>
                     </notebook>
                 </sheet>

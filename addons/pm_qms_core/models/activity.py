@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class PmQmsActivity(models.Model):
@@ -45,7 +46,20 @@ class PmQmsActivity(models.Model):
     responsible_role = fields.Char()
     responsible_user_id = fields.Many2one("res.users", string="Responsible User")
     expected_output = fields.Text()
+    evidence_expectations = fields.Text(
+        help="Narrative guidance about evidence that would normally demonstrate effective completion; this does not create a formal evidence requirement."
+    )
+    definition_key = fields.Char(
+        index=True,
+        copy=False,
+        help="Stable identity for a seeded methodology definition; optional for legacy activities."
+    )
     active = fields.Boolean(default=True)
+
+    _definition_key_company_uniq = models.Constraint(
+        "unique(company_id, definition_key)",
+        "A methodology activity definition key must be unique within a company.",
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -57,6 +71,13 @@ class PmQmsActivity(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        if "definition_key" in vals:
+            for activity in self:
+                new_key = vals.get("definition_key")
+                if activity.definition_key and new_key != activity.definition_key:
+                    raise ValidationError(
+                        "A seeded methodology activity definition key is immutable."
+                    )
         if vals.get("activity_kind") == "project_administration":
             vals["readiness_required"] = False
         if vals.get("readiness_required") is True and not vals.get("activity_kind"):
