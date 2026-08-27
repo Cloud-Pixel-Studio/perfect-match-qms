@@ -389,7 +389,7 @@ class PmQmsImplementationProject(models.Model):
                             "pm_control_instance_id": line.control_instance_id.id,
                             "pm_activity_id": activity.id,
                             "pm_generated": True,
-                            "pm_required": line.required,
+                            "pm_required": bool(line.required and activity.readiness_required),
                         }
                     )
 
