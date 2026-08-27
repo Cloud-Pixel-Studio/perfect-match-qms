@@ -283,6 +283,83 @@ class TestPmQmsImplementation(TransactionCase):
         self.assertEqual(project.completed_tasks, 1)
         self.assertEqual(self.activity.name, original_activity_name)
 
+    def test_activity_guided_semantics_and_administrative_invariant(self):
+        activity = self.env["pm.qms.activity"].create(
+            {
+                "control_id": self.controls[2].id,
+                "name": "Plan implementation communications",
+                "objective": "Establish the communication plan for the implementation.",
+                "why_it_matters": "The team needs a shared operating rhythm.",
+                "implementation_steps": "Identify audiences, cadence, owners, and outputs.",
+                "success_criteria": "The approved communication plan is available.",
+            }
+        )
+        self.assertEqual(activity.activity_kind, "qms_implementation")
+        self.assertTrue(activity.readiness_required)
+        self.assertEqual(
+            activity.objective,
+            "Establish the communication plan for the implementation.",
+        )
+        self.assertEqual(
+            activity.success_criteria,
+            "The approved communication plan is available.",
+        )
+
+        activity.write(
+            {
+                "activity_kind": "project_administration",
+                "readiness_required": True,
+            }
+        )
+        self.assertFalse(activity.readiness_required)
+        activity.write({"readiness_required": True})
+        self.assertFalse(activity.readiness_required)
+
+    def test_generated_task_required_flag_respects_activity_semantics(self):
+        non_readiness = self.env["pm.qms.activity"].create(
+            {
+                "control_id": self.controls[3].id,
+                "name": "Schedule implementation check-in",
+                "activity_kind": "project_administration",
+            }
+        )
+        self.assertFalse(non_readiness.readiness_required)
+        optional_control = self.controls[1]
+        pack = self._create_pack(
+            "PM-TST-ACTIVITY-SEMANTICS",
+            self.controls[:4],
+            required={optional_control.id: False},
+        )
+        project = self._generate_project([pack])
+        tasks = {
+            task.pm_activity_id.id: task
+            for task in project.generated_task_ids
+        }
+
+        required_task = tasks[self.activity.id]
+        optional_task = tasks[self.second_activity.id]
+        non_readiness_task = tasks[non_readiness.id]
+        self.assertTrue(required_task.pm_required)
+        self.assertFalse(optional_task.pm_required)
+        self.assertFalse(non_readiness_task.pm_required)
+
+        line = project.implementation_control_ids.filtered(
+            lambda item: item.control_id == self.controls[0]
+        )
+        line.write({"required": False})
+        self.assertFalse(required_task.pm_required)
+        line.write({"required": True})
+        self.assertTrue(required_task.pm_required)
+
+        non_readiness_line = project.implementation_control_ids.filtered(
+            lambda item: item.control_id == self.controls[3]
+        )
+        non_readiness_line.control_instance_id.with_user(self.manager).action_mark_in_progress()
+        before = non_readiness_line.readiness_state
+        non_readiness_task.with_user(self.manager).write({"state": "1_done"})
+        self.assertEqual(non_readiness_line.readiness_state, before)
+        self.assertEqual(non_readiness_line.open_activity_count, 0)
+
     def test_activity_actions_preserve_qms_context_and_project_task_engine(self):
         pack = self._create_pack("PM-TST-ACTUX", [self.controls[0]])
         project = self._generate_project([pack])

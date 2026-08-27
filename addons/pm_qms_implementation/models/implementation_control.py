@@ -240,7 +240,14 @@ class PmQmsImplementationControl(models.Model):
         result = super().write(vals)
         if "required" in vals:
             for line in self:
-                line.task_ids.filtered(lambda task: task.pm_generated).write({"pm_required": line.required})
+                for task in line.task_ids.filtered(lambda item: item.pm_generated):
+                    task.write(
+                        {
+                            "pm_required": bool(
+                                line.required and task.pm_activity_id.readiness_required
+                            )
+                        }
+                    )
         return result
 
     def unlink(self):

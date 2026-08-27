@@ -8,6 +8,8 @@
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="control_id"/>
+                <field name="activity_kind" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                <field name="readiness_required" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                 <field name="responsible_role"/>
                 <field name="responsible_user_id"/>
                 <field name="expected_output"/>
@@ -37,6 +39,14 @@
                     <group>
                         <field name="description"/>
                         <field name="expected_output"/>
+                    </group>
+                    <group string="Guided implementation semantics" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator">
+                        <field name="objective"/>
+                        <field name="why_it_matters"/>
+                        <field name="implementation_steps"/>
+                        <field name="success_criteria"/>
+                        <field name="activity_kind"/>
+                        <field name="readiness_required"/>
                     </group>
                 </sheet>
             </form>
