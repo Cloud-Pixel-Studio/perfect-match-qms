@@ -1,0 +1,5 @@
+Name,External ID,Original Source ID,Task Usage Count
+Evidence,fixture.tag.evidence,old-tag-001,2
+High Priority,fixture.tag.priority,old-tag-002,1
+Risk,fixture.tag.risk,old-tag-003,2
+Unmapped Concept,fixture.tag.unmapped,old-tag-004,1

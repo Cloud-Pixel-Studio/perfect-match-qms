@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "M25.2 source-derived methodology candidate",
+  "type": "object",
+  "required": [
+    "source_record_key",
+    "classification",
+    "initial_implementation_candidate",
+    "review_status",
+    "review_flags",
+    "confidence",
+    "provenance"
+  ],
+  "properties": {
+    "source_record_key": { "type": "string", "pattern": "^src-[a-f0-9]{20}$" },
+    "source_stage": { "type": "string" },
+    "source_title": { "type": "string" },
+    "classification": {
+      "enum": [
+        "QMS_IMPLEMENTATION",
+        "PROJECT_ADMINISTRATION",
+        "READINESS_ASSESSMENT",
+        "CERTIFICATION_PREPARATION",
+        "TRANSITION",
+        "GAP_REMEDIATION",
+        "OTHER",
+        "NEEDS_REVIEW"
+      ]
+    },
+    "initial_implementation_candidate": { "enum": ["YES", "NO", "REVIEW"] },
+    "proposed_phase_key": { "type": "string" },
+    "title": { "type": "string" },
+    "objective": { "type": "string" },
+    "why_it_matters": { "type": "string" },
+    "guidance": { "type": "string" },
+    "implementation_steps": { "type": "array", "items": { "type": "string" } },
+    "expected_output": { "type": "string" },
+    "evidence_expectations": { "type": "array", "items": { "type": "string" } },
+    "success_criteria": { "type": "array", "items": { "type": "string" } },
+    "responsible_role": { "type": "string" },
+    "priority": { "type": "string" },
+    "evidence_types": { "type": "array", "items": { "type": "string" } },
+    "readiness_candidate": { "enum": ["TRUE", "FALSE", "REVIEW"] },
+    "external_reference_metadata": { "type": "object" },
+    "unresolved_tags": { "type": "array", "items": { "type": "string" } },
+    "review_status": { "enum": ["UNREVIEWED", "REVIEW_REQUIRED"] },
+    "review_flags": { "type": "array", "items": { "type": "string" } },
+    "confidence": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+    "provenance": {
+      "type": "object",
+      "required": ["kind", "source_key_basis"],
+      "properties": {
+        "kind": { "enum": ["main", "subtask"] },
+        "source_stage": { "type": "string" },
+        "source_key_basis": { "const": "safe structural hash" }
+      }
+    },
+    "content_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

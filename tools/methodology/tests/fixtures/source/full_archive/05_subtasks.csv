@@ -1,0 +1,10 @@
+Name,Parent Task Name,Description,Original Source ID,Assignees/Email,AI Prompt
+Define QMS Process Map,Define QMS Process Map,Establish the fictional process step.,old-sub-001,person@example.invalid,
+Collect evidence,Define QMS Process Map,Retain a fictional evidence record.,old-sub-002,person@example.invalid,
+Confirm success criterion,Define QMS Process Map,Confirm fictional acceptance criteria.,old-sub-003,person@example.invalid,
+Produce deliverable,Define QMS Process Map,Produce a fictional output.,old-sub-004,person@example.invalid,
+Schedule meeting,Project kickoff logistics,Coordinate fictional meeting logistics.,old-sub-005,person@example.invalid,
+Transition note,2026 transition planning,Keep transition content separate.,old-sub-006,person@example.invalid,
+Crosswalk note,Review ISO 14001 crosswalk,ISO 14001 reference for review.,old-sub-007,person@example.invalid,
+AI guidance,Define QMS Process Map,Use a fictional guidance concept.,old-sub-008,person@example.invalid,Fictional raw prompt must be excluded
+Protected text note,Define QMS Process Map,Copyright requirement text shall be reviewed.,old-sub-009,person@example.invalid,

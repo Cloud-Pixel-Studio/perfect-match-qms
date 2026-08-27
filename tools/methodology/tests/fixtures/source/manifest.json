@@ -1,0 +1,17 @@
+{
+  "package_name": "fictional-methodology-fixture",
+  "schema_version": "fixture-1",
+  "source_database": "fictional_source_db",
+  "source_project_id": "source-project-001",
+  "generated_at": "2026-01-01T00:00:00Z",
+  "counts": {
+    "projects": 1,
+    "stages": 2,
+    "main_tasks": 8,
+    "subtasks": 9,
+    "tags": 4,
+    "chatter": 1,
+    "dependencies": 0,
+    "attachments": 0
+  }
+}
