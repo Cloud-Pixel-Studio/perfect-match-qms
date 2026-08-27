@@ -219,3 +219,28 @@ class TestPmQmsEvidence(TransactionCase):
         evidence = self.env["pm.qms.evidence"].create(self._evidence_values(name="Company one evidence"))
 
         self.assertFalse(self.env["pm.qms.evidence"].with_user(other_user).search([("id", "=", evidence.id)]))
+
+    def test_m25_8_requirement_identity_and_reviewer_context(self):
+        self.requirement.write({
+            "definition_key": "PM-QMS-EVID-PM-QMP-TEST-001",
+            "description": "A current controlled source.",
+            "acceptance_criteria": "Owner is identified.\nDate is present.",
+        })
+        evidence = self.env["pm.qms.evidence"].create(self._evidence_values())
+        self.assertEqual(evidence.requirement_description, "A current controlled source.")
+        self.assertEqual(evidence.requirement_acceptance_criteria, "Owner is identified.\nDate is present.")
+        with self.assertRaises(ValidationError):
+            self.requirement.write({"definition_key": "PM-QMS-EVID-OTHER"})
+
+    def test_m25_8_archived_evidence_is_excluded_from_live_completion(self):
+        manager = self._create_test_user("pmqms.evidence.archive_manager", self.qms_manager_group)
+        evidence = self.env["pm.qms.evidence"].create(self._evidence_values())
+        evidence.action_submit()
+        evidence.with_user(manager).action_accept()
+        evidence.with_context(pm_qms_evidence_workflow=True).write({"active": False})
+        self.control_instance.invalidate_recordset([
+            "required_evidence_count", "accepted_evidence_count", "missing_evidence_count"
+        ])
+        self.assertEqual(self.control_instance.required_evidence_count, 1)
+        self.assertEqual(self.control_instance.accepted_evidence_count, 0)
+        self.assertEqual(self.control_instance.missing_evidence_count, 1)

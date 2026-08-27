@@ -361,3 +361,15 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertFalse(
             self.env["pm.qms.implementation.project"].with_user(self.other_user).search([("id", "=", project.id)])
         )
+
+    def test_m25_8_quality_requirements_have_stable_keys_and_criteria(self):
+        requirements = self.quality_pack.control_line_ids.mapped(
+            "control_id.evidence_requirement_ids"
+        ).filtered(lambda requirement: requirement.active and requirement.mandatory)
+        self.assertEqual(len(requirements), 37)
+        self.assertEqual(len(set(requirements.mapped("definition_key"))), 37)
+        self.assertTrue(all(
+            requirement.definition_key.startswith("PM-QMS-EVID-PM-QMP-")
+            and len(requirement.acceptance_criteria.splitlines()) == 5
+            for requirement in requirements
+        ))

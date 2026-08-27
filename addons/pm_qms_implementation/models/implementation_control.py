@@ -134,8 +134,10 @@ class PmQmsImplementationControl(models.Model):
     @api.depends(
         "control_instance_id.implementation_status",
         "control_instance_id.applicability",
+        "control_instance_id.evidence_ids.active",
         "control_instance_id.evidence_ids.state",
         "control_instance_id.evidence_ids.evidence_requirement_id",
+        "control_id.evidence_requirement_ids.active",
         "control_id.evidence_requirement_ids.mandatory",
         "task_ids.state",
         "task_ids.date_deadline",
@@ -144,11 +146,29 @@ class PmQmsImplementationControl(models.Model):
     def _compute_readiness_components(self):
         now = fields.Datetime.now()
         for line in self:
-            requirements = line.control_id.evidence_requirement_ids.filtered(lambda req: req.mandatory and req.active)
-            evidence = line.control_instance_id.evidence_ids.filtered(lambda record: record.evidence_requirement_id in requirements)
-            accepted_requirements = evidence.filtered(lambda record: record.state == "accepted").mapped("evidence_requirement_id")
-            under_review = evidence.filtered(lambda record: record.state in {"submitted", "under_review"})
-            required_tasks = line.task_ids.filtered(lambda task: task.pm_generated and task.pm_required)
+            status = line.control_instance_id.implementation_status
+            not_applicable = (
+                line.control_instance_id.applicability == "not_applicable"
+                or status == "not_applicable"
+            )
+            requirements = line.control_id.evidence_requirement_ids.filtered(
+                lambda req: not not_applicable and req.mandatory and req.active
+            )
+            evidence = line.control_instance_id.evidence_ids.filtered(
+                lambda record: record.active
+                and record.evidence_requirement_id in requirements
+            )
+            accepted_requirements = evidence.filtered(
+                lambda record: record.state == "accepted"
+            ).mapped("evidence_requirement_id")
+            under_review = evidence.filtered(
+                lambda record: record.state in {"submitted", "under_review"}
+            )
+            required_tasks = line.task_ids.filtered(
+                lambda task: not not_applicable
+                and task.pm_generated
+                and task.pm_required
+            )
             completed_tasks = required_tasks.filtered("is_closed")
             open_tasks = required_tasks - completed_tasks
             overdue_tasks = open_tasks.filtered(lambda task: task.date_deadline and task.date_deadline < now)
@@ -162,8 +182,7 @@ class PmQmsImplementationControl(models.Model):
             line.open_activity_count = len(open_tasks)
             line.overdue_activity_count = len(overdue_tasks)
 
-            status = line.control_instance_id.implementation_status
-            if line.control_instance_id.applicability == "not_applicable" or status == "not_applicable":
+            if not_applicable:
                 line.readiness_state = "not_applicable"
                 line.gap_reason = False
             elif status == "implemented" and not line.missing_evidence_count and not line.open_activity_count:

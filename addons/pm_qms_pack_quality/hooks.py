@@ -54,6 +54,36 @@ def _quality_guidance_values(control_data):
     }
 
 
+def _evidence_acceptance_criteria(evidence_type):
+    label = evidence_type.replace("_", " ")
+    return "\n".join(
+        [
+            "The evidence set identifies the applicable control and implementation scope.",
+            "The evidence set identifies an accountable owner and a relevant date or revision marker.",
+            f"The evidence set contains a current {label} source or an equivalent traceable source.",
+            "The reviewer can retrieve the source and confirm that the set is complete for the claimed scope.",
+            "The evidence is internally consistent and supports the implementation decision being reviewed.",
+        ]
+    )
+
+
+def _find_or_adopt_evidence_requirement(env, control, name, definition_key):
+    Requirement = env["pm.qms.evidence.requirement"]
+    keyed = Requirement.search([("definition_key", "=", definition_key)])
+    if len(keyed) > 1:
+        raise ValueError(f"Duplicate evidence requirement definition {definition_key} exists.")
+    if keyed:
+        if keyed.control_id != control:
+            raise ValueError(f"Evidence requirement definition {definition_key} belongs to another control.")
+        return keyed
+    legacy = Requirement.search([("control_id", "=", control.id), ("name", "=", name)])
+    if len(legacy) > 1:
+        raise ValueError(f"Duplicate legacy evidence requirement {name} exists.")
+    if legacy:
+        if legacy.definition_key and legacy.definition_key != definition_key:
+            raise ValueError(f"Legacy evidence requirement {name} has an incompatible definition key.")
+        legacy.write({"definition_key": definition_key})
+        return legacy
 QUALITY_CONTROLS = [
     {
         "code": "PM-QMP-ORG-001",
@@ -693,21 +723,27 @@ def seed_quality_pack(env):
                     }
                 )
         for sequence, (name, evidence_type, description) in enumerate(control_data["evidence"], start=1):
-            existing_requirement = env["pm.qms.evidence.requirement"].search(
-                [("control_id", "=", control.id), ("name", "=", name)],
-                limit=1,
+            definition_key = f"PM-QMS-EVID-{control_data['code']}"
+            existing_requirement = _find_or_adopt_evidence_requirement(
+                env, control, name, definition_key
             )
-            if not existing_requirement:
-                env["pm.qms.evidence.requirement"].create(
-                    {
-                        "control_id": control.id,
-                        "sequence": sequence * 10,
-                        "name": name,
-                        "evidence_type": evidence_type,
-                        "description": description,
-                        "mandatory": True,
-                    }
-                )
+            values = {
+                "control_id": control.id,
+                "sequence": sequence * 10,
+                "name": name,
+                "definition_key": definition_key,
+                "evidence_type": evidence_type,
+                "description": description,
+                "acceptance_criteria": _evidence_acceptance_criteria(evidence_type),
+                "mandatory": True,
+            }
+            if existing_requirement:
+                existing_requirement.write({
+                    "definition_key": definition_key,
+                    "acceptance_criteria": values["acceptance_criteria"],
+                })
+            else:
+                env["pm.qms.evidence.requirement"].create(values)
 
     pack = env["pm.qms.framework.pack"].search(
         [

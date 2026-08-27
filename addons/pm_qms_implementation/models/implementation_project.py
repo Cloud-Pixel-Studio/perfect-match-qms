@@ -177,10 +177,13 @@ class PmQmsImplementationProject(models.Model):
             partial = applicable.filtered(lambda line: line.readiness_state == "partial")
             gap = applicable.filtered(lambda line: line.readiness_state == "gap")
             tasks = project.generated_task_ids.filtered(lambda task: task.pm_generated)
-            completed_tasks = tasks.filtered("is_closed")
-            open_tasks = tasks - completed_tasks
-            required_activity_count = sum(controls.mapped("required_activity_count"))
-            completed_activity_count = sum(controls.mapped("completed_activity_count"))
+            readiness_tasks = tasks.filtered(
+                lambda task: task.pm_implementation_control_id in applicable
+            )
+            completed_tasks = readiness_tasks.filtered("is_closed")
+            open_tasks = readiness_tasks - completed_tasks
+            required_activity_count = sum(applicable.mapped("required_activity_count"))
+            completed_activity_count = sum(applicable.mapped("completed_activity_count"))
 
             project.total_controls = len(controls)
             project.applicable_controls = len(applicable)
@@ -194,9 +197,9 @@ class PmQmsImplementationProject(models.Model):
             )
             project.not_started_controls = len(controls.filtered(lambda line: line.implementation_status == "not_started"))
             project.under_review_controls = len(controls.filtered(lambda line: line.implementation_status == "under_review"))
-            project.required_evidence = sum(controls.mapped("required_evidence_count"))
-            project.accepted_evidence = sum(controls.mapped("accepted_evidence_count"))
-            project.missing_evidence = sum(controls.mapped("missing_evidence_count"))
+            project.required_evidence = sum(applicable.mapped("required_evidence_count"))
+            project.accepted_evidence = sum(applicable.mapped("accepted_evidence_count"))
+            project.missing_evidence = sum(applicable.mapped("missing_evidence_count"))
             project.total_generated_tasks = len(tasks)
             project.completed_tasks = len(completed_tasks)
             project.open_tasks = len(open_tasks)
@@ -549,9 +552,9 @@ class PmQmsImplementationProject(models.Model):
                     "partial_controls": len(applicable.filtered(lambda line: line.readiness_state == "partial")),
                     "gap_controls": len(applicable.filtered(lambda line: line.readiness_state == "gap")),
                     "not_applicable_controls": len(not_applicable),
-                    "missing_evidence": sum(lines.mapped("missing_evidence_count")),
-                    "open_tasks": sum(lines.mapped("open_activity_count")),
-                    "overdue_tasks": sum(lines.mapped("overdue_activity_count")),
+                    "missing_evidence": sum(applicable.mapped("missing_evidence_count")),
+                    "open_tasks": sum(applicable.mapped("open_activity_count")),
+                    "overdue_tasks": sum(applicable.mapped("overdue_activity_count")),
                     "readiness_percent": (len(ready) / len(applicable) * 100.0) if applicable else 0.0,
                 }
             )

@@ -44,6 +44,8 @@
                         <group string="Implementation">
                             <field name="control_instance_id"/>
                             <field name="evidence_requirement_id"/>
+                            <field name="requirement_description" readonly="1"/>
+                            <field name="requirement_acceptance_criteria" readonly="1"/>
                             <field name="organization_id"/>
                             <field name="process_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>

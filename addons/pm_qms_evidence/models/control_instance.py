@@ -11,9 +11,11 @@ class PmQmsControlInstance(models.Model):
 
     def _compute_evidence_completion(self):
         for instance in self:
-            required_requirements = instance.control_id.evidence_requirement_ids.filtered("mandatory")
+            required_requirements = instance.control_id.evidence_requirement_ids.filtered(
+                lambda requirement: requirement.active and requirement.mandatory
+            )
             accepted_requirements = instance.evidence_ids.filtered(
-                lambda evidence: evidence.state == "accepted"
+                lambda evidence: evidence.active and evidence.state == "accepted"
                 and evidence.evidence_requirement_id in required_requirements
             ).mapped("evidence_requirement_id")
             instance.required_evidence_count = len(required_requirements)

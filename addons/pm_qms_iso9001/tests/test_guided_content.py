@@ -668,7 +668,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         self.assertEqual(design.implementation_status, "not_applicable")
         self.assertEqual(property_line.implementation_status, "not_applicable")
         self.assertTrue(design_task.pm_required)
-        self.assertGreaterEqual(design.open_activity_count, 1)
+        self.assertEqual(design.open_activity_count, 0)
         self.assertEqual(project.not_applicable_controls, 2)
         self.assertEqual(
             project.applicable_controls,
