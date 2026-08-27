@@ -46,6 +46,9 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         cls.m25_6_content = json.loads(
             (cls.root / "content" / "initial_implementation_p09_p10_v1.json").read_text()
         )
+        cls.m25_7_content = json.loads(
+            (cls.root / "content" / "initial_implementation_p11_p13_v1.json").read_text()
+        )
         cls.blueprint_by_key = {
             item["activity_key"]: item for item in cls.blueprint["activities"]
         }
@@ -55,7 +58,10 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         cls.target_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(1, 11)}
         cls.m25_5_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(11, 16)}
         cls.m25_6_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(16, 28)}
-        cls.all_target_keys = cls.target_keys | cls.m25_5_keys | cls.m25_6_keys
+        cls.m25_7_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(28, 38)}
+        cls.all_target_keys = (
+            cls.target_keys | cls.m25_5_keys | cls.m25_6_keys | cls.m25_7_keys
+        )
 
     def test_blueprint_checkpoint_distribution_is_roadmap_aligned(self):
         counts = {}
@@ -103,6 +109,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
                 ("initial_implementation_p01_p06_v1.json", "M25.4"),
                 ("initial_implementation_p07_p08_v1.json", "M25.5"),
                 ("initial_implementation_p09_p10_v1.json", "M25.6"),
+                ("initial_implementation_p11_p13_v1.json", "M25.7"),
             ],
         )
         self.assertEqual(set(_initial_authored_content()), self.all_target_keys)
@@ -216,18 +223,136 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             self.assertEqual(activity.activity_kind, "qms_implementation")
             self.assertTrue(activity.readiness_required)
 
-    def test_a011_to_a015_are_materialized_and_a028_to_a037_remain_blueprint_only(self):
+    def test_a011_to_a015_are_materialized(self):
         activities = self.env["pm.qms.activity"].search(
             [("definition_key", "in", sorted(self.m25_5_keys)), ("company_id", "=", self.company.id)]
         )
         self.assertEqual(len(activities), 5)
         self.assertEqual(set(activities.mapped("definition_key")), self.m25_5_keys)
-        later_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(28, 38)}
-        self.assertFalse(
-            self.env["pm.qms.activity"].search(
-                [("definition_key", "in", sorted(later_keys))]
-            )
+
+    def test_m25_7_content_block_matches_blueprint_and_is_complete(self):
+        self.assertEqual(
+            {item["activity_key"] for item in self.m25_7_content["activities"]},
+            self.m25_7_keys,
         )
+        required = (
+            "activity_key",
+            "content_checkpoint",
+            "title",
+            "description",
+            "objective",
+            "why_it_matters",
+            "implementation_steps",
+            "expected_output",
+            "evidence_expectations",
+            "success_criteria",
+            "responsible_role",
+            "activity_kind",
+            "readiness_required",
+            "applicable_pack_ids",
+        )
+        expected = {
+            "ISO9001-INITIAL-A028": ("PM-QMP-SAT-001", "P11"),
+            "ISO9001-INITIAL-A029": ("PM-QMP-KPI-001", "P11"),
+            "ISO9001-INITIAL-A030": ("PM-QMP-DATA-001", "P11"),
+            "ISO9001-INITIAL-A031": ("PM-QMP-NCO-001", "P12"),
+            "ISO9001-INITIAL-A032": ("PM-QMP-NCR-001", "P12"),
+            "ISO9001-INITIAL-A033": ("PM-QMP-RCA-001", "P12"),
+            "ISO9001-INITIAL-A034": ("PM-QMP-CAPA-001", "P12"),
+            "ISO9001-INITIAL-A035": ("PM-QMP-CI-001", "P12"),
+            "ISO9001-INITIAL-A036": ("PM-QMP-AUD-001", "P12"),
+            "ISO9001-INITIAL-A037": ("PM-QMP-MRV-001", "P13"),
+        }
+        for item in self.m25_7_content["activities"]:
+            self.assertTrue(all(item.get(field_name) for field_name in required))
+            self.assertEqual(item["content_checkpoint"], "M25.7")
+            self.assertEqual(item["activity_kind"], "qms_implementation")
+            self.assertTrue(item["readiness_required"])
+            self.assertEqual(item["applicable_pack_ids"], [INITIAL_PACK_CODE])
+            self.assertEqual(
+                self.blueprint_by_key[item["activity_key"]]["control_code"],
+                expected[item["activity_key"]][0],
+            )
+            self.assertEqual(
+                self.blueprint_by_key[item["activity_key"]]["phase_key"],
+                expected[item["activity_key"]][1],
+            )
+
+    def test_m25_7_cross_activity_distinctions_are_explicit(self):
+        by_key = {item["activity_key"]: item for item in self.m25_7_content["activities"]}
+        text = {
+            key: " ".join(
+                item[field]
+                for field in (
+                    "title",
+                    "description",
+                    "objective",
+                    "why_it_matters",
+                    "implementation_steps",
+                    "expected_output",
+                    "evidence_expectations",
+                    "success_criteria",
+                )
+            ).lower()
+            for key, item in by_key.items()
+        }
+        self.assertIn("complaint", text["ISO9001-INITIAL-A028"])
+        self.assertIn("feedback", text["ISO9001-INITIAL-A028"])
+        self.assertIn("metric", text["ISO9001-INITIAL-A029"])
+        self.assertIn("data", text["ISO9001-INITIAL-A030"])
+        self.assertIn("immediate", text["ISO9001-INITIAL-A031"])
+        self.assertIn("nonconformit", text["ISO9001-INITIAL-A032"])
+        self.assertIn("cause", text["ISO9001-INITIAL-A033"])
+        self.assertIn("effectiveness", text["ISO9001-INITIAL-A034"])
+        self.assertIn("improvement", text["ISO9001-INITIAL-A035"])
+        self.assertIn("objective evidence", text["ISO9001-INITIAL-A036"])
+        self.assertIn("leadership", text["ISO9001-INITIAL-A037"])
+        self.assertIn("decisions", text["ISO9001-INITIAL-A037"])
+        self.assertNotIn("certification", text["ISO9001-INITIAL-A036"])
+        self.assertNotIn("certification", text["ISO9001-INITIAL-A037"])
+
+    def test_m25_7_content_is_standalone_and_narrative_only(self):
+        text = (self.root / "content" / "initial_implementation_p11_p13_v1.json").read_text().lower()
+        for marker in (
+            "odoo sales",
+            "odoo purchase",
+            "odoo inventory",
+            "odoo manufacturing",
+            "odoo quality",
+            "odoo maintenance",
+            "accounting",
+            "bi software",
+            "iso 14001",
+            "iso 45001",
+            "as9100",
+            "iatf",
+            "shall",
+            "certification",
+            "raw ai",
+            "chatter",
+            "source database",
+        ):
+            self.assertNotIn(marker, text)
+
+    def test_m25_7_activities_have_exact_control_phase_scope_and_semantics(self):
+        activities = self.env["pm.qms.activity"].search(
+            [
+                ("definition_key", "in", sorted(self.m25_7_keys)),
+                ("company_id", "=", self.company.id),
+            ]
+        )
+        self.assertEqual(len(activities), 10)
+        for activity in activities:
+            blueprint = self.blueprint_by_key[activity.definition_key]
+            self.assertEqual(activity.control_id.code, blueprint["control_code"])
+            line = self.pack.control_line_ids.filtered(
+                lambda record, control=activity.control_id: record.control_id == control
+            )
+            self.assertEqual(len(line), 1)
+            self.assertEqual(line.area_id.code, blueprint["phase_key"])
+            self.assertEqual(activity.applicable_pack_ids, self.pack)
+            self.assertEqual(activity.activity_kind, "qms_implementation")
+            self.assertTrue(activity.readiness_required)
 
     def test_m25_6_content_block_matches_blueprint_and_is_complete(self):
         self.assertEqual(
@@ -399,7 +524,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         activities = self.env["pm.qms.activity"].search(
             [("definition_key", "in", sorted(self.all_target_keys)), ("company_id", "=", self.company.id)]
         )
-        self.assertEqual(len(activities), 27)
+        self.assertEqual(len(activities), 37)
         self.assertEqual(set(activities.mapped("definition_key")), self.all_target_keys)
         with self.assertRaises(ValidationError):
             activities[0].write({"definition_key": "ISO9001-INITIAL-CHANGED"})
@@ -442,7 +567,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         self.assertEqual(task.pm_activity_evidence_expectations, source.evidence_expectations)
         self.assertEqual(task.pm_activity_responsible_role, source.responsible_role)
 
-    def test_generation_materializes_twenty_seven_iso_tasks_and_no_generic_pack_leak(self):
+    def test_generation_materializes_thirty_seven_iso_tasks_and_no_generic_pack_leak(self):
         self.env.user.write(
             {"group_ids": [(4, self.env.ref("pm_qms_core.group_pm_qms_manager").id)]}
         )
@@ -463,7 +588,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         tasks = project.generated_task_ids.filtered(
             lambda task: task.pm_activity_id.definition_key in self.all_target_keys
         )
-        self.assertEqual(len(tasks), 27)
+        self.assertEqual(len(tasks), 37)
         self.assertEqual(
             len(tasks.filtered(lambda task: task.pm_activity_id.definition_key in self.m25_5_keys)),
             5,
@@ -472,9 +597,9 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             len(tasks.filtered(lambda task: task.pm_activity_id.definition_key in self.m25_6_keys)),
             12,
         )
-        later_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(28, 38)}
-        self.assertFalse(
-            tasks.filtered(lambda task: task.pm_activity_id.definition_key in later_keys)
+        self.assertEqual(
+            len(tasks.filtered(lambda task: task.pm_activity_id.definition_key in self.m25_7_keys)),
+            10,
         )
         self.assertTrue(all(tasks.mapped("pm_required")))
 
@@ -602,6 +727,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             "initial_implementation_p01_p06_v1.json",
             "initial_implementation_p07_p08_v1.json",
             "initial_implementation_p09_p10_v1.json",
+            "initial_implementation_p11_p13_v1.json",
         ):
             text = (self.root / "content" / filename).read_text().lower()
             for marker in (
