@@ -1,0 +1,462 @@
+{
+  "activities": [
+    {
+      "activity_key": "ISO9001-INITIAL-A001",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-ORG-001",
+      "phase_key": "P01",
+      "readiness_intent": true,
+      "title": "Establish the organizational context register"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A002",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-ORG-002",
+      "phase_key": "P02",
+      "readiness_intent": true,
+      "title": "Identify interested-party planning inputs"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A003",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-SCOPE-001",
+      "phase_key": "P02",
+      "readiness_intent": true,
+      "title": "Define the QMS scope boundaries"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A004",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-PROC-001",
+      "phase_key": "P03",
+      "readiness_intent": true,
+      "title": "Map the QMS process architecture"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A005",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-GOV-001",
+      "phase_key": "P04",
+      "readiness_intent": true,
+      "title": "Confirm leadership accountability"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A006",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-ROLE-001",
+      "phase_key": "P04",
+      "readiness_intent": true,
+      "title": "Build the responsibility and authority matrix"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A007",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-POL-001",
+      "phase_key": "P04",
+      "readiness_intent": true,
+      "title": "Set the quality policy direction"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A008",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-RISK-001",
+      "phase_key": "P05",
+      "readiness_intent": true,
+      "title": "Establish risk and opportunity planning"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A009",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-OBJ-001",
+      "phase_key": "P06",
+      "readiness_intent": true,
+      "title": "Deploy quality objectives"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A010",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-RES-001",
+      "phase_key": "P06",
+      "readiness_intent": true,
+      "title": "Plan QMS resources"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A011",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-CMP-001",
+      "phase_key": "P07",
+      "readiness_intent": true,
+      "title": "Establish competency requirements"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A012",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-AWR-001",
+      "phase_key": "P07",
+      "readiness_intent": true,
+      "title": "Plan quality awareness"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A013",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-COM-001",
+      "phase_key": "P07",
+      "readiness_intent": true,
+      "title": "Define the QMS communication method"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A014",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-DOC-001",
+      "phase_key": "P08",
+      "readiness_intent": true,
+      "title": "Establish documented-information control"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A015",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-REC-001",
+      "phase_key": "P08",
+      "readiness_intent": true,
+      "title": "Establish record and evidence control"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A016",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-DSG-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Set design and development controls"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A017",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-OPS-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Define operational planning criteria"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A018",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-OPS-002",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Control work instructions"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A019",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-REL-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Define verification and release controls"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A020",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-TRC-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Establish identification and traceability"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A021",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-PROP-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Protect customer and external property"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A022",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-PRE-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Establish preservation and handling controls"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A023",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-CHG-001",
+      "phase_key": "P09",
+      "readiness_intent": true,
+      "title": "Control operational changes"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A024",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-CUST-001",
+      "phase_key": "P10",
+      "readiness_intent": true,
+      "title": "Capture customer requirements"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A025",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-REQ-001",
+      "phase_key": "P10",
+      "readiness_intent": true,
+      "title": "Review commitments before acceptance"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A026",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-SUP-001",
+      "phase_key": "P10",
+      "readiness_intent": true,
+      "title": "Qualify external providers"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A027",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-SUP-002",
+      "phase_key": "P10",
+      "readiness_intent": true,
+      "title": "Monitor supplier performance"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A028",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-SAT-001",
+      "phase_key": "P11",
+      "readiness_intent": true,
+      "title": "Establish customer feedback review"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A029",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-KPI-001",
+      "phase_key": "P11",
+      "readiness_intent": true,
+      "title": "Establish the quality KPI system"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A030",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-DATA-001",
+      "phase_key": "P11",
+      "readiness_intent": true,
+      "title": "Protect quality data integrity"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A031",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-NCO-001",
+      "phase_key": "P12",
+      "readiness_intent": true,
+      "title": "Control nonconforming outputs"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A032",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-NCR-001",
+      "phase_key": "P12",
+      "readiness_intent": true,
+      "title": "Manage nonconformities"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A033",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-RCA-001",
+      "phase_key": "P12",
+      "readiness_intent": true,
+      "title": "Apply root-cause analysis"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A034",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-CAPA-001",
+      "phase_key": "P12",
+      "readiness_intent": true,
+      "title": "Verify corrective-action effectiveness"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A035",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-CI-001",
+      "phase_key": "P12",
+      "readiness_intent": true,
+      "title": "Maintain the continual-improvement pipeline"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A036",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-AUD-001",
+      "phase_key": "P12",
+      "readiness_intent": true,
+      "title": "Establish the internal audit program"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A037",
+      "activity_kind": "qms_implementation",
+      "authoring_status": "blueprint",
+      "content_checkpoint": "M25.4",
+      "control_code": "PM-QMP-MRV-001",
+      "phase_key": "P13",
+      "readiness_intent": true,
+      "title": "Prepare management review inputs and decisions"
+    }
+  ],
+  "pack": {
+    "code": "PM-QMS-ISO9001-INITIAL",
+    "name": "ISO 9001 Initial Implementation",
+    "pack_type": "standard",
+    "state": "active",
+    "version": "1.0"
+  },
+  "phases": [
+    {
+      "code": "P01",
+      "description": "Establish the implementation operating frame, ownership, and decision rhythm.",
+      "name": "Setup and Governance",
+      "sequence": 10
+    },
+    {
+      "code": "P02",
+      "description": "Set the organizational boundaries and planning inputs for the QMS.",
+      "name": "Context and Scope",
+      "sequence": 20
+    },
+    {
+      "code": "P03",
+      "description": "Define the process structure and interactions used by the organization.",
+      "name": "Process Architecture",
+      "sequence": 30
+    },
+    {
+      "code": "P04",
+      "description": "Make leadership direction, roles, and authority visible in the operating model.",
+      "name": "Leadership and Responsibilities",
+      "sequence": 40
+    },
+    {
+      "code": "P05",
+      "description": "Turn relevant uncertainty into owned planning and response decisions.",
+      "name": "Risk and Planning",
+      "sequence": 50
+    },
+    {
+      "code": "P06",
+      "description": "Connect objectives, measures, and resources to intended performance.",
+      "name": "Objectives, KPI and Resources",
+      "sequence": 60
+    },
+    {
+      "code": "P07",
+      "description": "Establish the people capability and communication practices needed for execution.",
+      "name": "Competency and Communication",
+      "sequence": 70
+    },
+    {
+      "code": "P08",
+      "description": "Control the information and records used to operate and learn.",
+      "name": "Documented Information",
+      "sequence": 80
+    },
+    {
+      "code": "P09",
+      "description": "Build repeatable controls for delivering products and services.",
+      "name": "Operational Controls",
+      "sequence": 90
+    },
+    {
+      "code": "P10",
+      "description": "Coordinate customer commitments and external-provider performance.",
+      "name": "Customer and Supplier Controls",
+      "sequence": 100
+    },
+    {
+      "code": "P11",
+      "description": "Collect, review, and act on quality and customer performance information.",
+      "name": "Measurement and Performance",
+      "sequence": 110
+    },
+    {
+      "code": "P12",
+      "description": "Use audit, nonconformity, cause analysis, and improvement to strengthen the system.",
+      "name": "Audit and Corrective Action",
+      "sequence": 120
+    },
+    {
+      "code": "P13",
+      "description": "Prepare leadership review and implementation-readiness decisions.",
+      "name": "Management Review and Readiness",
+      "sequence": 130
+    }
+  ],
+  "schema_version": "m25.3.1"
+}

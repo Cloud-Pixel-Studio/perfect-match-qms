@@ -1,0 +1,15 @@
+{
+  "blueprint_activity_count": 37,
+  "consolidated": 37,
+  "control_gaps": 0,
+  "control_phase_conflicts": 0,
+  "duplicate_or_redundant": 17,
+  "excluded_after_review": 0,
+  "needs_author_review": 0,
+  "normalized_content_hash": "6952af6528ab9b3e7a6b947ee9c0b7dbd642b6735547f20480833fbc45ace8b0",
+  "schema_version": "m25.3-review-1",
+  "source_candidates_reviewed": 54,
+  "source_eligible_candidates": 54,
+  "source_package_sha256": "2a6a9f8d569c6fd23daaab63e34db8ef8596da39e4aef755fd0d433ba9edcee0",
+  "traceability_policy": "Structural hashes only; no source prose or source-system identifiers."
+}

@@ -365,6 +365,10 @@ class PmQmsImplementationProject(models.Model):
             for line in lines.filtered(lambda item: item.implementation_project_id == project):
                 activities = line.control_id.implementation_activity_ids.filtered("active")
                 for activity in activities:
+                    if activity.applicable_pack_ids and not (
+                        activity.applicable_pack_ids & line.pack_ids
+                    ):
+                        continue
                     existing = Task.search(
                         [
                             ("pm_implementation_project_id", "=", project.id),

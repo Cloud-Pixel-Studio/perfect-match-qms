@@ -8,13 +8,16 @@ pack remain usable without this add-on. Only reference identifiers and
 Perfect Match-authored metadata belong here; official standard text is never
 copied into the product.
     """,
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
     "license": "Other proprietary",
     "depends": ["pm_qms_pack_quality"],
-    "data": ["views/iso9001_views.xml"],
+    "data": [
+        "data/initial_implementation_data.xml",
+        "views/iso9001_views.xml",
+    ],
     "post_init_hook": "post_init_hook",
     "application": False,
     "installable": True,

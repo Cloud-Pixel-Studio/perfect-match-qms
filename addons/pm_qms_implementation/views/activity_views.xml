@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_activity_form_pack_scope" model="ir.ui.view">
+        <field name="name">pm.qms.activity.form.pack.scope</field>
+        <field name="model">pm.qms.activity</field>
+        <field name="inherit_id" ref="pm_qms_core.view_pm_qms_activity_form"/>
+        <field name="arch" type="xml">
+            <field name="readiness_required" position="after">
+                <field name="applicable_pack_ids" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator" widget="many2many_tags"/>
+            </field>
+        </field>
+    </record>
+</odoo>

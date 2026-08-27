@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="pm.qms.framework.pack" name="seed_iso9001_initial_implementation"/>
+</odoo>
