@@ -108,7 +108,11 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertEqual(self.quality_pack.pack_type, "standard")
         controls = self.quality_pack.control_line_ids.mapped("control_id")
         self.assertEqual(len(controls), 37)
-        self.assertEqual(len(controls.mapped("implementation_activity_ids").filtered("active")), 74)
+        quality_activities = controls.mapped("implementation_activity_ids").filtered(
+            lambda activity: not activity.applicable_pack_ids
+            or self.quality_pack in activity.applicable_pack_ids
+        )
+        self.assertEqual(len(quality_activities.filtered("active")), 74)
         self.assertEqual(len(controls.mapped("evidence_requirement_ids").filtered(lambda req: req.active and req.mandatory)), 37)
         self.assertEqual(len(controls.mapped("code")), len(set(controls.mapped("code"))))
         self.assertGreaterEqual(self.quality_pack.area_count, 6)
@@ -232,9 +236,13 @@ class TestPmQmsQualityPack(TransactionCase):
     def test_quality_pack_generates_project_tasks_and_readiness(self):
         project = self._generate_project()
         controls = self.quality_pack.control_line_ids.mapped("control_id")
+        quality_activities = controls.mapped("implementation_activity_ids").filtered(
+            lambda activity: not activity.applicable_pack_ids
+            or self.quality_pack in activity.applicable_pack_ids
+        )
         self.assertEqual(project.state, "generated")
         self.assertEqual(len(project.implementation_control_ids), len(controls))
-        self.assertEqual(project.total_generated_tasks, len(controls.mapped("implementation_activity_ids").filtered("active")))
+        self.assertEqual(project.total_generated_tasks, len(quality_activities.filtered("active")))
         self.assertEqual(project.readiness_percent, 0.0)
         self.assertFalse(project.implementation_control_ids.filtered(lambda line: not line.area_ids))
         center = self.env["pm.qms.readiness.center"].with_user(self.manager).create(

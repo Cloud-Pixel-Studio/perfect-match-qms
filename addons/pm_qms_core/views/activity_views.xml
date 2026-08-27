@@ -27,6 +27,7 @@
                     <group>
                         <group>
                             <field name="name"/>
+                            <field name="definition_key" readonly="1"/>
                             <field name="control_id"/>
                             <field name="sequence"/>
                         </group>
@@ -39,6 +40,7 @@
                     <group>
                         <field name="description"/>
                         <field name="expected_output"/>
+                        <field name="evidence_expectations"/>
                     </group>
                     <group string="Guided implementation semantics" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator">
                         <field name="objective"/>

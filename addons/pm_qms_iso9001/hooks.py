@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from odoo import Command
 from odoo.exceptions import UserError
 
 
@@ -73,6 +74,100 @@ def _assert_definition(record, values, label):
             raise UserError(
                 f"Existing {label} is incompatible with the ISO 9001 initial "
                 f"implementation definition: {field_name}."
+            )
+
+
+def _initial_authored_content():
+    path = Path(__file__).parent / "content" / "initial_implementation_p01_p06_v1.json"
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        raise UserError("ISO 9001 M25.4 authored content is invalid.") from exc
+    records = data.get("activities") or []
+    expected_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(1, 11)}
+    actual_keys = {record.get("activity_key") for record in records}
+    if (
+        data.get("schema_version") != "m25.4-authored-content-v1"
+        or data.get("content_checkpoint") != "M25.4"
+        or data.get("pack_code") != INITIAL_PACK_CODE
+        or data.get("pack_version") != INITIAL_PACK_VERSION
+        or actual_keys != expected_keys
+        or len(records) != 10
+    ):
+        raise UserError("ISO 9001 M25.4 authored content metadata is invalid.")
+    required = (
+        "title",
+        "description",
+        "objective",
+        "why_it_matters",
+        "implementation_steps",
+        "expected_output",
+        "evidence_expectations",
+        "success_criteria",
+        "responsible_role",
+        "activity_kind",
+        "readiness_required",
+    )
+    for record in records:
+        if any(not record.get(field_name) for field_name in required):
+            raise UserError(
+                f"ISO 9001 M25.4 content is incomplete for {record.get('activity_key')}."
+            )
+        if record["activity_kind"] != "qms_implementation" or record["readiness_required"] is not True:
+            raise UserError(
+                f"ISO 9001 M25.4 content has invalid activity semantics for {record['activity_key']}."
+            )
+    return {record["activity_key"]: record for record in records}
+
+
+def _seed_initial_authored_activities(seed_env, pack, company, blueprint_activities):
+    authored = _initial_authored_content()
+    blueprint_by_key = {item["activity_key"]: item for item in blueprint_activities}
+    Activity = seed_env["pm.qms.activity"]
+    Line = seed_env["pm.qms.framework.pack.control"]
+    for key in sorted(authored):
+        content = authored[key]
+        blueprint = blueprint_by_key.get(key)
+        if not blueprint or blueprint.get("content_checkpoint") != "M25.4":
+            raise UserError(f"M25.4 content key {key} is not aligned with the blueprint.")
+        control = seed_env["pm.qms.control"].search(
+            [("code", "=", blueprint["control_code"]), ("company_id", "=", company.id)]
+        )
+        if len(control) != 1:
+            raise UserError(f"Generic control {blueprint['control_code']} is missing or duplicated.")
+        line = Line.search(
+            [("pack_id", "=", pack.id), ("control_id", "=", control.id)], limit=1
+        )
+        if not line or line.area_id.code != blueprint["phase_key"]:
+            raise UserError(f"M25.4 activity {key} is not aligned with its active pack phase.")
+        existing = Activity.search(
+            [("definition_key", "=", key), ("company_id", "=", company.id)]
+        )
+        if len(existing) > 1:
+            raise UserError(f"Duplicate seeded activity definition {key} exists.")
+        values = {
+            "definition_key": key,
+            "name": content["title"],
+            "control_id": control.id,
+            "description": content["description"],
+            "objective": content["objective"],
+            "why_it_matters": content["why_it_matters"],
+            "implementation_steps": content["implementation_steps"],
+            "expected_output": content["expected_output"],
+            "evidence_expectations": content["evidence_expectations"],
+            "success_criteria": content["success_criteria"],
+            "responsible_role": content["responsible_role"],
+            "activity_kind": content["activity_kind"],
+            "readiness_required": content["readiness_required"],
+            "active": True,
+        }
+        if existing:
+            _assert_definition(existing, values, f"ISO 9001 M25.4 activity {key}")
+            if set(existing.applicable_pack_ids.ids) != {pack.id}:
+                raise UserError(f"Existing ISO 9001 M25.4 activity {key} has incompatible pack scope.")
+        else:
+            Activity.with_context(module=True).create(
+                {**values, "applicable_pack_ids": [Command.set([pack.id])]}
             )
 
 
@@ -184,4 +279,5 @@ def seed_iso9001_initial_implementation(env):
 
     if pack.state == "draft":
         pack.with_context(pm_qms_pack_workflow=True).action_activate()
+    _seed_initial_authored_activities(seed_env, pack, company, activities)
     return pack

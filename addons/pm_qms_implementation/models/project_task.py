@@ -65,6 +65,39 @@ class ProjectTask(models.Model):
         string="Evidence Guidance",
         readonly=True,
     )
+    pm_activity_objective = fields.Text(
+        related="pm_activity_id.objective", string="Objective", readonly=True
+    )
+    pm_activity_why_it_matters = fields.Text(
+        related="pm_activity_id.why_it_matters",
+        string="Why It Matters",
+        readonly=True,
+    )
+    pm_activity_implementation_steps = fields.Text(
+        related="pm_activity_id.implementation_steps",
+        string="Implementation Steps",
+        readonly=True,
+    )
+    pm_activity_expected_output = fields.Text(
+        related="pm_activity_id.expected_output",
+        string="Expected Output",
+        readonly=True,
+    )
+    pm_activity_evidence_expectations = fields.Text(
+        related="pm_activity_id.evidence_expectations",
+        string="Evidence Expectations",
+        readonly=True,
+    )
+    pm_activity_success_criteria = fields.Text(
+        related="pm_activity_id.success_criteria",
+        string="Success Criteria",
+        readonly=True,
+    )
+    pm_activity_responsible_role = fields.Char(
+        related="pm_activity_id.responsible_role",
+        string="Responsible Role",
+        readonly=True,
+    )
     pm_required_evidence_count = fields.Integer(
         related="pm_implementation_control_id.required_evidence_count",
         string="Required Evidence",
