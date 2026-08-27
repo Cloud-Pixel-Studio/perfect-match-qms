@@ -218,6 +218,33 @@ main .o_database_list .form-control:focus {
                 border-color: var(--pmqms-primary-hover);
                 color: var(--pmqms-navigation-text);
             }
+
+            // Odoo renders the list create action as btn-outline-primary; keep it a filled customer primary action.
+            .o_form_button_create.btn-primary,
+            .o_form_button_create.btn-outline-primary,
+            .o_list_button_add.btn-primary,
+            .o_list_button_add.btn-outline-primary {
+                background-color: var(--pmqms-magenta);
+                border-color: var(--pmqms-magenta);
+                color: var(--pmqms-navigation-text);
+            }
+
+            .o_form_button_create.btn-primary:not(:disabled):hover,
+            .o_form_button_create.btn-primary:not(:disabled):focus-visible,
+            .o_form_button_create.btn-primary:not(:disabled):active,
+            .o_form_button_create.btn-outline-primary:not(:disabled):hover,
+            .o_form_button_create.btn-outline-primary:not(:disabled):focus-visible,
+            .o_form_button_create.btn-outline-primary:not(:disabled):active,
+            .o_list_button_add.btn-primary:not(:disabled):hover,
+            .o_list_button_add.btn-primary:not(:disabled):focus-visible,
+            .o_list_button_add.btn-primary:not(:disabled):active,
+            .o_list_button_add.btn-outline-primary:not(:disabled):hover,
+            .o_list_button_add.btn-outline-primary:not(:disabled):focus-visible,
+            .o_list_button_add.btn-outline-primary:not(:disabled):active {
+                background-color: var(--pmqms-primary-hover);
+                border-color: var(--pmqms-primary-hover);
+                color: var(--pmqms-navigation-text);
+            }
         }
 
         .o_searchview {
