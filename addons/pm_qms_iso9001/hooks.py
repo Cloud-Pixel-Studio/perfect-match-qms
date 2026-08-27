@@ -75,6 +75,12 @@ INITIAL_AUTHORED_CONTENT_FILES = (
         "M25.6",
         frozenset(f"ISO9001-INITIAL-A{i:03d}" for i in range(16, 28)),
     ),
+    (
+        "initial_implementation_p11_p13_v1.json",
+        "m25.7-authored-content-v1",
+        "M25.7",
+        frozenset(f"ISO9001-INITIAL-A{i:03d}" for i in range(28, 38)),
+    ),
 )
 
 
@@ -117,6 +123,8 @@ def _validate_authored_content_block(
         "activity_kind",
         "readiness_required",
     }
+    if expected_checkpoint == "M25.7":
+        record_keys.add("applicable_pack_ids")
     records = data.get("activities") if isinstance(data, dict) else None
     actual_keys = [record.get("activity_key") for record in records] if isinstance(records, list) else []
     if (
@@ -164,6 +172,11 @@ def _validate_authored_content_block(
             raise UserError(
                 f"ISO 9001 {expected_checkpoint} content has invalid activity "
                 f"semantics for {record['activity_key']}."
+            )
+        if expected_checkpoint == "M25.7" and record["applicable_pack_ids"] != [INITIAL_PACK_CODE]:
+            raise UserError(
+                f"ISO 9001 {expected_checkpoint} content has invalid pack scope for "
+                f"{record['activity_key']}."
             )
     return {record["activity_key"]: record for record in records}
 
