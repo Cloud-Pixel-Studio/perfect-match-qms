@@ -46,13 +46,16 @@ class NormalizerTests(unittest.TestCase):
         second = normalize(self.source, self.root / "generated-2", sha256_file(self.source))["manifest"]["content_hash"]
         self.assertEqual(first, second)
 
-    def test_inventory_counts(self):
+    def test_inventory_counts_and_stage_counts(self):
         self.run_normalizer()
-        self.assertEqual(self.load("inventory.json")["source_counts"], {
-            "projects": 1, "stages": 2, "main_tasks": 8, "subtasks": 9,
-            "total_tasks": 17, "tags": 4, "chatter": 1, "dependencies": 0,
+        inventory = self.load("inventory.json")
+        self.assertEqual(inventory["source_counts"], {
+            "projects": 1, "stages": 5, "main_tasks": 10, "subtasks": 11,
+            "total_tasks": 21, "tags": 4, "chatter": 1, "dependencies": 0,
             "attachments": 0,
         })
+        self.assertEqual(inventory["source_stage_counts"]["Context of the Organization"], 3)
+        self.assertEqual(inventory["source_stage_counts"]["ISO 9001:2026 Transition Readiness"], 2)
 
     def test_chatter_excluded(self):
         result = self.run_normalizer()
@@ -75,17 +78,26 @@ class NormalizerTests(unittest.TestCase):
 
     def test_administrative_classification(self):
         self.run_normalizer()
-        mains = self.load("normalized_candidates.json")["main_tasks"]
-        item = next(row for row in mains if row["title"] == "Project kickoff logistics")
+        item = next(row for row in self.load("normalized_candidates.json")["main_tasks"] if row["title"] == "Project kickoff logistics")
         self.assertEqual(item["classification"], "PROJECT_ADMINISTRATION")
         self.assertEqual(item["readiness_candidate"], "FALSE")
         self.assertEqual(item["initial_implementation_candidate"], "NO")
 
-    def test_transition_separation(self):
+    def test_stage_authority_prevents_shared_year_contamination(self):
         self.run_normalizer()
-        item = next(row for row in self.load("normalized_candidates.json")["main_tasks"] if "transition" in row["title"])
+        mains = self.load("normalized_candidates.json")["main_tasks"]
+        item = next(row for row in mains if row["title"] == "Define QMS Process Map")
+        self.assertEqual(item["classification"], "QMS_IMPLEMENTATION")
+        self.assertEqual(item["initial_implementation_candidate"], "YES")
+        item = next(row for row in mains if row["title"] == "Review context with shared release metadata")
+        self.assertEqual(item["classification"], "QMS_IMPLEMENTATION")
+        self.assertNotIn("TRANSITION_CONTENT", item["review_flags"])
+
+    def test_explicit_transition_stage_classifies_transition(self):
+        self.run_normalizer()
+        item = next(row for row in self.load("normalized_candidates.json")["main_tasks"] if row["title"] == "2026 transition planning")
         self.assertEqual(item["classification"], "TRANSITION")
-        self.assertIn("TRANSITION_CONTENT", item["review_flags"])
+        self.assertIn("TRANSITION_TRIGGER_STAGE_NAME", item["review_flags"])
         self.assertEqual(item["readiness_candidate"], "FALSE")
 
     def test_other_standard_quarantine(self):
@@ -95,12 +107,6 @@ class NormalizerTests(unittest.TestCase):
         self.assertIn(item, self.load("quarantine.json")["records"])
 
     def test_ip_review_quarantine(self):
-        self.run_normalizer()
-        item = next(row for row in self.load("normalized_candidates.json")["main_tasks"] if row["title"] == "Mystery item")
-        self.assertIn("AMBIGUOUS_CLASSIFICATION", item["review_flags"])
-        self.assertIn(item, self.load("review_queue.json")["records"])
-
-    def test_possible_protected_text_is_quarantined(self):
         self.run_normalizer()
         item = next(row for row in self.load("normalized_candidates.json")["subtasks"] if row["title"] == "Protected text note")
         self.assertIn("POSSIBLE_STANDARD_TEXT", item["review_flags"])
@@ -114,15 +120,33 @@ class NormalizerTests(unittest.TestCase):
         self.assertEqual(next(row for row in tags if row["name"] == "Unmapped Concept")["status"], "UNRESOLVED")
         self.assertGreater(result["summary"]["unresolved_tags"], 0)
 
-    def test_duplicate_detection(self):
+    def test_duplicate_detection_includes_candidate_content(self):
         result = self.run_normalizer()
         self.assertGreater(result["summary"]["duplicate_groups"], 0)
+        self.assertTrue(any("DUPLICATE_CONTENT" in row["review_flags"] for row in self.load("normalized_candidates.json")["main_tasks"]))
 
-    def test_stable_provenance_keys(self):
+    def test_stable_provenance_keys_and_parent_context(self):
         self.run_normalizer()
-        rows = self.load("normalized_candidates.json")["main_tasks"]
-        self.assertTrue(all(row["source_record_key"].startswith("src-") for row in rows))
-        self.assertFalse(any("old-main" in json.dumps(row) for row in rows))
+        data = self.load("normalized_candidates.json")
+        self.assertTrue(all(row["source_record_key"].startswith("src-") for row in data["main_tasks"]))
+        self.assertFalse(any("old-main" in json.dumps(row) for row in data["main_tasks"]))
+        child = next(row for row in data["subtasks"] if row["title"] == "Collect evidence")
+        self.assertEqual(child["parent_classification"], "QMS_IMPLEMENTATION")
+        self.assertTrue(child["parent_source_record_key"].startswith("src-"))
+
+    def test_transition_parent_preserves_semantic_subtask(self):
+        self.run_normalizer()
+        item = next(row for row in self.load("normalized_candidates.json")["subtasks"] if row["title"] == "Document current gap")
+        self.assertIn(item["classification"], {"IMPLEMENTATION_STEP", "EVIDENCE_EXPECTATION", "DELIVERABLE", "SUCCESS_CRITERION"})
+        self.assertEqual(item["readiness_candidate"], "FALSE")
+        self.assertIn("parent_classification", item)
+
+    def test_ambiguous_item_is_low_confidence_review(self):
+        self.run_normalizer()
+        item = next(row for row in self.load("normalized_candidates.json")["subtasks"] if row["title"] == "Check item")
+        self.assertEqual(item["classification"], "NEEDS_REVIEW")
+        self.assertEqual(item["confidence"], "LOW")
+        self.assertIn(item, self.load("review_queue.json")["records"])
 
     def test_stable_content_hash(self):
         result = self.run_normalizer()
@@ -132,6 +156,7 @@ class NormalizerTests(unittest.TestCase):
         self.run_normalizer()
         raw = (self.output / "normalized_candidates.json").read_text(encoding="utf-8")
         self.assertNotIn("old-main-", raw)
+        self.assertNotIn("old-sub-", raw)
         self.assertNotIn("External ID", raw)
 
     def test_synthetic_fixture_is_original_and_present(self):
@@ -143,12 +168,19 @@ class NormalizerTests(unittest.TestCase):
         self.assertEqual(Path(result["output"]), self.output)
         self.assertTrue((self.output / "quarantine.json").exists())
 
-    def test_subtask_semantics(self):
-        self.run_normalizer()
+    def test_subtask_semantics_are_not_collapsed_to_archive(self):
+        result = self.run_normalizer()
         subtasks = self.load("normalized_candidates.json")["subtasks"]
         self.assertEqual(next(row for row in subtasks if row["title"] == "Collect evidence")["classification"], "EVIDENCE_EXPECTATION")
         self.assertEqual(next(row for row in subtasks if row["title"] == "Confirm success criterion")["classification"], "SUCCESS_CRITERION")
-        self.assertEqual(next(row for row in subtasks if row["title"] == "Transition note")["classification"], "IGNORE_ARCHIVE")
+        self.assertNotEqual(result["summary"]["subtask_classification"].get("IGNORE_ARCHIVE", 0), len(subtasks))
+
+    def test_distribution_warnings_are_clear_for_fixture(self):
+        self.run_normalizer()
+        warnings = self.load("classification_summary.json")["distribution_warnings"]
+        self.assertFalse(warnings["main_category_over_80_percent"])
+        self.assertFalse(warnings["subtasks_over_90_percent_ignore_archive"])
+        self.assertFalse(warnings["no_semantic_subtasks"])
 
 
 if __name__ == "__main__":

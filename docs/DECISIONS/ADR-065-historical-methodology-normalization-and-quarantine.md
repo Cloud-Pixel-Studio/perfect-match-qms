@@ -26,6 +26,10 @@ The tool:
 - excludes chatter, authors, users, email addresses, attachments, source IDs,
   environment metadata, and raw AI prompts;
 - classifies main tasks and subtasks using explicit, reviewable taxonomy;
+- gives explicit source stage and task title precedence over shared metadata;
+- treats a generic year such as \`2026\` as insufficient transition evidence;
+- preserves semantic subtask categories and safe parent context, including for
+  transition parents;
 - separates project administration, transition work, readiness assessment,
   certification preparation, and gap remediation from Initial Implementation;
 - quarantines other-standard references and possible protected standard text;
@@ -51,6 +55,8 @@ activities. The historical package remains auditable as external source
 material without leaking source users, customer identifiers, or technical
 metadata into Git.
 
-The normalizer intentionally does not decide final wording, compliance claims,
+The normalizer reports trigger-field diagnostics and distribution warnings so
+classification contamination is visible during source review. It intentionally
+does not decide final wording, compliance claims,
 or readiness behavior. Those decisions belong to later authoring and review
 work.
