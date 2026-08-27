@@ -140,7 +140,7 @@ def classify_main(row: dict[str, Any]) -> tuple[str, str, list[str]]:
 
 def implementation_eligibility(category: str, flags: Iterable[str]) -> str:
     if category == "QMS_IMPLEMENTATION" and not set(flags) & {
-        "OTHER_STANDARD_REFERENCE", "POSSIBLE_STANDARD_TEXT", "PERSONAL_OR_USER_DATA",
+        "OTHER_STANDARD_REFERENCE", "POSSIBLE_STANDARD_TEXT",
     }:
         return "YES"
     if category in {
