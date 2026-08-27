@@ -1,0 +1,83 @@
+{
+  "schema_version": "m25.5-authored-content-v1",
+  "content_checkpoint": "M25.5",
+  "pack_code": "PM-QMS-ISO9001-INITIAL",
+  "pack_version": "1.0",
+  "activities": [
+    {
+      "activity_key": "ISO9001-INITIAL-A011",
+      "content_checkpoint": "M25.5",
+      "title": "Establish competency requirements",
+      "description": "Define the capability needed for work that can materially affect quality, controlled processes, customer outcomes, or QMS effectiveness. Record gaps and proportionate actions so capability remains practical as work changes.",
+      "objective": "Maintain role-based expectations for knowledge, skills, experience, qualification, and capability for quality-impacting work.",
+      "why_it_matters": "Clear capability expectations help leaders identify meaningful gaps and support reliable work without treating attendance as proof of competence.",
+      "implementation_steps": "1. Identify roles and work that can materially affect quality or QMS results.\n2. Describe the knowledge, skills, experience, qualification, or capability needed for each role or work area.\n3. Review current capability against those expectations using proportionate information.\n4. Record material gaps and assign actions such as training, coaching, supervised practice, qualification, hiring, reassignment, or experience.\n5. Evaluate whether completed actions improved capability in the work context.\n6. Reassess expectations when processes, technology, responsibilities, or risks materially change.",
+      "expected_output": "Maintained competency requirements with an owned gap and action record for material role or work needs.",
+      "evidence_expectations": "Examples may include role or work analysis, capability reviews, assigned development actions, observed effectiveness follow-up, and reassessment after material change.",
+      "success_criteria": "Material roles are identified, expectations fit the work, gaps and actions have owners, effectiveness is checked, and a review trigger is defined.",
+      "responsible_role": "Quality Manager with Process Owners",
+      "activity_kind": "qms_implementation",
+      "readiness_required": true
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A012",
+      "content_checkpoint": "M25.5",
+      "title": "Plan quality awareness",
+      "description": "Plan practical ways for people to understand quality information that affects their work. Use role-relevant onboarding, briefings, change communication, and reinforcement rather than relying on one universal training event.",
+      "objective": "Ensure people understand the quality direction, responsibilities, contribution, escalation expectations, and work consequences relevant to their role.",
+      "why_it_matters": "Relevant awareness helps people make sound decisions, recognize when to escalate, and respond consistently when work or priorities change.",
+      "implementation_steps": "1. Identify the quality direction, objectives, responsibilities, and work consequences relevant to each audience.\n2. Identify topics that require onboarding, role-specific briefing, change communication, or periodic reinforcement.\n3. Assign an owner and choose a practical method for each awareness need.\n4. Include reporting and escalation expectations for significant issues or changes.\n5. Check practical understanding through suitable discussion, observation, or follow-up.\n6. Review the awareness plan when roles, processes, priorities, or QMS information change.",
+      "expected_output": "Role-relevant quality awareness plan with owners, delivery methods, reinforcement points, and follow-up expectations.",
+      "evidence_expectations": "Examples may include onboarding content, team briefings, change communications, attendance or acknowledgement records, observation notes, and follow-up actions.",
+      "success_criteria": "Relevant audiences and topics are identified, delivery methods fit the work, escalation expectations are understood, and awareness is refreshed after meaningful change.",
+      "responsible_role": "Quality Manager with People Leaders",
+      "activity_kind": "qms_implementation",
+      "readiness_required": true
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A013",
+      "content_checkpoint": "M25.5",
+      "title": "Define the QMS communication method",
+      "description": "Establish a predictable method for internal and external quality-management communication. Keep the scope focused on information that supports decisions, coordination, escalation, and review of QMS performance.",
+      "objective": "Define what quality information is communicated, why it matters, who receives it, who owns it, when it is shared, and how feedback is handled.",
+      "why_it_matters": "Intentional communication reduces missed decisions and supports consistent handling of process changes, performance information, issues, risks, and actions.",
+      "implementation_steps": "1. List QMS-relevant information that needs communication and the decisions or actions it supports.\n2. Define the intended audience, responsible owner, timing, frequency, and channel for each communication need.\n3. Include process, supplier, customer-related, performance, issue, risk, action, and management information where relevant.\n4. Define feedback, escalation, and response expectations for significant communications.\n5. Identify when the communication itself needs retained evidence.\n6. Review the method when QMS responsibilities, operations, risks, or communication needs change.",
+      "expected_output": "QMS communication method with defined information needs, audiences, owners, timing, channels, feedback, and retention triggers.",
+      "evidence_expectations": "Examples may include a communication plan or matrix, recurring meeting records, decision communications, escalation records, and review notes.",
+      "success_criteria": "Relevant communication needs have owners and audiences, timing and channels are workable, escalation is clear, and significant communications can be traced when needed.",
+      "responsible_role": "Quality Manager",
+      "activity_kind": "qms_implementation",
+      "readiness_required": true
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A014",
+      "content_checkpoint": "M25.5",
+      "title": "Establish documented-information control",
+      "description": "Create a practical lifecycle for information used to direct or control work. Distinguish controlled information from temporary working material so access, revision, and obsolescence are managed in proportion to their use.",
+      "objective": "Maintain reliable information at the point of use with clear ownership, review, approval, revision, access, protection, and change handling.",
+      "why_it_matters": "People need confidence that information directing work is current, authorized, available, and protected without creating unnecessary document bureaucracy.",
+      "implementation_steps": "1. Identify information used to direct or control work and distinguish it from temporary working material.\n2. Define ownership, identification, review, approval, and revision expectations for controlled information.\n3. Set practical rules for availability, access, protection, change, and release at the point of use.\n4. Define how obsolete information is identified, removed from use, retained, or archived when appropriate.\n5. Address relevant controlled external information and its review or distribution.\n6. Review the control method when processes, tools, responsibilities, or information risks change.",
+      "expected_output": "Documented-information control method covering lifecycle, ownership, release, access, protection, change, and obsolete-information handling.",
+      "evidence_expectations": "Examples may include a controlled information register, approved current revision, review record, change history, access rule, or obsolete-information disposition record.",
+      "success_criteria": "Information that directs work is identified, ownership and review are clear, current versions are available and protected, and obsolete material is controlled appropriately.",
+      "responsible_role": "Document Controller with Process Owners",
+      "activity_kind": "qms_implementation",
+      "readiness_required": true
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A015",
+      "content_checkpoint": "M25.5",
+      "title": "Establish record and evidence control",
+      "description": "Define how retained records demonstrate activities, decisions, results, approvals, and completed work. Keep this control focused on what occurred and what resulted, separate from information used to direct work.",
+      "objective": "Maintain trustworthy, traceable, readable, protected, and retrievable records and implementation evidence for defined retention needs.",
+      "why_it_matters": "Reliable records support learning, accountability, decision review, issue resolution, and confidence that important work and outcomes can be reconstructed.",
+      "implementation_steps": "1. Identify records and evidence that need to be retained for activities, decisions, results, approvals, or completed work.\n2. Define ownership, identification, traceability, readability, storage, protection, access, and retrieval expectations.\n3. Set proportionate retention, disposition, confidentiality, and amendment controls.\n4. Clarify how corrections preserve the original record context and show what changed when needed.\n5. Check that selected storage and access arrangements support integrity and timely retrieval.\n6. Review record needs when processes, risks, tools, responsibilities, or retention obligations change.",
+      "expected_output": "Record and evidence control method with owners, retention and disposition rules, storage safeguards, access arrangements, and amendment handling.",
+      "evidence_expectations": "Examples may include a record inventory, completed work record, approval or decision record, retrieval check, retention review, or controlled correction history.",
+      "success_criteria": "Important records are identified, traceable, readable, protected, retrievable, retained for a defined reason, and corrected in a transparent manner when necessary.",
+      "responsible_role": "Document Controller with Quality Manager",
+      "activity_kind": "qms_implementation",
+      "readiness_required": true
+    }
+  ]
+}

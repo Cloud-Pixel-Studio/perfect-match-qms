@@ -56,6 +56,21 @@ def post_init_hook(env):
 INITIAL_PACK_CODE = "PM-QMS-ISO9001-INITIAL"
 INITIAL_PACK_VERSION = "1.0"
 
+INITIAL_AUTHORED_CONTENT_FILES = (
+    (
+        "initial_implementation_p01_p06_v1.json",
+        "m25.4-authored-content-v1",
+        "M25.4",
+        frozenset(f"ISO9001-INITIAL-A{i:03d}" for i in range(1, 11)),
+    ),
+    (
+        "initial_implementation_p07_p08_v1.json",
+        "m25.5-authored-content-v1",
+        "M25.5",
+        frozenset(f"ISO9001-INITIAL-A{i:03d}" for i in range(11, 16)),
+    ),
+)
+
 
 def _initial_blueprint():
     path = Path(__file__).parent / "content" / "initial_implementation_v1.json"
@@ -77,24 +92,41 @@ def _assert_definition(record, values, label):
             )
 
 
-def _initial_authored_content():
-    path = Path(__file__).parent / "content" / "initial_implementation_p01_p06_v1.json"
-    try:
-        data = json.loads(path.read_text())
-    except (OSError, ValueError) as exc:
-        raise UserError("ISO 9001 M25.4 authored content is invalid.") from exc
-    records = data.get("activities") or []
-    expected_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(1, 11)}
-    actual_keys = {record.get("activity_key") for record in records}
+def _validate_authored_content_block(
+    data, filename, expected_schema_version, expected_checkpoint, expected_keys
+):
+    metadata_keys = {"schema_version", "content_checkpoint", "pack_code", "pack_version", "activities"}
+    record_keys = {
+        "activity_key",
+        "content_checkpoint",
+        "title",
+        "description",
+        "objective",
+        "why_it_matters",
+        "implementation_steps",
+        "expected_output",
+        "evidence_expectations",
+        "success_criteria",
+        "responsible_role",
+        "activity_kind",
+        "readiness_required",
+    }
+    records = data.get("activities") if isinstance(data, dict) else None
+    actual_keys = [record.get("activity_key") for record in records] if isinstance(records, list) else []
     if (
-        data.get("schema_version") != "m25.4-authored-content-v1"
-        or data.get("content_checkpoint") != "M25.4"
+        not isinstance(data, dict)
+        or set(data) != metadata_keys
+        or not isinstance(records, list)
+        or any(not isinstance(record, dict) or set(record) != record_keys for record in records)
+        or data.get("schema_version") != expected_schema_version
+        or data.get("content_checkpoint") != expected_checkpoint
         or data.get("pack_code") != INITIAL_PACK_CODE
         or data.get("pack_version") != INITIAL_PACK_VERSION
-        or actual_keys != expected_keys
-        or len(records) != 10
+        or len(records) != len(expected_keys)
+        or len(actual_keys) != len(set(actual_keys))
+        or set(actual_keys) != set(expected_keys)
     ):
-        raise UserError("ISO 9001 M25.4 authored content metadata is invalid.")
+        raise UserError(f"ISO 9001 authored content block {filename} is invalid.")
     required = (
         "title",
         "description",
@@ -109,27 +141,83 @@ def _initial_authored_content():
         "readiness_required",
     )
     for record in records:
-        if any(not record.get(field_name) for field_name in required):
+        if (
+            record.get("content_checkpoint") != expected_checkpoint
+            or any(not record.get(field_name) for field_name in required)
+            or any(
+                not isinstance(record[field_name], str)
+                for field_name in required
+                if field_name != "readiness_required"
+            )
+        ):
             raise UserError(
-                f"ISO 9001 M25.4 content is incomplete for {record.get('activity_key')}."
+                f"ISO 9001 {expected_checkpoint} content is incomplete for "
+                f"{record.get('activity_key')}."
             )
         if record["activity_kind"] != "qms_implementation" or record["readiness_required"] is not True:
             raise UserError(
-                f"ISO 9001 M25.4 content has invalid activity semantics for {record['activity_key']}."
+                f"ISO 9001 {expected_checkpoint} content has invalid activity "
+                f"semantics for {record['activity_key']}."
             )
     return {record["activity_key"]: record for record in records}
+
+
+def _combine_authored_content_blocks(blocks):
+    combined = {}
+    for filename, content in blocks:
+        duplicates = set(combined).intersection(content)
+        if duplicates:
+            raise UserError(
+                "Duplicate authored activity keys across content blocks: "
+                + ", ".join(sorted(duplicates))
+            )
+        combined.update(content)
+    return combined
+
+
+def _initial_authored_content():
+    blocks = []
+    content_root = Path(__file__).parent / "content"
+    for filename, schema_version, checkpoint, expected_keys in INITIAL_AUTHORED_CONTENT_FILES:
+        path = content_root / filename
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError) as exc:
+            raise UserError(f"ISO 9001 authored content block {filename} is invalid.") from exc
+        blocks.append(
+            (
+                filename,
+                _validate_authored_content_block(
+                    data, filename, schema_version, checkpoint, expected_keys
+                ),
+            )
+        )
+    return _combine_authored_content_blocks(blocks)
+
+
+def _validate_authored_blueprint_alignment(authored, blueprint_by_key):
+    for key, content in authored.items():
+        blueprint = blueprint_by_key.get(key)
+        if not blueprint:
+            raise UserError(f"Authored activity key {key} is not in the approved blueprint.")
+        if blueprint.get("content_checkpoint") != content.get("content_checkpoint"):
+            raise UserError(
+                f"Authored activity {key} has a checkpoint different from the blueprint."
+            )
+    return blueprint_by_key
 
 
 def _seed_initial_authored_activities(seed_env, pack, company, blueprint_activities):
     authored = _initial_authored_content()
     blueprint_by_key = {item["activity_key"]: item for item in blueprint_activities}
+    _validate_authored_blueprint_alignment(authored, blueprint_by_key)
     Activity = seed_env["pm.qms.activity"]
     Line = seed_env["pm.qms.framework.pack.control"]
     for key in sorted(authored):
         content = authored[key]
         blueprint = blueprint_by_key.get(key)
-        if not blueprint or blueprint.get("content_checkpoint") != "M25.4":
-            raise UserError(f"M25.4 content key {key} is not aligned with the blueprint.")
+        if not blueprint:
+            raise UserError(f"Authored content key {key} is not aligned with the blueprint.")
         control = seed_env["pm.qms.control"].search(
             [("code", "=", blueprint["control_code"]), ("company_id", "=", company.id)]
         )
@@ -139,7 +227,9 @@ def _seed_initial_authored_activities(seed_env, pack, company, blueprint_activit
             [("pack_id", "=", pack.id), ("control_id", "=", control.id)], limit=1
         )
         if not line or line.area_id.code != blueprint["phase_key"]:
-            raise UserError(f"M25.4 activity {key} is not aligned with its active pack phase.")
+            raise UserError(
+                f"Authored activity {key} is not aligned with its active pack phase."
+            )
         existing = Activity.search(
             [("definition_key", "=", key), ("company_id", "=", company.id)]
         )
@@ -162,9 +252,9 @@ def _seed_initial_authored_activities(seed_env, pack, company, blueprint_activit
             "active": True,
         }
         if existing:
-            _assert_definition(existing, values, f"ISO 9001 M25.4 activity {key}")
+            _assert_definition(existing, values, f"ISO 9001 authored activity {key}")
             if set(existing.applicable_pack_ids.ids) != {pack.id}:
-                raise UserError(f"Existing ISO 9001 M25.4 activity {key} has incompatible pack scope.")
+                raise UserError(f"Existing ISO 9001 activity {key} has incompatible pack scope.")
         else:
             Activity.with_context(module=True).create(
                 {**values, "applicable_pack_ids": [Command.set([pack.id])]}
