@@ -1,179 +1,214 @@
-# Perfect Match Digital QMS
+# Perfect Match QMS
 
-Perfect Match Digital QMS is a proprietary digital management system implementation platform for Perfect Match Investments LLC.
+## Overview
 
-The product will help organizations implement, operate, monitor, and improve management systems through Perfect Match proprietary methods, controls, workflows, templates, evidence expectations, and implementation guidance.
+Perfect Match QMS is a digital quality management system platform for helping
+organizations implement, operate, measure, audit, improve, and assess the
+readiness of their management system. It combines Perfect Match proprietary
+methodology, workflows, controls, implementation guidance, and evidence
+expectations in one product.
 
-## IP Boundary
+The current application runtime is self-hosted Odoo 19. Odoo provides the
+runtime, authentication, ORM, workflow and access-control foundations; Perfect
+Match QMS owns the product modules, domain behavior, and customer experience.
 
-This repository must not contain copyrighted ISO, IATF, AS, SAE, CMMC, or other third-party standard text unless a valid license explicitly permits it and use is authorized.
+The product is proprietary to Perfect Match Investments LLC. It is not an Odoo
+fork, a theme, or a generic collection of unrelated Odoo modules.
 
-Perfect Match proprietary controls are stored separately from external standard references and mappings.
+## Current Product Capabilities
 
-## Target Platform
+The current customer module set provides:
 
-- Odoo 19 Self-Hosted.
-- Python and Odoo ORM.
-- PostgreSQL.
-- Odoo Owl, JavaScript, XML/QWeb.
-- Docker, Docker Compose, Linux, Nginx, TLS.
-- n8n for external integration automation.
-- OpenAI API for controlled QMS assistance.
-- Plane for project management.
+- Guided QMS implementation projects, activities, control instances, and
+  readiness assessments.
+- Controlled documents, revisions, evidence requirements, and evidence review.
+- Risks and opportunities, nonconformities, CAPA, and corrective-action
+  effectiveness workflows.
+- Internal audit programs, audits, criteria, evidence, findings, and controlled
+  finding-to-NCR integration.
+- Objectives, KPIs, historical measurements, customer performance, and supplier
+  quality evaluation.
+- Management Review records with historical input snapshots and follow-up
+  actions.
+- People, training, competency, equipment, calibration, and impact assessment.
+- Customer quality, supplier quality, Cost of Quality, and the unified Action
+  Center.
+- Organizations, Sites, Processes, scoped access, and customer user roles.
+- The Perfect Match customer shell, product navigation, dashboard, and
+  commercial licensing.
 
-## Current Status
+The ordered customer module manifest is maintained in
+[`deployment/customer/modules.txt`](deployment/customer/modules.txt). Historical
+pilot material is retained for traceability but is not current product data.
 
-Mission 02 establishes the isolated Odoo DEV environment and the first installable
-`pm_qms_core` addon.
+## Supported Standards
 
-Mission 03 adds the client implementation layer, controlled documents, document
-revisions, and actual evidence records.
+The generic Perfect Match QMS foundation and its operational modules are
+standard-neutral. Standard profiles are separate Perfect Match addons.
 
-Mission 04 adds operational hardening, risk and opportunity management,
-nonconformity management, CAPA, CI quality gates, and DEV backup/restore
-validation.
+The only currently supported standard profile is **ISO 9001**, implemented by
+[`pm_qms_iso9001`](addons/pm_qms_iso9001/). Its dependency direction is:
 
-Mission 05 adds the internal audit foundation: audit programs, individual
-audits, normalized scope and criteria, audit team and independence metadata,
-planning lines, audit evidence, findings, and controlled finding-to-NCR
-integration while preserving NCR-to-CAPA separation.
+```text
+pm_qms_iso9001
+        |
+        v
+Perfect Match generic QMS and methodology foundation
+```
 
-Mission 06 adds the performance-management foundation: objectives, KPI
-definitions, KPI measurements with historical snapshots, KPI trends and
-measurement schedules, customer performance, customer satisfaction, supplier
-performance, and supplier evaluations.
+The generic foundation does not depend on ISO 9001. The ISO addon owns its
+profile metadata, reference identifiers, review workflow, and customer
+navigation. An operational Perfect Match control can be related to approved
+reference metadata without duplicating customer QMS records or external
+standard text.
 
-Mission 07 adds the Management Review engine: controlled review records,
-historical input snapshots, management decisions, and follow-up actions. It
-consolidates operational QMS data for management review without turning the
-review into a live dashboard or copying operational attachments.
+## Architecture
 
-Mission 08 adds the generic implementation engine: versioned framework packs,
-project generation, multi-pack control deduplication, Odoo project/task
-execution, live implementation readiness metrics, and historical readiness
-assessments.
+Perfect Match QMS is a modular Odoo monolith composed of Python/Odoo ORM
+services, PostgreSQL persistence, Owl/JavaScript, XML/QWeb views, and SCSS
+assets. Docker Compose provides the local DEV and product Demo runtimes. Nginx
+and TLS provide the applicable reverse-proxy boundary.
 
-Mission 09 adds the first commercial Quality Management Pack: proprietary
-Perfect Match quality controls, implementation activities, evidence
-expectations, external reference mapping profiles, metadata-only CSV mapping
-import, and a content-safety scan for external standard material.
+Business and domain behavior belongs in Perfect Match addons and services.
+The product uses supported Odoo extension mechanisms and does not modify or
+fork Odoo core.
 
-Mission 10 established a customer-specific technical pilot for `Oliva Torras
-USA, Inc.`. That pilot was retired in RC6 after a final validated local backup;
-its implementation records and release documentation remain historical only.
+## Customer Deployment Model
 
-Core paths:
+Each customer production deployment is isolated and has its own:
 
-- `deployment/docker/dev/compose.yml`
-- `deployment/scripts/odoo-dev.sh`
-- `docs/DEV_ENVIRONMENT.md`
-- `docs/TESTING.md`
-- `docs/ARCHITECTURE.md`
-- `addons/pm_qms_core/`
-- `addons/pm_qms_documents/`
-- `addons/pm_qms_evidence/`
-- `addons/pm_qms_risk/`
-- `addons/pm_qms_ncr/`
-- `addons/pm_qms_capa/`
-- `addons/pm_qms_audit/`
-- `addons/pm_qms_kpi/`
-- `addons/pm_qms_management_review/`
-- `addons/pm_qms_implementation/`
-- `addons/pm_qms_pack_quality/`
-- `addons/pm_qms_migration/`
-- `framework/mappings/iso9001-approved-mapping.csv.example`
-- `.github/workflows/qms-ci.yml`
+- database and Odoo filestore;
+- environment identity and signed license;
+- secrets and runtime configuration; and
+- backup archives and recovery metadata.
 
-## DEV Quick Start
+Customer instances are created from approved Perfect Match release bundles.
+They do not run from live `main`, and commercial tenancy is not based on one
+shared unrestricted multi-company database. Customer deployment, upgrade,
+backup, and recovery procedures are documented in
+[`docs/CUSTOMER_DEPLOYMENT_ARCHITECTURE.md`](docs/CUSTOMER_DEPLOYMENT_ARCHITECTURE.md),
+[`docs/CUSTOMER_DEPLOYMENT_RUNBOOK.md`](docs/CUSTOMER_DEPLOYMENT_RUNBOOK.md),
+and [`docs/CUSTOMER_UPGRADE_RUNBOOK.md`](docs/CUSTOMER_UPGRADE_RUNBOOK.md).
+
+## Licensing
+
+Perfect Match QMS uses signed offline licenses with environment binding and
+capacity entitlements for companies, Sites, and named QMS users. Verification
+is local to the installation; the product does not require permanent
+phone-home or continuous Internet verification.
+
+Licensing is separate from Odoo ACLs and record rules. A license controls
+commercial entitlement, while Odoo remains the system of record for identity,
+permissions, workflows, and QMS data. See
+[`docs/LICENSING_ARCHITECTURE.md`](docs/LICENSING_ARCHITECTURE.md) and
+[`docs/COMMERCIAL_ENTITLEMENTS.md`](docs/COMMERCIAL_ENTITLEMENTS.md) for the
+design boundary.
+
+## Security and Access
+
+Access is role-based and combines Odoo ACLs, record rules, workflow authority,
+and Site/Process/organization scope. The model supports segregation of duties
+between operational QMS work and platform administration.
+
+Menu visibility is a usability layer, not a security boundary. Permissions and
+server-side access checks remain authoritative. Technical administrators retain
+the platform administration surfaces required to maintain an installation;
+normal QMS users receive only the customer-facing QMS experience appropriate to
+their role and scope.
+
+## Product Shell
+
+Normal QMS users enter the Perfect Match QMS product shell, with grouped
+navigation for Dashboard, Implementation, Quality Operations, Assurance,
+Performance, Action Center, Standards, and Configuration. The shell organizes
+existing QMS actions without replacing their domain ownership.
+
+Technical administrators retain the underlying Odoo Apps, Settings,
+maintenance, and troubleshooting capabilities needed to operate the platform.
+The shell and its boundaries are described in
+[`docs/PRODUCT_SHELL_ARCHITECTURE.md`](docs/PRODUCT_SHELL_ARCHITECTURE.md) and
+[`docs/NAVIGATION_ARCHITECTURE.md`](docs/NAVIGATION_ARCHITECTURE.md).
+
+## Development Quick Start
+
+The supported local DEV loop is:
 
 ```bash
 cd /opt/perfect-match/perfect-match-qms
 ./deployment/scripts/odoo-dev.sh init-secrets
 ./deployment/scripts/odoo-dev.sh config
 ./deployment/scripts/odoo-dev.sh up
-./deployment/scripts/odoo-dev.sh install-core
-./deployment/scripts/odoo-dev.sh test-core
-./deployment/scripts/odoo-dev.sh install-mission03
-./deployment/scripts/odoo-dev.sh test-mission03
-./deployment/scripts/odoo-dev.sh install-mission04
-./deployment/scripts/odoo-dev.sh test-mission04
-./deployment/scripts/odoo-dev.sh install-mission05
-./deployment/scripts/odoo-dev.sh test-mission05
-./deployment/scripts/odoo-dev.sh install-mission06
-./deployment/scripts/odoo-dev.sh test-mission06
-./deployment/scripts/odoo-dev.sh install-mission07
-./deployment/scripts/odoo-dev.sh test-mission07
-./deployment/scripts/odoo-dev.sh install-mission08
-./deployment/scripts/odoo-dev.sh test-mission08
-./deployment/scripts/odoo-dev.sh install-mission09
-./deployment/scripts/odoo-dev.sh test-mission09
-./deployment/scripts/odoo-dev.sh install-mission10
-./deployment/scripts/odoo-dev.sh test-mission10
+./deployment/scripts/odoo-dev.sh install-mission23
+./deployment/scripts/odoo-dev.sh health
+./deployment/scripts/odoo-dev.sh test-mission23
 ```
 
-Raw Docker Compose commands use the same compose file:
+The DEV database is `pmqms_dev`; runtime secrets are generated outside Git.
+Open the local service through the documented SSH tunnel or the configured
+local binding. See [`docs/DEV_ENVIRONMENT.md`](docs/DEV_ENVIRONMENT.md),
+[`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md), and
+[`docs/TESTING.md`](docs/TESTING.md) for focused update and test procedures.
 
-```bash
-docker compose -f deployment/docker/dev/compose.yml up -d
-docker compose -f deployment/docker/dev/compose.yml logs -f odoo-dev
-docker compose -f deployment/docker/dev/compose.yml down
+## Repository Structure
+
+```text
+addons/
+  pm_qms_core/             generic organizations, processes, controls, evidence
+  pm_qms_app/              product shell, dashboard, branding, navigation
+  pm_qms_implementation/   projects, activities, and readiness
+  pm_qms_pack_quality/     Perfect Match proprietary quality methodology pack
+  pm_qms_iso9001/          ISO 9001 standard profile addon
+  pm_qms_license/          commercial licensing and entitlements
+  pm_qms_*                 operational QMS domains
+deployment/
+  customer/                approved customer module manifest and tooling
+  docker/                  DEV and Demo Compose definitions
+  scripts/                 supported validation and environment helpers
+docs/
+  architecture, security, deployment, licensing, testing, and runbooks
+framework/
+  approved metadata and reference-mapping examples
+.github/
+  CI workflows and repository quality gates
 ```
 
-The DEV stack uses `pmqms_dev_network`, `pmqms_dev_postgres`, and
-`pmqms_dev_odoo_data`. It is intentionally separate from Plane.
+## Validation and Release Model
 
-## Active Validation Environments
+`main` is the development and integration branch. Customer deployments come
+from approved release bundles, with controlled preflight, backup, update,
+health, and manifest procedures. Historical release tags are immutable.
 
-DEV is the engineering environment. Demo is the only public validation
-environment and is served through the approved HTTPS reverse proxy. The former
-Oliva Torras pilot was retired in RC6; its backup is retained outside Git for
-local historical recovery evidence only.
+Odoo major-version upgrades are controlled engineering and customer migration
+events; they are not automatic customer upgrades. Repeatable validation commands
+and release evidence are documented in [`docs/TESTING.md`](docs/TESTING.md),
+[`docs/CI.md`](docs/CI.md), and the release runbooks.
 
-## Framework vs Client Implementation
+## Intellectual Property Boundary
 
-`pm.qms.control` defines reusable Perfect Match methodology. It remains a
-framework definition.
+The repository does not contain copied ISO or other third-party standard
+requirement text unless separately authorized. Standard names, editions,
+publishers, clause/reference identifiers, and mapping metadata may be stored
+where appropriate. Perfect Match proprietary methodology and controls remain
+separate from third-party publications.
 
-`pm.qms.control.instance` represents how a specific organization implements a
-framework control. Documents and evidence attach to the client implementation,
-not to copied external standard text.
+Users remain responsible for obtaining authorized official standards where
+required. See [`docs/IP_AND_STANDARDS_POLICY.md`](docs/IP_AND_STANDARDS_POLICY.md)
+and [`docs/STANDARD_ADDON_ARCHITECTURE.md`](docs/STANDARD_ADDON_ARCHITECTURE.md).
 
-Risk, NCR, and CAPA records are also client operational records. They relate to
-control instances and client evidence/documents without mutating reusable
-framework controls.
+## Compliance and Certification Notice
 
-Internal audit records are also operational records. Audit findings relate to
-audits, criteria, evidence, processes, and control instances. Internal
-nonconformity findings can create NCR records through a controlled action; CAPA
-continues through the existing NCR-to-CAPA pathway.
+Perfect Match QMS supports QMS implementation and operation, readiness
+assessment, evidence organization, and internal quality processes. It does not
+guarantee certification or compliance, replace a certification body, or replace
+authorized access to official standards.
 
-Performance records are client operational records. Objectives and KPIs may
-relate to control instances and processes, but historical KPI measurements live
-on `pm.qms.kpi.measurement`, not on reusable `pm.qms.control`. Customer and
-supplier performance reuse Odoo `res.partner` as master data instead of
-duplicating customer or supplier databases.
+## Documentation
 
-Management Review records are client operational records. Review inputs are
-snapshots stored on `pm.qms.management.review.input` so completed reviews show
-what management actually reviewed at that time. Decisions and follow-up actions
-remain separate from the meeting closure, so a review can be completed while
-its actions remain open.
-
-Implementation projects are client deployment records. Framework packs group
-Perfect Match-authored controls by version, the generator deduplicates shared
-controls across selected packs, and each organization/control pair reuses a
-single `pm.qms.control.instance`. Readiness is an internal implementation
-metric based on applicable controls; evidence completion and generated task
-completion are tracked separately.
-
-The Quality Management Pack is the first commercial pack built on that generic
-engine. It stores Perfect Match-authored controls, activities, and evidence
-expectations. Its external mapping profile stores reference metadata only; it
-does not include external standard text and does not replace authorized access
-to official publications.
-
-Mission 10 added controlled migration wizards for customer-authorized document
-and evidence inventories. Evidence imports cannot create accepted evidence;
-acceptance must pass through QMS review workflow. Historical pilot readiness
-was an internal implementation metric and did not represent certification,
-external compliance, or customer production approval.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - product architecture and
+  domain relationships.
+- [`docs/APPLICATION_SHELL.md`](docs/APPLICATION_SHELL.md) - application shell
+  responsibilities and navigation.
+- [`docs/DEMO_ENVIRONMENT.md`](docs/DEMO_ENVIRONMENT.md) - fictional Demo
+  environment and supported validation commands.
+- [`docs/SECURITY.md`](docs/SECURITY.md) - security principles and boundaries.
+- [`docs/index.md`](docs/index.md) - documentation index.
