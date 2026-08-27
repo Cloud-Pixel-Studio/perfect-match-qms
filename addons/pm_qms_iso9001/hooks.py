@@ -69,6 +69,12 @@ INITIAL_AUTHORED_CONTENT_FILES = (
         "M25.5",
         frozenset(f"ISO9001-INITIAL-A{i:03d}" for i in range(11, 16)),
     ),
+    (
+        "initial_implementation_p09_p10_v1.json",
+        "m25.6-authored-content-v1",
+        "M25.6",
+        frozenset(f"ISO9001-INITIAL-A{i:03d}" for i in range(16, 28)),
+    ),
 )
 
 

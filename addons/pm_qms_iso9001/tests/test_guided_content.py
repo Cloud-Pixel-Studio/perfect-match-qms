@@ -43,6 +43,9 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         cls.m25_5_content = json.loads(
             (cls.root / "content" / "initial_implementation_p07_p08_v1.json").read_text()
         )
+        cls.m25_6_content = json.loads(
+            (cls.root / "content" / "initial_implementation_p09_p10_v1.json").read_text()
+        )
         cls.blueprint_by_key = {
             item["activity_key"]: item for item in cls.blueprint["activities"]
         }
@@ -51,7 +54,8 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         }
         cls.target_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(1, 11)}
         cls.m25_5_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(11, 16)}
-        cls.all_target_keys = cls.target_keys | cls.m25_5_keys
+        cls.m25_6_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(16, 28)}
+        cls.all_target_keys = cls.target_keys | cls.m25_5_keys | cls.m25_6_keys
 
     def test_blueprint_checkpoint_distribution_is_roadmap_aligned(self):
         counts = {}
@@ -98,6 +102,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             [
                 ("initial_implementation_p01_p06_v1.json", "M25.4"),
                 ("initial_implementation_p07_p08_v1.json", "M25.5"),
+                ("initial_implementation_p09_p10_v1.json", "M25.6"),
             ],
         )
         self.assertEqual(set(_initial_authored_content()), self.all_target_keys)
@@ -211,18 +216,158 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             self.assertEqual(activity.activity_kind, "qms_implementation")
             self.assertTrue(activity.readiness_required)
 
-    def test_a011_to_a015_are_materialized_and_a016_to_a037_remain_blueprint_only(self):
+    def test_a011_to_a015_are_materialized_and_a028_to_a037_remain_blueprint_only(self):
         activities = self.env["pm.qms.activity"].search(
             [("definition_key", "in", sorted(self.m25_5_keys)), ("company_id", "=", self.company.id)]
         )
         self.assertEqual(len(activities), 5)
         self.assertEqual(set(activities.mapped("definition_key")), self.m25_5_keys)
-        later_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(16, 38)}
+        later_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(28, 38)}
         self.assertFalse(
             self.env["pm.qms.activity"].search(
                 [("definition_key", "in", sorted(later_keys))]
             )
         )
+
+    def test_m25_6_content_block_matches_blueprint_and_is_complete(self):
+        self.assertEqual(
+            {item["activity_key"] for item in self.m25_6_content["activities"]},
+            self.m25_6_keys,
+        )
+        required = (
+            "activity_key",
+            "content_checkpoint",
+            "title",
+            "description",
+            "objective",
+            "why_it_matters",
+            "implementation_steps",
+            "expected_output",
+            "evidence_expectations",
+            "success_criteria",
+            "responsible_role",
+            "activity_kind",
+            "readiness_required",
+        )
+        expected = {
+            "ISO9001-INITIAL-A016": ("PM-QMP-DSG-001", "P09"),
+            "ISO9001-INITIAL-A017": ("PM-QMP-OPS-001", "P09"),
+            "ISO9001-INITIAL-A018": ("PM-QMP-OPS-002", "P09"),
+            "ISO9001-INITIAL-A019": ("PM-QMP-REL-001", "P09"),
+            "ISO9001-INITIAL-A020": ("PM-QMP-TRC-001", "P09"),
+            "ISO9001-INITIAL-A021": ("PM-QMP-PROP-001", "P09"),
+            "ISO9001-INITIAL-A022": ("PM-QMP-PRE-001", "P09"),
+            "ISO9001-INITIAL-A023": ("PM-QMP-CHG-001", "P09"),
+            "ISO9001-INITIAL-A024": ("PM-QMP-CUST-001", "P10"),
+            "ISO9001-INITIAL-A025": ("PM-QMP-REQ-001", "P10"),
+            "ISO9001-INITIAL-A026": ("PM-QMP-SUP-001", "P10"),
+            "ISO9001-INITIAL-A027": ("PM-QMP-SUP-002", "P10"),
+        }
+        for item in self.m25_6_content["activities"]:
+            self.assertTrue(all(item.get(field_name) for field_name in required))
+            self.assertTrue(
+                all(
+                    isinstance(item[field_name], str)
+                    for field_name in required
+                    if field_name != "readiness_required"
+                )
+            )
+            self.assertEqual(item["content_checkpoint"], "M25.6")
+            self.assertEqual(item["activity_kind"], "qms_implementation")
+            self.assertTrue(item["readiness_required"])
+            self.assertEqual(
+                self.blueprint_by_key[item["activity_key"]]["control_code"],
+                expected[item["activity_key"]][0],
+            )
+            self.assertEqual(
+                self.blueprint_by_key[item["activity_key"]]["phase_key"],
+                expected[item["activity_key"]][1],
+            )
+
+    def test_m25_6_cross_activity_distinctions_are_explicit(self):
+        by_key = {item["activity_key"]: item for item in self.m25_6_content["activities"]}
+        self.assertIn("operational planning", by_key["ISO9001-INITIAL-A017"]["title"].lower())
+        self.assertIn("work instructions", by_key["ISO9001-INITIAL-A018"]["title"].lower())
+        self.assertIn("release", by_key["ISO9001-INITIAL-A019"]["title"].lower())
+        self.assertIn("traceability", by_key["ISO9001-INITIAL-A020"]["title"].lower())
+        self.assertIn("capture", by_key["ISO9001-INITIAL-A024"]["title"].lower())
+        self.assertIn("commitment", by_key["ISO9001-INITIAL-A025"]["title"].lower())
+        self.assertIn("qualify", by_key["ISO9001-INITIAL-A026"]["title"].lower())
+        self.assertIn("monitor", by_key["ISO9001-INITIAL-A027"]["title"].lower())
+        self.assertNotEqual(
+            by_key["ISO9001-INITIAL-A024"]["objective"],
+            by_key["ISO9001-INITIAL-A025"]["objective"],
+        )
+        self.assertNotEqual(
+            by_key["ISO9001-INITIAL-A026"]["objective"],
+            by_key["ISO9001-INITIAL-A027"]["objective"],
+        )
+
+    def test_m25_6_design_guidance_requires_contextual_applicability(self):
+        design = next(
+            item for item in self.m25_6_content["activities"]
+            if item["activity_key"] == "ISO9001-INITIAL-A016"
+        )
+        text = " ".join(design[field] for field in (
+            "description", "objective", "why_it_matters", "implementation_steps",
+            "expected_output", "evidence_expectations", "success_criteria",
+        )).lower()
+        for marker in ("determine whether", "business-context", "applicability", "rationale"):
+            self.assertIn(marker, text)
+        for forbidden in (
+            "every organization",
+            "every customer",
+            "automatically mark",
+            "automatically excluded",
+            "must create a design procedure",
+        ):
+            self.assertNotIn(forbidden, text)
+
+    def test_m25_6_content_is_standalone_and_does_not_add_formal_evidence(self):
+        text = (self.root / "content" / "initial_implementation_p09_p10_v1.json").read_text().lower()
+        for marker in (
+            "odoo sales", "odoo purchase", "odoo inventory", "odoo manufacturing",
+            "odoo quality", "odoo maintenance", " accounting", "iso 14001",
+            "iso 45001", "as9100", "iatf", "shall", "certification guarantee",
+        ):
+            self.assertNotIn(marker, text)
+        control_codes = {
+            self.blueprint_by_key[key]["control_code"] for key in self.m25_6_keys
+        }
+        controls = self.env["pm.qms.control"].search(
+            [("code", "in", sorted(control_codes)), ("company_id", "=", self.company.id)]
+        )
+        before = {
+            control.code: self.env["pm.qms.evidence.requirement"].search_count(
+                [("control_id", "=", control.id)]
+            )
+            for control in controls
+        }
+        seed_iso9001_initial_implementation(self.env)
+        after = {
+            control.code: self.env["pm.qms.evidence.requirement"].search_count(
+                [("control_id", "=", control.id)]
+            )
+            for control in controls
+        }
+        self.assertEqual(after, before)
+
+    def test_m25_6_activities_have_exact_control_phase_scope_and_semantics(self):
+        activities = self.env["pm.qms.activity"].search(
+            [("definition_key", "in", sorted(self.m25_6_keys)), ("company_id", "=", self.company.id)]
+        )
+        self.assertEqual(len(activities), 12)
+        for activity in activities:
+            blueprint = self.blueprint_by_key[activity.definition_key]
+            self.assertEqual(activity.control_id.code, blueprint["control_code"])
+            line = self.pack.control_line_ids.filtered(
+                lambda record, control=activity.control_id: record.control_id == control
+            )
+            self.assertEqual(len(line), 1)
+            self.assertEqual(line.area_id.code, blueprint["phase_key"])
+            self.assertEqual(activity.applicable_pack_ids, self.pack)
+            self.assertEqual(activity.activity_kind, "qms_implementation")
+            self.assertTrue(activity.readiness_required)
 
     def test_m25_5_activities_have_exact_control_phase_scope_and_semantics(self):
         activities = self.env["pm.qms.activity"].search(
@@ -254,7 +399,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         activities = self.env["pm.qms.activity"].search(
             [("definition_key", "in", sorted(self.all_target_keys)), ("company_id", "=", self.company.id)]
         )
-        self.assertEqual(len(activities), 15)
+        self.assertEqual(len(activities), 27)
         self.assertEqual(set(activities.mapped("definition_key")), self.all_target_keys)
         with self.assertRaises(ValidationError):
             activities[0].write({"definition_key": "ISO9001-INITIAL-CHANGED"})
@@ -297,7 +442,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         self.assertEqual(task.pm_activity_evidence_expectations, source.evidence_expectations)
         self.assertEqual(task.pm_activity_responsible_role, source.responsible_role)
 
-    def test_generation_materializes_fifteen_iso_tasks_and_no_generic_pack_leak(self):
+    def test_generation_materializes_twenty_seven_iso_tasks_and_no_generic_pack_leak(self):
         self.env.user.write(
             {"group_ids": [(4, self.env.ref("pm_qms_core.group_pm_qms_manager").id)]}
         )
@@ -318,10 +463,18 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         tasks = project.generated_task_ids.filtered(
             lambda task: task.pm_activity_id.definition_key in self.all_target_keys
         )
-        self.assertEqual(len(tasks), 15)
+        self.assertEqual(len(tasks), 27)
         self.assertEqual(
             len(tasks.filtered(lambda task: task.pm_activity_id.definition_key in self.m25_5_keys)),
             5,
+        )
+        self.assertEqual(
+            len(tasks.filtered(lambda task: task.pm_activity_id.definition_key in self.m25_6_keys)),
+            12,
+        )
+        later_keys = {f"ISO9001-INITIAL-A{i:03d}" for i in range(28, 38)}
+        self.assertFalse(
+            tasks.filtered(lambda task: task.pm_activity_id.definition_key in later_keys)
         )
         self.assertTrue(all(tasks.mapped("pm_required")))
 
@@ -348,6 +501,53 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             generic_project.generated_task_ids.filtered(
                 lambda task: task.pm_activity_id.definition_key in self.m25_5_keys
             )
+        )
+
+    def test_m25_6_applicability_uses_existing_control_instance_workflow(self):
+        self.env.user.write(
+            {"group_ids": [(4, self.env.ref("pm_qms_core.group_pm_qms_manager").id)]}
+        )
+        organization = self.env["pm.qms.organization"].create(
+            {"name": "M25.6 Applicability Organization", "code": "M256-APP-ORG", "company_id": self.company.id}
+        )
+        project = self.env["pm.qms.implementation.project"].create(
+            {
+                "name": "M25.6 Applicability Test",
+                "company_id": self.company.id,
+                "organization_id": organization.id,
+                "date_start": "2026-08-27",
+                "target_date": "2026-09-30",
+                "pack_ids": [Command.set([self.pack.id])],
+            }
+        )
+        project._sync_framework()
+        lines = project.implementation_control_ids.filtered(
+            lambda line: line.control_id.code in {"PM-QMP-DSG-001", "PM-QMP-PROP-001"}
+        )
+        self.assertEqual(len(lines), 2)
+        design = lines.filtered(lambda line: line.control_id.code == "PM-QMP-DSG-001")
+        property_line = lines.filtered(lambda line: line.control_id.code == "PM-QMP-PROP-001")
+        design_task = design.task_ids.filtered("pm_generated")[:1]
+        self.assertEqual(design.applicability, "applicable")
+        self.assertTrue(design_task)
+        self.assertTrue(design_task.pm_required)
+
+        for line in (design, property_line):
+            line.control_instance_id.with_user(self.env.user).write(
+                {"justification": "This fictional organization does not control this activity in its current scope."}
+            )
+            line.control_instance_id.with_user(self.env.user).action_mark_not_applicable()
+
+        self.assertEqual(design.readiness_state, "not_applicable")
+        self.assertEqual(property_line.readiness_state, "not_applicable")
+        self.assertEqual(design.implementation_status, "not_applicable")
+        self.assertEqual(property_line.implementation_status, "not_applicable")
+        self.assertTrue(design_task.pm_required)
+        self.assertGreaterEqual(design.open_activity_count, 1)
+        self.assertEqual(project.not_applicable_controls, 2)
+        self.assertEqual(
+            project.applicable_controls,
+            project.total_controls - project.not_applicable_controls,
         )
 
     def test_m25_5_narrative_guidance_does_not_change_formal_evidence(self):
@@ -401,6 +601,7 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         for filename in (
             "initial_implementation_p01_p06_v1.json",
             "initial_implementation_p07_p08_v1.json",
+            "initial_implementation_p09_p10_v1.json",
         ):
             text = (self.root / "content" / filename).read_text().lower()
             for marker in (
