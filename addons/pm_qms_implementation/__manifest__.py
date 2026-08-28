@@ -7,7 +7,7 @@ versioned proprietary framework packs. It generates implementation projects,
 deduplicates shared controls, creates Odoo execution tasks, and preserves
 historical implementation readiness assessments.
     """,
-    "version": "19.0.5.0.0",
+    "version": "19.0.6.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",

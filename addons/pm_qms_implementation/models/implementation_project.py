@@ -562,34 +562,41 @@ class PmQmsImplementationProject(models.Model):
 
     def _recommended_next_action_values(self, limit=12):
         self.ensure_one()
-        actions = []
         controls = self.implementation_control_ids.filtered(
-            lambda line: line.active and line.readiness_state in {"gap", "partial"}
-        ).sorted(lambda line: (0 if line.readiness_state == "gap" else 1, line.sequence, line.id))
-        for line in controls:
-            area = line.area_ids.sorted(lambda item: (item.sequence, item.code or "", item.id))[:1]
-            values = {
+            lambda line: line.active and line.readiness_state not in {"ready", "not_applicable"}
+        )
+
+        def sort_key(line):
+            overdue = 0 if line.overdue_activity_count else 1
+            state = 0 if line.readiness_state == "gap" else 1
+            tasks = line.task_ids.filtered(
+                lambda task: task.pm_generated and task.pm_required and not task.is_closed
+            )
+            deadline = min(
+                (str(task.date_deadline) for task in tasks if task.date_deadline),
+                default="9999-12-31",
+            )
+            area = line.area_ids.sorted(
+                lambda item: (item.sequence, item.code or "", item.id)
+            )[:1]
+            return (
+                overdue, state, deadline,
+                area.sequence if area else 10**9,
+                line.sequence, line.id,
+            )
+
+        actions = []
+        for line in controls.sorted(sort_key)[:limit]:
+            area = line.area_ids.sorted(
+                lambda item: (item.sequence, item.code or "", item.id)
+            )[:1]
+            values = line._readiness_intelligence_values()
+            values.update({
                 "sequence": len(actions) + 1,
-                "priority": "high" if line.readiness_state == "gap" else "normal",
                 "area_id": area.id if area else False,
                 "implementation_control_id": line.id,
-                "res_model": "pm.qms.implementation.control",
-                "res_id": line.id,
-            }
-            if line.gap_reason == "implementation_not_started":
-                values.update({"action_type": "start_control", "name": f"Start {line.control_code}", "reason": "Implementation has not started."})
-            elif line.gap_reason == "missing_evidence":
-                values.update({"action_type": "evidence", "name": f"Add evidence for {line.control_code}", "reason": f"{line.missing_evidence_count} mandatory evidence item(s) missing."})
-            elif line.gap_reason == "evidence_under_review":
-                values.update({"action_type": "review_evidence", "name": f"Review evidence for {line.control_code}", "reason": f"{line.evidence_under_review_count} evidence item(s) under review."})
-            elif line.gap_reason in {"open_required_activities", "overdue_activities"}:
-                task = line.task_ids.filtered(lambda task: task.pm_generated and task.pm_required and not task.is_closed).sorted(lambda task: (task.date_deadline or fields.Datetime.now(), task.id))[:1]
-                values.update({"action_type": "activity", "name": f"Complete activity for {line.control_code}", "reason": f"{line.open_activity_count} required activity item(s) open.", "task_id": task.id if task else False, "res_model": "project.task" if task else "pm.qms.implementation.control", "res_id": task.id if task else line.id})
-            else:
-                values.update({"action_type": "implementation", "name": f"Review {line.control_code}", "reason": "Implementation status needs review."})
+            })
             actions.append(values)
-            if len(actions) >= limit:
-                break
         return actions
 
     def action_open_readiness_center(self):

@@ -57,6 +57,9 @@
                                     <field name="control_name_snapshot"/>
                                     <field name="readiness_state_snapshot"/>
                                     <field name="gap_reason_snapshot"/>
+                                    <field name="blocker_summary_snapshot" optional="hide"/>
+                                    <field name="recommended_next_action_snapshot" optional="hide"/>
+                                    <field name="recommended_done_when_snapshot" optional="hide"/>
                                     <field name="required_evidence_snapshot"/>
                                     <field name="accepted_evidence_snapshot"/>
                                     <field name="required_activity_snapshot"/>

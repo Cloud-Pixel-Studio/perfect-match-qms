@@ -593,3 +593,204 @@ class TestPmQmsImplementation(TransactionCase):
         self.assertGreaterEqual(item.required_activity_snapshot, 1)
         self.assertGreaterEqual(item.open_activity_snapshot, 1)
         self.assertEqual(item.readiness_state_snapshot, "not_applicable")
+
+
+    def test_m25_9_readiness_intelligence_precedence_and_routing(self):
+        pack = self._create_pack("PM-TST-INTEL", [self.controls[0]])
+        project = self._generate_project([pack])
+        line = project.implementation_control_ids[0]
+
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "start_control")
+        self.assertEqual(values["priority"], "high")
+        self.assertIn("Implementation has not started", values["blocker_summary"])
+
+        line.control_instance_id.with_user(self.manager).action_mark_implemented()
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "activity")
+        self.assertEqual(values["res_model"], "project.task")
+        self.assertEqual(values["res_id"], values["task_id"])
+        self.assertIn("evidence requirement", values["blocker_summary"])
+
+        line.task_ids.with_user(self.manager).write({"state": "1_done"})
+        evidence = self.env["pm.qms.evidence"].with_user(self.manager).create({
+            "name": "Under review implementation evidence",
+            "control_instance_id": line.control_instance_id.id,
+            "evidence_requirement_id": self.evidence_requirement.id,
+            "state": "under_review",
+        })
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "review_evidence")
+        self.assertEqual(values["evidence_id"], evidence.id)
+        self.assertEqual(values["res_id"], evidence.id)
+        self.assertEqual(values["res_model"], "pm.qms.evidence")
+        action = project._recommended_next_action_values(limit=1)[0]
+        self.assertEqual(action["evidence_id"], evidence.id)
+        self.assertEqual(action["done_when"], "An authorized reviewer records the evidence decision.")
+
+    def _set_implementation_in_progress(self, line):
+        line.control_instance_id.with_user(self.manager).action_mark_in_progress()
+
+    def _create_evidence(self, line, name, state):
+        return self.env["pm.qms.evidence"].with_user(self.manager).create(
+            {
+                "name": name,
+                "control_instance_id": line.control_instance_id.id,
+                "evidence_requirement_id": self.evidence_requirement.id,
+                "state": state,
+            }
+        )
+
+    def test_m25_9_accepted_evidence_suppresses_stale_blockers(self):
+        for state in ("rejected", "under_review", "expired"):
+            pack = self._create_pack(f"PM-TST-STALE-{state.upper()}", [self.controls[0]])
+            project = self._generate_project([pack], name=f"Stale {state}")
+            line = project.implementation_control_ids[0]
+            self._set_implementation_in_progress(line)
+            line.task_ids.with_user(self.manager).write({"state": "1_done"})
+            self._accept_evidence(line)
+            stale = self._create_evidence(line, f"Stale {state} evidence", state)
+
+            values = line._readiness_intelligence_values()
+            self.assertEqual(line.missing_evidence_count, 0)
+            self.assertEqual(values["action_type"], "implementation")
+            self.assertEqual(values["res_id"], line.id)
+            self.assertNotIn(state, values["blocker_summary"] or "")
+            self.assertFalse(values["evidence_id"])
+            self.assertTrue(stale)
+
+    def test_m25_9_expired_evidence_has_distinct_action_and_routing(self):
+        pack = self._create_pack("PM-TST-EXPIRED", [self.controls[0]])
+        project = self._generate_project([pack], name="Expired evidence")
+        line = project.implementation_control_ids[0]
+        line.control_instance_id.with_user(self.manager).action_mark_implemented()
+        line.task_ids.with_user(self.manager).write({"state": "1_done"})
+        evidence = self._create_evidence(line, "Expired implementation evidence", "expired")
+
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "evidence_renewal")
+        self.assertEqual(values["priority"], "high")
+        self.assertIn("expired", values["name"].lower())
+        self.assertEqual(values["evidence_id"], evidence.id)
+        self.assertIn("renewed", values["done_when"].lower())
+
+    def test_m25_9_activity_order_prefers_methodology_then_overdue(self):
+        later_activity = self.env["pm.qms.activity"].create(
+            {
+                "control_id": self.controls[0].id,
+                "name": "Later implementation activity",
+                "description": "Fictional later activity for ordering coverage.",
+                "sequence": 20,
+            }
+        )
+        pack = self._create_pack("PM-TST-ACTIVITY-ORDER", [self.controls[0]])
+        project = self._generate_project([pack], name="Activity ordering")
+        line = project.implementation_control_ids[0]
+        self._set_implementation_in_progress(line)
+        tasks = line.task_ids.sorted(lambda task: task.pm_activity_id.sequence)
+        self.assertEqual(tasks[0].pm_activity_id, self.activity)
+        self.assertEqual(tasks[1].pm_activity_id, later_activity)
+        tasks[0].with_user(self.manager).write({"date_deadline": "2026-10-01"})
+        tasks[1].with_user(self.manager).write({"date_deadline": "2026-09-01"})
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["task_id"], tasks[0].id)
+
+        tasks[1].with_user(self.manager).write({"date_deadline": "2026-08-01"})
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["task_id"], tasks[1].id)
+
+    def test_m25_9_project_order_and_limit_are_repeatable(self):
+        extra_control = self.env["pm.qms.control"].create(
+            {
+                "name": "Implementation Demo Control 13",
+                "code": "PM-QMS-IMP-T013",
+                "objective": "Apply the fictional implementation method 13.",
+                "description": "Original fictional control for limit coverage.",
+                "process_id": self.process.id,
+                "category": "process",
+            }
+        )
+        extra_control.action_activate()
+        pack = self._create_pack("PM-TST-ORDER-LIMIT", self.controls + [extra_control])
+        project = self._generate_project([pack], name="Order and limit")
+
+        first = project._recommended_next_action_values()
+        second = project._recommended_next_action_values()
+        projection = lambda actions: [
+            (item["implementation_control_id"], item["action_type"], item["priority"], item["res_model"], item["res_id"])
+            for item in actions
+        ]
+        self.assertEqual(len(first), 12)
+        self.assertEqual(projection(first), projection(second))
+
+        first_line = project.implementation_control_ids.sorted("sequence")[0]
+        first_line.control_instance_id.with_user(self.manager).write(
+            {"justification": "Excluded from this fictional limit test."}
+        )
+        first_line.control_instance_id.with_user(self.manager).action_mark_not_applicable()
+        refreshed = project._recommended_next_action_values()
+        self.assertEqual(len(refreshed), 12)
+        self.assertNotIn(first_line.id, [item["implementation_control_id"] for item in refreshed])
+
+    def test_m25_9_rejected_evidence_routes_to_exact_record(self):
+        pack = self._create_pack("PM-TST-REJECTED", [self.controls[0]])
+        project = self._generate_project([pack])
+        line = project.implementation_control_ids[0]
+        line.control_instance_id.with_user(self.manager).action_mark_implemented()
+        line.task_ids.with_user(self.manager).write({"state": "1_done"})
+        evidence = self.env["pm.qms.evidence"].with_user(self.manager).create({
+            "name": "Rejected implementation evidence",
+            "control_instance_id": line.control_instance_id.id,
+            "evidence_requirement_id": self.evidence_requirement.id,
+            "state": "rejected",
+        })
+
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "evidence_correction")
+        self.assertEqual(values["priority"], "high")
+        self.assertEqual(values["evidence_id"], evidence.id)
+        center = self.env["pm.qms.readiness.center"].with_user(self.manager).create({
+            "implementation_project_id": project.id,
+        })
+        action = center.action_line_ids[:1]
+        self.assertEqual(action.evidence_id, evidence)
+        opened = action.action_open_record()
+        self.assertEqual(opened["res_model"], "pm.qms.evidence")
+        self.assertEqual(opened["res_id"], evidence.id)
+
+    def test_m25_9_readiness_snapshots_include_intelligence(self):
+        pack = self._create_pack("PM-TST-SNAPSHOT", [self.controls[0]])
+        project = self._generate_project([pack])
+        action = project.with_user(self.manager).action_run_readiness_assessment()
+        assessment = self.env["pm.qms.readiness.assessment"].browse(
+            action["domain"][0][2]
+        )
+        item = assessment.item_ids[0]
+        self.assertEqual(assessment.state, "completed")
+        self.assertTrue(item.blocker_summary_snapshot)
+        self.assertTrue(item.recommended_next_action_snapshot)
+        self.assertTrue(item.recommended_done_when_snapshot)
+        blocker = item.blocker_summary_snapshot
+        project.implementation_control_ids[0].control_instance_id.with_user(
+            self.manager
+        ).action_mark_implemented()
+        self.assertEqual(item.blocker_summary_snapshot, blocker)
+
+
+    def test_m25_9_ready_and_not_applicable_controls_have_no_action(self):
+        pack = self._create_pack("PM-TST-NO-ACTION", self.controls[:2])
+        project = self._generate_project([pack])
+        first, second = project.implementation_control_ids.sorted("sequence")
+        self._mark_ready(first)
+        second.control_instance_id.with_user(self.manager).write({
+            "justification": "Excluded from the fictional scope."
+        })
+        second.control_instance_id.with_user(self.manager).action_mark_not_applicable()
+
+        actions = project._recommended_next_action_values()
+        self.assertFalse(
+            any(action["implementation_control_id"] == first.id for action in actions)
+        )
+        self.assertFalse(
+            any(action["implementation_control_id"] == second.id for action in actions)
+        )
