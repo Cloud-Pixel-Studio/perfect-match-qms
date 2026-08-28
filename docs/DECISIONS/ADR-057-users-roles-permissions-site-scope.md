@@ -23,6 +23,12 @@ The product UI is `Perfect Match QMS > Configuration > Users & Access`. It
 exposes the approved role allow-list and scope fields, not technical groups,
 ACLs, record rules, or licensing controls.
 
+Operational records remain scoped by organization, site, and process. Reusable
+methodology/master definitions are read-only for QMS managers and are readable
+when required by an authorized operational implementation in their process
+scope. Master mutation remains restricted to the existing Framework
+Administration authority.
+
 ## Consequences
 
 The model is easy to test with `with_user`, fail-closed by default, and remains
