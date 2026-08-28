@@ -135,6 +135,7 @@ class PmQmsReadinessCenterAction(models.TransientModel):
             ("evidence", "Evidence"),
             ("review_evidence", "Review Evidence"),
             ("evidence_correction", "Correct Evidence"),
+            ("evidence_renewal", "Renew Evidence"),
             ("activity", "Activity"),
             ("implementation", "Implementation"),
         ],

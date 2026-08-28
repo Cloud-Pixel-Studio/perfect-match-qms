@@ -12,11 +12,17 @@ The engine evaluates these blockers in order:
 1. implementation not started
 2. overdue required activity
 3. open required activity
-4. submitted or under-review evidence
-5. rejected or expired evidence
-6. missing accepted formal evidence
-7. implementation final review
-8. other manual review
+4. submitted or under-review evidence for a missing requirement
+5. rejected evidence for a missing requirement
+6. expired evidence for a missing requirement
+7. missing accepted formal evidence
+8. implementation final review
+9. other manual review
+
+Evidence attached to a requirement that already has current accepted evidence
+does not create a readiness blocker. Under-review work asks an authorized
+reviewer to record a decision; rejected evidence asks for correction or
+replacement, while expired evidence asks for renewal or replacement.
 
 The blocker summary can list multiple active factors, while the recommended
 action selects the first actionable factor. Ready and not-applicable controls
@@ -36,7 +42,9 @@ rejected/expired evidence; normal for open or review work; low only for the
 fallback manual-review case.
 
 The activity success criteria are the preferred done-when text, with expected
-output as fallback. Evidence actions use the requirement acceptance criteria.
+output as fallback. Provide, correct, and renew evidence actions use the
+requirement acceptance criteria. Review evidence uses decision-based done-when
+guidance: an authorized reviewer records the evidence decision.
 These are guidance only and do not accept evidence or complete workflow steps.
 
 ## Historical snapshots

@@ -179,8 +179,12 @@ class PmQmsImplementationControl(models.Model):
             accepted_requirements = evidence.filtered(
                 lambda record: record.state == "accepted"
             ).mapped("evidence_requirement_id")
+            missing_requirements = requirements.filtered(
+                lambda requirement: requirement.id not in set(accepted_requirements.ids)
+            )
             under_review = evidence.filtered(
-                lambda record: record.state in {"submitted", "under_review"}
+                lambda record: record.evidence_requirement_id in missing_requirements
+                and record.state in {"submitted", "under_review"}
             )
             required_tasks = line.task_ids.filtered(
                 lambda task: task.pm_generated
@@ -273,12 +277,14 @@ class PmQmsImplementationControl(models.Model):
             .mapped("evidence_requirement_id").ids
         )
         missing = requirements.filtered(lambda req: req.id not in accepted_ids)
-        under_review = evidence.filtered(
+        blocking_evidence = evidence.filtered(
+            lambda record: record.evidence_requirement_id in missing
+        )
+        under_review = blocking_evidence.filtered(
             lambda record: record.state in {"submitted", "under_review"}
         )
-        rejected = evidence.filtered(
-            lambda record: record.state in {"rejected", "expired"}
-        )
+        rejected = blocking_evidence.filtered(lambda record: record.state == "rejected")
+        expired = blocking_evidence.filtered(lambda record: record.state == "expired")
         required_tasks = self.task_ids.filtered(
             lambda task: task.pm_generated and task.pm_required
         )
@@ -297,9 +303,9 @@ class PmQmsImplementationControl(models.Model):
         if under_review:
             blockers.append(f"{len(under_review)} evidence item(s) are under review.")
         if rejected:
-            blockers.append(
-                f"{len(rejected)} evidence item(s) require correction because they were rejected or expired."
-            )
+            blockers.append(f"{len(rejected)} evidence item(s) were rejected and require correction.")
+        if expired:
+            blockers.append(f"{len(expired)} evidence item(s) are expired and require renewal or replacement.")
         if missing:
             blockers.append(
                 f"{len(missing)} mandatory evidence requirement(s) lack accepted evidence."
@@ -307,10 +313,17 @@ class PmQmsImplementationControl(models.Model):
         if not blockers:
             blockers.append("Implementation status requires a manual readiness review.")
 
-        task = open_tasks.sorted(
-            lambda item: (item.date_deadline or datetime.max, item.id)
-        )[:1]
-        evidence_record = (under_review or rejected)[:1]
+        def task_deadline(item):
+            return str(item.date_deadline) if item.date_deadline else "9999-12-31"
+
+        def task_sequence(item):
+            return item.pm_activity_id.sequence or 10**9
+
+        if overdue:
+            task = overdue.sorted(lambda item: (task_deadline(item), task_sequence(item), item.id))[:1]
+        else:
+            task = open_tasks.sorted(lambda item: (task_sequence(item), task_deadline(item), item.id))[:1]
+        evidence_record = (under_review[:1] or rejected[:1] or expired[:1])
         requirement = missing[:1]
         if self.implementation_status == "not_started":
             action_type, priority = "start_control", "high"
@@ -334,13 +347,19 @@ class PmQmsImplementationControl(models.Model):
             action_type, priority = "review_evidence", "normal"
             name = f"Review evidence for {self.control_code}"
             reason = f"{len(under_review)} evidence item(s) are under review."
-            done_when = evidence_record.evidence_requirement_id.acceptance_criteria or "The evidence meets the requirement acceptance criteria and is reviewed."
+            done_when = "An authorized reviewer records the evidence decision."
             res_model, res_id = "pm.qms.evidence", evidence_record.id
         elif rejected:
             action_type, priority = "evidence_correction", "high"
-            name = f"Correct evidence for {self.control_code}"
-            reason = f"{len(rejected)} evidence item(s) were rejected or expired."
-            done_when = evidence_record.evidence_requirement_id.acceptance_criteria or "Replacement evidence meets the requirement acceptance criteria."
+            name = f"Correct or replace rejected evidence for {self.control_code}"
+            reason = f"{len(rejected)} evidence item(s) were rejected and do not satisfy the formal requirement."
+            done_when = "Corrected or replacement evidence has been submitted and an authorized reviewer has accepted evidence satisfying the requirement acceptance criteria."
+            res_model, res_id = "pm.qms.evidence", evidence_record.id
+        elif expired:
+            action_type, priority = "evidence_renewal", "high"
+            name = f"Renew or replace expired evidence for {self.control_code}"
+            reason = f"{len(expired)} evidence item(s) are expired and no current accepted evidence satisfies the requirement."
+            done_when = "Current replacement or renewed evidence has been submitted and accepted against the formal requirement."
             res_model, res_id = "pm.qms.evidence", evidence_record.id
         elif requirement:
             action_type = "evidence"

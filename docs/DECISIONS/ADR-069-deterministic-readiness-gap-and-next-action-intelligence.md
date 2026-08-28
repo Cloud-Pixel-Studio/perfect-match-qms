@@ -20,8 +20,14 @@ The evaluation uses the existing required activity, task, formal evidence, and
 requirement records.
 
 The precedence is work before paperwork: start implementation, overdue and
-open required activities, evidence review, evidence correction, missing formal
-evidence, final review, then manual review. The Readiness Center ranks results
+open required activities, evidence review, evidence correction or renewal,
+missing formal evidence, final review, then manual review. Only evidence linked
+to an unsatisfied formal requirement can create an evidence readiness blocker;
+redundant evidence on a satisfied requirement remains history without blocking.
+Submitted or under-review evidence requires a review decision. Rejected and
+expired evidence have distinct corrective guidance. Overdue activities are
+ordered by deadline, activity sequence, and ID; ordinary open activities follow
+methodology sequence, deadline, and ID. The Readiness Center ranks results
 deterministically and limits the default result to twelve actions.
 
 Evidence actions route to an exact evidence record when one exists. Missing

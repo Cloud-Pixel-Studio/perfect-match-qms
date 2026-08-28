@@ -573,8 +573,8 @@ class PmQmsImplementationProject(models.Model):
                 lambda task: task.pm_generated and task.pm_required and not task.is_closed
             )
             deadline = min(
-                (task.date_deadline for task in tasks if task.date_deadline),
-                default=datetime.max,
+                (str(task.date_deadline) for task in tasks if task.date_deadline),
+                default="9999-12-31",
             )
             area = line.area_ids.sorted(
                 lambda item: (item.sequence, item.code or "", item.id)
