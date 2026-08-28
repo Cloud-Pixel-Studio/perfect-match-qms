@@ -438,21 +438,59 @@ legacy_persons = env["pm.qms.person"].search(
 if legacy_persons and site_by_code.get("APEX-HQ"):
     legacy_persons.write({"site_id": site_by_code["APEX-HQ"].id, "active": False})
 
-# Implementation project from the existing Perfect Match Quality Pack.
-pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") else False
+# Canonical ISO 9001 Initial Implementation project for the fictional Apex
+# organization. Reuse the historical Demo project when present so reseeding
+# never creates a second customer scenario.
+canonical_project_name = "Apex Precision ISO 9001 Initial Implementation"
+legacy_project_name = "Apex Precision QMS Demo Implementation"
+pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-ISO9001-INITIAL"), ("state", "=", "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") else False
 if not pack and model_exists("pm.qms.framework.pack"):
-    pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active")], limit=1)
-project = env["pm.qms.implementation.project"].search([("name", "=", "Apex Precision QMS Demo Implementation"), ("organization_id", "=", organization.id)], limit=1) if model_exists("pm.qms.implementation.project") else False
+    pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-ISO9001-INITIAL"), ("state", "=", "active")], limit=1)
+project = env["pm.qms.implementation.project"].search([("name", "in", [canonical_project_name, legacy_project_name]), ("organization_id", "=", organization.id)], limit=1) if model_exists("pm.qms.implementation.project") else False
+
+
+def align_iso_generated_tasks(project, pack):
+    """Reuse legacy generated tasks so the task uniqueness invariant is kept."""
+    for line in project.implementation_control_ids.filtered("active"):
+        activity = line.control_id.implementation_activity_ids.filtered(
+            lambda item: item.active
+            and item.definition_key
+            and item.definition_key.startswith("ISO9001-INITIAL-")
+            and pack in item.applicable_pack_ids
+        ).sorted("sequence")[:1]
+        if not activity:
+            continue
+        iso_tasks = line.task_ids.filtered(
+            lambda task: task.pm_generated and task.pm_activity_id == activity
+        )
+        generic_tasks = line.task_ids.filtered(
+            lambda task: task.pm_generated
+            and task.pm_activity_id
+            and not task.pm_activity_id.definition_key
+        )
+        if not iso_tasks and generic_tasks:
+            task = generic_tasks[0]
+            task.write({
+                "pm_activity_id": activity.id,
+                "name": activity.name,
+                "description": activity.description or activity.expected_output or False,
+                "pm_required": bool(line.required and activity.readiness_required),
+            })
+            generic_tasks = generic_tasks[1:]
+        if generic_tasks:
+            generic_tasks.write({"active": False})
+
+
 if pack and not project:
     try:
         project = env["pm.qms.implementation.project"].generate_from_wizard({
-            "name": "Apex Precision QMS Demo Implementation",
+            "name": canonical_project_name,
             "company_id": company.id,
             "organization_id": organization.id,
             "project_manager_id": demo_user.id,
             "date_start": today - relativedelta(days=45),
             "target_date": today + relativedelta(days=75),
-            "implementation_type": "migration",
+            "implementation_type": "new_implementation",
             "pack_ids": pack.ids,
             "create_odoo_project": True,
             "notes": "Fictional full-product demo implementation using original Perfect Match control wording only.",
@@ -460,7 +498,183 @@ if pack and not project:
     except Exception as exc:
         warnings.append(f"implementation_project:{exc.__class__.__name__}:{exc}")
 elif project:
-    call(project, "action_sync_framework")
+    if project.name != canonical_project_name:
+        project.write({"name": canonical_project_name})
+    if "implementation_type" in project._fields:
+        project.write({"implementation_type": "new_implementation"})
+    if pack and set(project.pack_ids.ids) != set(pack.ids):
+        project.write({"pack_ids": [Command.set(pack.ids)]})
+        iso_lines = {
+            line.control_id.id: line
+            for line in pack.control_line_ids.filtered("active")
+        }
+        for line in project.implementation_control_ids:
+            source = iso_lines.get(line.control_id.id)
+            if source:
+                line.write({
+                    "pack_ids": [Command.set([pack.id])],
+                    "area_ids": [Command.set([source.area_id.id])],
+                    "sequence": source.sequence,
+                    "required": source.required,
+                })
+        align_iso_generated_tasks(project, pack)
+    # Existing control lines are already present; syncing would recreate the
+    # intentionally archived global tasks for the ISO project.
+
+
+def ensure_demo_evidence(control_instance, requirement, name, target_state, description):
+    """Create one fictional evidence record and advance it through its workflow."""
+    evidence = upsert(
+        "pm.qms.evidence",
+        name=name,
+        vals={
+            "control_instance_id": control_instance.id,
+            "evidence_requirement_id": requirement.id,
+            "owner_id": demo_user.id,
+            "evidence_date": today - relativedelta(days=5),
+            "description": description,
+        },
+        extra_domain=[
+            ("control_instance_id", "=", control_instance.id),
+            ("evidence_requirement_id", "=", requirement.id),
+            ("name", "=", name),
+        ],
+        required=False,
+    )
+    if not evidence or evidence.state == target_state:
+        return evidence
+    if evidence.state == "draft" and target_state in {"submitted", "under_review", "accepted", "rejected", "expired"}:
+        call(evidence, "action_submit")
+    if evidence.state == "submitted" and target_state in {"under_review", "accepted", "rejected", "expired"}:
+        call(evidence, "action_review")
+    if evidence.state == "under_review" and target_state in {"accepted", "expired"}:
+        call(evidence, "action_accept")
+    if evidence.state == "under_review" and target_state == "rejected":
+        call(evidence, "action_reject")
+    if evidence.state == "accepted" and target_state == "expired":
+        call(evidence, "action_expire")
+    if evidence.state != target_state:
+        warnings.append(f"demo_evidence_state:{name}:expected_{target_state}:actual_{evidence.state}")
+    return evidence
+
+
+def seed_iso_initial_demo_scenario(project, pack):
+    """Seed a small, deterministic maturity mix without changing product code."""
+    if not project or not pack:
+        return
+    lines = project.implementation_control_ids.filtered("active").sorted("sequence")
+    if len(lines) != 37:
+        warnings.append(f"iso_initial_project_lines:{len(lines)}")
+        return
+    by_code = {line.control_id.code: line for line in lines}
+    for line in lines:
+        source = pack.control_line_ids.filtered(lambda item: item.control_id == line.control_id)[:1]
+        if source:
+            line.write({
+                "pack_ids": [Command.set([pack.id])],
+                "area_ids": [Command.set([source.area_id.id])],
+                "sequence": source.sequence,
+                "required": source.required,
+            })
+
+    # Keep one generated ISO activity per control and archive only the old
+    # generic tasks that came from the pre-M25.10 Demo seed.
+    align_iso_generated_tasks(project, pack)
+
+    def task_for(line):
+        return line.task_ids.filtered(
+            lambda task: task.pm_generated and task.pm_activity_id and task.pm_activity_id.definition_key
+        ).sorted("id")[:1]
+
+    def requirement_for(line):
+        return line.control_id.evidence_requirement_ids.filtered(
+            lambda req: req.active and req.mandatory
+        ).sorted("sequence")[:1]
+
+    def accepted(line, label):
+        req = requirement_for(line)
+        if req:
+            return ensure_demo_evidence(
+                line.control_instance_id,
+                req,
+                f"Apex ISO demo evidence - {label}",
+                "accepted",
+                f"Fictional Apex evidence demonstrating {label.lower()}; acceptance is recorded through the normal review workflow.",
+            )
+        warnings.append(f"missing_evidence_requirement:{line.control_id.code}")
+        return False
+
+    for code in ("PM-QMP-ORG-001", "PM-QMP-OPS-001", "PM-QMP-CUST-001", "PM-QMP-SUP-001", "PM-QMP-AUD-001", "PM-QMP-MRV-001"):
+        line = by_code.get(code)
+        if line:
+            accepted(line, code)
+
+    # The sequence is intentionally stable so the same controls demonstrate
+    # each readiness and evidence path on every idempotent seed run.
+    ready = by_code.get("PM-QMP-ORG-001")
+    if ready:
+        ready.control_instance_id.action_mark_implemented()
+        task = task_for(ready)
+        if task:
+            task.write({"state": "1_done"})
+
+    not_started = by_code.get("PM-QMP-ORG-002")
+    open_line = by_code.get("PM-QMP-SCOPE-001")
+    overdue_line = by_code.get("PM-QMP-PROC-001")
+    missing_line = by_code.get("PM-QMP-GOV-001")
+    under_review_line = by_code.get("PM-QMP-ROLE-001")
+    rejected_line = by_code.get("PM-QMP-POL-001")
+    expired_line = by_code.get("PM-QMP-RISK-001")
+    final_review_line = by_code.get("PM-QMP-OBJ-001")
+    not_applicable = by_code.get("PM-QMP-DSG-001")
+
+    for line in (open_line, overdue_line, final_review_line):
+        if line:
+            line.control_instance_id.action_mark_in_progress()
+    if open_line:
+        accepted(open_line, "open required activity")
+    if overdue_line:
+        accepted(overdue_line, "overdue required activity")
+        task = task_for(overdue_line)
+        if task:
+            task.write({"date_deadline": fields.Datetime.to_string(datetime.combine(overdue, datetime.min.time()))})
+    if final_review_line:
+        accepted(final_review_line, "final implementation review")
+        task = task_for(final_review_line)
+        if task:
+            task.write({"state": "1_done"})
+    if missing_line:
+        missing_line.control_instance_id.action_mark_implemented()
+        task = task_for(missing_line)
+        if task:
+            task.write({"state": "1_done"})
+    for line, label, state in (
+        (under_review_line, "evidence under review", "under_review"),
+        (rejected_line, "rejected evidence", "rejected"),
+        (expired_line, "expired evidence", "expired"),
+    ):
+        if line:
+            line.control_instance_id.action_mark_implemented()
+            task = task_for(line)
+            if task:
+                task.write({"state": "1_done"})
+            req = requirement_for(line)
+            if req:
+                accepted(line, label + " accepted baseline")
+                ensure_demo_evidence(
+                    line.control_instance_id,
+                    req,
+                    f"Apex ISO demo evidence - {label}",
+                    state,
+                    f"Fictional Apex {label} record retained to demonstrate the controlled evidence workflow.",
+                )
+    if not_applicable:
+        not_applicable.control_instance_id.write({"justification": "Design and development is outside the fictional Apex manufacturing scope."})
+        not_applicable.control_instance_id.action_mark_not_applicable()
+
+
+if project and pack:
+    seed_iso_initial_demo_scenario(project, pack)
 
 controls = env["pm.qms.control"].search([("company_id", "=", company.id)], limit=6) if model_exists("pm.qms.control") else env["ir.model"].browse()
 control_instances = []

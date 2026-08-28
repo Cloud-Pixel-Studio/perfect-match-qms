@@ -81,6 +81,88 @@ require(count("pm.qms.supplier.issue", org_domain) >= 1, "expected demo supplier
 require(count("pm.qms.scar", org_domain) >= 1, "expected demo SCAR")
 require(count("pm.qms.management.review", org_domain) >= 1, "expected demo management review")
 
+# M25.10 canonical ISO 9001 implementation scenario checks.  These assertions
+# validate the customer-facing dataset without importing historical task data.
+if all(model_name in env for model_name in (
+    "pm.qms.implementation.project",
+    "pm.qms.framework.pack",
+    "pm.qms.activity",
+    "project.task",
+    "pm.qms.evidence",
+)) and organization:
+    Project = env["pm.qms.implementation.project"]
+    Pack = env["pm.qms.framework.pack"]
+    canonical_projects = Project.search([
+        ("name", "=", "Apex Precision ISO 9001 Initial Implementation"),
+        ("organization_id", "=", organization.id),
+    ])
+    summary["canonical_iso_project"] = len(canonical_projects)
+    require(len(canonical_projects) == 1, "expected one canonical ISO 9001 Demo project")
+    if canonical_projects:
+        project = canonical_projects[0]
+        pack = Pack.search([
+            ("code", "=", "PM-QMS-ISO9001-INITIAL"),
+            ("state", "=", "active"),
+        ], limit=1)
+        require(bool(pack), "active ISO 9001 Initial Implementation pack missing")
+        require(project.pack_ids == pack, "canonical project pack alignment failed")
+        lines = project.implementation_control_ids.filtered("active")
+        controls = lines.mapped("control_id")
+        areas = lines.mapped("area_ids")
+        require(len(lines) == 37 and len(controls) == 37, "canonical project must have 37 unique control lines")
+        require(len(areas) == 13, "canonical project must cover 13 ISO implementation areas")
+        require(all(line.pack_ids == pack for line in lines), "canonical line pack alignment failed")
+        require(all(len(line.area_ids) == 1 for line in lines), "canonical lines must map to one implementation area")
+
+        Activity = env["pm.qms.activity"]
+        iso_activities = Activity.search([("definition_key", "like", "ISO9001-INITIAL-%")])
+        iso_keys = iso_activities.mapped("definition_key")
+        summary["canonical_iso_activities"] = len(iso_activities)
+        require(len(iso_activities) == 37 and len(set(iso_keys)) == 37, "expected 37 unique ISO 9001 activities")
+        require(all(pack in activity.applicable_pack_ids for activity in iso_activities), "ISO activities must be scoped to the ISO pack")
+
+        Task = env["project.task"].with_context(active_test=False)
+        generated = Task.search([
+            ("pm_implementation_project_id", "=", project.id),
+            ("pm_generated", "=", True),
+        ])
+        active_generated = generated.filtered("active")
+        active_iso = active_generated.filtered(
+            lambda task: task.pm_activity_id and task.pm_activity_id.definition_key
+        )
+        summary["canonical_iso_tasks.active"] = len(active_iso)
+        summary["canonical_iso_tasks.archived"] = len(generated) - len(active_generated)
+        require(len(active_iso) == 37, "expected one active ISO task per control")
+        require(len(generated) - len(active_generated) == 37, "expected legacy generic tasks to be archived")
+        require(len(set(active_iso.mapped("pm_activity_id.definition_key"))) == 37, "ISO task activity keys must be unique")
+
+        requirements = controls.mapped("evidence_requirement_ids")
+        requirement_keys = requirements.mapped("definition_key")
+        summary["canonical_iso_evidence_requirements"] = len(requirements)
+        require(len(requirements) == 37 and len(set(requirement_keys)) == 37, "expected 37 unique ISO evidence requirements")
+        require(all((key or "").startswith("PM-QMS-EVID-") for key in requirement_keys), "ISO evidence requirement keys are invalid")
+
+        evidence = env["pm.qms.evidence"].search([
+            ("control_instance_id", "in", lines.mapped("control_instance_id").ids),
+        ])
+        evidence_states = set(evidence.mapped("state"))
+        summary["canonical_iso_evidence.states"] = ",".join(sorted(evidence_states))
+        require({"accepted", "under_review", "rejected", "expired"}.issubset(evidence_states), "canonical evidence maturity states are incomplete")
+
+        status_counts = {}
+        for status in sorted(set(lines.mapped("control_instance_id.implementation_status"))):
+            status_counts[status] = lines.mapped("control_instance_id.implementation_status").count(status)
+        summary["canonical_iso_control_statuses"] = ",".join(f"{key}:{status_counts[key]}" for key in sorted(status_counts))
+        require("implemented" in status_counts and "in_progress" in status_counts and "not_started" in status_counts, "canonical control maturity mix is incomplete")
+        require("not_applicable" in set(lines.mapped("control_instance_id.applicability")), "canonical N/A control is missing")
+
+        next_actions = project._recommended_next_action_values(limit=12)
+        summary["canonical_iso_next_actions"] = len(next_actions)
+        require(len(next_actions) <= 12, "readiness next-action limit exceeded")
+        require(all(action.get("res_model") for action in next_actions), "readiness next actions must link to source records")
+else:
+    errors.append("missing models for canonical ISO 9001 Demo scenario")
+
 if "pm.qms.license" in env:
     license_record = env["pm.qms.license"].search([("is_current", "=", True)], order="id desc", limit=1)
     require(bool(license_record), "current Demo commercial license missing")
