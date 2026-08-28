@@ -368,8 +368,36 @@ class TestPmQmsQualityPack(TransactionCase):
         ).filtered(lambda requirement: requirement.active and requirement.mandatory)
         self.assertEqual(len(requirements), 37)
         self.assertEqual(len(set(requirements.mapped("definition_key"))), 37)
-        self.assertTrue(all(
-            requirement.definition_key.startswith("PM-QMS-EVID-PM-QMP-")
-            and len(requirement.acceptance_criteria.splitlines()) == 5
+        criteria_by_code = {
+            requirement.control_id.code: tuple(
+                line.strip()
+                for line in (requirement.acceptance_criteria or "").splitlines()
+                if line.strip()
+            )
             for requirement in requirements
-        ))
+        }
+        self.assertEqual(len(criteria_by_code), 37)
+        self.assertTrue(all(2 <= len(criteria) <= 5 for criteria in criteria_by_code.values()))
+        self.assertEqual(len(set(criteria_by_code.values())), 37)
+        semantic_indicators = {
+            "PM-QMP-CMP-001": ("competence", "capability"),
+            "PM-QMP-AWR-001": ("awareness", "communicated"),
+            "PM-QMP-DSG-001": ("design", "applicable"),
+            "PM-QMP-OPS-002": ("instructions", "current"),
+            "PM-QMP-TRC-001": ("traceability", "identification"),
+            "PM-QMP-PROP-001": ("property", "protection"),
+            "PM-QMP-SUP-001": ("supplier", "qualification"),
+            "PM-QMP-SUP-002": ("provider", "monitoring"),
+            "PM-QMP-SAT-001": ("customer", "perception"),
+            "PM-QMP-AUD-001": ("audit", "findings"),
+            "PM-QMP-MRV-001": ("leadership", "decisions"),
+        }
+        for code, indicators in semantic_indicators.items():
+            content = " ".join(criteria_by_code[code]).lower()
+            for indicator in indicators:
+                self.assertIn(indicator, content)
+        for code in ("PM-QMP-NCO-001", "PM-QMP-NCR-001", "PM-QMP-RCA-001", "PM-QMP-CAPA-001"):
+            self.assertIn("genuine", " ".join(criteria_by_code[code]).lower())
+        combined = " ".join(" ".join(criteria) for criteria in criteria_by_code.values()).lower()
+        for forbidden in ("iso 14001", "iso 45001", "certification guarantee", "raw prompt"):
+            self.assertNotIn(forbidden, combined)

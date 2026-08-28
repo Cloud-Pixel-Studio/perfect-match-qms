@@ -15,10 +15,7 @@ loudly.
 Evidence acceptance criteria describe observable review conditions for an
 evidence set. They are generic QMS guidance and are not copied standard text.
 
-Live readiness counts only active requirements, active evidence, and accepted
-evidence. Controls marked Not Applicable contribute neither required evidence
-nor required implementation activities to readiness denominators. Completed
-readiness assessments retain their calculated snapshots.
+Live readiness counts only active requirements, active evidence, and accepted evidence. Controls marked Not Applicable preserve their line-level evidence and activity traceability, but contribute neither required evidence nor required implementation activities to readiness-facing aggregates. Completed readiness assessments retain those line-level snapshots while excluding N/A lines from aggregate calculations.
 
 The ISO 9001 add-on owns a reference-only crosswalk from its authored activity
 keys to the generic evidence definitions. The generic QMS remains

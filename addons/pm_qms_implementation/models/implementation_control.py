@@ -152,7 +152,7 @@ class PmQmsImplementationControl(models.Model):
                 or status == "not_applicable"
             )
             requirements = line.control_id.evidence_requirement_ids.filtered(
-                lambda req: not not_applicable and req.mandatory and req.active
+                lambda req: req.mandatory and req.active
             )
             evidence = line.control_instance_id.evidence_ids.filtered(
                 lambda record: record.active
@@ -165,8 +165,7 @@ class PmQmsImplementationControl(models.Model):
                 lambda record: record.state in {"submitted", "under_review"}
             )
             required_tasks = line.task_ids.filtered(
-                lambda task: not not_applicable
-                and task.pm_generated
+                lambda task: task.pm_generated
                 and task.pm_required
             )
             completed_tasks = required_tasks.filtered("is_closed")

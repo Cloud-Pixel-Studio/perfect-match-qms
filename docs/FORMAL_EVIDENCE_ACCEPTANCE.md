@@ -11,8 +11,7 @@ criteria as read-only context. A reviewer still uses the normal evidence
 workflow to submit, review, accept, reject, or expire evidence.
 
 Live readiness ignores inactive requirements, inactive evidence, and expired
-evidence. Controls marked Not Applicable are excluded from evidence and
-required-activity readiness denominators. Historical readiness assessments keep
+evidence. Controls marked Not Applicable retain line-level evidence and activity traceability, while they are excluded from evidence and required-activity readiness-facing aggregates. Historical readiness assessments keep
 their immutable snapshots.
 
 ## Development
