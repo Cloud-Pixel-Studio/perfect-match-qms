@@ -386,6 +386,9 @@ class TestPmQmsQualityPack(TransactionCase):
             "PM-QMP-OPS-002": ("instructions", "current"),
             "PM-QMP-TRC-001": ("traceability", "identification"),
             "PM-QMP-PROP-001": ("property", "protection"),
+            "PM-QMP-PRE-001": ("preservation", "handling", "storage"),
+            "PM-QMP-CUST-001": ("customer", "requirement", "captured"),
+            "PM-QMP-REQ-001": ("review", "commitment", "capability", "feasibility", "decision"),
             "PM-QMP-SUP-001": ("supplier", "qualification"),
             "PM-QMP-SUP-002": ("provider", "monitoring"),
             "PM-QMP-SAT-001": ("customer", "perception"),
@@ -398,6 +401,21 @@ class TestPmQmsQualityPack(TransactionCase):
                 self.assertIn(indicator, content)
         for code in ("PM-QMP-NCO-001", "PM-QMP-NCR-001", "PM-QMP-RCA-001", "PM-QMP-CAPA-001"):
             self.assertIn("genuine", " ".join(criteria_by_code[code]).lower())
+
+        pre_content = " ".join(criteria_by_code["PM-QMP-PRE-001"]).lower()
+        self.assertNotIn("operational readiness", pre_content)
+        self.assertNotIn("prerequisites before work", pre_content)
+
+        customer_content = " ".join(criteria_by_code["PM-QMP-CUST-001"]).lower()
+        requirement_review_content = " ".join(criteria_by_code["PM-QMP-REQ-001"]).lower()
+        self.assertIn("capture", customer_content)
+        for forbidden in ("feasibility", "capacity", "acceptance decision"):
+            self.assertNotIn(forbidden, customer_content)
+        self.assertIn("review", requirement_review_content)
+        self.assertIn("commitment", requirement_review_content)
+        self.assertIn("decision", requirement_review_content)
+        self.assertNotEqual(customer_content, requirement_review_content)
+
         combined = " ".join(" ".join(criteria) for criteria in criteria_by_code.values()).lower()
         for forbidden in ("iso 14001", "iso 45001", "certification guarantee", "raw prompt"):
             self.assertNotIn(forbidden, combined)

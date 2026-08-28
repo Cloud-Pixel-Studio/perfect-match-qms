@@ -714,14 +714,16 @@ QUALITY_ACCEPTANCE_CRITERIA = {
         "A representative record is complete, traceable, and protected from unintended alteration.",
     ],
     "PM-QMP-CUST-001": [
-        "Customer commitments and relevant quality inputs are identified for the applicable work.",
-        "The record shows how customer-related changes, risks, or decisions are reviewed.",
-        "Ownership for customer quality communication or escalation is visible.",
+        "The requested product, service, scope, and intended outcome are identifiable from the captured customer requirement.",
+        "Relevant quantity, timing, delivery, technical, quality, and documentation expectations are captured where applicable.",
+        "Clarifications and changes can be traced to the captured requirement.",
+        "The captured information is available to the people who perform later commitment review and operational planning.",
     ],
     "PM-QMP-REQ-001": [
-        "Applicable product, service, or process requirements are identified from controlled sources.",
-        "Requirement changes are reviewed for impact before affected work is released or continued.",
-        "The evidence links relevant requirements to an owner, decision, or operating record.",
+        "Captured customer and applicable requirements are reviewed before acceptance or commitment.",
+        "Differences, ambiguities, exceptions, and later changes are resolved or explicitly handled before commitment.",
+        "Capability, resources, capacity, technical feasibility, delivery, and external-provider dependencies are evaluated where relevant.",
+        "An authorized acceptance, rejection, or exception decision is traceable to the review.",
     ],
     "PM-QMP-DSG-001": [
         "When design applies, the evidence identifies design responsibility, inputs, reviews, outputs, and change control.",
@@ -764,9 +766,10 @@ QUALITY_ACCEPTANCE_CRITERIA = {
         "Loss, damage, discrepancy, or issue handling is recorded when relevant; N/A decisions follow the applicability workflow.",
     ],
     "PM-QMP-PRE-001": [
-        "The operational readiness method identifies prerequisites, owners, and decision points before work begins.",
-        "Readiness checks are supported by current results or controlled records.",
-        "Unmet prerequisites have a disposition, escalation, or action before affected work proceeds.",
+        "Preservation and handling risks for relevant outputs, materials, information, or deliverables are identified.",
+        "Where needed, handling, storage, protection, and delivery conditions are defined for the item and its context.",
+        "Operating records or other objective evidence show the proportionate preservation controls are used where applicable.",
+        "Relevant damage, deterioration, or preservation exceptions receive an appropriate response and follow-up.",
     ],
     "PM-QMP-CHG-001": [
         "The change record identifies the proposed change, reason, owner, and affected scope.",
