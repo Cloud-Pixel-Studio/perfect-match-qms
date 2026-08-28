@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from odoo import Command, api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -80,6 +82,22 @@ class PmQmsImplementationControl(models.Model):
         ],
         compute="_compute_readiness_components",
         store=True,
+    )
+
+    readiness_blocker_summary = fields.Text(
+        compute="_compute_readiness_intelligence",
+        string="Readiness Blockers",
+        readonly=True,
+    )
+    recommended_next_action = fields.Text(
+        compute="_compute_readiness_intelligence",
+        string="Recommended Next Action",
+        readonly=True,
+    )
+    recommended_done_when = fields.Text(
+        compute="_compute_readiness_intelligence",
+        string="Done When",
+        readonly=True,
     )
 
     _implementation_control_uniq = models.Constraint(
@@ -208,6 +226,151 @@ class PmQmsImplementationControl(models.Model):
             else:
                 line.readiness_state = "gap"
                 line.gap_reason = "other"
+
+    @api.depends(
+        "readiness_state", "gap_reason", "implementation_status", "applicability",
+        "required_evidence_count", "accepted_evidence_count", "missing_evidence_count",
+        "evidence_under_review_count", "required_activity_count",
+        "open_activity_count", "overdue_activity_count",
+        "task_ids.name", "task_ids.date_deadline", "task_ids.is_closed",
+        "task_ids.pm_generated", "task_ids.pm_required", "task_ids.pm_activity_id",
+        "task_ids.pm_activity_id.success_criteria",
+        "task_ids.pm_activity_id.expected_output",
+        "control_instance_id.evidence_ids.active",
+        "control_instance_id.evidence_ids.state",
+        "control_instance_id.evidence_ids.evidence_requirement_id",
+        "control_id.evidence_requirement_ids.active",
+        "control_id.evidence_requirement_ids.mandatory",
+        "control_id.evidence_requirement_ids.acceptance_criteria",
+    )
+    def _compute_readiness_intelligence(self):
+        for line in self:
+            values = line._readiness_intelligence_values()
+            line.readiness_blocker_summary = values["blocker_summary"]
+            line.recommended_next_action = values["name"]
+            line.recommended_done_when = values["done_when"]
+
+    def _readiness_intelligence_values(self):
+        """Return deterministic, non-persistent guidance for one control."""
+        self.ensure_one()
+        empty = {
+            "blocker_summary": False, "action_type": False, "priority": False,
+            "name": False, "reason": False, "done_when": False,
+            "task_id": False, "evidence_id": False,
+            "evidence_requirement_id": False, "res_model": False, "res_id": False,
+        }
+        if self.readiness_state in {"ready", "not_applicable"}:
+            return empty
+
+        requirements = self.control_id.evidence_requirement_ids.filtered(
+            lambda req: req.mandatory and req.active
+        ).sorted(lambda req: (req.sequence, req.id))
+        evidence = self.control_instance_id.evidence_ids.filtered(
+            lambda record: record.active and record.evidence_requirement_id in requirements
+        ).sorted(lambda record: (record.evidence_requirement_id.sequence, record.id))
+        accepted_ids = set(
+            evidence.filtered(lambda record: record.state == "accepted")
+            .mapped("evidence_requirement_id").ids
+        )
+        missing = requirements.filtered(lambda req: req.id not in accepted_ids)
+        under_review = evidence.filtered(
+            lambda record: record.state in {"submitted", "under_review"}
+        )
+        rejected = evidence.filtered(
+            lambda record: record.state in {"rejected", "expired"}
+        )
+        required_tasks = self.task_ids.filtered(
+            lambda task: task.pm_generated and task.pm_required
+        )
+        open_tasks = required_tasks.filtered(lambda task: not task.is_closed)
+        overdue = open_tasks.filtered(
+            lambda task: task.date_deadline and task.date_deadline < fields.Datetime.now()
+        )
+
+        blockers = []
+        if self.implementation_status == "not_started":
+            blockers.append("Implementation has not started.")
+        if overdue:
+            blockers.append(f"{len(overdue)} overdue required activity item(s).")
+        if open_tasks:
+            blockers.append(f"{len(open_tasks)} required activity item(s) remain open.")
+        if under_review:
+            blockers.append(f"{len(under_review)} evidence item(s) are under review.")
+        if rejected:
+            blockers.append(
+                f"{len(rejected)} evidence item(s) require correction because they were rejected or expired."
+            )
+        if missing:
+            blockers.append(
+                f"{len(missing)} mandatory evidence requirement(s) lack accepted evidence."
+            )
+        if not blockers:
+            blockers.append("Implementation status requires a manual readiness review.")
+
+        task = open_tasks.sorted(
+            lambda item: (item.date_deadline or datetime.max, item.id)
+        )[:1]
+        evidence_record = (under_review or rejected)[:1]
+        requirement = missing[:1]
+        if self.implementation_status == "not_started":
+            action_type, priority = "start_control", "high"
+            name = f"Start implementation for {self.control_code}"
+            reason = "Implementation has not started."
+            done_when = "The control implementation is started and its owner is assigned."
+            res_model, res_id = "pm.qms.implementation.control", self.id
+        elif overdue:
+            action_type, priority = "activity", "high"
+            name = f"Complete overdue activity for {self.control_code}"
+            reason = f"{len(overdue)} required activity item(s) are overdue."
+            done_when = task.pm_activity_id.success_criteria or task.pm_activity_id.expected_output or "The overdue activity is completed and its outcome is recorded."
+            res_model, res_id = "project.task", task.id
+        elif open_tasks:
+            action_type, priority = "activity", "normal"
+            name = f"Complete activity for {self.control_code}"
+            reason = f"{len(open_tasks)} required activity item(s) remain open."
+            done_when = task.pm_activity_id.success_criteria or task.pm_activity_id.expected_output or "The selected activity is completed and its outcome is recorded."
+            res_model, res_id = "project.task", task.id
+        elif under_review:
+            action_type, priority = "review_evidence", "normal"
+            name = f"Review evidence for {self.control_code}"
+            reason = f"{len(under_review)} evidence item(s) are under review."
+            done_when = evidence_record.evidence_requirement_id.acceptance_criteria or "The evidence meets the requirement acceptance criteria and is reviewed."
+            res_model, res_id = "pm.qms.evidence", evidence_record.id
+        elif rejected:
+            action_type, priority = "evidence_correction", "high"
+            name = f"Correct evidence for {self.control_code}"
+            reason = f"{len(rejected)} evidence item(s) were rejected or expired."
+            done_when = evidence_record.evidence_requirement_id.acceptance_criteria or "Replacement evidence meets the requirement acceptance criteria."
+            res_model, res_id = "pm.qms.evidence", evidence_record.id
+        elif requirement:
+            action_type = "evidence"
+            priority = "high" if self.readiness_state == "gap" else "normal"
+            name = f"Add evidence for {self.control_code}"
+            reason = f"{len(missing)} mandatory evidence item(s) lack accepted evidence."
+            done_when = requirement.acceptance_criteria or "Evidence satisfying the requirement acceptance criteria is submitted."
+            res_model, res_id = "pm.qms.evidence", False
+        elif self.implementation_status in {"implemented", "in_progress", "evidence_required", "under_review"}:
+            action_type, priority = "implementation", "normal"
+            name = f"Complete final review for {self.control_code}"
+            reason = "Implementation status requires a final readiness review."
+            done_when = "The implementation control is reviewed and its readiness decision is recorded."
+            res_model, res_id = "pm.qms.implementation.control", self.id
+        else:
+            action_type, priority = "implementation", "low"
+            name = f"Review {self.control_code}"
+            reason = "Implementation status needs review."
+            done_when = "The implementation control is reviewed and its readiness decision is recorded."
+            res_model, res_id = "pm.qms.implementation.control", self.id
+
+        return {
+            "blocker_summary": " ".join(blockers),
+            "action_type": action_type, "priority": priority, "name": name,
+            "reason": reason, "done_when": done_when,
+            "task_id": task.id if task and res_model == "project.task" else False,
+            "evidence_id": evidence_record.id if evidence_record and res_model == "pm.qms.evidence" else False,
+            "evidence_requirement_id": requirement.id if requirement and action_type == "evidence" else False,
+            "res_model": res_model, "res_id": res_id,
+        }
 
     def action_generate_missing_tasks(self):
         projects = self.mapped("implementation_project_id")

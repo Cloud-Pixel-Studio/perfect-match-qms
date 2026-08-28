@@ -75,6 +75,9 @@ class PmQmsReadinessAssessment(models.Model):
             "open_activity_snapshot": line.open_activity_count,
             "readiness_state_snapshot": line.readiness_state,
             "gap_reason_snapshot": line.gap_reason,
+            "blocker_summary_snapshot": line.readiness_blocker_summary,
+            "recommended_next_action_snapshot": line.recommended_next_action,
+            "recommended_done_when_snapshot": line.recommended_done_when,
             "source_pack_snapshot": source_packs,
         }
 
@@ -166,6 +169,9 @@ class PmQmsReadinessAssessmentItem(models.Model):
         required=True,
     )
     gap_reason_snapshot = fields.Char()
+    blocker_summary_snapshot = fields.Text()
+    recommended_next_action_snapshot = fields.Text()
+    recommended_done_when_snapshot = fields.Text()
     source_pack_snapshot = fields.Text()
     notes = fields.Text()
 

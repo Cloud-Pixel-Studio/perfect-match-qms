@@ -75,6 +75,9 @@
                             <group>
                                 <field name="readiness_state"/>
                                 <field name="gap_reason"/>
+                                <field name="readiness_blocker_summary"/>
+                                <field name="recommended_next_action"/>
+                                <field name="recommended_done_when"/>
                                 <field name="external_alignment_summary" readonly="1"/>
                             </group>
                         </page>

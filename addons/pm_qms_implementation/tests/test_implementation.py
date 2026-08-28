@@ -593,3 +593,100 @@ class TestPmQmsImplementation(TransactionCase):
         self.assertGreaterEqual(item.required_activity_snapshot, 1)
         self.assertGreaterEqual(item.open_activity_snapshot, 1)
         self.assertEqual(item.readiness_state_snapshot, "not_applicable")
+
+
+    def test_m25_9_readiness_intelligence_precedence_and_routing(self):
+        pack = self._create_pack("PM-TST-INTEL", [self.controls[0]])
+        project = self._generate_project([pack])
+        line = project.implementation_control_ids[0]
+
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "start_control")
+        self.assertEqual(values["priority"], "high")
+        self.assertIn("Implementation has not started", values["blocker_summary"])
+
+        line.control_instance_id.with_user(self.manager).action_mark_implemented()
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "activity")
+        self.assertEqual(values["res_model"], "project.task")
+        self.assertEqual(values["res_id"], values["task_id"])
+        self.assertIn("evidence requirement", values["blocker_summary"])
+
+        line.task_ids.with_user(self.manager).write({"state": "1_done"})
+        evidence = self.env["pm.qms.evidence"].with_user(self.manager).create({
+            "name": "Under review implementation evidence",
+            "control_instance_id": line.control_instance_id.id,
+            "evidence_requirement_id": self.evidence_requirement.id,
+            "state": "under_review",
+        })
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "review_evidence")
+        self.assertEqual(values["evidence_id"], evidence.id)
+        self.assertEqual(values["res_id"], evidence.id)
+        self.assertEqual(values["res_model"], "pm.qms.evidence")
+        action = project._recommended_next_action_values(limit=1)[0]
+        self.assertEqual(action["evidence_id"], evidence.id)
+        self.assertEqual(action["done_when"], "The evidence meets the requirement acceptance criteria and is reviewed.")
+
+    def test_m25_9_rejected_evidence_routes_to_exact_record(self):
+        pack = self._create_pack("PM-TST-REJECTED", [self.controls[0]])
+        project = self._generate_project([pack])
+        line = project.implementation_control_ids[0]
+        line.control_instance_id.with_user(self.manager).action_mark_implemented()
+        line.task_ids.with_user(self.manager).write({"state": "1_done"})
+        evidence = self.env["pm.qms.evidence"].with_user(self.manager).create({
+            "name": "Rejected implementation evidence",
+            "control_instance_id": line.control_instance_id.id,
+            "evidence_requirement_id": self.evidence_requirement.id,
+            "state": "rejected",
+        })
+
+        values = line._readiness_intelligence_values()
+        self.assertEqual(values["action_type"], "evidence_correction")
+        self.assertEqual(values["priority"], "high")
+        self.assertEqual(values["evidence_id"], evidence.id)
+        center = self.env["pm.qms.readiness.center"].with_user(self.manager).create({
+            "implementation_project_id": project.id,
+        })
+        action = center.action_line_ids[:1]
+        self.assertEqual(action.evidence_id, evidence)
+        opened = action.action_open_record()
+        self.assertEqual(opened["res_model"], "pm.qms.evidence")
+        self.assertEqual(opened["res_id"], evidence.id)
+
+    def test_m25_9_readiness_snapshots_include_intelligence(self):
+        pack = self._create_pack("PM-TST-SNAPSHOT", [self.controls[0]])
+        project = self._generate_project([pack])
+        action = project.with_user(self.manager).action_run_readiness_assessment()
+        assessment = self.env["pm.qms.readiness.assessment"].browse(
+            action["domain"][0][2]
+        )
+        item = assessment.item_ids[0]
+        self.assertEqual(assessment.state, "completed")
+        self.assertTrue(item.blocker_summary_snapshot)
+        self.assertTrue(item.recommended_next_action_snapshot)
+        self.assertTrue(item.recommended_done_when_snapshot)
+        blocker = item.blocker_summary_snapshot
+        project.implementation_control_ids[0].control_instance_id.with_user(
+            self.manager
+        ).action_mark_implemented()
+        self.assertEqual(item.blocker_summary_snapshot, blocker)
+
+
+    def test_m25_9_ready_and_not_applicable_controls_have_no_action(self):
+        pack = self._create_pack("PM-TST-NO-ACTION", self.controls[:2])
+        project = self._generate_project([pack])
+        first, second = project.implementation_control_ids.sorted("sequence")
+        self._mark_ready(first)
+        second.control_instance_id.with_user(self.manager).write({
+            "justification": "Excluded from the fictional scope."
+        })
+        second.control_instance_id.with_user(self.manager).action_mark_not_applicable()
+
+        actions = project._recommended_next_action_values()
+        self.assertFalse(
+            any(action["implementation_control_id"] == first.id for action in actions)
+        )
+        self.assertFalse(
+            any(action["implementation_control_id"] == second.id for action in actions)
+        )

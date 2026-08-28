@@ -68,9 +68,13 @@
                                     <field name="action_type"/>
                                     <field name="name"/>
                                     <field name="reason"/>
+                                    <field name="blocker_summary"/>
+                                    <field name="done_when"/>
                                     <field name="area_id"/>
                                     <field name="implementation_control_id"/>
                                     <field name="task_id"/>
+                                    <field name="evidence_requirement_id" optional="hide"/>
+                                    <field name="evidence_id" optional="hide"/>
                                 </list>
                             </field>
                         </page>

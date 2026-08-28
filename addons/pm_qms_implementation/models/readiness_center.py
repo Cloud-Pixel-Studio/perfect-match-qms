@@ -134,6 +134,7 @@ class PmQmsReadinessCenterAction(models.TransientModel):
             ("start_control", "Start Control"),
             ("evidence", "Evidence"),
             ("review_evidence", "Review Evidence"),
+            ("evidence_correction", "Correct Evidence"),
             ("activity", "Activity"),
             ("implementation", "Implementation"),
         ],
@@ -141,14 +142,39 @@ class PmQmsReadinessCenterAction(models.TransientModel):
     )
     name = fields.Char(readonly=True)
     reason = fields.Char(readonly=True)
+    blocker_summary = fields.Text(readonly=True)
+    done_when = fields.Text(string="Done When", readonly=True)
     area_id = fields.Many2one("pm.qms.framework.area", readonly=True)
     implementation_control_id = fields.Many2one("pm.qms.implementation.control", readonly=True)
     task_id = fields.Many2one("project.task", readonly=True)
+    evidence_requirement_id = fields.Many2one("pm.qms.evidence.requirement", readonly=True)
+    evidence_id = fields.Many2one("pm.qms.evidence", readonly=True)
     res_model = fields.Char(readonly=True)
     res_id = fields.Integer(readonly=True)
 
     def action_open_record(self):
         self.ensure_one()
+        if self.res_model == "pm.qms.evidence" and self.evidence_id:
+            action = self.env["ir.actions.actions"]._for_xml_id(
+                "pm_qms_evidence.action_pm_qms_evidence"
+            )
+            action.update({"view_mode": "form", "res_id": self.evidence_id.id})
+            return action
+        if self.res_model == "pm.qms.evidence":
+            action = self.env["ir.actions.actions"]._for_xml_id(
+                "pm_qms_evidence.action_pm_qms_evidence"
+            )
+            action["domain"] = [
+                ("control_instance_id", "=", self.implementation_control_id.control_instance_id.id),
+                ("evidence_requirement_id", "=", self.evidence_requirement_id.id),
+            ]
+            action["context"] = {
+                "default_control_instance_id": self.implementation_control_id.control_instance_id.id,
+                "default_evidence_requirement_id": self.evidence_requirement_id.id,
+                "default_organization_id": self.implementation_control_id.organization_id.id,
+            }
+            action["name"] = "Evidence"
+            return action
         if self.res_model == "project.task" and self.task_id:
             return self.task_id.action_open_pm_qms_activity()
         if self.implementation_control_id:
