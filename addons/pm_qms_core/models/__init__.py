@@ -7,3 +7,4 @@ from . import control_instance
 from . import activity
 from . import evidence_requirement
 from . import external_mapping
+from . import history

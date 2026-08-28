@@ -1,0 +1,14 @@
+.o_pm_qms_customer_shell {
+    .o_pm_qms_activity_history_header {
+        border-bottom: 1px solid var(--pmqms-border);
+        color: var(--pmqms-primary);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        padding: 0.75rem 1rem 0.5rem;
+    }
+
+    .o-mail-Chatter-logNote {
+        color: var(--pmqms-control-text);
+    }
+}

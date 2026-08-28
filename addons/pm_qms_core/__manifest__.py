@@ -8,7 +8,7 @@ activities, evidence requirements, and reference-only external mappings.
 It also defines client control instances that keep implementation status
 separate from reusable framework controls.
     """,
-    "version": "19.0.6.0.0",
+    "version": "19.0.7.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
