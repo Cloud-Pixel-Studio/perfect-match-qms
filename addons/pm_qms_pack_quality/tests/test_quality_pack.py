@@ -361,3 +361,61 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertFalse(
             self.env["pm.qms.implementation.project"].with_user(self.other_user).search([("id", "=", project.id)])
         )
+
+    def test_m25_8_quality_requirements_have_stable_keys_and_criteria(self):
+        requirements = self.quality_pack.control_line_ids.mapped(
+            "control_id.evidence_requirement_ids"
+        ).filtered(lambda requirement: requirement.active and requirement.mandatory)
+        self.assertEqual(len(requirements), 37)
+        self.assertEqual(len(set(requirements.mapped("definition_key"))), 37)
+        criteria_by_code = {
+            requirement.control_id.code: tuple(
+                line.strip()
+                for line in (requirement.acceptance_criteria or "").splitlines()
+                if line.strip()
+            )
+            for requirement in requirements
+        }
+        self.assertEqual(len(criteria_by_code), 37)
+        self.assertTrue(all(2 <= len(criteria) <= 5 for criteria in criteria_by_code.values()))
+        self.assertEqual(len(set(criteria_by_code.values())), 37)
+        semantic_indicators = {
+            "PM-QMP-CMP-001": ("competence", "capability"),
+            "PM-QMP-AWR-001": ("awareness", "communicated"),
+            "PM-QMP-DSG-001": ("design", "applicable"),
+            "PM-QMP-OPS-002": ("instructions", "current"),
+            "PM-QMP-TRC-001": ("traceability", "identification"),
+            "PM-QMP-PROP-001": ("property", "protection"),
+            "PM-QMP-PRE-001": ("preservation", "handling", "storage"),
+            "PM-QMP-CUST-001": ("customer", "requirement", "captured"),
+            "PM-QMP-REQ-001": ("review", "commitment", "capability", "feasibility", "decision"),
+            "PM-QMP-SUP-001": ("supplier", "qualification"),
+            "PM-QMP-SUP-002": ("provider", "monitoring"),
+            "PM-QMP-SAT-001": ("customer", "perception"),
+            "PM-QMP-AUD-001": ("audit", "findings"),
+            "PM-QMP-MRV-001": ("leadership", "decisions"),
+        }
+        for code, indicators in semantic_indicators.items():
+            content = " ".join(criteria_by_code[code]).lower()
+            for indicator in indicators:
+                self.assertIn(indicator, content)
+        for code in ("PM-QMP-NCO-001", "PM-QMP-NCR-001", "PM-QMP-RCA-001", "PM-QMP-CAPA-001"):
+            self.assertIn("genuine", " ".join(criteria_by_code[code]).lower())
+
+        pre_content = " ".join(criteria_by_code["PM-QMP-PRE-001"]).lower()
+        self.assertNotIn("operational readiness", pre_content)
+        self.assertNotIn("prerequisites before work", pre_content)
+
+        customer_content = " ".join(criteria_by_code["PM-QMP-CUST-001"]).lower()
+        requirement_review_content = " ".join(criteria_by_code["PM-QMP-REQ-001"]).lower()
+        self.assertIn("capture", customer_content)
+        for forbidden in ("feasibility", "capacity", "acceptance decision"):
+            self.assertNotIn(forbidden, customer_content)
+        self.assertIn("review", requirement_review_content)
+        self.assertIn("commitment", requirement_review_content)
+        self.assertIn("decision", requirement_review_content)
+        self.assertNotEqual(customer_content, requirement_review_content)
+
+        combined = " ".join(" ".join(criteria) for criteria in criteria_by_code.values()).lower()
+        for forbidden in ("iso 14001", "iso 45001", "certification guarantee", "raw prompt"):
+            self.assertNotIn(forbidden, combined)

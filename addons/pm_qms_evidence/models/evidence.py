@@ -36,6 +36,16 @@ class PmQmsEvidence(models.Model):
         ondelete="restrict",
         index=True,
     )
+    requirement_description = fields.Text(
+        related="evidence_requirement_id.description",
+        string="Requirement Description",
+        readonly=True,
+    )
+    requirement_acceptance_criteria = fields.Text(
+        related="evidence_requirement_id.acceptance_criteria",
+        string="Requirement Acceptance Criteria",
+        readonly=True,
+    )
     process_id = fields.Many2one(
         "pm.qms.process",
         related="control_instance_id.process_id",

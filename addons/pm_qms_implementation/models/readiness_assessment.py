@@ -87,10 +87,10 @@ class PmQmsReadinessAssessment(models.Model):
             item_commands = [Command.create(assessment._item_values(line)) for line in lines]
             applicable = lines.filtered(lambda line: line.readiness_state != "not_applicable")
             ready = applicable.filtered(lambda line: line.readiness_state == "ready")
-            required_evidence = sum(lines.mapped("required_evidence_count"))
-            accepted_evidence = sum(lines.mapped("accepted_evidence_count"))
-            required_activity = sum(lines.mapped("required_activity_count"))
-            completed_activity = sum(lines.mapped("completed_activity_count"))
+            required_evidence = sum(applicable.mapped("required_evidence_count"))
+            accepted_evidence = sum(applicable.mapped("accepted_evidence_count"))
+            required_activity = sum(applicable.mapped("required_activity_count"))
+            completed_activity = sum(applicable.mapped("completed_activity_count"))
             values = {
                 "item_ids": [Command.clear()] + item_commands,
                 "total_controls": len(lines),

@@ -1,0 +1,229 @@
+{
+  "schema_version": "m25.8-evidence-crosswalk-v1",
+  "standard_name": "ISO 9001",
+  "edition": "2015",
+  "mappings": [
+    {
+      "activity_key": "ISO9001-INITIAL-A001",
+      "control_code": "PM-QMP-ORG-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-ORG-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A002",
+      "control_code": "PM-QMP-ORG-002",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-ORG-002",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A003",
+      "control_code": "PM-QMP-SCOPE-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-SCOPE-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A004",
+      "control_code": "PM-QMP-PROC-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-PROC-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A005",
+      "control_code": "PM-QMP-GOV-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-GOV-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A006",
+      "control_code": "PM-QMP-ROLE-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-ROLE-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A007",
+      "control_code": "PM-QMP-POL-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-POL-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A008",
+      "control_code": "PM-QMP-RISK-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-RISK-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A009",
+      "control_code": "PM-QMP-OBJ-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-OBJ-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A010",
+      "control_code": "PM-QMP-RES-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-RES-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A011",
+      "control_code": "PM-QMP-CMP-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-CMP-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A012",
+      "control_code": "PM-QMP-AWR-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-AWR-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A013",
+      "control_code": "PM-QMP-COM-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-COM-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A014",
+      "control_code": "PM-QMP-DOC-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-DOC-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A015",
+      "control_code": "PM-QMP-REC-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-REC-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A016",
+      "control_code": "PM-QMP-DSG-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-DSG-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A017",
+      "control_code": "PM-QMP-OPS-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-OPS-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A018",
+      "control_code": "PM-QMP-OPS-002",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-OPS-002",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A019",
+      "control_code": "PM-QMP-REL-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-REL-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A020",
+      "control_code": "PM-QMP-TRC-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-TRC-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A021",
+      "control_code": "PM-QMP-PROP-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-PROP-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A022",
+      "control_code": "PM-QMP-PRE-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-PRE-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A023",
+      "control_code": "PM-QMP-CHG-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-CHG-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A024",
+      "control_code": "PM-QMP-CUST-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-CUST-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A025",
+      "control_code": "PM-QMP-REQ-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-REQ-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A026",
+      "control_code": "PM-QMP-SUP-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-SUP-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A027",
+      "control_code": "PM-QMP-SUP-002",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-SUP-002",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A028",
+      "control_code": "PM-QMP-SAT-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-SAT-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A029",
+      "control_code": "PM-QMP-KPI-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-KPI-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A030",
+      "control_code": "PM-QMP-DATA-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-DATA-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A031",
+      "control_code": "PM-QMP-NCO-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-NCO-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A032",
+      "control_code": "PM-QMP-NCR-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-NCR-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A033",
+      "control_code": "PM-QMP-RCA-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-RCA-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A034",
+      "control_code": "PM-QMP-CAPA-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-CAPA-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A035",
+      "control_code": "PM-QMP-CI-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-CI-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A036",
+      "control_code": "PM-QMP-AUD-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-AUD-001",
+      "evidence_policy": "global_generic"
+    },
+    {
+      "activity_key": "ISO9001-INITIAL-A037",
+      "control_code": "PM-QMP-MRV-001",
+      "evidence_definition_key": "PM-QMS-EVID-PM-QMP-MRV-001",
+      "evidence_policy": "global_generic"
+    }
+  ]
+}

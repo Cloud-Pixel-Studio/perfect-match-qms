@@ -54,6 +54,30 @@ def _quality_guidance_values(control_data):
     }
 
 
+def _quality_acceptance_criteria(control_code):
+    criteria = QUALITY_ACCEPTANCE_CRITERIA.get(control_code)
+    if not criteria:
+        raise ValueError(f"No acceptance criteria defined for {control_code}.")
+    return "\n".join(criteria)
+
+
+def _find_or_adopt_evidence_requirement(env, control, name, definition_key):
+    Requirement = env["pm.qms.evidence.requirement"]
+    keyed = Requirement.search([("definition_key", "=", definition_key)])
+    if len(keyed) > 1:
+        raise ValueError(f"Duplicate evidence requirement definition {definition_key} exists.")
+    if keyed:
+        if keyed.control_id != control:
+            raise ValueError(f"Evidence requirement definition {definition_key} belongs to another control.")
+        return keyed
+    legacy = Requirement.search([("control_id", "=", control.id), ("name", "=", name)])
+    if len(legacy) > 1:
+        raise ValueError(f"Duplicate legacy evidence requirement {name} exists.")
+    if legacy:
+        if legacy.definition_key and legacy.definition_key != definition_key:
+            raise ValueError(f"Legacy evidence requirement {name} has an incompatible definition key.")
+        legacy.write({"definition_key": definition_key})
+        return legacy
 QUALITY_CONTROLS = [
     {
         "code": "PM-QMP-ORG-001",
@@ -613,6 +637,198 @@ QUALITY_CONTROLS = [
 ]
 
 
+QUALITY_ACCEPTANCE_CRITERIA = {
+    "PM-QMP-ORG-001": [
+        "The context register identifies internal and external factors relevant to the QMS scope.",
+        "The register shows accountable owners and a review method for material changes.",
+        "The reviewed record demonstrates that context inputs inform a current QMS decision.",
+    ],
+    "PM-QMP-ORG-002": [
+        "The interested-party register identifies relevant parties and the needs that affect quality work.",
+        "Each material need has an owner, source, or review responsibility.",
+        "The record shows how changes in relevant needs are considered in QMS planning.",
+    ],
+    "PM-QMP-SCOPE-001": [
+        "The scope statement identifies organizational, product, service, and process boundaries.",
+        "Boundary decisions and exclusions have a documented rationale.",
+        "The approved scope is consistent with the organization and processes being implemented.",
+    ],
+    "PM-QMP-PROC-001": [
+        "The process architecture identifies process owners, inputs, outputs, and interactions.",
+        "The process record shows how quality-critical handoffs are controlled.",
+        "The current map or inventory can be used to plan measurement and improvement.",
+    ],
+    "PM-QMP-GOV-001": [
+        "The leadership record assigns accountability for quality direction and QMS support.",
+        "Decisions, review cadence, and escalation responsibilities are visible.",
+        "The evidence shows leadership follow-up on a quality-relevant decision or priority.",
+    ],
+    "PM-QMP-ROLE-001": [
+        "The responsibility matrix identifies authorities, backups, and escalation paths for relevant QMS work.",
+        "Role assignments are linked to the processes or decisions they support.",
+        "The reviewed record shows that assigned owners understand or accepted their responsibilities.",
+    ],
+    "PM-QMP-POL-001": [
+        "The quality direction states the organization's intended quality priorities in its own language.",
+        "The record connects quality direction with objectives, process behavior, or improvement priorities.",
+        "Communication and review ownership for the current direction are identified.",
+    ],
+    "PM-QMP-RISK-001": [
+        "The risk register identifies quality risks or opportunities, affected work, and assigned owners.",
+        "Responses are proportionate to the stated risk or opportunity and have review triggers.",
+        "The evidence shows a current review of response status or effectiveness.",
+    ],
+    "PM-QMP-OBJ-001": [
+        "Each quality objective has an owner, target or intended result, and review timing.",
+        "The objective record identifies measures or decision inputs used to evaluate progress.",
+        "The evidence shows that a current result or action is being followed up.",
+    ],
+    "PM-QMP-RES-001": [
+        "The resource plan identifies resources needed for the relevant quality-critical work.",
+        "Resource gaps have an owner, timing, or decision path.",
+        "The reviewed record shows that resource status is considered in implementation planning.",
+    ],
+    "PM-QMP-CMP-001": [
+        "The competence record identifies capability needs for people performing relevant work.",
+        "Evidence supports an appropriate competence or capability decision for assigned work, not attendance alone.",
+        "Observed gaps have a development, reassignment, supervision, or acceptance action with ownership.",
+    ],
+    "PM-QMP-AWR-001": [
+        "The awareness record identifies the quality responsibilities, risks, or priorities relevant to affected roles.",
+        "Evidence shows that the message was communicated or embedded in routine work.",
+        "The organization has a follow-up method to confirm awareness is reaching the intended roles without requiring a universal exam.",
+    ],
+    "PM-QMP-COM-001": [
+        "The communication plan identifies relevant audiences, messages, owners, channels, and timing.",
+        "The evidence shows that a planned quality communication was delivered or embedded.",
+        "Feedback, missed communication, or follow-up actions are recorded when relevant.",
+    ],
+    "PM-QMP-DOC-001": [
+        "The document control method identifies approval, revision, access, and change responsibilities.",
+        "A current controlled document can be located by its owner, status, or revision marker.",
+        "The evidence shows that obsolete or superseded information is handled to prevent unintended use.",
+    ],
+    "PM-QMP-REC-001": [
+        "The record method identifies what must be retained, who owns it, and how it can be retrieved.",
+        "Retention or disposition decisions are based on the organization's operational needs.",
+        "A representative record is complete, traceable, and protected from unintended alteration.",
+    ],
+    "PM-QMP-CUST-001": [
+        "The requested product, service, scope, and intended outcome are identifiable from the captured customer requirement.",
+        "Relevant quantity, timing, delivery, technical, quality, and documentation expectations are captured where applicable.",
+        "Clarifications and changes can be traced to the captured requirement.",
+        "The captured information is available to the people who perform later commitment review and operational planning.",
+    ],
+    "PM-QMP-REQ-001": [
+        "Captured customer and applicable requirements are reviewed before acceptance or commitment.",
+        "Differences, ambiguities, exceptions, and later changes are resolved or explicitly handled before commitment.",
+        "Capability, resources, capacity, technical feasibility, delivery, and external-provider dependencies are evaluated where relevant.",
+        "An authorized acceptance, rejection, or exception decision is traceable to the review.",
+    ],
+    "PM-QMP-DSG-001": [
+        "When design applies, the evidence identifies design responsibility, inputs, reviews, outputs, and change control.",
+        "Design decisions and verification or review results are traceable to the responsible work.",
+        "When design is not applicable, the control instance retains a supported applicability rationale and no design evidence is required.",
+    ],
+    "PM-QMP-SUP-001": [
+        "Supplier qualification criteria are defined in proportion to the supplied product, service, or risk.",
+        "The approval or qualification decision is supported by relevant and proportionate evidence.",
+        "Restrictions, conditions, or follow-up actions are visible before the supplier is relied upon.",
+    ],
+    "PM-QMP-SUP-002": [
+        "Provider performance measures or feedback sources are selected for the relevant service or risk.",
+        "The monitoring record shows ongoing review and an owner for follow-up.",
+        "Performance concerns lead to a proportionate decision or action without requiring a scorecard for every provider.",
+    ],
+    "PM-QMP-OPS-001": [
+        "The operational method identifies the controlled conditions needed for the relevant process.",
+        "Responsibilities, decision points, and required records are usable by the people performing the work.",
+        "The evidence shows that the method is deployed or being evaluated in its intended operating context.",
+    ],
+    "PM-QMP-OPS-002": [
+        "Current work instructions exist for activities that need documented direction.",
+        "The instructions are usable at the point of work by the intended role.",
+        "Approval, status, revision, or change information shows that the instructions are current without requiring instructions for every task.",
+    ],
+    "PM-QMP-REL-001": [
+        "Release or handoff criteria identify the checks and approvals needed for the applicable output.",
+        "The release record identifies the responsible decision-maker and relevant result.",
+        "Exceptions or incomplete checks are controlled before the output is treated as released.",
+    ],
+    "PM-QMP-TRC-001": [
+        "The required identification and traceability level is defined for the relevant product, service, or process risk.",
+        "Records demonstrate the level of linkage or identification determined necessary.",
+        "Traceability exceptions are contained, investigated, or dispositioned without universally requiring serial traceability.",
+    ],
+    "PM-QMP-PROP-001": [
+        "When applicable, external property is identified with its owner, status, and handling responsibility.",
+        "The record supports protection or controlled use appropriate to the property's condition and risk.",
+        "Loss, damage, discrepancy, or issue handling is recorded when relevant; N/A decisions follow the applicability workflow.",
+    ],
+    "PM-QMP-PRE-001": [
+        "Preservation and handling risks for relevant outputs, materials, information, or deliverables are identified.",
+        "Where needed, handling, storage, protection, and delivery conditions are defined for the item and its context.",
+        "Operating records or other objective evidence show the proportionate preservation controls are used where applicable.",
+        "Relevant damage, deterioration, or preservation exceptions receive an appropriate response and follow-up.",
+    ],
+    "PM-QMP-CHG-001": [
+        "The change record identifies the proposed change, reason, owner, and affected scope.",
+        "Impact, risk, resource, or verification considerations are reviewed before implementation.",
+        "Implementation and follow-up results are recorded for changes that affect quality work.",
+    ],
+    "PM-QMP-NCO-001": [
+        "The nonconforming-output method defines identification, containment, disposition, and responsible roles.",
+        "The operating method supports a traceable decision for affected output and customer or process impact.",
+        "If no genuine event occurred during implementation, the deployed method and its decision path may satisfy readiness without inventing an incident.",
+    ],
+    "PM-QMP-SAT-001": [
+        "The customer-perception method identifies usable inputs, review ownership, and a suitable cadence.",
+        "The review record shows relevant themes, trends, or conclusions from available customer feedback.",
+        "Improvement or follow-up decisions are captured when the review identifies a need; complaints are not the only valid input.",
+    ],
+    "PM-QMP-KPI-001": [
+        "The KPI definition identifies purpose, owner, data source, calculation, and review timing.",
+        "A current result can be reproduced or traced to its source data.",
+        "Thresholds, trends, or decisions are reviewed when the measure indicates attention is needed.",
+    ],
+    "PM-QMP-AUD-001": [
+        "The audit program defines scope, timing, responsibility, criteria, and a method for independence.",
+        "Operating evidence includes objective samples, findings or conclusions, and the basis for the audit result; a schedule alone is insufficient.",
+        "Findings receive appropriate follow-up, ownership, and closure or escalation evidence.",
+    ],
+    "PM-QMP-MRV-001": [
+        "The management review record covers relevant performance, changes, risks, resources, and improvement inputs.",
+        "Leadership evaluation and conclusions are recorded beyond an invitation, attendance list, or slide deck alone.",
+        "Decisions and actions have owners, timing, and follow-up evidence where needed.",
+    ],
+    "PM-QMP-NCR-001": [
+        "The issue-management method defines classification, escalation, containment, correction, and disposition responsibilities.",
+        "A genuine issue can be recorded with its impact, decision, owner, and status without requiring a fabricated event.",
+        "The method identifies when additional cause analysis or corrective action is appropriate rather than requiring it for every issue.",
+    ],
+    "PM-QMP-RCA-001": [
+        "Genuine cause-analysis triggers and a proportionate analysis method are defined for relevant issues.",
+        "The analysis links observations and evidence to causes without unsupported conclusions.",
+        "When an issue meets the trigger, the result informs an action or decision; cause analysis is not mandatory for every issue.",
+    ],
+    "PM-QMP-CAPA-001": [
+        "Genuine corrective-action criteria, ownership, target timing, and effectiveness review are defined.",
+        "Where corrective action is needed, the action links to the issue or cause and has completion evidence.",
+        "Effectiveness is decided when appropriate, without requiring a corrective action for every NCR.",
+    ],
+    "PM-QMP-CI-001": [
+        "The improvement method identifies inputs, owners, prioritization, and decision points.",
+        "Improvement actions have a defined result, status, and follow-up method.",
+        "The evidence shows that learning or performance information is used to select or review an improvement.",
+    ],
+    "PM-QMP-DATA-001": [
+        "The quality-data method identifies owners, source records, validation checks, and correction responsibilities.",
+        "A representative data set can be traced from source to reported result.",
+        "Data errors, missing values, or changes are reviewed and corrected with an auditable decision.",
+    ],
+}
+
+
 def _find_or_create(env, model_name, domain, values):
     record = env[model_name].search(domain, limit=1)
     if record:
@@ -693,21 +909,27 @@ def seed_quality_pack(env):
                     }
                 )
         for sequence, (name, evidence_type, description) in enumerate(control_data["evidence"], start=1):
-            existing_requirement = env["pm.qms.evidence.requirement"].search(
-                [("control_id", "=", control.id), ("name", "=", name)],
-                limit=1,
+            definition_key = f"PM-QMS-EVID-{control_data['code']}"
+            existing_requirement = _find_or_adopt_evidence_requirement(
+                env, control, name, definition_key
             )
-            if not existing_requirement:
-                env["pm.qms.evidence.requirement"].create(
-                    {
-                        "control_id": control.id,
-                        "sequence": sequence * 10,
-                        "name": name,
-                        "evidence_type": evidence_type,
-                        "description": description,
-                        "mandatory": True,
-                    }
-                )
+            values = {
+                "control_id": control.id,
+                "sequence": sequence * 10,
+                "name": name,
+                "definition_key": definition_key,
+                "evidence_type": evidence_type,
+                "description": description,
+                "acceptance_criteria": _quality_acceptance_criteria(control_data["code"]),
+                "mandatory": True,
+            }
+            if existing_requirement:
+                existing_requirement.write({
+                    "definition_key": definition_key,
+                    "acceptance_criteria": values["acceptance_criteria"],
+                })
+            else:
+                env["pm.qms.evidence.requirement"].create(values)
 
     pack = env["pm.qms.framework.pack"].search(
         [

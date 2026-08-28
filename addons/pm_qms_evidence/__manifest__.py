@@ -6,7 +6,7 @@ Evidence records for client-specific Perfect Match QMS control instances,
 including submission, review, acceptance, rejection, and evidence completion
 foundation metrics.
     """,
-    "version": "19.0.1.0.0",
+    "version": "19.0.2.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",

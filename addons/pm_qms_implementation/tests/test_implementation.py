@@ -561,3 +561,35 @@ class TestPmQmsImplementation(TransactionCase):
             self.env["pm.qms.framework.area"].with_user(self.manager).create(
                 {"name": "Manager Cannot Author Framework Area", "code": "NOPE", "pack_id": first_pack.id}
             )
+
+    def test_m25_8_not_applicable_excludes_live_readiness_components(self):
+        pack = self._create_pack("PM-TST-NA-M258", [self.controls[0]])
+        project = self._generate_project([pack])
+        line = project.implementation_control_ids[0]
+        self.assertEqual(line.required_evidence_count, 1)
+        self.assertEqual(line.missing_evidence_count, 1)
+        self.assertGreaterEqual(line.required_activity_count, 1)
+        self.assertGreaterEqual(line.open_activity_count, 1)
+        line.control_instance_id.with_user(self.manager).write({
+            "justification": "Outside the fictional implementation scope."
+        })
+        line.control_instance_id.with_user(self.manager).action_mark_not_applicable()
+        self.assertEqual(line.readiness_state, "not_applicable")
+        self.assertEqual(line.required_evidence_count, 1)
+        self.assertEqual(line.missing_evidence_count, 1)
+        self.assertGreaterEqual(line.required_activity_count, 1)
+        self.assertGreaterEqual(line.open_activity_count, 1)
+        self.assertEqual(project.applicable_controls, 0)
+        self.assertEqual(project.required_evidence, 0)
+        self.assertEqual(project.open_tasks, 0)
+        self.assertEqual(project.evidence_completion_percent, 100.0)
+        self.assertEqual(project.activity_completion_percent, 100.0)
+        action = project.with_user(self.manager).action_run_readiness_assessment()
+        assessment = self.env["pm.qms.readiness.assessment"].browse(action["domain"][0][2])
+        item = assessment.item_ids.filtered(lambda candidate: candidate.implementation_control_id == line)
+        self.assertEqual(len(item), 1)
+        self.assertEqual(item.required_evidence_snapshot, 1)
+        self.assertEqual(item.missing_evidence_snapshot, 1)
+        self.assertGreaterEqual(item.required_activity_snapshot, 1)
+        self.assertGreaterEqual(item.open_activity_snapshot, 1)
+        self.assertEqual(item.readiness_state_snapshot, "not_applicable")
