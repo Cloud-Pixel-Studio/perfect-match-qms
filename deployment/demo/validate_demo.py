@@ -10,6 +10,20 @@ EXPECTED_QMS_PERSONAS = {
     "Management User": "michael.stone.demo@perfectmatch.local",
     "QMS Viewer": "qms.viewer.demo@perfectmatch.local",
 }
+CANONICAL_APEX_PROCESS_CODES = (
+    "APEX-LEAD",
+    "APEX-QMS",
+    "APEX-CUST",
+    "APEX-SUP",
+    "APEX-REC",
+    "APEX-PROD",
+    "APEX-FIN",
+    "APEX-SHIP",
+    "APEX-DOC",
+    "APEX-AUD",
+    "APEX-TRN",
+    "APEX-CAL",
+)
 if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
     raise RuntimeError(f"Demo validation refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")
 
@@ -27,6 +41,18 @@ def count(model_name, domain=None):
     total = env[model_name].search_count(domain or [])
     summary[model_name] = total
     return total
+
+
+def relation_id(record, field_name):
+    value = getattr(record, field_name, False)
+    return value.id if value else False
+
+
+def duplicate_groups(records, field_name):
+    grouped = {}
+    for record in records:
+        grouped.setdefault(relation_id(record, field_name), []).append(record.id)
+    return {key: ids for key, ids in grouped.items() if len(ids) > 1}
 
 organization = env["pm.qms.organization"].search([("code", "=", "APEX")], limit=1) if "pm.qms.organization" in env else False
 require(bool(organization), "APEX organization missing")
@@ -61,6 +87,19 @@ org_domain = [("organization_id", "=", organization.id)] if organization else []
 company_domain = [("company_id", "=", organization.company_id.id)] if organization else []
 
 require(count("pm.qms.process", org_domain) >= 10, "expected at least 10 demo processes")
+if "pm.qms.process" in env and organization:
+    process_model = env["pm.qms.process"].with_context(active_test=False)
+    for process_code in CANONICAL_APEX_PROCESS_CODES:
+        matches = process_model.search(org_domain + [("code", "=", process_code)])
+        require(
+            len(matches) == 1 and matches.active,
+            f"canonical Apex process must exist exactly once and be active: {process_code}",
+        )
+    summary["canonical_apex_processes"] = len(
+        process_model.search(
+            org_domain + [("code", "in", list(CANONICAL_APEX_PROCESS_CODES))]
+        )
+    )
 require(count("pm.qms.document", org_domain) >= 5, "expected demo documents")
 require(count("pm.qms.evidence", org_domain) >= 3, "expected demo evidence")
 require(count("pm.qms.risk", org_domain) >= 2, "expected demo risks")
@@ -97,6 +136,40 @@ if "pm.qms.license" in env:
         require(license_record.named_user_usage <= license_record.named_user_limit, "Demo named-user entitlement is exceeded")
 else:
     errors.append("missing model: pm.qms.license")
+
+
+if "pm.qms.training.record" in env and "pm.qms.training.course" in env and organization:
+    course = env["pm.qms.training.course"].search(
+        [("code", "=", "APEX-TRN-001"), ("company_id", "=", organization.company_id.id)],
+        limit=1,
+    )
+    if course:
+        training_records = env["pm.qms.training.record"].search(
+            org_domain + [("course_id", "=", course.id)]
+        )
+        training_duplicates = duplicate_groups(training_records, "person_id")
+        summary["canonical_training_duplicate_groups"] = len(training_duplicates)
+        require(
+            not training_duplicates,
+            "duplicate canonical Demo training records detected",
+        )
+
+
+if "pm.qms.qualification.record" in env and "pm.qms.qualification.type" in env and organization:
+    qualification_type = env["pm.qms.qualification.type"].search(
+        [("code", "=", "APEX-QUAL-001"), ("company_id", "=", organization.company_id.id)],
+        limit=1,
+    )
+    if qualification_type:
+        qualification_records = env["pm.qms.qualification.record"].search(
+            org_domain + [("qualification_type_id", "=", qualification_type.id)]
+        )
+        qualification_duplicates = duplicate_groups(qualification_records, "person_id")
+        summary["canonical_qualification_duplicate_groups"] = len(qualification_duplicates)
+        require(
+            not qualification_duplicates,
+            "duplicate canonical Demo qualification records detected",
+        )
 
 for role, login in EXPECTED_QMS_PERSONAS.items():
     persona = env["res.users"].search([("login", "=", login)], limit=1)

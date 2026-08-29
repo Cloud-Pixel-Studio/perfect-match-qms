@@ -110,6 +110,37 @@ def domain_for(model_name, code=None, name=None, extra=None):
         domain.append(("title", "=", name))
     return domain
 
+
+def scoped_person_record_identity(
+    person_id, related_field, related_id, organization_id, company_id
+):
+    """Return the stable identity used by the canonical Demo fixture."""
+    return [
+        ("person_id", "=", person_id),
+        (related_field, "=", related_id),
+        ("organization_id", "=", organization_id),
+        ("company_id", "=", company_id),
+    ]
+
+
+def training_identity_domain(person_id, course_id, organization_id, company_id):
+    return scoped_person_record_identity(
+        person_id, "course_id", course_id, organization_id, company_id
+    )
+
+
+def qualification_identity_domain(
+    person_id, qualification_type_id, organization_id, company_id
+):
+    return scoped_person_record_identity(
+        person_id,
+        "qualification_type_id",
+        qualification_type_id,
+        organization_id,
+        company_id,
+    )
+
+
 def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, required=True):
     vals = dict(vals or {})
     if not model_exists(model_name):
@@ -529,8 +560,8 @@ course = upsert("pm.qms.training.course", code="APEX-TRN-001", name="Revised set
 qtype = upsert("pm.qms.qualification.type", code="APEX-QUAL-001", name="Final Inspection Authorization", vals={"company_id": company.id, "description": "Fictional qualification for final inspection release authority."}, required=False)
 for idx, person in enumerate(persons[:4]):
     upsert("pm.qms.competency.assessment", vals={"person_id": person.id, "competency_id": competency.id if competency else False, "organization_id": organization.id, "company_id": company.id, "assessment_date": today - relativedelta(days=10), "score": 4 if idx == 0 else 2, "notes": "Fictional competency assessment for demo."}, extra_domain=[("person_id", "=", person.id), ("competency_id", "=", competency.id if competency else 0), ("assessment_date", "=", today - relativedelta(days=10))], required=False)
-    upsert("pm.qms.training.record", vals={"person_id": person.id, "course_id": course.id if course else False, "organization_id": organization.id, "company_id": company.id, "due_date": [overdue, due_today, due_soon, next_month][idx], "result": ["not_completed", "not_completed", "not_completed", "satisfactory"][idx], "notes": "Fictional training status for Action Center."}, extra_domain=[("person_id", "=", person.id), ("course_id", "=", course.id if course else 0), ("due_date", "=", [overdue, due_today, due_soon, next_month][idx])], required=False)
-    upsert("pm.qms.qualification.record", vals={"person_id": person.id, "qualification_type_id": qtype.id if qtype else False, "organization_id": organization.id, "company_id": company.id, "issue_date": today - relativedelta(months=10), "expiration_date": [overdue, due_soon, next_month, today + relativedelta(months=6)][idx], "notes": "Fictional qualification for demo."}, extra_domain=[("person_id", "=", person.id), ("qualification_type_id", "=", qtype.id if qtype else 0), ("expiration_date", "=", [overdue, due_soon, next_month, today + relativedelta(months=6)][idx])], required=False)
+    upsert("pm.qms.training.record", vals={"person_id": person.id, "course_id": course.id if course else False, "organization_id": organization.id, "company_id": company.id, "due_date": [overdue, due_today, due_soon, next_month][idx], "result": ["not_completed", "not_completed", "not_completed", "satisfactory"][idx], "notes": "Fictional training status for Action Center."}, extra_domain=training_identity_domain(person.id, course.id if course else 0, organization.id, company.id), required=False)
+    upsert("pm.qms.qualification.record", vals={"person_id": person.id, "qualification_type_id": qtype.id if qtype else False, "organization_id": organization.id, "company_id": company.id, "issue_date": today - relativedelta(months=10), "expiration_date": [overdue, due_soon, next_month, today + relativedelta(months=6)][idx], "notes": "Fictional qualification for demo."}, extra_domain=qualification_identity_domain(person.id, qtype.id if qtype else 0, organization.id, company.id), required=False)
 if revisions and persons:
     upsert("pm.qms.document.acknowledgment", vals={"revision_id": revisions[2].id, "document_id": documents[2].id if len(documents) > 2 else False, "person_id": persons[2].id if len(persons) > 2 else persons[0].id, "organization_id": organization.id, "company_id": company.id, "due_date": due_today}, extra_domain=[("revision_id", "=", revisions[2].id), ("person_id", "=", persons[2].id if len(persons) > 2 else persons[0].id)], required=False)
 
