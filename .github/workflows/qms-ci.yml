@@ -29,7 +29,10 @@ jobs:
           python-version: "3.12"
 
       - name: Python syntax
-        run: python -m compileall addons deployment/scripts
+        run: python -m compileall addons deployment/demo deployment/scripts
+
+      - name: Run Demo seed idempotency tests
+        run: python -m unittest discover -s deployment/demo/tests -p 'test_*.py'
 
       - name: Validate addon manifests and XML
         run: python deployment/scripts/validate-addons.py
