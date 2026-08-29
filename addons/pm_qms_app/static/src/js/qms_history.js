@@ -2,6 +2,7 @@
 
 import { Chatter } from "@mail/chatter/web_portal/chatter";
 import { Message } from "@mail/core/common/message_model";
+import { Message as MessageComponent } from "@mail/core/common/message";
 import { ResPartner } from "@mail/core/common/res_partner_model";
 import { fields } from "@mail/core/common/record";
 import { patch } from "@web/core/utils/patch";
@@ -23,6 +24,19 @@ patch(Message.prototype, {
             return "Perfect Match QMS · System";
         }
         return super.authorName;
+    },
+});
+
+patch(MessageComponent.prototype, {
+    get authorAvatarUrl() {
+        if (
+            this.message.author_id?.pm_qms_system_actor &&
+            this.message.thread?.model?.startsWith(PM_QMS_MODEL_PREFIX) &&
+            document.documentElement.classList.contains(CUSTOMER_SHELL_CLASS)
+        ) {
+            return "/pm_qms_app/static/description/icon.svg";
+        }
+        return super.authorAvatarUrl;
     },
 });
 
