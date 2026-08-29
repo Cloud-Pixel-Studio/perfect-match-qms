@@ -9,9 +9,19 @@
         <xpath expr="//button[hasclass('o-mail-Chatter-sendMessage')]" position="attributes">
             <attribute name="t-if">not isQmsCustomerHistory</attribute>
         </xpath>
-        <xpath expr="//button[hasclass('o-mail-Chatter-logNote')]/text()" position="replace">
-            <t t-if="isQmsCustomerHistory">Internal Note</t>
-            <t t-else="">Log note</t>
+        <xpath expr="//button[hasclass('o-mail-Chatter-logNote')]" position="replace">
+            <button class="o-mail-Chatter-logNote btn text-nowrap me-1"
+                    t-att-class="{
+                        'btn-primary active': state.composerType === 'note',
+                        'btn-secondary': state.composerType !== 'note',
+                        'my-2': !props.compactHeight
+                    }"
+                    t-att-disabled="!state.thread.canPostMessage and props.threadId"
+                    data-hotkey="shift+m"
+                    t-on-click="() => this.toggleComposer('note')">
+                <t t-if="isQmsCustomerHistory">Internal Note</t>
+                <t t-else="">Log note</t>
+            </button>
         </xpath>
         <xpath expr="//div[hasclass('o-mail-Followers')]" position="attributes">
             <attribute name="t-if">not isQmsCustomerHistory</attribute>
