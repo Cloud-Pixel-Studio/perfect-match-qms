@@ -9,7 +9,7 @@
         <xpath expr="//button[hasclass('o-mail-Chatter-sendMessage')]" position="attributes">
             <attribute name="t-if">not isQmsCustomerHistory</attribute>
         </xpath>
-        <xpath expr="//button[hasclass('o-mail-Chatter-logNote')]/text()" position="replace">
+        <xpath expr="//button[hasclass('o-mail-Chatter-logNote')]" position="replace" mode="inner">
             <t t-if="isQmsCustomerHistory">Internal Note</t>
             <t t-else="">Log note</t>
         </xpath>
