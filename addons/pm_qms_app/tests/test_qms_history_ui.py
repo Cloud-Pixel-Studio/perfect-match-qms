@@ -1,4 +1,6 @@
 from pathlib import Path
+import re
+import xml.etree.ElementTree as ET
 
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -33,10 +35,57 @@ class TestQmsHistoryCustomerUi(TransactionCase):
         self.assertIn('data-hotkey=\"shift+m\"', template)
         self.assertIn('t-on-click=\"() => this.toggleComposer(\'note\')\"', template)
         self.assertIn("Log note", template)
-        self.assertIn('t-if">not isQmsCustomerHistory<', template)
+        self.assertIn('t-if">!isQmsCustomerHistory<', template)
+        self.assertNotIn('t-if">not isQmsCustomerHistory<', template)
         self.assertIn("o-mail-Chatter-sendMessage", template)
         self.assertIn("o-mail-Followers", template)
-        self.assertNotIn('t-if">!isQmsCustomerHistory<', template)
+
+        root = ET.fromstring(template)
+        scoped_conditions = {}
+        for xpath_node in root.findall(".//xpath"):
+            expr = xpath_node.attrib.get("expr", "")
+            if "o-mail-Chatter-sendMessage" in expr or "o-mail-Followers" in expr:
+                attribute = next(
+                    (
+                        node
+                        for node in xpath_node.findall("attribute")
+                        if node.attrib.get("name") == "t-if"
+                    ),
+                    None,
+                )
+                scoped_conditions[expr] = attribute.text if attribute is not None else None
+
+        self.assertEqual(
+            scoped_conditions.get("//button[hasclass('o-mail-Chatter-sendMessage')]"),
+            "!isQmsCustomerHistory",
+        )
+        self.assertEqual(
+            scoped_conditions.get("//div[hasclass('o-mail-Followers')]"),
+            "!isQmsCustomerHistory",
+        )
+        self.assertEqual(
+            list(scoped_conditions.values()).count("!isQmsCustomerHistory"),
+            2,
+        )
+
+    def test_customer_frontend_xml_rejects_python_style_boolean_not(self):
+        xml_root = Path(__file__).parents[1] / "static/src/xml"
+        invalid_expressions = []
+        for path in sorted(xml_root.rglob("*.xml")):
+            source = path.read_text(encoding="utf-8")
+            invalid_expressions.extend(
+                (path.name, match.group(0))
+                for match in re.finditer(
+                    r"(?:t-(?:if|elif)\s*=\s*[\"']\s*not\b|>\s*not\s+isQms\w*)",
+                    source,
+                )
+            )
+
+        self.assertEqual(
+            invalid_expressions,
+            [],
+            "Python-style boolean expressions must not enter Owl frontend XML",
+        )
 
     def test_customer_history_does_not_touch_global_odoo_messaging(self):
         addon_root = Path(__file__).parents[1]
