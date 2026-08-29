@@ -101,3 +101,4 @@ class MailTrackingValue(models.Model):
 
     def unlink(self):
         self._check_pm_qms_history_write()
+        return super().unlink()

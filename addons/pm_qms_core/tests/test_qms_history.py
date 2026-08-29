@@ -20,6 +20,15 @@ class TestQmsHistory(TransactionCase):
         cls.technical = cls._create_user(
             "history_technical", cls.env.ref("base.group_system")
         )
+        cls.technical.write(
+            {
+                "group_ids": [
+                    Command.link(
+                        cls.env.ref("pm_qms_core.group_pm_qms_administrator").id
+                    )
+                ]
+            }
+        )
         cls.organization = cls.env["pm.qms.organization"].create(
             {
                 "name": "History Test Organization",
@@ -96,6 +105,11 @@ class TestQmsHistory(TransactionCase):
         system_partner = self.env.ref("base.partner_root")
         self.assertTrue(system_partner.pm_qms_system_actor)
         self.assertFalse(self.manager.partner_id.pm_qms_system_actor)
+        message = self.risk.sudo().message_post(body="System actor payload fixture.")
+        self.assertIn(
+            "pm_qms_system_actor",
+            message._get_store_partner_name_fields(),
+        )
 
     def test_customer_cannot_rewrite_or_delete_published_history(self):
         self.risk.with_user(self.manager).write({"likelihood": 4})
@@ -116,6 +130,18 @@ class TestQmsHistory(TransactionCase):
         with self.assertRaises(AccessError):
             tracking.with_user(self.manager).unlink()
 
+    def test_technical_administrator_can_unlink_pm_tracking_value(self):
+        self.risk.with_user(self.manager).write({"likelihood": 5})
+        self._flush_tracking()
+        tracking = self._latest_tracking_message().tracking_value_ids.sudo().filtered(
+            lambda value: value.field_id.name == "likelihood"
+        )
+        self.assertTrue(tracking)
+
+        tracking.with_user(self.technical).unlink()
+
+        self.assertFalse(tracking.sudo().exists())
+
     def test_internal_note_is_allowed_to_create_but_immutable_after_post(self):
         note = self.risk.with_user(self.manager).message_post(
             body="Original internal note for a fictional test record.",
@@ -126,6 +152,16 @@ class TestQmsHistory(TransactionCase):
             note.with_user(self.manager).write({"body": "rewritten"})
         with self.assertRaises(AccessError):
             note.with_user(self.manager).unlink()
+
+    def test_technical_administrator_can_repair_internal_note(self):
+        note = self.risk.with_user(self.manager).message_post(
+            body="Technical repair test note.", subtype_xmlid="mail.mt_note"
+        )
+        technical_note = note.with_user(self.technical)
+        technical_note.write({"body": "Technical repair completed."})
+        self.assertIn("Technical repair completed.", str(technical_note.body))
+        technical_note.unlink()
+        self.assertFalse(technical_note.sudo().exists())
 
     def test_technical_administrator_keeps_repair_exception(self):
         note = self.risk.with_user(self.manager).message_post(
@@ -146,12 +182,31 @@ class TestQmsHistory(TransactionCase):
         with self.assertRaises(AccessError):
             note.with_user(self.viewer).write({"body": "Viewer mutation"})
 
-    def test_non_pm_mail_message_is_not_restricted_by_pm_guard(self):
+    def test_non_pm_mail_message_uses_native_write_and_unlink(self):
         partner = self.env["res.partner"].create({"name": "Native mail fixture"})
         message = partner.sudo().message_post(
             body="Unrelated native mail record fixture."
         )
-        native_message = message.with_user(self.manager)
+        native_message = message.with_user(self.technical)
         self.assertFalse(native_message._pm_qms_history_protected())
-        native_message.sudo().write({"body": "Edited native fixture."})
+        native_message.write({"body": "Edited native fixture."})
         self.assertIn("Edited native fixture.", str(native_message.body))
+        native_message.unlink()
+        self.assertFalse(native_message.sudo().exists())
+
+    def test_non_pm_tracking_value_uses_native_unlink(self):
+        partner = self.env["res.partner"].create({"name": "Native tracking fixture"})
+        message = partner.sudo().message_post(body="Unrelated native tracking fixture.")
+        field = self.env["ir.model.fields"]._get("res.partner", "name")
+        tracking = self.env["mail.tracking.value"].sudo().create(
+            {
+                "field_id": field.id,
+                "old_value_char": "Before",
+                "new_value_char": "After",
+                "mail_message_id": message.id,
+            }
+        )
+
+        tracking.with_user(self.technical).unlink()
+
+        self.assertFalse(tracking.sudo().exists())

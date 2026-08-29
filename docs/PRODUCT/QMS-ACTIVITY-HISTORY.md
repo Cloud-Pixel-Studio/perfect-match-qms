@@ -31,3 +31,10 @@ recorded as a new Internal Note.
 
 The frontend presentation is scoped to authorized Perfect Match QMS records.
 Unrelated Odoo mail-enabled records retain their native behavior.
+
+For the pinned Odoo 19 runtime, the native `mail.Chatter` template renders the
+Send Message and Followers entry points without native `t-if` conditions. This
+addon therefore adds a PM customer-history predicate only to those controls;
+Odoo's native disabled and permission logic remains authoritative, and all
+non-PM chatter behavior remains unchanged. This scope does not disable
+`mail.activity`, record chatter, tracking, or required notifications.

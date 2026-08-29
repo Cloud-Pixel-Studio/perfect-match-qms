@@ -39,6 +39,13 @@ The presentation code is scoped to `pm.qms.*` threads and the existing
 customer shell is unchanged. No system user or partner is created and there
 is no licensing impact.
 
+The pinned Odoo 19 `mail.Chatter` template was inspected as part of this
+decision. Its Send Message and Followers entry points are native unconditional
+controls, so the addon applies the customer-history predicate only within the
+PM QMS shell. Native permission and disabled-state checks remain in force;
+`mail.activity`, record chatter, tracking, and required notifications are not
+disabled, and non-PM chatter retains the native runtime behavior.
+
 ## Consequences
 
 The product gets one readable customer history surface while preserving native

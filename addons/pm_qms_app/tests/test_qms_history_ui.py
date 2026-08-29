@@ -24,7 +24,10 @@ class TestQmsHistoryCustomerUi(TransactionCase):
         self.assertIn("Perfect Match QMS · System", source)
         self.assertIn("QMS Activity &amp; History", template)
         self.assertIn("Internal Note", template)
-        self.assertIn("!isQmsCustomerHistory", template)
+        self.assertIn('t-if">not isQmsCustomerHistory<', template)
+        self.assertIn("o-mail-Chatter-sendMessage", template)
+        self.assertIn("o-mail-Followers", template)
+        self.assertNotIn('t-if">!isQmsCustomerHistory<', template)
 
     def test_customer_history_does_not_touch_global_odoo_messaging(self):
         addon_root = Path(__file__).parents[1]
@@ -39,3 +42,10 @@ class TestQmsHistoryCustomerUi(TransactionCase):
         self.assertIn("mail.Chatter", template)
         self.assertNotIn("patch(MessagingMenu", source)
         self.assertNotIn("mail.message", template)
+
+    def test_customer_history_scope_is_not_global(self):
+        source = (Path(__file__).parents[1] / "static/src/js/qms_history.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("threadModel?.startsWith(PM_QMS_MODEL_PREFIX)", source)
+        self.assertIn("document.documentElement.classList.contains", source)
