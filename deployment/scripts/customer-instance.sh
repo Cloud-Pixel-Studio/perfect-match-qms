@@ -395,7 +395,7 @@ bundle() (
   while [[ $# -gt 0 ]]; do case "$1" in --output) output="${2:-}"; shift 2;; --release) release="${2:-}"; shift 2;; *) die "unknown bundle option: $1";; esac; done
   [[ -n "$output" ]] || die "--output is required"; git -C "$REPO_ROOT" rev-parse "$release^{commit}" >/dev/null 2>&1 || die "release tag not found"
   local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
-  git -C "$REPO_ROOT" archive "$release" addons deployment/customer deployment/runtime deployment/docker/customer deployment/nginx/customer.conf.example deployment/scripts/customer-instance.sh | tar -x -C "$tmp"
+  git -C "$REPO_ROOT" archive "$release" addons deployment/customer deployment/runtime/runtime-lock.json deployment/docker/customer deployment/nginx/customer.conf.example deployment/scripts/customer-instance.sh | tar -x -C "$tmp"
   [[ -s "$tmp/deployment/runtime/runtime-lock.json" ]] || die "release has no runtime lock"
   rm -rf "$tmp/deployment/demo" "$tmp/deployment/docker/demo"; find "$tmp/addons" -type d -name __pycache__ -prune -exec rm -rf {} +; find "$tmp/addons" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
   local sha; sha="$(git -C "$REPO_ROOT" rev-parse "$release^{commit}")"
