@@ -171,6 +171,19 @@ if "pm.qms.qualification.record" in env and "pm.qms.qualification.type" in env a
             "duplicate canonical Demo qualification records detected",
         )
 
+if "pm.qms.capa" in env and "pm.qms.capa.why" in env and organization:
+    capa = env["pm.qms.capa"].search([("code", "=", "APEX-CAPA-001"), ("organization_id", "=", organization.id)], limit=1)
+    if capa:
+        why_rows = env["pm.qms.capa.why"].search([("capa_id", "=", capa.id)])
+        by_sequence = {}
+        for row in why_rows:
+            by_sequence.setdefault(row.sequence, []).append(row.id)
+        summary["canonical_capa_why_count"] = len(why_rows)
+        summary["canonical_capa_why_sequences"] = sorted(by_sequence)
+        require(len(why_rows) == 5, f"canonical CAPA must contain exactly five 5 Why rows, found {len(why_rows)}")
+        require(set(by_sequence) == {1, 2, 3, 4, 5}, "canonical CAPA 5 Why sequences must be exactly 1 through 5")
+        require(all(len(ids) == 1 for ids in by_sequence.values()), "duplicate canonical CAPA 5 Why sequence detected")
+
 for role, login in EXPECTED_QMS_PERSONAS.items():
     persona = env["res.users"].search([("login", "=", login)], limit=1)
     require(bool(persona), f"Demo persona missing: {role}")

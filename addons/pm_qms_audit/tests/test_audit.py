@@ -350,8 +350,16 @@ class TestPmQmsAudit(TransactionCase):
         capa_action = self.env["pm.qms.capa.action"].with_user(manager).create(
             {"capa_id": capa.id, "name": "Replace superseded workstation instruction"}
         )
-        capa.with_user(manager).write({"root_cause": "The local instruction check was not assigned."})
+        capa.with_user(manager).write(
+            {
+                "root_cause_analysis": "The local instruction check was not assigned.",
+                "root_cause": "The local instruction check was not assigned.",
+            }
+        )
         capa.with_user(manager).action_start_analysis()
+        capa.why_ids.filtered(lambda why: why.sequence == 1).with_user(manager).write(
+            {"answer": "The local instruction check was not assigned."}
+        )
         capa.with_user(manager).action_plan_actions()
         capa.with_user(manager).action_start_implementation()
         capa_action.with_user(manager).action_start()

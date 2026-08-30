@@ -217,6 +217,7 @@ class TestPmQmsManagementReview(TransactionCase):
                 "process_id": self.process.id,
                 "source_type": "management_decision",
                 "problem_statement": "Follow-up action requires effectiveness confirmation.",
+                "root_cause_analysis": "The follow-up check was not previously assigned.",
                 "root_cause": "The follow-up check was not previously assigned.",
                 "target_date": "2026-03-31",
                 "effectiveness_review_date": "2026-04-30",
@@ -227,6 +228,9 @@ class TestPmQmsManagementReview(TransactionCase):
             {"capa_id": capa.id, "name": "Complete management review follow-up check"}
         )
         capa.with_user(manager).action_start_analysis()
+        capa.why_ids.filtered(lambda why: why.sequence == 1).with_user(manager).write(
+            {"answer": "The follow-up check was not previously assigned."}
+        )
         capa.with_user(manager).action_plan_actions()
         capa.with_user(manager).action_start_implementation()
         action.with_user(manager).action_start()

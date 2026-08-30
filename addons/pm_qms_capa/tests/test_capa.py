@@ -123,6 +123,7 @@ class TestPmQmsCapa(TransactionCase):
             "source_type": "other",
             "problem_statement": "Distribution verification needs a clear owner.",
             "root_cause_method": "5why",
+            "root_cause_analysis": "The analysis identified a missing ownership control.",
             "root_cause": "The recurring owner was not assigned.",
             "action_plan": "Assign owner and verify completion.",
             "target_date": "2026-01-01",
@@ -142,13 +143,12 @@ class TestPmQmsCapa(TransactionCase):
         self.assertTrue(why_list)
         columns = why_list[0].xpath("./field/@name")
         self.assertEqual(columns, ["sequence", "question", "answer"])
+        self.assertEqual(why_list[0].get("create"), "0")
+        self.assertEqual(why_list[0].get("delete"), "0")
 
     def test_capa_creation_5why_multiple_actions_effectiveness_and_history(self):
         manager = self._create_test_user("pmqms.capa.manager", self.qms_manager_group)
         capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values())
-        self.env["pm.qms.capa.why"].with_user(manager).create(
-            {"capa_id": capa.id, "sequence": 1, "question": "Why did this happen?", "answer": "Ownership was unclear."}
-        )
         action_1 = self.env["pm.qms.capa.action"].with_user(manager).create(
             {"capa_id": capa.id, "name": "Assign owner", "target_date": "2026-01-01"}
         )
@@ -157,11 +157,15 @@ class TestPmQmsCapa(TransactionCase):
         )
 
         self.assertRegex(capa.code, r"^PM-CAPA-\d{5}$")
-        self.assertEqual(len(capa.why_ids), 1)
+        self.assertEqual(len(capa.why_ids), 0)
         self.assertEqual(capa.action_count, 2)
         self.assertTrue(action_1.is_overdue)
 
         capa.with_user(manager).action_start_analysis()
+        self.assertEqual(len(capa.why_ids), 5)
+        self.assertEqual(capa.why_ids.mapped("sequence"), [1, 2, 3, 4, 5])
+        self.assertEqual(capa.why_ids[0].question, "Why did the problem occur?")
+        capa.why_ids[0].with_user(manager).write({"answer": "Ownership was unclear."})
         capa.with_user(manager).action_plan_actions()
         capa.with_user(manager).action_start_implementation()
         action_1.with_user(manager).action_start()
@@ -184,6 +188,7 @@ class TestPmQmsCapa(TransactionCase):
         action = self.env["pm.qms.capa.action"].with_user(manager).create({"capa_id": capa.id, "name": "Initial action"})
 
         capa.with_user(manager).action_start_analysis()
+        capa.why_ids.filtered(lambda row: row.sequence == 1).with_user(manager).write({"answer": "The assigned owner was unclear."})
         capa.with_user(manager).action_plan_actions()
         capa.with_user(manager).action_start_implementation()
         action.with_user(manager).action_complete()
@@ -255,8 +260,14 @@ class TestPmQmsCapa(TransactionCase):
         self.ncr.with_user(manager).action_require_action()
         capa = self.env["pm.qms.capa"].browse(self.ncr.action_create_capa()["res_id"])
         action = self.env["pm.qms.capa.action"].with_user(manager).create({"capa_id": capa.id, "name": "Verify after next review"})
-        capa.with_user(manager).write({"root_cause": "The controlled distribution check was not assigned."})
+        capa.with_user(manager).write(
+            {
+                "root_cause_analysis": "The analysis identified an unassigned distribution check.",
+                "root_cause": "The controlled distribution check was not assigned.",
+            }
+        )
         capa.with_user(manager).action_start_analysis()
+        capa.why_ids.filtered(lambda row: row.sequence == 1).with_user(manager).write({"answer": "The check had no named owner."})
         capa.with_user(manager).action_plan_actions()
         capa.with_user(manager).action_start_implementation()
         action.with_user(manager).action_complete()
@@ -272,3 +283,106 @@ class TestPmQmsCapa(TransactionCase):
         self.assertNotIn("risk_ids", self.control._fields)
         self.assertNotIn("nonconformity_ids", self.control._fields)
         self.assertNotIn("capa_ids", self.control._fields)
+
+    def test_5why_fixed_slots_are_idempotent_and_protected(self):
+        manager = self._create_test_user("pmqms.capa.fixed", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values(name="Fixed slots"))
+        capa.with_user(manager).action_start_analysis()
+        capa.with_user(manager).action_start_analysis()
+        self.assertEqual(len(capa.why_ids), 5)
+        self.assertEqual(set(capa.why_ids.mapped("sequence")), {1, 2, 3, 4, 5})
+        with self.assertRaises(UserError):
+            capa.why_ids[0].with_user(manager).unlink()
+        with self.assertRaises(UserError):
+            capa.why_ids[0].with_user(manager).write({"sequence": 2})
+        with self.assertRaises(UserError):
+            self.env["pm.qms.capa.why"].with_user(manager).create(
+                {"capa_id": capa.id, "sequence": 1, "question": "Not a fixed prompt"}
+            )
+
+    def test_5why_plan_gate_requires_contiguous_answers_and_common_summary(self):
+        manager = self._create_test_user("pmqms.capa.gate", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values(name="5 Why gate"))
+        capa.with_user(manager).action_start_analysis()
+        capa.why_ids.filtered(lambda row: row.sequence == 2).with_user(manager).write({"answer": "Skipped Why 1"})
+        with self.assertRaises(UserError):
+            capa.with_user(manager).action_plan_actions()
+        capa.why_ids.filtered(lambda row: row.sequence == 1).with_user(manager).write({"answer": "Initial condition"})
+        capa.with_user(manager).action_plan_actions()
+        self.assertEqual(capa.state, "action_planned")
+
+    def test_fishbone_requires_confirmed_evidence_and_supports_multiple_categories(self):
+        manager = self._create_test_user("pmqms.capa.fishbone", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(name="Fishbone", root_cause_method="fishbone")
+        )
+        capa.with_user(manager).action_start_analysis()
+        fishbone = self.env["pm.qms.capa.fishbone"].with_user(manager)
+        fishbone.create({"capa_id": capa.id, "category": "process", "potential_cause": "Unclear handoff"})
+        fishbone.create({"capa_id": capa.id, "category": "process", "potential_cause": "Missing review"})
+        with self.assertRaises(UserError):
+            capa.with_user(manager).action_plan_actions()
+        confirmed = fishbone.create(
+            {
+                "capa_id": capa.id,
+                "category": "measurement",
+                "potential_cause": "Signal not checked",
+                "evidence_basis": "Fictional inspection sample",
+                "rationale_finding": "The check was absent from the local workflow.",
+                "investigation_status": "confirmed",
+            }
+        )
+        capa.with_user(manager).action_plan_actions()
+        self.assertEqual(capa.state, "action_planned")
+        self.assertEqual(confirmed.capa_id, capa)
+
+    def test_is_is_not_initializes_four_fixed_dimensions_and_gates_plan(self):
+        manager = self._create_test_user("pmqms.capa.isnot", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(name="Is Is Not", root_cause_method="is_is_not")
+        )
+        capa.with_user(manager).action_start_analysis()
+        self.assertEqual(set(capa.is_is_not_ids.mapped("dimension")), {"what", "where", "when", "extent"})
+        with self.assertRaises(UserError):
+            capa.with_user(manager).action_plan_actions()
+        capa.is_is_not_ids.with_user(manager).write(
+            {
+                "is_value": "Observed condition",
+                "is_not_value": "Excluded condition",
+                "distinction": "Verified boundary",
+            }
+        )
+        capa.with_user(manager).action_plan_actions()
+        self.assertEqual(capa.state, "action_planned")
+        with self.assertRaises(UserError):
+            capa.is_is_not_ids[0].with_user(manager).unlink()
+
+    def test_other_method_requires_named_tool_and_method_lock(self):
+        manager = self._create_test_user("pmqms.capa.other", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(name="Other method", root_cause_method="other", other_method_name="Barrier review")
+        )
+        capa.with_user(manager).action_start_analysis()
+        with self.assertRaises(UserError):
+            capa.with_user(manager).write({"root_cause_method": "5why"})
+        capa.with_user(manager).action_plan_actions()
+        self.assertEqual(capa.state, "action_planned")
+
+    def test_rca_is_locked_in_implementation_and_refinable_after_ineffective_reopen(self):
+        manager = self._create_test_user("pmqms.capa.lock", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values(name="RCA lock"))
+        capa.with_user(manager).action_start_analysis()
+        capa.why_ids.filtered(lambda row: row.sequence == 1).with_user(manager).write({"answer": "Condition"})
+        capa.with_user(manager).action_plan_actions()
+        action = self.env["pm.qms.capa.action"].with_user(manager).create({"capa_id": capa.id, "name": "Contain"})
+        capa.with_user(manager).action_start_implementation()
+        with self.assertRaises(UserError):
+            capa.with_user(manager).write({"root_cause": "Changed after implementation"})
+        action.with_user(manager).action_complete()
+        capa.with_user(manager).action_complete_implementation()
+        capa.with_user(manager).write({"effectiveness_notes": "The cause persisted."})
+        capa.with_user(manager).action_mark_ineffective()
+        capa.with_user(manager).action_reopen_actions()
+        capa.with_user(manager).write({"root_cause_analysis": "Refined after ineffective review."})
+        with self.assertRaises(UserError):
+            capa.with_user(manager).write({"root_cause_method": "fishbone"})
