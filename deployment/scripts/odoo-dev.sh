@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
 COMPOSE_FILE="$REPO_ROOT/deployment/docker/dev/compose.yml"
+RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
 SECRETS_DIR="${PMQMS_ODOO_DEV_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-dev}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
@@ -55,6 +56,26 @@ export ODOO_DEV_HTTP_PORT="${ODOO_DEV_HTTP_PORT:-8069}"
 export ODOO_DEV_LONGPOLLING_BIND="${ODOO_DEV_LONGPOLLING_BIND:-127.0.0.1}"
 export ODOO_DEV_LONGPOLLING_PORT="${ODOO_DEV_LONGPOLLING_PORT:-8072}"
 
+runtime_image() { jq -er ".${1}.image" "$RUNTIME_LOCK_FILE"; }
+load_runtime_lock() {
+  [[ -s "$RUNTIME_LOCK_FILE" ]] || { echo "Runtime lock is missing: $RUNTIME_LOCK_FILE" >&2; return 1; }
+  export PMQMS_ODOO_IMAGE="$(runtime_image odoo)"
+  export PMQMS_POSTGRES_IMAGE="$(runtime_image postgres)"
+}
+runtime_verify() {
+  load_runtime_lock
+  docker image inspect "$PMQMS_ODOO_IMAGE" >/dev/null 2>&1 || {
+    echo "ERROR: approved Odoo runtime image is not available locally: $PMQMS_ODOO_IMAGE" >&2
+    echo "Run: $0 runtime-fetch" >&2
+    return 1
+  }
+  docker image inspect "$PMQMS_POSTGRES_IMAGE" >/dev/null 2>&1 || {
+    echo "ERROR: approved PostgreSQL runtime image is not available locally: $PMQMS_POSTGRES_IMAGE" >&2
+    echo "Run: $0 runtime-fetch" >&2
+    return 1
+  }
+}
+
 random_secret() {
   python3 - <<'PY'
 import secrets
@@ -98,19 +119,13 @@ EOF
 
 prepare_runtime_permissions() {
   init_secrets
-
-  if docker image inspect odoo:19.0 >/dev/null 2>&1; then
-    docker run --rm --user root \
-      -v "$SECRETS_DIR:/secrets" \
-      --entrypoint sh \
-      odoo:19.0 \
-      -lc "chown 100:101 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 600 /secrets/odoo_pg_password /secrets/config/odoo.conf && chmod 644 /secrets/config/environment_id"
-  else
-    chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
-  fi
+  load_runtime_lock
+  runtime_verify
+  chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
 }
 
 compose() {
+  load_runtime_lock
   docker compose -f "$COMPOSE_FILE" "$@"
 }
 
@@ -143,6 +158,7 @@ database_exists() {
 }
 
 health() {
+  runtime_verify
   prepare_runtime_permissions
   compose up -d >/dev/null
   local code="000"
@@ -195,7 +211,10 @@ Commands:
                 Verify no addon depends on functional ERP modules.
   init-secrets   Generate local DEV secrets outside Git.
   config         Validate the Docker Compose file.
-  pull           Pull Odoo and PostgreSQL images.
+  pull           Explicitly fetch the exact locked runtime images.
+  runtime-images Print the approved immutable runtime references.
+  runtime-verify Verify locked runtime images locally without registry access.
+  runtime-fetch  Explicitly fetch the exact locked runtime images.
   up             Start the Odoo DEV stack.
   down           Stop the Odoo DEV stack without removing volumes.
   restart        Restart the Odoo DEV stack.
@@ -354,12 +373,30 @@ case "$command" in
     ;;
   config)
     init_secrets
+    load_runtime_lock
     compose config >/dev/null
     echo "Odoo DEV Compose configuration is valid."
     ;;
   pull)
     init_secrets
-    compose pull
+    load_runtime_lock
+    docker pull "$PMQMS_ODOO_IMAGE"
+    docker pull "$PMQMS_POSTGRES_IMAGE"
+    prepare_runtime_permissions
+    ;;
+  runtime-images)
+    load_runtime_lock
+    printf 'odoo_image=%s\npostgres_image=%s\n' "$PMQMS_ODOO_IMAGE" "$PMQMS_POSTGRES_IMAGE"
+    ;;
+  runtime-verify)
+    runtime_verify
+    echo "DEV_RUNTIME_VERIFY=PASS"
+    ;;
+  runtime-fetch)
+    init_secrets
+    load_runtime_lock
+    docker pull "$PMQMS_ODOO_IMAGE"
+    docker pull "$PMQMS_POSTGRES_IMAGE"
     prepare_runtime_permissions
     ;;
   up)

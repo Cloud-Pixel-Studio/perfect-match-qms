@@ -49,6 +49,9 @@ jobs:
       - name: Run customer deployment script regressions
         run: bash deployment/scripts/tests/test_customer_instance_cleanup.sh
 
+      - name: Run runtime lock regressions
+        run: bash deployment/scripts/tests/test_runtime_lock.sh
+
       - name: Pull DEV runtime images
         run: bash deployment/scripts/odoo-dev.sh pull
 

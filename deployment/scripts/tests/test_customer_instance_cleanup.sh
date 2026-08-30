@@ -24,6 +24,9 @@ printf '{"product_version":"v1.0.0-rc8","deployment_state":"licensed"}\n' \
 printf 'fixture-environment\n' > "$INSTANCE_ROOT/config/environment_id"
 
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$INSTANCE_ROOT/config/runtime-lock.json"
+chmod 600 "$INSTANCE_ROOT/config/runtime-lock.json"
+
 git -C "$REPO_ROOT" tag "$TEST_RELEASE" HEAD
 
 # Source the real functions so the test exercises the production backup and upgrade path.

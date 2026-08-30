@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COMPOSE_FILE="$REPO_ROOT/deployment/docker/demo/compose.yml"
 MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
+RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
 SECRETS_DIR="${PMQMS_DEMO_SECRETS_DIR:-/opt/perfect-match/secrets/odoo-demo}"
 CONFIG_DIR="$SECRETS_DIR/config"
 PG_PASSWORD_FILE="$SECRETS_DIR/odoo_pg_password"
@@ -18,6 +19,24 @@ DB_NAME="${PMQMS_DEMO_DB:-pmqms_demo}"
 DEMO_COMPANY_NAME="${PMQMS_DEMO_COMPANY_NAME:-Apex Precision Systems, Inc.}"
 DEMO_ADMIN_LOGIN="${PMQMS_DEMO_ADMIN_LOGIN:-admin}"
 DEMO_QUALITY_MANAGER_LOGIN="${PMQMS_DEMO_QUALITY_MANAGER_LOGIN:-olivia.parker.demo@perfectmatch.local}"
+
+runtime_image() { jq -er ".${1}.image" "$RUNTIME_LOCK_FILE"; }
+load_runtime_lock() {
+  [[ -s "$RUNTIME_LOCK_FILE" ]] || { echo "Runtime lock is missing: $RUNTIME_LOCK_FILE" >&2; return 1; }
+  export PMQMS_ODOO_IMAGE="$(runtime_image odoo)"
+  export PMQMS_POSTGRES_IMAGE="$(runtime_image postgres)"
+  export PMQMS_ALPINE_IMAGE="$(runtime_image alpine)"
+}
+runtime_verify() {
+  load_runtime_lock
+  for image in "$PMQMS_ODOO_IMAGE" "$PMQMS_POSTGRES_IMAGE" "$PMQMS_ALPINE_IMAGE"; do
+    docker image inspect "$image" >/dev/null 2>&1 || {
+      echo "ERROR: approved runtime image is not available locally: $image" >&2
+      echo "Run: $0 runtime-fetch" >&2
+      return 1
+    }
+  done
+}
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 DEMO_ADDONS="${PMQMS_DEMO_ADDONS:-$(module_list)}"
 
@@ -102,10 +121,12 @@ EOF
 
 prepare_runtime_permissions() {
   init_secrets
+  runtime_verify
   chmod 644 "$PG_PASSWORD_FILE" "$CONFIG_DIR/odoo.conf" "$ENVIRONMENT_ID_FILE"
 }
 
 compose() {
+  load_runtime_lock
   docker compose -f "$COMPOSE_FILE" "$@"
 }
 
@@ -208,7 +229,7 @@ backup_demo() {
   archive="$BACKUP_DIR/${DB_NAME}-${stamp}.tar.gz"
   dump="$(mktemp -d)"
   compose exec -T postgres-demo pg_dump -U odoo -d "$DB_NAME" --format=custom > "$dump/database.dump"
-  docker run --rm -v pmqms_demo_odoo_data:/var/lib/odoo:ro -v "$dump:/backup" alpine:3.20 sh -lc "cd /var/lib/odoo && tar -czf /backup/filestore.tar.gz filestore || true"
+  docker run --rm -v pmqms_demo_odoo_data:/var/lib/odoo:ro -v "$dump:/backup" "$PMQMS_ALPINE_IMAGE" sh -lc "cd /var/lib/odoo && tar -czf /backup/filestore.tar.gz filestore || true"
   tar -czf "$archive" -C "$dump" .
   rm -rf "$dump"
   echo "demo_backup=$archive"
@@ -269,7 +290,13 @@ Usage: ./deployment/scripts/odoo-demo.sh <command>
 Commands:
   init-secrets   Generate local DEMO secrets outside Git.
   config         Validate the Docker Compose file.
-  pull           Pull Odoo and PostgreSQL images.
+  pull           Explicitly fetch the exact locked runtime images.
+  runtime-images
+                Print the approved immutable runtime references.
+  runtime-verify
+                Verify locked runtime images locally without registry access.
+  runtime-fetch
+                Explicitly fetch the exact locked runtime images.
   up             Start the DEMO stack.
   down           Stop the DEMO stack without removing volumes.
   ps             Show stack containers.
@@ -292,8 +319,11 @@ EOF
 
 case "${1:-}" in
   init-secrets) init_secrets ;;
-  config) prepare_runtime_permissions; compose config >/dev/null; echo "demo_compose=valid" ;;
-  pull) prepare_runtime_permissions; compose pull ;;
+  config) init_secrets; load_runtime_lock; compose config >/dev/null; echo "demo_compose=valid" ;;
+  pull) init_secrets; load_runtime_lock; docker pull "$PMQMS_ODOO_IMAGE"; docker pull "$PMQMS_POSTGRES_IMAGE"; docker pull "$PMQMS_ALPINE_IMAGE"; prepare_runtime_permissions ;;
+  runtime-images) load_runtime_lock; printf 'odoo_image=%s\npostgres_image=%s\nalpine_image=%s\n' "$PMQMS_ODOO_IMAGE" "$PMQMS_POSTGRES_IMAGE" "$PMQMS_ALPINE_IMAGE" ;;
+  runtime-verify) runtime_verify; echo "DEMO_RUNTIME_VERIFY=PASS" ;;
+  runtime-fetch) init_secrets; load_runtime_lock; docker pull "$PMQMS_ODOO_IMAGE"; docker pull "$PMQMS_POSTGRES_IMAGE"; docker pull "$PMQMS_ALPINE_IMAGE"; prepare_runtime_permissions ;;
   up) prepare_runtime_permissions; compose up -d ;;
   down) prepare_runtime_permissions; compose down ;;
   ps) prepare_runtime_permissions; compose ps ;;
