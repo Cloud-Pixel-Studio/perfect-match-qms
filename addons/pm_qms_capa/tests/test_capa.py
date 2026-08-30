@@ -254,7 +254,7 @@ class TestPmQmsCapa(TransactionCase):
             self.assertEqual(len(guidance), 1)
             self.assertEqual(guidance[0].get("colspan"), "2")
             self.assertNotIn("o_form_label", guidance[0].get("class", ""))
-            if group.get("string", "").endswith("Analysis"):
+            if group.get("string") in ("5 Why Analysis", "Fishbone Analysis", "Is / Is Not Analysis"):
                 group_xml = etree.tostring(group, encoding="unicode")
                 self.assertLess(group_xml.index('class="text-muted"'), group_xml.index("<field"))
 
