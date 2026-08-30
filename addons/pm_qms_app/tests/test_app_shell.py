@@ -234,8 +234,10 @@ class TestPmQmsAppShell(TransactionCase):
             customer_shell,
         )
         self.assertIn(".nav-link", customer_shell)
-        self.assertNotIn("--o-stat-button-color:", global_source)
-        self.assertNotIn("--o-stat-text-color:", global_source)
+        # The dashboard already owns a separate, intentional stat-button scope.
+        self.assertIn(".o_pm_qms_dashboard_form_view .o-form-buttonbox", global_source)
+        self.assertIn("--o-stat-button-color:", global_source)
+        self.assertIn("--o-stat-text-color:", global_source)
         self.assertNotIn("--o-statusbar-", global_source)
         self.assertNotIn("--Notebook__link-border-", global_source)
 
