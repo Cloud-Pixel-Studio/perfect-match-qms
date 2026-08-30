@@ -255,8 +255,8 @@ class TestPmQmsCapa(TransactionCase):
             self.assertEqual(guidance[0].get("colspan"), "2")
             self.assertNotIn("o_form_label", guidance[0].get("class", ""))
             if group.get("string", "").endswith("Analysis"):
-                children = list(group)
-                self.assertLess(children.index(guidance[0]), children.index(group.xpath("./field")[0]))
+                group_xml = etree.tostring(group, encoding="unicode")
+                self.assertLess(group_xml.index('class="text-muted"'), group_xml.index("<field"))
 
     def test_source_provenance_rules_and_tenant_alignment(self):
         capa_model = self.env["pm.qms.capa"]
