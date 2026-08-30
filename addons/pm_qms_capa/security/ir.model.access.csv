@@ -10,3 +10,9 @@ access_pm_qms_capa_action_inspector,pm.qms.capa.action inspector,model_pm_qms_ca
 access_pm_qms_capa_why_user,pm.qms.capa.why user,model_pm_qms_capa_why,pm_qms_core.group_pm_qms_user,1,1,1,0
 access_pm_qms_capa_why_manager,pm.qms.capa.why manager,model_pm_qms_capa_why,pm_qms_core.group_pm_qms_manager,1,1,1,0
 access_pm_qms_capa_why_admin,pm.qms.capa.why admin,model_pm_qms_capa_why,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_capa_fishbone_user,pm.qms.capa.fishbone user,model_pm_qms_capa_fishbone,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_capa_fishbone_manager,pm.qms.capa.fishbone manager,model_pm_qms_capa_fishbone,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_capa_fishbone_admin,pm.qms.capa.fishbone admin,model_pm_qms_capa_fishbone,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_capa_is_is_not_user,pm.qms.capa.is.is.not user,model_pm_qms_capa_is_is_not,pm_qms_core.group_pm_qms_user,1,1,1,0
+access_pm_qms_capa_is_is_not_manager,pm.qms.capa.is.is.not manager,model_pm_qms_capa_is_is_not,pm_qms_core.group_pm_qms_manager,1,1,1,0
+access_pm_qms_capa_is_is_not_admin,pm.qms.capa.is.is.not admin,model_pm_qms_capa_is_is_not,pm_qms_core.group_pm_qms_administrator,1,1,1,1

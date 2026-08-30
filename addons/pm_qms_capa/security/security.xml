@@ -20,4 +20,18 @@
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
     </record>
+
+    <record id="rule_pm_qms_capa_fishbone_company" model="ir.rule">
+        <field name="name">Perfect Match QMS CAPA Fishbone company boundary</field>
+        <field name="model_id" ref="model_pm_qms_capa_fishbone"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
+
+    <record id="rule_pm_qms_capa_is_is_not_company" model="ir.rule">
+        <field name="name">Perfect Match QMS CAPA Is Is Not company boundary</field>
+        <field name="model_id" ref="model_pm_qms_capa_is_is_not"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+    </record>
 </odoo>

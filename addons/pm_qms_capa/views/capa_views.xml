@@ -68,16 +68,74 @@
                             <field name="problem_statement"/>
                         </page>
                         <page string="Root Cause">
-                            <field name="root_cause_method"/>
-                            <field name="root_cause_analysis"/>
-                            <field name="root_cause"/>
-                            <field name="why_ids">
-                                <list editable="bottom">
-                                    <field name="sequence"/>
-                                    <field name="question"/>
-                                    <field name="answer"/>
-                                </list>
-                            </field>
+                            <group string="Root Cause Method">
+                                <field name="root_cause_method" readonly="state != 'draft'"/>
+                            </group>
+                            <group string="5 Why Analysis" invisible="root_cause_method != '5why'">
+                                <div class="o_form_label">Use the fixed prompts to trace the contributing conditions. The final summary and verified root cause are common to every method.</div>
+                                <field name="why_ids" nolabel="1" readonly="state not in ('draft', 'analysis', 'action_planned')">
+                                    <list create="0" delete="0" editable="bottom">
+                                        <field name="sequence" readonly="1"/>
+                                        <field name="question" readonly="1"/>
+                                        <field name="answer"/>
+                                    </list>
+                                </field>
+                            </group>
+                            <group string="Fishbone Analysis" invisible="root_cause_method != 'fishbone'">
+                                <div class="o_form_label">Use the category guidance to investigate contributing causes. A CAPA may contain multiple potential causes in one category.</div>
+                                <field name="fishbone_ids" nolabel="1" readonly="state not in ('analysis', 'action_planned')">
+                                    <list editable="bottom">
+                                        <field name="category"/>
+                                        <field name="guidance" readonly="1"/>
+                                        <field name="potential_cause"/>
+                                        <field name="evidence_basis"/>
+                                        <field name="investigation_status"/>
+                                        <field name="rationale_finding"/>
+                                    </list>
+                                </field>
+                            </group>
+                            <group string="Is / Is Not Analysis" invisible="root_cause_method != 'is_is_not'">
+                                <div class="o_form_label">For each dimension, record IS, IS NOT, Distinction, and optional Change using the field-specific prompts.</div>
+                                <field name="is_is_not_ids" nolabel="1" readonly="state not in ('draft', 'analysis', 'action_planned')">
+                                    <list create="0" delete="0" editable="bottom">
+                                        <field name="sequence" readonly="1"/>
+                                        <field name="dimension" readonly="1"/>
+                                        <field name="is_value"/>
+                                        <field name="is_not_value"/>
+                                        <field name="distinction"/>
+                                        <field name="change_value"/>
+                                    </list>
+                                    <form string="Is / Is Not Analysis">
+                                        <group>
+                                            <field name="dimension" readonly="1"/>
+                                            <field name="sequence" readonly="1"/>
+                                        </group>
+                                        <group string="IS">
+                                            <field name="is_prompt" readonly="1" nolabel="1"/>
+                                            <field name="is_value" nolabel="1"/>
+                                        </group>
+                                        <group string="IS NOT">
+                                            <field name="is_not_prompt" readonly="1" nolabel="1"/>
+                                            <field name="is_not_value" nolabel="1"/>
+                                        </group>
+                                        <group string="Distinction">
+                                            <field name="distinction_prompt" readonly="1" nolabel="1"/>
+                                            <field name="distinction" nolabel="1"/>
+                                        </group>
+                                        <group string="Change (optional)">
+                                            <field name="change_prompt" readonly="1" nolabel="1"/>
+                                            <field name="change_value" nolabel="1"/>
+                                        </group>
+                                    </form>
+                                </field>
+                            </group>
+                            <group string="Other Method" invisible="root_cause_method != 'other'">
+                                <field name="other_method_name" readonly="state not in ('draft', 'analysis', 'action_planned')"/>
+                            </group>
+                            <group string="Common Root Cause Summary">
+                                <field name="root_cause_analysis" readonly="state not in ('draft', 'analysis', 'action_planned')"/>
+                                <field name="root_cause" readonly="state not in ('draft', 'analysis', 'action_planned')"/>
+                            </group>
                         </page>
                         <page string="Actions">
                             <field name="action_plan"/>

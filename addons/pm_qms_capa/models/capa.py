@@ -1,6 +1,9 @@
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
+from .capa_is_is_not import IS_IS_NOT_DIMENSIONS, IS_IS_NOT_SEQUENCE
+from .capa_why import WHY_PROMPTS
+
 
 class PmQmsCapa(models.Model):
     _name = "pm.qms.capa"
@@ -48,9 +51,11 @@ class PmQmsCapa(models.Model):
         ],
         default="5why",
         required=True,
+        tracking=True,
     )
-    root_cause_analysis = fields.Text()
-    root_cause = fields.Text()
+    root_cause_analysis = fields.Text(tracking=True)
+    root_cause = fields.Text(tracking=True)
+    other_method_name = fields.Char(string="Method / Tool Used", tracking=True)
     action_plan = fields.Text()
     action_owner_id = fields.Many2one("res.users", string="Primary Action Owner")
     target_date = fields.Date()
@@ -88,6 +93,8 @@ class PmQmsCapa(models.Model):
         tracking=True,
     )
     why_ids = fields.One2many("pm.qms.capa.why", "capa_id", string="5 Why Analysis")
+    fishbone_ids = fields.One2many("pm.qms.capa.fishbone", "capa_id", string="Fishbone Causes")
+    is_is_not_ids = fields.One2many("pm.qms.capa.is.is.not", "capa_id", string="Is / Is Not Analysis")
     action_ids = fields.One2many("pm.qms.capa.action", "capa_id", string="CAPA Actions")
     action_count = fields.Integer(compute="_compute_action_counts")
     open_action_count = fields.Integer(compute="_compute_action_counts")
@@ -209,12 +216,14 @@ class PmQmsCapa(models.Model):
             )
 
     def action_start_analysis(self):
+        self._check_manager_permission()
+        for capa in self:
+            capa._initialize_analysis_structure()
         self._transition("analysis", "CAPA analysis started")
 
     def action_plan_actions(self):
         for capa in self:
-            if not capa.root_cause:
-                raise UserError("Root cause is required before planning CAPA actions.")
+            capa._validate_root_cause_method()
         self._transition("action_planned", "CAPA actions planned")
 
     def action_start_implementation(self):
@@ -286,6 +295,14 @@ class PmQmsCapa(models.Model):
     def write(self, vals):
         if "state" in vals and not self.env.context.get("pm_qms_capa_workflow"):
             raise AccessError("Use CAPA workflow actions to change CAPA status.")
+        if "root_cause_method" in vals and any(capa.state != "draft" for capa in self):
+            raise UserError("The root cause method is locked after CAPA analysis starts.")
+        rca_fields = {"root_cause_analysis", "root_cause", "other_method_name"}
+        if rca_fields.intersection(vals) and any(
+            capa.state in ("implementation", "effectiveness_review", "effective", "ineffective", "closed")
+            for capa in self
+        ):
+            raise UserError("Root cause methodology is locked after implementation starts.")
         result = super().write(vals)
         if "attachment_ids" in vals:
             self._sync_qms_attachment_links()
@@ -295,3 +312,60 @@ class PmQmsCapa(models.Model):
         if any(capa.state != "draft" for capa in self):
             raise UserError("Only draft CAPA records can be deleted.")
         return super().unlink()
+
+    def _initialize_analysis_structure(self):
+        self.ensure_one()
+        if self.root_cause_method == "5why":
+            existing = {why.sequence for why in self.why_ids if why.sequence in WHY_PROMPTS}
+            missing = [sequence for sequence in WHY_PROMPTS if sequence not in existing]
+            if missing:
+                self.env["pm.qms.capa.why"].with_context(pm_qms_capa_initialize=True).create(
+                    [{"capa_id": self.id, "sequence": sequence} for sequence in missing]
+                )
+        elif self.root_cause_method == "is_is_not":
+            existing = {row.dimension for row in self.is_is_not_ids if row.dimension in IS_IS_NOT_DIMENSIONS}
+            missing = [dimension for dimension in IS_IS_NOT_DIMENSIONS if dimension not in existing]
+            if missing:
+                self.env["pm.qms.capa.is.is.not"].with_context(pm_qms_capa_initialize=True).create(
+                    [
+                        {"capa_id": self.id, "dimension": dimension, "sequence": IS_IS_NOT_SEQUENCE[dimension]}
+                        for dimension in missing
+                    ]
+                )
+
+    def _validate_root_cause_method(self):
+        self.ensure_one()
+        if not self.root_cause_analysis or not self.root_cause:
+            raise UserError("Root cause analysis summary and verified root cause are required before planning actions.")
+        if self.root_cause_method == "5why":
+            slots = self.why_ids
+            sequences = slots.mapped("sequence")
+            if len(slots) != 5 or set(sequences) != set(WHY_PROMPTS):
+                raise UserError("5 Why analysis must contain exactly one valid slot for each sequence 1 through 5.")
+            answers = {why.sequence: bool((why.answer or "").strip()) for why in slots}
+            if not answers.get(1):
+                raise UserError("Why 1 must be answered before planning CAPA actions.")
+            highest = max(sequence for sequence, answered in answers.items() if answered)
+            if any(not answers[sequence] for sequence in range(1, highest + 1)):
+                raise UserError("5 Why answers must be contiguous; trailing blank slots are allowed.")
+        elif self.root_cause_method == "fishbone":
+            if not self.fishbone_ids:
+                raise UserError("Fishbone analysis requires at least one potential cause.")
+            confirmed = self.fishbone_ids.filtered(lambda cause: cause.investigation_status == "confirmed")
+            if not confirmed:
+                raise UserError("Fishbone analysis requires at least one confirmed cause.")
+            if any(not cause.evidence_basis or not cause.rationale_finding for cause in confirmed):
+                raise UserError("Confirmed Fishbone causes require evidence basis and rationale.")
+        elif self.root_cause_method == "is_is_not":
+            rows = self.is_is_not_ids
+            if (
+                len(rows) != 4
+                or set(rows.mapped("dimension")) != set(IS_IS_NOT_DIMENSIONS)
+                or set(rows.mapped("sequence")) != set(IS_IS_NOT_SEQUENCE.values())
+            ):
+                raise UserError("Is / Is Not analysis requires What, Where, When, and Extent rows.")
+            if any(not all((row.is_value, row.is_not_value, row.distinction)) for row in rows):
+                raise UserError("Is / Is Not requires IS, IS NOT, and Distinction for every dimension.")
+        elif self.root_cause_method == "other":
+            if not self.other_method_name:
+                raise UserError("Other method requires the method/tool, analysis, and verified root cause.")
