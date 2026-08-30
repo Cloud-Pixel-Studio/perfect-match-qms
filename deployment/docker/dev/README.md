@@ -2,6 +2,11 @@
 
 This Compose stack runs the local Perfect Match Digital QMS Odoo development environment.
 
+The Odoo and PostgreSQL services resolve their immutable image references from
+`deployment/runtime/runtime-lock.json`. Use `./deployment/scripts/odoo-dev.sh
+runtime-fetch` as the explicit preparation step on a new host; `up`, `health`,
+and tests do not pull images implicitly.
+
 ## Architecture
 
 ```text

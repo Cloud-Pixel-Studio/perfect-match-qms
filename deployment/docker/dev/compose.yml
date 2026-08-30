@@ -2,7 +2,8 @@ name: pmqms-dev
 
 services:
   postgres-dev:
-    image: postgres:15
+    image: "${PMQMS_POSTGRES_IMAGE:?runtime lock was not loaded}"
+    pull_policy: never
     container_name: pmqms-postgres-dev
     restart: unless-stopped
     environment:
@@ -23,7 +24,8 @@ services:
       - pmqms_dev_network
 
   odoo-dev:
-    image: odoo:19.0
+    image: "${PMQMS_ODOO_IMAGE:?runtime lock was not loaded}"
+    pull_policy: never
     container_name: pmqms-odoo-dev
     restart: unless-stopped
     depends_on:

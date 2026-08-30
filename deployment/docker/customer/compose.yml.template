@@ -2,7 +2,8 @@ name: pmqms-customer-__INSTANCE_SLUG__
 
 services:
   postgres:
-    image: postgres:15
+    image: __POSTGRES_IMAGE__
+    pull_policy: never
     restart: unless-stopped
     environment:
       POSTGRES_DB: postgres
@@ -22,7 +23,8 @@ services:
       - pmqms___INSTANCE_SLUG___network
 
   odoo:
-    image: odoo:19.0
+    image: __ODOO_IMAGE__
+    pull_policy: never
     restart: unless-stopped
     depends_on:
       postgres:

@@ -23,6 +23,9 @@ printf '{"product_version":"v1.0.0-rc8","deployment_state":"licensed"}\n' \
   > "$INSTANCE_ROOT/config/deployment-manifest.json"
 printf 'fixture-environment\n' > "$INSTANCE_ROOT/config/environment_id"
 
+cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$INSTANCE_ROOT/config/runtime-lock.json"
+chmod 600 "$INSTANCE_ROOT/config/runtime-lock.json"
+
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 git -C "$REPO_ROOT" tag "$TEST_RELEASE" HEAD
 
