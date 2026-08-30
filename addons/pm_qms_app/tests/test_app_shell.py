@@ -200,6 +200,47 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertNotIn("#71639e", source)
         self.assertNotIn("!important", helper)
 
+    def test_customer_form_components_override_odoo_primary_fallbacks_in_scope(self):
+        source = (
+            Path(__file__).parents[1] / "static/src/scss/brand.scss"
+        ).read_text(encoding="utf-8")
+        customer_shell = source.split(".o_pm_qms_customer_shell {", 1)[1]
+        global_source = source.split(".o_pm_qms_customer_shell {", 1)[0]
+
+        self.assertIn(".o_pm_qms_customer_shell {", source)
+        self.assertIn(".o-form-buttonbox {", customer_shell)
+        self.assertIn(
+            "--o-stat-button-color: var(--pmqms-control-text);",
+            customer_shell,
+        )
+        self.assertIn(
+            "--o-stat-text-color: var(--pmqms-control-text);",
+            customer_shell,
+        )
+        self.assertIn(".o_field_statusbar {", customer_shell)
+        for variable in (
+            "--o-statusbar-background-active",
+            "--o-statusbar-border-active",
+            "--o-statusbar-background-hover",
+        ):
+            self.assertIn(variable, customer_shell)
+        self.assertIn(".o_notebook {", customer_shell)
+        self.assertIn(
+            "--Notebook__link-border-color--active",
+            customer_shell,
+        )
+        self.assertIn(
+            "--Notebook__link-border-color--hover",
+            customer_shell,
+        )
+        self.assertIn(".nav-link", customer_shell)
+        # The dashboard already owns a separate, intentional stat-button scope.
+        self.assertIn(".o_pm_qms_dashboard_form_view .o-form-buttonbox", global_source)
+        self.assertIn("--o-stat-button-color:", global_source)
+        self.assertIn("--o-stat-text-color:", global_source)
+        self.assertNotIn("--o-statusbar-", global_source)
+        self.assertNotIn("--Notebook__link-border-", global_source)
+
     def test_dashboard_stat_buttons_use_scoped_perfect_match_tokens(self):
         addon_root = Path(__file__).parents[1]
         source = (addon_root / "static/src/scss/brand.scss").read_text(

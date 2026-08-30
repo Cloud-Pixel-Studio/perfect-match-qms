@@ -356,6 +356,56 @@ main .o_database_list .form-control:focus {
         }
     }
 
+    .o_form_view {
+        .o-form-buttonbox {
+            --o-stat-button-color: var(--pmqms-control-text);
+            --o-stat-text-color: var(--pmqms-control-text);
+        }
+
+        .o_field_statusbar {
+            --o-statusbar-border: var(--pmqms-control-border);
+            --o-statusbar-background-active: var(--pmqms-control-active);
+            --o-statusbar-border-active: var(--pmqms-primary);
+            --o-statusbar-background-hover: var(--pmqms-control-hover);
+
+            > .o_statusbar_status > .o_arrow_button {
+                color: var(--pmqms-control-text);
+
+                &:hover,
+                &:focus {
+                    color: var(--pmqms-primary);
+                }
+
+                &.o_arrow_button_current:disabled,
+                &:active:not(.o_last) {
+                    color: var(--pmqms-primary);
+                }
+            }
+        }
+
+        .o_notebook {
+            --Notebook__link-border-color--active: var(--pmqms-magenta);
+            --Notebook__link-border-top-color--active: var(--pmqms-magenta);
+            --Notebook__link-border-color--hover: var(--pmqms-primary);
+
+            .nav-link {
+                color: var(--pmqms-control-text);
+
+                &:hover,
+                &:focus {
+                    color: var(--pmqms-primary);
+                }
+
+                &.active,
+                &.active:hover,
+                &.active:focus,
+                &.active:active {
+                    color: var(--pmqms-primary);
+                }
+            }
+        }
+    }
+
     .modal-footer {
         border-top-color: var(--pmqms-border);
 
