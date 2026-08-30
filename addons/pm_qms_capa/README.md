@@ -13,3 +13,8 @@ share a summary and verified root cause.
 The fixed structures are initialized idempotently by the Analyze workflow. The
 Demo seed uses `(capa_id, sequence)` as the 5 Why identity; historical duplicate
 rows remain readable and are not automatically deleted by the product.
+
+5 Why rows retain their stored `question` as backward-compatible historical
+data. Customer-facing methodology prompts are computed from the fixed sequence,
+so legacy wording is not rewritten by upgrades while current guidance remains
+canonical. The Demo seed updates only mutable answers for existing fixed slots.

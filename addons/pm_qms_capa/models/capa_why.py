@@ -21,7 +21,13 @@ class PmQmsCapaWhy(models.Model):
     organization_id = fields.Many2one(related="capa_id.organization_id", store=True, readonly=True, index=True)
     sequence = fields.Integer(default=1, required=True)
     question = fields.Char(required=True)
+    prompt = fields.Char(string="Methodology Prompt", compute="_compute_prompt", readonly=True)
     answer = fields.Text()
+
+    @api.depends("sequence")
+    def _compute_prompt(self):
+        for why in self:
+            why.prompt = WHY_PROMPTS.get(why.sequence, "")
 
     @api.model_create_multi
     def create(self, vals_list):

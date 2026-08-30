@@ -76,7 +76,7 @@
                                 <field name="why_ids" nolabel="1" readonly="state not in ('draft', 'analysis', 'action_planned')">
                                     <list create="0" delete="0" editable="bottom">
                                         <field name="sequence" readonly="1"/>
-                                        <field name="question" readonly="1"/>
+                                        <field name="prompt" readonly="1"/>
                                         <field name="answer"/>
                                     </list>
                                 </field>

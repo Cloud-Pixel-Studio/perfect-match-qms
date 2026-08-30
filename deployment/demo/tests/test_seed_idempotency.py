@@ -24,6 +24,26 @@ def load_identity_helpers():
     return namespace
 
 
+def load_capa_why_helper():
+    tree = ast.parse(SEED_PATH.read_text(encoding="utf-8"))
+    node = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "upsert_capa_why")
+    namespace = {}
+    exec(compile(ast.Module(body=[node], type_ignores=[]), str(SEED_PATH), "exec"), namespace)
+    return namespace["upsert_capa_why"]
+
+
+def load_seed_helpers(*names):
+    tree = ast.parse(SEED_PATH.read_text(encoding="utf-8"))
+    nodes = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name in names
+    ]
+    namespace = {}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SEED_PATH), "exec"), namespace)
+    return namespace
+
+
 def reconcile(rows, identity, values):
     matches = [
         row
@@ -43,6 +63,130 @@ def reconcile(rows, identity, values):
 class SeedIdentityTests(unittest.TestCase):
     def setUp(self):
         self.helpers = load_identity_helpers()
+
+    def test_capa_why_helper_updates_only_answer_for_existing_slot(self):
+        writes = []
+
+        class Record:
+            id = 7
+            answer = "old answer"
+
+            def write(self, values):
+                writes.append(values)
+                self.answer = values["answer"]
+                return True
+
+        record = Record()
+
+        class Model:
+            def search(self, domain, limit=1):
+                self.domain = domain
+                return record
+
+        class Cursor:
+            def savepoint(self):
+                class Savepoint:
+                    def __enter__(self):
+                        return self
+
+                    def __exit__(self, *args):
+                        return False
+
+                return Savepoint()
+
+        class Env:
+            cr = Cursor()
+
+            def __getitem__(self, key):
+                self.model = Model()
+                return self.model
+
+        helper = load_capa_why_helper()
+        env = Env()
+        helper.__globals__["env"] = env
+        capa = type("Capa", (), {"id": 42})()
+        helper(capa, 1, "new answer")
+        self.assertEqual(env.model.domain, [("capa_id", "=", 42), ("sequence", "=", 1)])
+        self.assertEqual(writes, [{"answer": "new answer"}])
+
+    def test_capa_why_helper_creates_missing_slot_with_initialization_context(self):
+        class Model:
+            def search(self, domain, limit=1):
+                self.domain = domain
+                return False
+
+            def with_context(self, **context):
+                self.context = context
+                return self
+
+            def create(self, values):
+                self.values = values
+                return values
+
+        class Cursor:
+            def savepoint(self):
+                class Savepoint:
+                    def __enter__(self):
+                        return self
+
+                    def __exit__(self, *args):
+                        return False
+
+                return Savepoint()
+
+        class Env:
+            cr = Cursor()
+
+            def __init__(self):
+                self.model = Model()
+
+            def __getitem__(self, key):
+                return self.model
+
+        helper = load_capa_why_helper()
+        env = Env()
+        helper.__globals__["env"] = env
+        capa = type("Capa", (), {"id": 42})()
+        helper(capa, 1, "new answer")
+        self.assertEqual(env.model.context, {"pm_qms_capa_initialize": True})
+        self.assertEqual(env.model.values, {"capa_id": 42, "sequence": 1, "answer": "new answer"})
+
+    def test_capa_why_helper_does_not_write_when_answer_is_unchanged(self):
+        writes = []
+
+        class Record:
+            id = 7
+            answer = "same answer"
+
+            def write(self, values):
+                writes.append(values)
+
+        class Model:
+            def search(self, domain, limit=1):
+                return Record()
+
+        class Cursor:
+            def savepoint(self):
+                class Savepoint:
+                    def __enter__(self):
+                        return self
+
+                    def __exit__(self, *args):
+                        return False
+
+                return Savepoint()
+
+        class Env:
+            cr = Cursor()
+
+            def __getitem__(self, key):
+                return Model()
+
+        helper = load_capa_why_helper()
+        helper.__globals__["env"] = Env()
+        helper.__globals__["warnings"] = []
+        helper(type("Capa", (), {"id": 42})(), 1, "same answer")
+        self.assertEqual(writes, [])
 
     def test_training_identity_excludes_due_date(self):
         identity = self.helpers["training_identity_domain"](7, 11, 2, 1)
@@ -102,6 +246,31 @@ class SeedIdentityTests(unittest.TestCase):
             extra = next(keyword.value for keyword in call.keywords if keyword.arg == "extra_domain")
             self.assertIsInstance(extra, ast.Call)
             self.assertEqual(extra.func.id, helper_name)
+
+    def test_capa_why_seed_uses_dedicated_fixed_slot_helper(self):
+        tree = ast.parse(SEED_PATH.read_text(encoding="utf-8"))
+        helper = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "upsert_capa_why"
+        )
+        source = ast.unparse(helper)
+        self.assertIn("env['pm.qms.capa.why']", source)
+        self.assertIn("[('capa_id', '=', capa.id), ('sequence', '=', sequence)]", source)
+        self.assertIn("record.write({'answer': answer})", source)
+        self.assertIn('with_context(pm_qms_capa_initialize=True)', source)
+        self.assertIn("'capa_id': capa.id", source)
+        self.assertIn("'sequence': sequence", source)
+        self.assertIn("'answer': answer", source)
+        self.assertNotIn("upsert(\"pm.qms.capa.why\"", SEED_PATH.read_text(encoding="utf-8"))
+
+    def test_capa_why_helper_contract_is_executable(self):
+        namespace = load_seed_helpers("upsert_capa_why")
+        source = ast.unparse(next(node for node in ast.parse(SEED_PATH.read_text(encoding="utf-8")).body if isinstance(node, ast.FunctionDef) and node.name == "upsert_capa_why"))
+        self.assertEqual(set(namespace) - {"__builtins__"}, {"upsert_capa_why"})
+        self.assertNotIn("question", source)
+        self.assertNotIn("organization_id", source)
+        self.assertNotIn("company_id", source)
 
     def test_validator_has_canonical_process_and_duplicate_gates(self):
         source = VALIDATE_PATH.read_text(encoding="utf-8")

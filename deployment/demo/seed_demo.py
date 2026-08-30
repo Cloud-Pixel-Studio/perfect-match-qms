@@ -171,6 +171,27 @@ def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, requi
         warnings.append(f"{model_name}:{code or name}:{exc.__class__.__name__}:{exc}")
         return model.browse()
 
+
+def upsert_capa_why(capa, sequence, answer):
+    """Seed one fixed CAPA Why slot without using generic payload filling."""
+    model = env["pm.qms.capa.why"]
+    record = model.search(
+        [("capa_id", "=", capa.id), ("sequence", "=", sequence)],
+        limit=1,
+    )
+    try:
+        with env.cr.savepoint():
+            if record:
+                if record.answer != answer:
+                    record.write({"answer": answer})
+                return record
+            return model.with_context(pm_qms_capa_initialize=True).create(
+                {"capa_id": capa.id, "sequence": sequence, "answer": answer}
+            )
+    except Exception as exc:
+        warnings.append(f"pm.qms.capa.why:{capa.id}:{sequence}:{exc.__class__.__name__}:{exc}")
+        return model.browse()
+
 def call(record, *names):
     if not record:
         return False
@@ -536,7 +557,7 @@ ncr = upsert("pm.qms.nonconformity", code="APEX-NCR-001", name="Incorrect hole d
 capa = upsert("pm.qms.capa", code="APEX-CAPA-001", name="Repeated inspection escape from outdated setup instruction", vals={"organization_id": organization.id, "process_id": next((p.id for p in processes if p.code == "APEX-FIN"), processes[0].id), "owner_id": demo_user.id, "source_type": "ncr", "source_reference": "APEX-NCR-001 / Lot L-24017", "source_ncr_id": ncr.id if ncr else False, "problem_statement": "Fictional repeated inspection escape linked to obsolete setup instruction at the work cell.", "root_cause_method": "5why", "root_cause_analysis": "5 Why analysis indicates obsolete setup instructions remained available after revision release.", "root_cause": "Document release and point-of-use verification were not synchronized.", "action_plan": "Remove obsolete copies, train inspectors, add layered verification.", "action_owner_id": demo_user.id, "target_date": due_soon, "effectiveness_required": True, "effectiveness_review_date": due_soon + relativedelta(days=21)}, required=False)
 if capa:
     for seq, answer in enumerate(["Diameter drift repeated at final inspection.", "Setup sheet at the station was obsolete.", "Point-of-use copy was not reconciled after revision.", "Document control checklist did not include floor copy verification.", "Release workflow lacked a confirmation action for production cells."], start=1):
-        upsert("pm.qms.capa.why", vals={"capa_id": capa.id, "sequence": seq, "question": "Why is it happening?", "answer": answer, "organization_id": organization.id, "company_id": company.id}, extra_domain=[("capa_id", "=", capa.id), ("sequence", "=", seq)], required=False)
+        upsert_capa_why(capa, seq, answer)
     upsert("pm.qms.capa.action", name="Remove obsolete setup instructions", vals={"capa_id": capa.id, "owner_id": users["Document Controller"].id, "target_date": today - relativedelta(days=2), "description": "Remove superseded point-of-use copies from Final Inspection."}, required=False)
     upsert("pm.qms.capa.action", name="Train inspectors on revised setup instruction", vals={"capa_id": capa.id, "owner_id": users["Quality Supervisor"].id, "target_date": due_today, "description": "Complete refresher training for final inspection team."}, required=False)
 
