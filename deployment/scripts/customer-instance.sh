@@ -53,7 +53,7 @@ runtime_verify_lock() {
 }
 runtime_images() {
   validate_runtime_lock "$RUNTIME_LOCK_FILE"
-  jq -r 'to_entries[] | select(.key != "schema_version" and .value.image) | "\(.key)_image=\(.value.image)"' "$RUNTIME_LOCK_FILE"
+  jq -r 'to_entries[] | select((.value | type) == "object" and .value.image) | "\(.key)_image=\(.value.image)"' "$RUNTIME_LOCK_FILE"
 }
 runtime_verify() {
   local lock="$RUNTIME_LOCK_FILE"
