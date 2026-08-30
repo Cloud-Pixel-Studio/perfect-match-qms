@@ -6,7 +6,7 @@ Perfect Match QMS CAPA manages corrective and preventive action lifecycles,
 root cause analysis, action plans, implementation, effectiveness review, and
 structured source relationships to NCRs and risks.
     """,
-    "version": "19.0.1.1.1",
+    "version": "19.0.1.1.2",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",

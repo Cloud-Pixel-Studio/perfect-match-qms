@@ -218,6 +218,7 @@ class PmQmsCapa(models.Model):
     def action_start_analysis(self):
         self._check_manager_permission()
         for capa in self:
+            capa._validate_analysis_start()
             capa._initialize_analysis_structure()
         self._transition("analysis", "CAPA analysis started")
 
@@ -332,6 +333,19 @@ class PmQmsCapa(models.Model):
                         for dimension in missing
                     ]
                 )
+
+    def _validate_analysis_start(self):
+        self.ensure_one()
+        prerequisites = (
+            (self.name, "CAPA name"),
+            (self.organization_id, "organization"),
+            (self.process_id, "process"),
+            (self.problem_statement, "CAPA problem statement"),
+            (self.root_cause_method, "root cause method"),
+        )
+        for value, label in prerequisites:
+            if not value or (isinstance(value, str) and not value.strip()):
+                raise UserError(f"Complete the {label} before starting root cause analysis.")
 
     def _validate_root_cause_method(self):
         self.ensure_one()
