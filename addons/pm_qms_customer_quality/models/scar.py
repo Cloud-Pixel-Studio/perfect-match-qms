@@ -184,7 +184,6 @@ class PmQmsScar(models.Model):
                 "process_id": self.process_id.id,
                 "source_type": "supplier_issue",
                 "source_reference": self.code,
-                "source_ncr_id": self.ncr_id.id,
                 "problem_statement": self.description,
                 "root_cause": self.supplier_root_cause,
                 "action_plan": self.supplier_corrective_action,

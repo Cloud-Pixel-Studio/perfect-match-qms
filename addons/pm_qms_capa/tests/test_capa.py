@@ -226,6 +226,159 @@ class TestPmQmsCapa(TransactionCase):
         self.assertEqual(len(summary), 1)
         self.assertEqual(summary[0].get("invisible"), "state == 'draft'")
 
+    def test_capa_source_fields_are_conditional_and_root_cause_is_verified(self):
+        view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
+        arch = etree.fromstring(view.arch_db.encode())
+        ncr_field = arch.xpath("//field[@name='source_ncr_id']")[0]
+        risk_field = arch.xpath("//field[@name='source_risk_id']")[0]
+
+        self.assertEqual(ncr_field.get("invisible"), "source_type != 'ncr'")
+        self.assertEqual(ncr_field.get("required"), "source_type == 'ncr'")
+        self.assertEqual(risk_field.get("invisible"), "source_type != 'risk'")
+        self.assertEqual(risk_field.get("required"), "source_type == 'risk'")
+        self.assertEqual(ncr_field.get("readonly"), "state != 'draft'")
+        self.assertEqual(risk_field.get("readonly"), "state != 'draft'")
+        self.assertEqual(self.env["pm.qms.capa"]._fields["root_cause"].string, "Verified Root Cause")
+        self.assertNotIn("o_form_label", view.arch_db)
+
+    def test_methodology_guidance_is_full_width_before_analysis_structure(self):
+        view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
+        arch = etree.fromstring(view.arch_db.encode())
+        guidance_groups = arch.xpath(
+            "//group[div[contains(@class, 'text-muted')]]"
+        )
+
+        self.assertEqual(len(guidance_groups), 8)
+        for group in guidance_groups:
+            guidance = group.xpath("./div[contains(@class, 'text-muted')]")
+            self.assertEqual(len(guidance), 1)
+            self.assertEqual(guidance[0].get("colspan"), "2")
+            self.assertNotIn("o_form_label", guidance[0].get("class", ""))
+            if group.get("string") in ("5 Why Analysis", "Fishbone Analysis", "Is / Is Not Analysis"):
+                group_xml = etree.tostring(group, encoding="unicode")
+                self.assertLess(group_xml.index('class="text-muted"'), group_xml.index("<field"))
+
+    def test_source_provenance_rules_and_tenant_alignment(self):
+        capa_model = self.env["pm.qms.capa"]
+        capa = capa_model.create(self._capa_values(source_type="ncr", source_ncr_id=self.ncr.id))
+        self.assertEqual(capa.source_ncr_id, self.ncr)
+
+        with self.assertRaisesRegex(ValidationError, "Select the originating NCR"):
+            capa_model.create(self._capa_values(source_type="ncr"))
+        with self.assertRaisesRegex(ValidationError, "An originating Risk cannot"):
+            capa_model.create(
+                self._capa_values(source_type="ncr", source_ncr_id=self.ncr.id, source_risk_id=self.risk.id)
+            )
+        with self.assertRaisesRegex(ValidationError, "Originating NCR and Originating Risk are not applicable"):
+            capa_model.create(self._capa_values(source_type="other", source_ncr_id=self.ncr.id))
+
+        risk_capa = capa_model.create(self._capa_values(source_type="risk", source_risk_id=self.risk.id))
+        self.assertEqual(risk_capa.source_risk_id, self.risk)
+        with self.assertRaisesRegex(ValidationError, "Select the originating Risk"):
+            capa_model.create(self._capa_values(source_type="risk"))
+        with self.assertRaisesRegex(ValidationError, "An originating NCR cannot"):
+            capa_model.create(
+                self._capa_values(source_type="risk", source_ncr_id=self.ncr.id, source_risk_id=self.risk.id)
+            )
+
+        for source_type in ("audit_finding", "customer_issue", "supplier_issue", "management_decision", "other"):
+            with self.assertRaisesRegex(ValidationError, "not applicable"):
+                capa_model.create(self._capa_values(source_type=source_type, source_risk_id=self.risk.id))
+
+        wrong_ncr = self.env["pm.qms.nonconformity"].create(
+            {
+                "name": "Wrong company NCR",
+                "organization_id": self.other_organization.id,
+                "process_id": self.other_process.id,
+                "source_type": "internal",
+                "description": "Wrong company source.",
+                "severity": "major",
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "Originating NCR must match"):
+            capa_model.create(self._capa_values(source_type="ncr", source_ncr_id=wrong_ncr.id))
+
+        same_company_other_org = self.env["pm.qms.organization"].create(
+            {"name": "CAPA Other Organization", "code": "PM-CAPA-ORG3", "company_id": self.company.id}
+        )
+        same_company_other_process = self.env["pm.qms.process"].create(
+            {
+                "name": "CAPA Other Process",
+                "code": "PM-CAPA-PROC3",
+                "organization_id": same_company_other_org.id,
+                "company_id": self.company.id,
+            }
+        )
+        wrong_org_ncr = self.env["pm.qms.nonconformity"].create(
+            {
+                "name": "Wrong organization NCR",
+                "organization_id": same_company_other_org.id,
+                "process_id": same_company_other_process.id,
+                "source_type": "internal",
+                "description": "Wrong organization source.",
+                "severity": "major",
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "Originating NCR must match"):
+            capa_model.create(self._capa_values(source_type="ncr", source_ncr_id=wrong_org_ncr.id))
+
+        wrong_risk = self.env["pm.qms.risk"].create(
+            {
+                "name": "Wrong company risk",
+                "organization_id": self.other_organization.id,
+                "process_id": self.other_process.id,
+                "description": "Wrong company source.",
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "Originating risk must match"):
+            capa_model.create(self._capa_values(source_type="risk", source_risk_id=wrong_risk.id))
+
+        wrong_org_risk = self.env["pm.qms.risk"].create(
+            {
+                "name": "Wrong organization risk",
+                "organization_id": same_company_other_org.id,
+                "process_id": same_company_other_process.id,
+                "description": "Wrong organization source.",
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "Originating risk must match"):
+            capa_model.create(self._capa_values(source_type="risk", source_risk_id=wrong_org_risk.id))
+
+    def test_source_type_onchange_clears_inapplicable_relationships(self):
+        capa = self.env["pm.qms.capa"].new(
+            self._capa_values(source_type="ncr", source_ncr_id=self.ncr.id, source_risk_id=self.risk.id)
+        )
+        capa._onchange_source_type()
+        self.assertFalse(capa.source_risk_id)
+        capa.source_type = "risk"
+        capa._onchange_source_type()
+        self.assertFalse(capa.source_ncr_id)
+        capa.source_type = "other"
+        capa._onchange_source_type()
+        self.assertFalse(capa.source_ncr_id)
+        self.assertFalse(capa.source_risk_id)
+
+    def test_source_provenance_is_editable_in_draft_and_locked_after_draft(self):
+        manager = self._create_test_user("pmqms.capa.provenance", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values())
+        capa.write({"source_reference": "Draft reference"})
+        capa.write({"source_type": "ncr", "source_ncr_id": self.ncr.id})
+        self.assertEqual(capa.source_ncr_id, self.ncr)
+
+        for state in ("analysis", "action_planned", "implementation", "effectiveness_review", "effective", "closed"):
+            capa.with_context(pm_qms_capa_workflow=True).write({"state": state})
+            with self.assertRaisesRegex(UserError, "source provenance is locked"):
+                capa.with_user(manager).write({"source_reference": f"Changed in {state}"})
+            with self.assertRaisesRegex(UserError, "source provenance is locked"):
+                capa.with_user(manager).write({"source_type": "risk"})
+            with self.assertRaisesRegex(UserError, "source provenance is locked"):
+                capa.with_user(manager).write({"source_ncr_id": False})
+
+    def test_analysis_start_rejects_missing_source_provenance(self):
+        capa = self.env["pm.qms.capa"].new(self._capa_values(source_type="ncr"))
+        with self.assertRaisesRegex(ValidationError, "Select the originating NCR"):
+            capa._validate_analysis_start()
+
     def test_start_analysis_validates_problem_statement_before_initialization(self):
         manager = self._create_test_user("pmqms.capa.start_validation", self.qms_manager_group)
         capa = self.env["pm.qms.capa"].with_user(manager).create(

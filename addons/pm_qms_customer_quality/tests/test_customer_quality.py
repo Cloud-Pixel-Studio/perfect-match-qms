@@ -134,8 +134,57 @@ class TestPmQmsCustomerSupplierQuality(TransactionCase):
         capa_action = eight_d.with_user(manager).action_create_capa()
         capa = self.env["pm.qms.capa"].browse(capa_action["res_id"])
         self.assertEqual(capa.source_type, "customer_issue")
+        self.assertFalse(capa.source_ncr_id)
+        self.assertFalse(capa.source_risk_id)
         self.assertEqual(capa.eight_d_id, eight_d)
         self.assertEqual(complaint.capa_id, capa)
+
+        ncr_eight_d = self.env["pm.qms.eight.d"].with_user(manager).create(
+            {
+                "name": "NCR-origin 8D",
+                "organization_id": self.organization.id,
+                "process_id": self.process.id,
+                "source_type": "ncr",
+                "ncr_id": first_ncr.id,
+                "problem_statement": "Fictional NCR-origin problem statement.",
+            }
+        )
+        ncr_capa_action = ncr_eight_d.action_create_capa()
+        ncr_capa = self.env["pm.qms.capa"].browse(ncr_capa_action["res_id"])
+        self.assertEqual(ncr_capa.source_type, "ncr")
+        self.assertEqual(ncr_capa.source_ncr_id, first_ncr)
+        self.assertFalse(ncr_capa.source_risk_id)
+
+        missing_ncr_eight_d = self.env["pm.qms.eight.d"].with_user(manager).create(
+            {
+                "name": "NCR-origin 8D without NCR",
+                "organization_id": self.organization.id,
+                "process_id": self.process.id,
+                "source_type": "ncr",
+                "problem_statement": "Fictional incomplete NCR-origin problem statement.",
+            }
+        )
+        with self.assertRaisesRegex(UserError, "Select the originating NCR"):
+            missing_ncr_eight_d.action_create_capa()
+        self.assertFalse(missing_ncr_eight_d.capa_ids)
+
+        for source_type, expected_source_type in (("supplier_issue", "supplier_issue"), ("other", "other")):
+            eight_d = self.env["pm.qms.eight.d"].with_user(manager).create(
+                {
+                    "name": f"{source_type} 8D",
+                    "organization_id": self.organization.id,
+                    "process_id": self.process.id,
+                    "source_type": source_type,
+                    "problem_statement": f"Fictional {source_type} problem statement.",
+                }
+            )
+            capa_action = eight_d.action_create_capa()
+            capa = self.env["pm.qms.capa"].browse(capa_action["res_id"])
+            self.assertEqual(capa.source_type, expected_source_type)
+            self.assertFalse(capa.source_ncr_id)
+            self.assertFalse(capa.source_risk_id)
+            self.assertEqual(capa.source_reference, eight_d.code)
+            self.assertEqual(capa.eight_d_id, eight_d)
 
     def test_customer_quality_alert_workflow_and_closure_controls(self):
         manager = self._create_test_user("pmqms.cq.alert.manager", self.qms_manager_group)
@@ -193,6 +242,8 @@ class TestPmQmsCustomerSupplierQuality(TransactionCase):
         capa_action = scar.with_user(manager).action_create_capa()
         capa = self.env["pm.qms.capa"].browse(capa_action["res_id"])
         self.assertEqual(capa.source_type, "supplier_issue")
+        self.assertFalse(capa.source_ncr_id)
+        self.assertFalse(capa.source_risk_id)
         self.assertEqual(capa.scar_id, scar)
         self.assertEqual(issue.capa_id, capa)
 

@@ -185,20 +185,21 @@ class PmQmsEightD(models.Model):
         existing = self.capa_ids[:1]
         if existing:
             return existing.get_formview_action()
+        capa_source_values = self._get_capa_source_values()
+        capa_values = {
+            "name": f"CAPA for {self.code}: {self.name}",
+            "organization_id": self.organization_id.id,
+            "process_id": self.process_id.id,
+            "source_reference": self.code,
+            "problem_statement": self.problem_statement,
+            "root_cause": self.root_cause_analysis_id.root_cause or self.d4_root_cause,
+            "action_plan": self.d5_corrective_action,
+            "target_date": self.due_date,
+            "eight_d_id": self.id,
+        }
+        capa_values.update(capa_source_values)
         capa = self.env["pm.qms.capa"].create(
-            {
-                "name": f"CAPA for {self.code}: {self.name}",
-                "organization_id": self.organization_id.id,
-                "process_id": self.process_id.id,
-                "source_type": "customer_issue" if self.source_type == "complaint" else "supplier_issue",
-                "source_reference": self.code,
-                "source_ncr_id": self.ncr_id.id,
-                "problem_statement": self.problem_statement,
-                "root_cause": self.root_cause_analysis_id.root_cause or self.d4_root_cause,
-                "action_plan": self.d5_corrective_action,
-                "target_date": self.due_date,
-                "eight_d_id": self.id,
-            }
+            capa_values
         )
         self.write({"capa_ids": [(4, capa.id)]})
         if self.complaint_id and not self.complaint_id.capa_id:
@@ -206,6 +207,23 @@ class PmQmsEightD(models.Model):
         if self.supplier_issue_id and not self.supplier_issue_id.capa_id:
             self.supplier_issue_id.write({"capa_id": capa.id})
         return capa.get_formview_action()
+
+    def _get_capa_source_values(self):
+        self.ensure_one()
+        if self.source_type == "ncr":
+            if not self.ncr_id:
+                raise UserError("Select the originating NCR before creating a CAPA from this NCR-based 8D.")
+            return {"source_type": "ncr", "source_ncr_id": self.ncr_id.id}
+        return {
+            "source_type": {
+                "complaint": "customer_issue",
+                "supplier_issue": "supplier_issue",
+                "scar": "supplier_issue",
+                "other": "other",
+            }[self.source_type],
+            "source_ncr_id": False,
+            "source_risk_id": False,
+        }
 
     def write(self, vals):
         if "state" in vals and not self.env.context.get("pm_qms_8d_workflow"):
