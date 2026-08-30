@@ -192,7 +192,6 @@ class PmQmsEightD(models.Model):
                 "process_id": self.process_id.id,
                 "source_type": "customer_issue" if self.source_type == "complaint" else "supplier_issue",
                 "source_reference": self.code,
-                "source_ncr_id": self.ncr_id.id,
                 "problem_statement": self.problem_statement,
                 "root_cause": self.root_cause_analysis_id.root_cause or self.d4_root_cause,
                 "action_plan": self.d5_corrective_action,

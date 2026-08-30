@@ -46,10 +46,10 @@
                     <group>
                         <group string="Identification">
                             <field name="code"/>
-                            <field name="source_type"/>
-                            <field name="source_reference"/>
-                            <field name="source_ncr_id"/>
-                            <field name="source_risk_id"/>
+                            <field name="source_type" readonly="state != 'draft'"/>
+                            <field name="source_reference" readonly="state != 'draft'"/>
+                            <field name="source_ncr_id" invisible="source_type != 'ncr'" required="source_type == 'ncr'" readonly="state != 'draft'"/>
+                            <field name="source_risk_id" invisible="source_type != 'risk'" required="source_type == 'risk'" readonly="state != 'draft'"/>
                             <field name="organization_id"/>
                             <field name="process_id"/>
                             <field name="company_id" groups="base.group_multi_company"/>
@@ -72,22 +72,22 @@
                                 <field name="root_cause_method" readonly="state != 'draft'"/>
                             </group>
                             <group string="Ready to Start Root Cause Analysis" invisible="state != 'draft'">
-                                <div class="o_form_label">Complete the CAPA identification and problem statement, select the root cause method, then start the root cause analysis. The selected analysis structure will be initialized automatically.</div>
+                                <div colspan="2" class="text-muted">Complete the CAPA identification and problem statement, select the root cause method, then start the root cause analysis. The selected analysis structure will be initialized automatically.</div>
                             </group>
                             <group string="5 Why selected" invisible="state != 'draft' or root_cause_method != '5why'">
-                                <div class="o_form_label">When the analysis starts, Perfect Match QMS will create five fixed Why steps. Complete the answers in sequence until the verified root cause is established.</div>
+                                <div colspan="2" class="text-muted">When the analysis starts, Perfect Match QMS will create five fixed Why steps. Complete the answers in sequence until the verified root cause is established.</div>
                             </group>
                             <group string="Fishbone selected" invisible="state != 'draft' or root_cause_method != 'fishbone'">
-                                <div class="o_form_label">When the analysis starts, investigate potential contributing causes using the People, Machine / Equipment, Method / Process, Material / Inputs, Measurement / Data, and Environment categories.</div>
+                                <div colspan="2" class="text-muted">When the analysis starts, investigate potential contributing causes using the People, Machine / Equipment, Method / Process, Material / Inputs, Measurement / Data, and Environment categories.</div>
                             </group>
                             <group string="Is / Is Not selected" invisible="state != 'draft' or root_cause_method != 'is_is_not'">
-                                <div class="o_form_label">When the analysis starts, Perfect Match QMS will create the What, Where, When, and Extent dimensions for comparison.</div>
+                                <div colspan="2" class="text-muted">When the analysis starts, Perfect Match QMS will create the What, Where, When, and Extent dimensions for comparison.</div>
                             </group>
                             <group string="Other method selected" invisible="state != 'draft' or root_cause_method != 'other'">
-                                <div class="o_form_label">When the analysis starts, document the method or tool used, the analysis, and the verified root cause.</div>
+                                <div colspan="2" class="text-muted">When the analysis starts, document the method or tool used, the analysis, and the verified root cause.</div>
                             </group>
                             <group string="5 Why Analysis" invisible="state == 'draft' or root_cause_method != '5why'">
-                                <div class="o_form_label">Use the fixed prompts to trace the contributing conditions. The final summary and verified root cause are common to every method.</div>
+                                <div colspan="2" class="text-muted">Use the fixed prompts to trace the contributing conditions. The final summary and verified root cause are common to every method.</div>
                                 <field name="why_ids" nolabel="1" readonly="state not in ('analysis', 'action_planned')">
                                     <list create="0" delete="0" editable="bottom">
                                         <field name="sequence" readonly="1"/>
@@ -97,7 +97,7 @@
                                 </field>
                             </group>
                             <group string="Fishbone Analysis" invisible="state == 'draft' or root_cause_method != 'fishbone'">
-                                <div class="o_form_label">Use the category guidance to investigate contributing causes. A CAPA may contain multiple potential causes in one category.</div>
+                                <div colspan="2" class="text-muted">Use the category guidance to investigate contributing causes. A CAPA may contain multiple potential causes in one category.</div>
                                 <field name="fishbone_ids" nolabel="1" readonly="state not in ('analysis', 'action_planned')">
                                     <list editable="bottom">
                                         <field name="category"/>
@@ -110,7 +110,7 @@
                                 </field>
                             </group>
                             <group string="Is / Is Not Analysis" invisible="state == 'draft' or root_cause_method != 'is_is_not'">
-                                <div class="o_form_label">For each dimension, record IS, IS NOT, Distinction, and optional Change using the field-specific prompts.</div>
+                                <div colspan="2" class="text-muted">For each dimension, record IS, IS NOT, Distinction, and optional Change using the field-specific prompts.</div>
                                 <field name="is_is_not_ids" nolabel="1" readonly="state not in ('analysis', 'action_planned')">
                                     <list create="0" delete="0" editable="bottom">
                                         <field name="sequence" readonly="1"/>

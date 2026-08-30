@@ -134,6 +134,8 @@ class TestPmQmsCustomerSupplierQuality(TransactionCase):
         capa_action = eight_d.with_user(manager).action_create_capa()
         capa = self.env["pm.qms.capa"].browse(capa_action["res_id"])
         self.assertEqual(capa.source_type, "customer_issue")
+        self.assertFalse(capa.source_ncr_id)
+        self.assertFalse(capa.source_risk_id)
         self.assertEqual(capa.eight_d_id, eight_d)
         self.assertEqual(complaint.capa_id, capa)
 
@@ -193,6 +195,8 @@ class TestPmQmsCustomerSupplierQuality(TransactionCase):
         capa_action = scar.with_user(manager).action_create_capa()
         capa = self.env["pm.qms.capa"].browse(capa_action["res_id"])
         self.assertEqual(capa.source_type, "supplier_issue")
+        self.assertFalse(capa.source_ncr_id)
+        self.assertFalse(capa.source_risk_id)
         self.assertEqual(capa.scar_id, scar)
         self.assertEqual(issue.capa_id, capa)
 

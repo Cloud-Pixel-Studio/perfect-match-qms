@@ -54,7 +54,7 @@ class PmQmsCapa(models.Model):
         tracking=True,
     )
     root_cause_analysis = fields.Text(tracking=True)
-    root_cause = fields.Text(tracking=True)
+    root_cause = fields.Text(string="Verified Root Cause", tracking=True)
     other_method_name = fields.Char(string="Method / Tool Used", tracking=True)
     action_plan = fields.Text()
     action_owner_id = fields.Many2one("res.users", string="Primary Action Owner")
@@ -169,9 +169,27 @@ class PmQmsCapa(models.Model):
             if capa.process_id.organization_id and capa.process_id.organization_id != capa.organization_id:
                 raise ValidationError("CAPA process must belong to the selected organization.")
 
-    @api.constrains("source_ncr_id", "source_risk_id")
+    @api.constrains("source_type", "source_ncr_id", "source_risk_id", "organization_id")
     def _check_source_alignment(self):
+        self._validate_source_provenance()
+
+    def _validate_source_provenance(self):
         for capa in self:
+            if capa.source_type == "ncr":
+                if not capa.source_ncr_id:
+                    raise ValidationError("Select the originating NCR when Source Type is NCR.")
+                if capa.source_risk_id:
+                    raise ValidationError("An originating Risk cannot be linked when Source Type is NCR.")
+            elif capa.source_type == "risk":
+                if not capa.source_risk_id:
+                    raise ValidationError("Select the originating Risk when Source Type is Risk.")
+                if capa.source_ncr_id:
+                    raise ValidationError("An originating NCR cannot be linked when Source Type is Risk.")
+            elif capa.source_ncr_id or capa.source_risk_id:
+                raise ValidationError(
+                    "Originating NCR and Originating Risk are not applicable to the selected Source Type."
+                )
+
             if capa.source_ncr_id and (
                 capa.source_ncr_id.company_id != capa.company_id
                 or capa.source_ncr_id.organization_id != capa.organization_id
@@ -182,6 +200,18 @@ class PmQmsCapa(models.Model):
                 or capa.source_risk_id.organization_id != capa.organization_id
             ):
                 raise ValidationError("Originating risk must match the CAPA company and organization.")
+
+    @api.onchange("source_type")
+    def _onchange_source_type(self):
+        if self.state and self.state != "draft":
+            return
+        if self.source_type == "ncr":
+            self.source_risk_id = False
+        elif self.source_type == "risk":
+            self.source_ncr_id = False
+        else:
+            self.source_ncr_id = False
+            self.source_risk_id = False
 
     @api.constrains("related_control_instance_ids", "related_document_ids")
     def _check_related_records_alignment(self):
@@ -296,6 +326,21 @@ class PmQmsCapa(models.Model):
     def write(self, vals):
         if "state" in vals and not self.env.context.get("pm_qms_capa_workflow"):
             raise AccessError("Use CAPA workflow actions to change CAPA status.")
+        provenance_fields = {"source_type", "source_reference", "source_ncr_id", "source_risk_id"}
+        for capa in self:
+            if capa.state == "draft":
+                continue
+            for field_name in provenance_fields.intersection(vals):
+                current = capa[field_name]
+                incoming = vals[field_name]
+                if field_name.endswith("_id"):
+                    current = current.id or False
+                    incoming = incoming.id if hasattr(incoming, "id") else incoming or False
+                else:
+                    current = current or False
+                    incoming = incoming or False
+                if current != incoming:
+                    raise UserError("CAPA source provenance is locked after Draft.")
         if "root_cause_method" in vals and any(capa.state != "draft" for capa in self):
             raise UserError("The root cause method is locked after CAPA analysis starts.")
         rca_fields = {"root_cause_analysis", "root_cause", "other_method_name"}
@@ -336,6 +381,7 @@ class PmQmsCapa(models.Model):
 
     def _validate_analysis_start(self):
         self.ensure_one()
+        self._validate_source_provenance()
         prerequisites = (
             (self.name, "CAPA name"),
             (self.organization_id, "organization"),
