@@ -13,9 +13,13 @@ workflow gate before actions can be planned, and all methods share a summary
 and verified root cause.
 
 5 Why uses five fixed, idempotently initialized slots. Is / Is Not uses exactly
-the What, Where, When, and Extent dimensions. Fishbone accepts multiple causes
-per category and requires evidence and rationale for a confirmed cause. Other
-requires a named method/tool plus the common summary and verified root cause.
+the What, Where, When, and Extent dimensions, with field-specific prompts for
+IS, IS NOT, Distinction, and optional Change. Fishbone accepts multiple causes
+per category across People, Machine / Equipment, Method / Process, Material /
+Inputs, Measurement / Data, and Environment; each category exposes read-only
+methodology guidance and a confirmed cause requires evidence and rationale.
+Other requires a named method/tool plus the common summary and verified root
+cause.
 
 ## Consequences
 

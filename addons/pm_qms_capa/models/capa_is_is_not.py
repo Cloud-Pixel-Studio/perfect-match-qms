@@ -8,11 +8,31 @@ IS_IS_NOT_DIMENSIONS = {
     "when": "When",
     "extent": "Extent",
 }
-IS_IS_NOT_GUIDANCE = {
-    "what": "Describe what is occurring and what is not occurring.",
-    "where": "Describe where the condition is and where it is not.",
-    "when": "Describe when the condition occurs and when it does not.",
-    "extent": "Describe the extent, scale, or boundary of the condition.",
+IS_IS_NOT_PROMPTS = {
+    "what": {
+        "is": "What object, process, or characteristic is affected?",
+        "is_not": "What comparable object, process, or characteristic could be affected but is not?",
+        "distinction": "What is different between the affected and unaffected cases?",
+        "change": "What changed that could explain the distinction?",
+    },
+    "where": {
+        "is": "Where is the problem observed?",
+        "is_not": "Where could the problem occur but does not?",
+        "distinction": "What differs between those locations?",
+        "change": "What changed between those conditions or locations?",
+    },
+    "when": {
+        "is": "When is or was the problem observed?",
+        "is_not": "When could the problem occur but does not?",
+        "distinction": "What differs between those times or operating conditions?",
+        "change": "What changed around the time the problem began?",
+    },
+    "extent": {
+        "is": "How many, how much, or how frequently is affected?",
+        "is_not": "What comparable population, quantity, or frequency is unaffected?",
+        "distinction": "What pattern separates the affected and unaffected cases?",
+        "change": "Has the magnitude, frequency, or pattern changed?",
+    },
 }
 IS_IS_NOT_SEQUENCE = {dimension: index for index, dimension in enumerate(IS_IS_NOT_DIMENSIONS, start=1)}
 
@@ -31,12 +51,19 @@ class PmQmsCapaIsIsNot(models.Model):
     is_not_value = fields.Text(string="IS NOT")
     distinction = fields.Text()
     change_value = fields.Text(string="Change")
-    guidance = fields.Text(compute="_compute_guidance")
+    is_prompt = fields.Text(compute="_compute_prompts", readonly=True)
+    is_not_prompt = fields.Text(compute="_compute_prompts", readonly=True)
+    distinction_prompt = fields.Text(compute="_compute_prompts", readonly=True)
+    change_prompt = fields.Text(compute="_compute_prompts", readonly=True)
 
     @api.depends("dimension")
-    def _compute_guidance(self):
+    def _compute_prompts(self):
         for row in self:
-            row.guidance = IS_IS_NOT_GUIDANCE.get(row.dimension, "")
+            prompts = IS_IS_NOT_PROMPTS.get(row.dimension, {})
+            row.is_prompt = prompts.get("is", "")
+            row.is_not_prompt = prompts.get("is_not", "")
+            row.distinction_prompt = prompts.get("distinction", "")
+            row.change_prompt = prompts.get("change", "")
 
     @api.model_create_multi
     def create(self, vals_list):

@@ -4,6 +4,9 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
+from odoo.addons.pm_qms_capa.models.capa_fishbone import FISHBONE_CATEGORIES, FISHBONE_GUIDANCE
+from odoo.addons.pm_qms_capa.models.capa_is_is_not import IS_IS_NOT_PROMPTS
+
 
 @tagged("-at_install", "post_install")
 class TestPmQmsCapa(TransactionCase):
@@ -145,6 +148,88 @@ class TestPmQmsCapa(TransactionCase):
         self.assertEqual(columns, ["sequence", "question", "answer"])
         self.assertEqual(why_list[0].get("create"), "0")
         self.assertEqual(why_list[0].get("delete"), "0")
+
+    def test_rca_methodology_views_expose_specific_guidance(self):
+        view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
+        arch = etree.fromstring(view.arch_db.encode())
+
+        fishbone_field = arch.xpath("//field[@name='fishbone_ids']")[0]
+        fishbone_columns = fishbone_field.xpath("./list/field/@name")
+        self.assertEqual(
+            fishbone_columns,
+            ["category", "guidance", "potential_cause", "evidence_basis", "investigation_status", "rationale_finding"],
+        )
+
+        is_is_not_field = arch.xpath("//field[@name='is_is_not_ids']")[0]
+        is_is_not_form_fields = is_is_not_field.xpath("./form//field/@name")
+        self.assertEqual(
+            set(is_is_not_form_fields),
+            {
+                "dimension",
+                "sequence",
+                "is_prompt",
+                "is_value",
+                "is_not_prompt",
+                "is_not_value",
+                "distinction_prompt",
+                "distinction",
+                "change_prompt",
+                "change_value",
+            },
+        )
+
+    def test_fishbone_uses_exact_categories_and_read_only_guidance(self):
+        expected_categories = {
+            "people": "People",
+            "machine_equipment": "Machine / Equipment",
+            "method_process": "Method / Process",
+            "material_inputs": "Material / Inputs",
+            "measurement_data": "Measurement / Data",
+            "environment": "Environment",
+        }
+        self.assertEqual(FISHBONE_CATEGORIES, expected_categories)
+        self.assertEqual(len(FISHBONE_CATEGORIES), 6)
+        self.assertNotIn("other", FISHBONE_CATEGORIES)
+        self.assertNotIn("equipment", FISHBONE_CATEGORIES)
+        self.assertNotIn("process", FISHBONE_CATEGORIES)
+        self.assertNotIn("materials", FISHBONE_CATEGORIES)
+        self.assertNotIn("measurement", FISHBONE_CATEGORIES)
+        self.assertEqual(set(FISHBONE_GUIDANCE), set(expected_categories))
+        self.assertTrue(all(FISHBONE_GUIDANCE.values()))
+        self.assertTrue(self.env["pm.qms.capa.fishbone"]._fields["guidance"].readonly)
+
+    def test_is_is_not_has_all_field_specific_prompts_and_optional_change(self):
+        expected_prompts = {
+            "what": {
+                "is": "What object, process, or characteristic is affected?",
+                "is_not": "What comparable object, process, or characteristic could be affected but is not?",
+                "distinction": "What is different between the affected and unaffected cases?",
+                "change": "What changed that could explain the distinction?",
+            },
+            "where": {
+                "is": "Where is the problem observed?",
+                "is_not": "Where could the problem occur but does not?",
+                "distinction": "What differs between those locations?",
+                "change": "What changed between those conditions or locations?",
+            },
+            "when": {
+                "is": "When is or was the problem observed?",
+                "is_not": "When could the problem occur but does not?",
+                "distinction": "What differs between those times or operating conditions?",
+                "change": "What changed around the time the problem began?",
+            },
+            "extent": {
+                "is": "How many, how much, or how frequently is affected?",
+                "is_not": "What comparable population, quantity, or frequency is unaffected?",
+                "distinction": "What pattern separates the affected and unaffected cases?",
+                "change": "Has the magnitude, frequency, or pattern changed?",
+            },
+        }
+        self.assertEqual(IS_IS_NOT_PROMPTS, expected_prompts)
+        fields = self.env["pm.qms.capa.is.is.not"]._fields
+        for field_name in ("is_prompt", "is_not_prompt", "distinction_prompt", "change_prompt"):
+            self.assertTrue(fields[field_name].readonly)
+        self.assertFalse(fields["change_value"].required)
 
     def test_capa_creation_5why_multiple_actions_effectiveness_and_history(self):
         manager = self._create_test_user("pmqms.capa.manager", self.qms_manager_group)
@@ -318,14 +403,20 @@ class TestPmQmsCapa(TransactionCase):
         )
         capa.with_user(manager).action_start_analysis()
         fishbone = self.env["pm.qms.capa.fishbone"].with_user(manager)
-        fishbone.create({"capa_id": capa.id, "category": "process", "potential_cause": "Unclear handoff"})
-        fishbone.create({"capa_id": capa.id, "category": "process", "potential_cause": "Missing review"})
+        first_cause = fishbone.create(
+            {"capa_id": capa.id, "category": "method_process", "potential_cause": "Unclear handoff"}
+        )
+        second_cause = fishbone.create(
+            {"capa_id": capa.id, "category": "method_process", "potential_cause": "Missing review"}
+        )
+        self.assertEqual(first_cause.guidance, FISHBONE_GUIDANCE["method_process"])
+        self.assertEqual(second_cause.guidance, first_cause.guidance)
         with self.assertRaises(UserError):
             capa.with_user(manager).action_plan_actions()
         confirmed = fishbone.create(
             {
                 "capa_id": capa.id,
-                "category": "measurement",
+                "category": "measurement_data",
                 "potential_cause": "Signal not checked",
                 "evidence_basis": "Fictional inspection sample",
                 "rationale_finding": "The check was absent from the local workflow.",

@@ -4,11 +4,19 @@ from odoo.exceptions import UserError, ValidationError
 
 FISHBONE_CATEGORIES = {
     "people": "People",
-    "equipment": "Equipment",
-    "process": "Process",
-    "materials": "Materials",
-    "measurement": "Measurement",
-    "other": "Other",
+    "machine_equipment": "Machine / Equipment",
+    "method_process": "Method / Process",
+    "material_inputs": "Material / Inputs",
+    "measurement_data": "Measurement / Data",
+    "environment": "Environment",
+}
+FISHBONE_GUIDANCE = {
+    "people": "What people, competency, staffing, communication, supervision, or training factors could have contributed?",
+    "machine_equipment": "What equipment, tooling, software, setup, maintenance, or infrastructure factors could have contributed?",
+    "method_process": "What procedure, work instruction, workflow, sequence, or process-control factors could have contributed?",
+    "material_inputs": "What material, component, supplier, information, or other input factors could have contributed?",
+    "measurement_data": "What inspection, calibration, measurement, monitoring, sampling, or data factors could have contributed?",
+    "environment": "What workplace, physical, environmental, or external conditions could have contributed?",
 }
 EDITABLE_STATES = ("analysis", "action_planned")
 
@@ -22,6 +30,7 @@ class PmQmsCapaFishbone(models.Model):
     company_id = fields.Many2one(related="capa_id.company_id", store=True, readonly=True, index=True)
     organization_id = fields.Many2one(related="capa_id.organization_id", store=True, readonly=True, index=True)
     category = fields.Selection([(key, label) for key, label in FISHBONE_CATEGORIES.items()], required=True)
+    guidance = fields.Text(compute="_compute_guidance", readonly=True)
     potential_cause = fields.Text(required=True)
     evidence_basis = fields.Text()
     investigation_status = fields.Selection(
@@ -35,6 +44,11 @@ class PmQmsCapaFishbone(models.Model):
         required=True,
     )
     rationale_finding = fields.Text()
+
+    @api.depends("category")
+    def _compute_guidance(self):
+        for cause in self:
+            cause.guidance = FISHBONE_GUIDANCE.get(cause.category, "")
 
     def _check_editable(self):
         if any(cause.capa_id.state not in EDITABLE_STATES for cause in self):

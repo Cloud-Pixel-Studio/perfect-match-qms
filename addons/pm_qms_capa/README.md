@@ -2,9 +2,13 @@
 
 CAPA root-cause analysis supports four controlled methodologies: fixed five-slot
 5 Why, multi-cause Fishbone, fixed four-dimension Is / Is Not, and a documented
-Other method. The selected method is chosen in draft and locks when analysis
-starts. Method-specific records are protected by the ORM after implementation
-begins, while all methods share a summary and verified root cause.
+Other method. Fishbone uses the six categories People, Machine / Equipment,
+Method / Process, Material / Inputs, Measurement / Data, and Environment, each
+with read-only methodology guidance. Is / Is Not provides field-specific
+read-only prompts for IS, IS NOT, Distinction, and optional Change. The selected
+method is chosen in draft and locks when analysis starts. Method-specific
+records are protected by the ORM after implementation begins, while all methods
+share a summary and verified root cause.
 
 The fixed structures are initialized idempotently by the Analyze workflow. The
 Demo seed uses `(capa_id, sequence)` as the 5 Why identity; historical duplicate

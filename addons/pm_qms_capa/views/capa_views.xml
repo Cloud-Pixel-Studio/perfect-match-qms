@@ -82,10 +82,11 @@
                                 </field>
                             </group>
                             <group string="Fishbone Analysis" invisible="root_cause_method != 'fishbone'">
-                                <div class="o_form_label">Use the categories as guidance. A CAPA may contain multiple potential causes in one category.</div>
+                                <div class="o_form_label">Use the category guidance to investigate contributing causes. A CAPA may contain multiple potential causes in one category.</div>
                                 <field name="fishbone_ids" nolabel="1" readonly="state not in ('analysis', 'action_planned')">
                                     <list editable="bottom">
                                         <field name="category"/>
+                                        <field name="guidance" readonly="1"/>
                                         <field name="potential_cause"/>
                                         <field name="evidence_basis"/>
                                         <field name="investigation_status"/>
@@ -94,17 +95,38 @@
                                 </field>
                             </group>
                             <group string="Is / Is Not Analysis" invisible="root_cause_method != 'is_is_not'">
-                                <div class="o_form_label">Complete IS, IS NOT, and Distinction for What, Where, When, and Extent. Change is optional.</div>
+                                <div class="o_form_label">For each dimension, record IS, IS NOT, Distinction, and optional Change using the field-specific prompts.</div>
                                 <field name="is_is_not_ids" nolabel="1" readonly="state not in ('draft', 'analysis', 'action_planned')">
                                     <list create="0" delete="0" editable="bottom">
                                         <field name="sequence" readonly="1"/>
                                         <field name="dimension" readonly="1"/>
-                                        <field name="guidance" readonly="1"/>
                                         <field name="is_value"/>
                                         <field name="is_not_value"/>
                                         <field name="distinction"/>
                                         <field name="change_value"/>
                                     </list>
+                                    <form string="Is / Is Not Analysis">
+                                        <group>
+                                            <field name="dimension" readonly="1"/>
+                                            <field name="sequence" readonly="1"/>
+                                        </group>
+                                        <group string="IS">
+                                            <field name="is_prompt" readonly="1" nolabel="1"/>
+                                            <field name="is_value" nolabel="1"/>
+                                        </group>
+                                        <group string="IS NOT">
+                                            <field name="is_not_prompt" readonly="1" nolabel="1"/>
+                                            <field name="is_not_value" nolabel="1"/>
+                                        </group>
+                                        <group string="Distinction">
+                                            <field name="distinction_prompt" readonly="1" nolabel="1"/>
+                                            <field name="distinction" nolabel="1"/>
+                                        </group>
+                                        <group string="Change (optional)">
+                                            <field name="change_prompt" readonly="1" nolabel="1"/>
+                                            <field name="change_value" nolabel="1"/>
+                                        </group>
+                                    </form>
                                 </field>
                             </group>
                             <group string="Other Method" invisible="root_cause_method != 'other'">
