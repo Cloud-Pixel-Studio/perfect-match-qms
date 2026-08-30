@@ -6,6 +6,7 @@ from odoo.tests.common import TransactionCase
 
 from odoo.addons.pm_qms_capa.models.capa_fishbone import FISHBONE_CATEGORIES, FISHBONE_GUIDANCE
 from odoo.addons.pm_qms_capa.models.capa_is_is_not import IS_IS_NOT_PROMPTS
+from odoo.addons.pm_qms_capa.models.capa_why import WHY_PROMPTS
 
 
 @tagged("-at_install", "post_install")
@@ -145,9 +146,26 @@ class TestPmQmsCapa(TransactionCase):
         why_list = why_field[0].xpath("./list")
         self.assertTrue(why_list)
         columns = why_list[0].xpath("./field/@name")
-        self.assertEqual(columns, ["sequence", "question", "answer"])
+        self.assertEqual(columns, ["sequence", "prompt", "answer"])
+        self.assertNotIn("question", columns)
         self.assertEqual(why_list[0].get("create"), "0")
         self.assertEqual(why_list[0].get("delete"), "0")
+
+    def test_legacy_question_is_preserved_while_prompt_is_canonical(self):
+        manager = self._create_test_user("pmqms.capa.legacy_prompt", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values(name="Legacy prompt"))
+        capa.with_user(manager).action_start_analysis()
+        legacy = capa.why_ids.filtered(lambda row: row.sequence == 1)
+        self.env.cr.execute(
+            "UPDATE pm_qms_capa_why SET question = %s WHERE id = %s",
+            ("Why is it happening?", legacy.id),
+        )
+        self.env.invalidate_all()
+        legacy = self.env["pm.qms.capa.why"].browse(legacy.id)
+        self.assertEqual(legacy.question, "Why is it happening?")
+        self.assertEqual(legacy.prompt, WHY_PROMPTS[1])
+        self.assertEqual(capa.why_ids.mapped("prompt"), [WHY_PROMPTS[i] for i in range(1, 6)])
+        self.assertTrue(self.env["pm.qms.capa.why"]._fields["prompt"].readonly)
 
     def test_rca_methodology_views_expose_specific_guidance(self):
         view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")

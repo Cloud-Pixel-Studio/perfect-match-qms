@@ -103,6 +103,31 @@ class SeedIdentityTests(unittest.TestCase):
             self.assertIsInstance(extra, ast.Call)
             self.assertEqual(extra.func.id, helper_name)
 
+    def test_capa_why_seed_uses_fixed_slot_identity_without_legacy_question(self):
+        tree = ast.parse(SEED_PATH.read_text(encoding="utf-8"))
+        call = next(
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "upsert"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "pm.qms.capa.why"
+        )
+        vals = next(keyword.value for keyword in call.keywords if keyword.arg == "vals")
+        self.assertIsInstance(vals, ast.Dict)
+        val_keys = {key.value for key in vals.keys if isinstance(key, ast.Constant)}
+        self.assertEqual(val_keys, {"capa_id", "sequence", "answer", "organization_id", "company_id"})
+        self.assertNotIn("question", val_keys)
+        extra = next(keyword.value for keyword in call.keywords if keyword.arg == "extra_domain")
+        self.assertIsInstance(extra, ast.List)
+        self.assertEqual(len(extra.elts), 2)
+        self.assertEqual([ast.literal_eval(item.elts[0]) for item in extra.elts], ["capa_id", "sequence"])
+        self.assertEqual([ast.literal_eval(item.elts[1]) for item in extra.elts], ["=", "="])
+        self.assertEqual(ast.unparse(extra.elts[0].elts[2]), "capa.id")
+        self.assertEqual(ast.unparse(extra.elts[1].elts[2]), "seq")
+
     def test_validator_has_canonical_process_and_duplicate_gates(self):
         source = VALIDATE_PATH.read_text(encoding="utf-8")
         for code in (
