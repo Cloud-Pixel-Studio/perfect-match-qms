@@ -107,3 +107,36 @@ class TestQmsHistoryCustomerUi(TransactionCase):
         )
         self.assertIn("threadModel?.startsWith(PM_QMS_MODEL_PREFIX)", source)
         self.assertIn("document.documentElement.classList.contains", source)
+
+    def test_system_avatar_mapping_is_scoped_and_uses_official_asset(self):
+        addon_root = Path(__file__).parents[1]
+        source = (addon_root / "static/src/js/qms_history.js").read_text(
+            encoding="utf-8"
+        )
+        avatar_asset = addon_root / "static/description/icon.svg"
+
+        self.assertIn(
+            'import { Message as MessageComponent } from "@mail/core/common/message";',
+            source,
+        )
+        self.assertIn("patch(MessageComponent.prototype", source)
+        self.assertIn("get authorAvatarUrl()", source)
+        self.assertIn("this.message.author_id?.pm_qms_system_actor", source)
+        self.assertIn(
+            "this.message.thread?.model?.startsWith(PM_QMS_MODEL_PREFIX)", source
+        )
+        self.assertIn(
+            "document.documentElement.classList.contains(CUSTOMER_SHELL_CLASS)",
+            source,
+        )
+        self.assertIn(
+            'return "/pm_qms_app/static/description/icon.svg";', source
+        )
+        self.assertIn("return super.authorAvatarUrl;", source)
+        self.assertNotIn("base.partner_root", source)
+        self.assertNotIn("avatar_128", source)
+        self.assertNotIn("DEFAULT_AVATAR", source)
+
+        self.assertTrue(avatar_asset.is_file())
+        svg_root = ET.parse(avatar_asset).getroot()
+        self.assertEqual(svg_root.tag.rsplit("}", 1)[-1], "svg")
