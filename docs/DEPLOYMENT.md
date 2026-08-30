@@ -1,7 +1,5 @@
 # Deployment
 
-Plane is available at `https://plane.cloudpixelstudio.agency`.
-
 Odoo currently has two active VM-local Docker Compose environments:
 
 - DEV under `deployment/docker/dev/`
@@ -28,7 +26,7 @@ DEV uses:
 
 The public Demo uses the dedicated `pmqms_demo` database and the
 `demo.invperfectmatch.com` HTTPS route. It is fictional product data only and
-must remain isolated from DEV and Plane. See `docs/DEMO_ENVIRONMENT.md` for
+must remain isolated from DEV and unrelated infrastructure. See `docs/DEMO_ENVIRONMENT.md` for
 operational commands and secret locations.
 
 The Oliva Torras pilot was retired in RC6. Its database, containers, volumes,

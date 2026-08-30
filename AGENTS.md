@@ -18,7 +18,7 @@ Prefer a modular Odoo monolith first. Core QMS state and business rules belong i
 
 Prefer modular Odoo addons, clean Python, Odoo ORM, PostgreSQL, Owl where custom frontend components are necessary, and standard Odoo functionality before custom development.
 
-Every meaningful feature should correspond to a tracked Plane work item.
+Every meaningful feature should correspond to a GitHub Issue or Pull Request.
 
 ## Intellectual Property
 
@@ -30,27 +30,15 @@ Never commit passwords, tokens, API keys, private keys, production credentials, 
 
 Use environment variables, excluded secret files, Docker secrets, or an approved secrets-management mechanism.
 
-## Plane
+## Engineering Governance
 
-Plane is the project-management system of record.
+GitHub is the sole active engineering Source of Truth for Perfect Match QMS.
+Use GitHub Issues for work definition, focused branches for implementation,
+Pull Requests for review, QMS CI for automated gates, and `main` for reviewed
+integration history. Follow the lifecycle in `docs/GITHUB_GOVERNANCE.md`.
 
-Do not modify Plane PostgreSQL directly to create, update, close, delete, or repair workspaces, projects, cycles, modules, milestones, labels, or work items.
-
-Use supported Plane mechanisms only, in this order:
-
-1. Plane Compose or another supported Plane configuration mechanism, if available for the installed edition/version.
-2. Official Plane REST API.
-3. Official Plane MCP integration, if enabled and appropriate.
-
-For a self-hosted Plane instance, configure credentials outside Git through:
-
-- `PLANE_API_KEY`
-- `PLANE_WORKSPACE_SLUG`
-- `PLANE_BASE_URL`
-
-`PLANE_API_TOKEN` may be supported as a backward-compatible alias only. Prefer `PLANE_API_KEY` in new automation.
-
-Before creating Plane records, list existing records and match by stable name/identifier to avoid duplicates.
+Do not update Plane, call Plane APIs, or treat the `plane/` directory as active
+requirements. The `plane/` directory is a read-only historical archive.
 
 ## Data
 
@@ -64,7 +52,8 @@ Use feature branches when GitHub integration is activated later. Keep commits fo
 
 New functionality must include appropriate automated tests. Never declare a feature complete merely because code was written.
 
-For Odoo addons, verify install/update and run focused Odoo tests before closing the related Plane work item.
+For Odoo addons, verify install/update and run focused Odoo tests before closing
+the related GitHub Issue or Pull Request.
 
 ## Documentation
 
