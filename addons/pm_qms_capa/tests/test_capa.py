@@ -196,6 +196,47 @@ class TestPmQmsCapa(TransactionCase):
             },
         )
 
+    def test_draft_rca_view_explains_start_workflow_and_hides_working_areas(self):
+        view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
+        arch = etree.fromstring(view.arch_db.encode())
+
+        start_buttons = arch.xpath("//header/button[@name='action_start_analysis']")
+        self.assertEqual(len(start_buttons), 1)
+        self.assertEqual(start_buttons[0].get("string"), "Start Root Cause Analysis")
+        self.assertNotEqual(start_buttons[0].get("string"), "Analyze")
+
+        expected_guidance = {
+            "5 Why selected": "five fixed Why steps",
+            "Fishbone selected": "People, Machine / Equipment",
+            "Is / Is Not selected": "What, Where, When, and Extent",
+            "Other method selected": "method or tool used",
+        }
+        for title, guidance in expected_guidance.items():
+            groups = arch.xpath(f"//group[@string={title!r}]")
+            self.assertEqual(len(groups), 1)
+            self.assertIn("state != 'draft'", groups[0].get("invisible"))
+            self.assertIn(guidance, " ".join(groups[0].itertext()))
+
+        for title in ("5 Why Analysis", "Fishbone Analysis", "Is / Is Not Analysis", "Other Method"):
+            groups = arch.xpath(f"//group[@string={title!r}]")
+            self.assertEqual(len(groups), 1)
+            self.assertIn("state == 'draft'", groups[0].get("invisible"))
+
+        summary = arch.xpath("//group[@string='Common Root Cause Summary']")
+        self.assertEqual(len(summary), 1)
+        self.assertEqual(summary[0].get("invisible"), "state == 'draft'")
+
+    def test_start_analysis_validates_problem_statement_before_initialization(self):
+        manager = self._create_test_user("pmqms.capa.start_validation", self.qms_manager_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(name="Incomplete start", problem_statement="")
+        )
+
+        with self.assertRaisesRegex(UserError, "Complete the CAPA problem statement before starting root cause analysis"):
+            capa.with_user(manager).action_start_analysis()
+        self.assertEqual(capa.state, "draft")
+        self.assertFalse(capa.why_ids)
+
     def test_fishbone_uses_exact_categories_and_read_only_guidance(self):
         expected_categories = {
             "people": "People",
