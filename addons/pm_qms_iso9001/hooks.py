@@ -787,7 +787,6 @@ def seed_iso9001_initial_implementation(env):
         "ISO 9001 Amendment 1 initial implementation",
         "Versioned Perfect Match implementation pack aligned to Amendment 1:2024 concepts.",
     )
-    initial_by_key = {item["activity_key"]: item for item in initial_activities}
     for blueprint in amendment_activities:
         source_key = blueprint["source_activity_key"]
         if blueprint["definition_key"] == source_key:
@@ -809,7 +808,7 @@ def seed_iso9001_initial_implementation(env):
         )
         if blueprint["definition_key"] == source_key:
             _set_activity_scope(
-                initial_by_key[source_key],
+                initial_records[source_key],
                 [initial_pack.id, amendment_pack.id],
                 f"ISO 9001 shared activity {source_key}",
             )
