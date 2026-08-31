@@ -243,7 +243,7 @@ class TestPmQmsImplementation(TransactionCase):
 
         other_pack = self._create_pack("PM-TST-DIFFERENT-CODE", [self.controls[1]])
         project.write({"pack_ids": [Command.set([pack_v1.id, other_pack.id])]})
-        project._sync_framework()
+        project.with_user(self.manager)._sync_framework()
         self.assertEqual(len(project.implementation_control_ids), 2)
         self.assertEqual({pack.code for pack in project.pack_ids}, {pack_v1.code, other_pack.code})
 
