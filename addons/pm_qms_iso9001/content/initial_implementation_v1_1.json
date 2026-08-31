@@ -14,12 +14,12 @@
     {"code": "P05", "description": "Turn relevant uncertainty into owned planning and response decisions.", "name": "Risk and Planning", "sequence": 50},
     {"code": "P06", "description": "Connect objectives, measures, and resources to intended performance.", "name": "Objectives, KPI and Resources", "sequence": 60},
     {"code": "P07", "description": "Establish the people capability and communication practices needed for execution.", "name": "Competency and Communication", "sequence": 70},
-    {"code": "P08", "description": "Make documented information available, controlled, and useful to the QMS.", "name": "Documented Information", "sequence": 80},
-    {"code": "P09", "description": "Translate planned controls into consistent operational execution.", "name": "Operational Controls", "sequence": 90},
-    {"code": "P10", "description": "Manage customer and supplier interfaces that affect QMS results.", "name": "Customer and Supplier Controls", "sequence": 100},
-    {"code": "P11", "description": "Use measurement and performance information to evaluate the QMS.", "name": "Measurement and Performance", "sequence": 110},
-    {"code": "P12", "description": "Use audit, nonconformity, and corrective-action practices to improve the QMS.", "name": "Audit and Corrective Action", "sequence": 120},
-    {"code": "P13", "description": "Connect leadership review to readiness and continual improvement decisions.", "name": "Management Review and Readiness", "sequence": 130}
+    {"code": "P08", "description": "Control the information and records used to operate and learn.", "name": "Documented Information", "sequence": 80},
+    {"code": "P09", "description": "Build repeatable controls for delivering products and services.", "name": "Operational Controls", "sequence": 90},
+    {"code": "P10", "description": "Coordinate customer commitments and external-provider performance.", "name": "Customer and Supplier Controls", "sequence": 100},
+    {"code": "P11", "description": "Collect, review, and act on quality and customer performance information.", "name": "Measurement and Performance", "sequence": 110},
+    {"code": "P12", "description": "Use audit, nonconformity, cause analysis, and improvement to strengthen the system.", "name": "Audit and Corrective Action", "sequence": 120},
+    {"code": "P13", "description": "Prepare leadership review and implementation-readiness decisions.", "name": "Management Review and Readiness", "sequence": 130}
   ],
   "activities": [
     {"activity_key": "ISO9001-INITIAL-A001", "definition_key": "ISO9001-INITIAL-V11-A001", "logical_id": "A001", "source_activity_key": "ISO9001-INITIAL-A001", "control_code": "PM-QMP-ORG-001", "phase_key": "P01"},
