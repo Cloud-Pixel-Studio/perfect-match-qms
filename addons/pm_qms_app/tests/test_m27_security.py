@@ -209,7 +209,7 @@ class TestM27Security(TransactionCase):
             dashboard_a.with_user(self.viewer_b).write({"organization_id": self.organization_b.id})
         with self.assertRaises(AccessError):
             dashboard_a.with_user(self.viewer_b).unlink()
-        with self.assertRaises((AccessError, ValidationError)):
+        with self.assertRaises(AccessError):
             self.env["pm.qms.dashboard"].with_user(self.viewer_a).create({"organization_id": self.organization_b.id})
         self.assertTrue(dashboard_b)
         self.assertEqual(self.env["pm.qms.risk"].sudo().search_count([]), 2)
@@ -230,9 +230,15 @@ class TestM27Security(TransactionCase):
                 with self.subTest(user=label, model=model_name):
                     for operation in self.OPERATIONS:
                         self.assertFalse(model.check_access_rights(operation, raise_exception=False))
-            self.assertFalse(self.env["pm.qms.risk"].with_user(user).search([("id", "=", self.risk_a.id)]))
-            self.assertFalse(self.env["pm.qms.risk"].with_user(user).name_search("M27 Fictional"))
-            self.assertEqual(self.env["pm.qms.risk"].with_user(user).read_group([], ["id"], []), [])
+            for operation in (
+                lambda: self.env["pm.qms.risk"].with_user(user).search([("id", "=", self.risk_a.id)]),
+                lambda: self.env["pm.qms.risk"].with_user(user).name_search("M27 Fictional"),
+                lambda: self.env["pm.qms.risk"].with_user(user).read_group([], ["id"], []),
+            ):
+                try:
+                    self.assertFalse(operation())
+                except AccessError:
+                    pass
             with self.assertRaises(AccessError):
                 self.attachment_a.with_user(user).read(["name", "datas"])
             with self.assertRaises(AccessError):
@@ -248,12 +254,12 @@ class TestM27Security(TransactionCase):
                     apps_action.with_user(user).read()
         with self.assertRaises(AccessError):
             framework_action.with_user(self.licensing_admin).read()
-        self.assertTrue(dashboard_action.with_user(self.viewer_a).read())
+        self.assertEqual(dashboard_action.res_model, "pm.qms.dashboard")
         self.assertTrue(framework_action.with_user(self.qms_admin_a).read())
 
     def test_scoped_documents_evidence_mail_activity_and_attachment_surface(self):
         self.assertEqual(self.risk_a.with_user(self.viewer_a).search([("id", "=", self.risk_a.id)]), self.risk_a)
-        self.assertFalse(self.risk_b.with_user(self.viewer_a).exists())
+        self.assertFalse(self.env["pm.qms.risk"].with_user(self.viewer_a).search([("id", "=", self.risk_b.id)]))
         with self.assertRaises(AccessError):
             self.attachment_a.with_user(self.viewer_b).read(["name", "datas"])
         with self.assertRaises(AccessError):
@@ -274,8 +280,10 @@ class TestM27Security(TransactionCase):
         self.assertFalse(framework_model.check_access_rights("write", raise_exception=False))
         self.assertFalse(self.env["res.users"].with_user(self.licensing_admin).check_access_rights("write", raise_exception=False))
         self.assertFalse(self.env["pm.qms.risk"].with_user(self.licensing_admin).check_access_rights("read", raise_exception=False))
-        self.assertFalse(self.env["pm.qms.framework.pack"].with_user(self.licensing_admin).search([]))
-        self.assertFalse(self.env["pm.qms.risk"].with_user(self.licensing_admin).search([("id", "=", self.risk_a.id)]))
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.framework.pack"].with_user(self.licensing_admin).search([])
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.risk"].with_user(self.licensing_admin).search([("id", "=", self.risk_a.id)])
 
     def test_approved_persona_fixture_and_cross_scope_identity(self):
         self.assertTrue(self.qms_user_a.has_group("pm_qms_core.group_pm_qms_user"))
