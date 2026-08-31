@@ -136,9 +136,11 @@ class TestM27Security(TransactionCase):
         cls.portal_group = cls.env.ref("base.group_portal", raise_if_not_found=False)
 
         def user(login, company, groups, organization=None, *, portal=False):
-            group_ids = [cls.base_user.id, *(group.id for group in groups)]
+            group_ids = [*(group.id for group in groups)]
             if portal and cls.portal_group:
                 group_ids.append(cls.portal_group.id)
+            else:
+                group_ids.insert(0, cls.base_user.id)
             return cls.env["res.users"].sudo().with_context(no_reset_password=True).create(
                 {
                     "name": login,
