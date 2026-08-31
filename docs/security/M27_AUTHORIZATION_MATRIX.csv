@@ -1,0 +1,18 @@
+surface,persona,operation,expected,evidence,status
+QMS business records,Quality Manager,read within assigned company and organization,allow,M27 test fixture and existing scope rules,PASS
+QMS business records,QMS Viewer,read within assigned company and organization,allow,M27 test fixture and existing scope rules,PASS
+QMS business records,QMS Viewer,read direct ID outside assigned company or organization,deny,M27 cross-scope test,PASS
+QMS business records,QMS Viewer,create/write/unlink risk,deny,M27 viewer mutation test,PASS
+QMS business records,Quality Manager,read direct ID outside assigned company or organization,deny,M27 cross-scope test,PASS
+Dashboard transient,QMS Viewer,create/read assigned dashboard helper,allow,M27 dashboard test,PASS
+Dashboard transient,QMS Viewer,write dashboard helper,deny,M27 dashboard test,PASS
+License workflow,QMS Licensing Administrator,read license,allow,M27 licensing test,PASS
+License workflow,QMS Licensing Administrator,create activation request,allow,M27 licensing test,PASS
+Framework master data,QMS Licensing Administrator,write framework pack,deny,M27 licensing test,PASS
+User administration,QMS Licensing Administrator,write res.users,deny,M27 licensing test,PASS
+System administration,all M27 customer personas,base.group_system,deny,M27 role test,PASS
+Portal/public surface,public or portal user,access QMS business routes,deny,no custom QMS controller or route; unsupported for v1.0,NOT_APPLICABLE
+Mail/chatter,QMS customer personas,record chatter and required QMS activities,preserve,existing architecture unchanged,REVIEWED_NO_RUNTIME_CHANGE
+Attachments,QMS customer personas,attachment access,follow owning record rules,not expanded by M27,REVIEWED_NO_RUNTIME_CHANGE
+Followers,QMS customer personas,follower access,follow owning record rules,not expanded by M27,REVIEWED_NO_RUNTIME_CHANGE
+Workflow surfaces,QMS customer personas,workflow transitions,follow owning model ACL/rules,not expanded by M27,REVIEWED_NO_RUNTIME_CHANGE
