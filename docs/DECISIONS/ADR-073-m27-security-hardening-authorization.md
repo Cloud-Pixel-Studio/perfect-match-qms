@@ -29,19 +29,27 @@ without changing Demo data, RC11, ISO content, or mail/chatter architecture.
    route or controller. The test covers direct model, direct-ID, attachment,
    and message-post side channels.
 5. Inventory all `sudo()` calls for conservative follow-up review, separating
-   existing production call sites from disposable test setup. Privileged
-   reads/writes must remain narrow and scoped.
-6. Keep mail.thread, mail.activity, chatter, followers, attachments and
+   existing production call sites from disposable test setup. Each production
+   site records its caller, input provenance, pre-sudo scope, output/mutation,
+   audit behavior, regression evidence, risk and follow-up; no M27 site adds
+   privilege.
+6. Generate authorization evidence from an explicit runtime-case registry.
+   Source-only model rows remain risk-classified review items; P0/P1 rows are
+   emitted only when a named runtime boundary test executes them. Native
+   report/import/export HTTP behavior is not falsely certified and is deferred
+   to the appropriate endpoint-validation mission.
+7. Keep mail.thread, mail.activity, chatter, followers, attachments and
    workflow behavior unchanged in this mission.
 
 ## Consequences
 
 The licensing role has a narrower authority boundary and an update-idempotency
 regression test protects it. Security fixture tests document tenant, role,
-direct-ID, transient-helper, portal/public, owner, and organization behavior.
-The deterministic authorization inventory and exact production sudo call-site
-inventory are included as review evidence; existing production sudo sites
-remain a P2 follow-up, not a new M27 privilege.
+direct-ID, transient-helper, portal/public, owner, organization, framework
+administration, and native action behavior. The deterministic authorization
+inventory and exact production sudo call-site inventory are included as review
+evidence; existing production sudo sites remain bounded P2 follow-up where
+appropriate, not a new M27 privilege.
 
 ## Non-goals
 

@@ -246,18 +246,71 @@ class TestM27Security(TransactionCase):
 
     def test_native_actions_and_customer_admin_surfaces_are_restricted(self):
         dashboard_action = self.env.ref("pm_qms_app.action_pm_qms_dashboard")
-        framework_action = self.env.ref("pm_qms_implementation.action_pm_qms_framework_pack")
         apps_action = self.env.ref("base.open_module_tree")
-        for user in (self.qms_user_a, self.viewer_a, self.manager_a, self.supervisor_a):
+        for user in (self.qms_user_a, self.viewer_a, self.manager_a, self.supervisor_a, self.qms_admin_a):
             with self.subTest(user=user.login):
                 with self.assertRaises(AccessError):
                     apps_action.with_user(user).read()
-        with self.assertRaises(AccessError):
-            framework_action.with_user(self.licensing_admin).read()
         self.assertEqual(dashboard_action.res_model, "pm.qms.dashboard")
+
+    def test_qms_administrator_framework_authority(self):
+        framework_model = self.env["pm.qms.framework.pack"].with_user(self.qms_admin_a)
+        self.assertTrue(framework_model.check_access_rights("read", raise_exception=False))
+        self.assertTrue(framework_model.check_access_rights("create", raise_exception=False))
+        self.assertTrue(framework_model.check_access_rights("write", raise_exception=False))
+        pack = framework_model.create(
+            {
+                "name": "M27 Fictional Framework Pack",
+                "code": "M27-FRAMEWORK",
+                "version": "1.0",
+                "company_id": self.company_a.id,
+            }
+        )
+        self.assertEqual(framework_model.search([("id", "=", pack.id)]), pack)
+        pack.write({"description": "M27 fictional framework administration fixture."})
+        self.assertEqual(pack.description, "M27 fictional framework administration fixture.")
+
+        area_model = self.env["pm.qms.framework.area"].with_user(self.qms_admin_a)
+        control_line_model = self.env["pm.qms.framework.pack.control"].with_user(self.qms_admin_a)
+        self.assertTrue(area_model.check_access_rights("read", raise_exception=False))
+        self.assertTrue(area_model.check_access_rights("create", raise_exception=False))
+        self.assertTrue(control_line_model.check_access_rights("read", raise_exception=False))
+        framework_menu = self.env.ref("pm_qms_core.menu_pm_qms_framework")
+        framework_pack_menu = self.env.ref("pm_qms_implementation.menu_pm_qms_framework_packs")
+        self.assertIn(self.qms_admin_group, framework_menu.groups_id)
+        self.assertEqual(framework_pack_menu.action, f"ir.actions.act_window,{self.env.ref('pm_qms_implementation.action_pm_qms_framework_pack').id}")
+        self.assertTrue(self.env["ir.ui.menu"].with_user(self.qms_admin_a).search([("id", "=", framework_menu.id)]))
+        users_access_action = self.env.ref("pm_qms_app.action_pm_qms_users_access")
+        self.assertTrue(users_access_action.with_user(self.qms_admin_a).read())
         with self.assertRaises(AccessError):
-            framework_action.with_user(self.qms_admin_a).read()
-        self.assertTrue(framework_action.with_user(self.technical_admin).read())
+            users_access_action.with_user(self.licensing_admin).read()
+        self.assertFalse(self.qms_admin_a.has_group("base.group_system"))
+
+    def test_report_import_export_and_action_boundaries(self):
+        report_model = self.env["ir.actions.report"].with_user(self.viewer_a)
+        custom_reports = report_model.search([("report_name", "like", "pm_qms")])
+        self.assertFalse(custom_reports)
+
+        for model_name in (
+            "pm.qms.license.import.wizard",
+            "pm.qms.document.import.wizard",
+            "pm.qms.evidence.import.wizard",
+            "pm.qms.mapping.import.wizard",
+            "pm.qms.project.generator.wizard",
+        ):
+            with self.subTest(model=model_name):
+                self.assertFalse(self.env[model_name].with_user(self.viewer_a).check_access_rights("create", raise_exception=False))
+                self.assertFalse(self.env[model_name].with_user(self.licensing_admin).check_access_rights("create", raise_exception=False))
+
+        viewer_risk = self.env["pm.qms.risk"].with_user(self.viewer_a)
+        self.assertTrue(viewer_risk.check_access_rights("read", raise_exception=False))
+        self.assertFalse(viewer_risk.check_access_rights("create", raise_exception=False))
+        self.assertEqual(viewer_risk.search([("id", "=", self.risk_a.id)]), self.risk_a)
+        self.assertFalse(viewer_risk.search([("id", "=", self.risk_b.id)]))
+        with self.assertRaises(AccessError):
+            self.env.ref("base.open_module_tree").with_user(self.viewer_a).read()
+        with self.assertRaises(AccessError):
+            self.env.ref("base.open_module_tree").with_user(self.licensing_admin).read()
 
     def test_scoped_documents_evidence_mail_activity_and_attachment_surface(self):
         self.assertEqual(self.risk_a.with_user(self.viewer_a).search([("id", "=", self.risk_a.id)]), self.risk_a)
@@ -286,6 +339,10 @@ class TestM27Security(TransactionCase):
             self.env["pm.qms.framework.pack"].with_user(self.licensing_admin).search([])
         with self.assertRaises(AccessError):
             self.env["pm.qms.risk"].with_user(self.licensing_admin).search([("id", "=", self.risk_a.id)])
+        framework_menu = self.env.ref("pm_qms_core.menu_pm_qms_framework")
+        self.assertNotIn(self.licensing_admin_group, framework_menu.groups_id)
+        with self.assertRaises(AccessError):
+            self.env.ref("pm_qms_app.action_pm_qms_users_access").with_user(self.licensing_admin).read()
 
     def test_approved_persona_fixture_and_cross_scope_identity(self):
         self.assertTrue(self.qms_user_a.has_group("pm_qms_core.group_pm_qms_user"))
