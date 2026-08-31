@@ -172,8 +172,9 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         self.assertEqual(profile.name, "ISO 9001:2015 + Amendment 1:2024 Mapping")
         self.assertEqual(profile.standard_name, "ISO 9001")
         self.assertEqual(profile.edition, "2015")
-        self.assertEqual(len(profile.mapping_ids), 37)
-        self.assertEqual(len(set(profile.mapping_ids.mapped("control_id").ids)), 37)
+        # The crosswalk is authoring metadata for existing generic evidence;
+        # it must not materialize external mapping records.
+        self.assertFalse(profile.mapping_ids)
         self.assertEqual(len(self.crosswalk["mappings"]), 37)
         self.assertEqual(
             {item["control_code"] for item in self.crosswalk["mappings"]},
