@@ -60,4 +60,3 @@ id,addon,file,line,purpose,classification,scope_boundary,regression_status
 "59","pm_qms_pack_quality","addons/pm_qms_pack_quality/hooks.py","1024","production privileged read/write path","justified_but_missing_regression_evidence","reviewed in source context; no new privilege granted","M27_STATIC_REVIEW_NO_CALLSITE_CHANGE"
 "60","pm_qms_core","addons/pm_qms_core/models/event.py","73","production privileged read/write path","justified_but_missing_regression_evidence","reviewed in source context; no new privilege granted","M27_STATIC_REVIEW_NO_CALLSITE_CHANGE"
 "61","pm_qms_cost_quality","addons/pm_qms_cost_quality/models/management_review.py","23","production privileged read/write path","justified_but_missing_regression_evidence","reviewed in source context; no new privilege granted","M27_STATIC_REVIEW_NO_CALLSITE_CHANGE"
-
