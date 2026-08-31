@@ -255,7 +255,9 @@ class TestM27Security(TransactionCase):
         with self.assertRaises(AccessError):
             framework_action.with_user(self.licensing_admin).read()
         self.assertEqual(dashboard_action.res_model, "pm.qms.dashboard")
-        self.assertTrue(framework_action.with_user(self.qms_admin_a).read())
+        with self.assertRaises(AccessError):
+            framework_action.with_user(self.qms_admin_a).read()
+        self.assertTrue(framework_action.with_user(self.technical_admin).read())
 
     def test_scoped_documents_evidence_mail_activity_and_attachment_surface(self):
         self.assertEqual(self.risk_a.with_user(self.viewer_a).search([("id", "=", self.risk_a.id)]), self.risk_a)
