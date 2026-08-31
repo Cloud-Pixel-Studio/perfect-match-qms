@@ -73,6 +73,14 @@ class PmQmsFrameworkPack(models.Model):
         "Framework pack code and version must be unique per company.",
     )
 
+    @api.depends("name", "version")
+    def _compute_display_name(self):
+        for pack in self:
+            version = (pack.version or "").strip()
+            if version and not version.lower().startswith("v"):
+                version = f"v{version}"
+            pack.display_name = f"{pack.name} - {version}" if version else pack.name
+
     @api.depends("control_line_ids.active", "area_ids.active", "implementation_project_ids")
     def _compute_counts(self):
         for pack in self:

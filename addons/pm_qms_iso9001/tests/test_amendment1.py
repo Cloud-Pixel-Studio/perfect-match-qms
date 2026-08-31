@@ -177,6 +177,9 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
 
     def test_existing_v1_project_is_unchanged_by_repeated_m25_11_seed(self):
         project = self._generate_project(self.v1_pack, "ISO Existing V1 Project")
+        pack_count = self.env["pm.qms.framework.pack"].search_count(
+            [("code", "=", INITIAL_PACK_CODE), ("company_id", "=", self.company.id)]
+        )
         controls = tuple(
             (
                 line.id,
@@ -262,6 +265,12 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         self.assertEqual(project.evidence_completion_percent, snapshot[8])
         self.assertFalse(
             project.pack_ids.filtered(lambda pack: pack.code == INITIAL_PACK_CODE and pack.version == AMENDMENT_PACK_VERSION)
+        )
+        self.assertEqual(
+            self.env["pm.qms.framework.pack"].search_count(
+                [("code", "=", INITIAL_PACK_CODE), ("company_id", "=", self.company.id)]
+            ),
+            pack_count,
         )
 
     def test_v11_readiness_uses_generic_behavior_and_na_has_no_next_action(self):

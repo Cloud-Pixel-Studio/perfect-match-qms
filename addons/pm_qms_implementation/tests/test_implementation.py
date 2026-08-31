@@ -206,6 +206,31 @@ class TestPmQmsImplementation(TransactionCase):
                 {"pack_id": pack.id, "control_id": self.controls[1].id}
             )
 
+    def test_framework_pack_display_names_include_version_without_mutating_identity(self):
+        pack_v1 = self._create_pack("PM-TST-DISPLAY", [self.controls[0]], version="1.0")
+        pack_v11 = self._create_pack("PM-TST-DISPLAY", [self.controls[0]], version="1.1")
+        pack_v1.with_user(self.admin).write({"name": "ISO 9001 Initial Implementation"})
+        pack_v11.with_user(self.admin).write({"name": "ISO 9001 Initial Implementation"})
+
+        self.assertEqual(pack_v1.display_name, "ISO 9001 Initial Implementation - v1.0")
+        self.assertEqual(pack_v11.display_name, "ISO 9001 Initial Implementation - v1.1")
+        self.assertNotEqual(pack_v1.display_name, pack_v11.display_name)
+
+        suggestions = dict(
+            self.env["pm.qms.framework.pack"].name_search(
+                "ISO 9001 Initial Implementation", operator="ilike", limit=10
+            )
+        )
+        self.assertEqual(suggestions[pack_v1.id], pack_v1.display_name)
+        self.assertEqual(suggestions[pack_v11.id], pack_v11.display_name)
+
+        project = self._generate_project([pack_v1], name="Existing v1 display")
+        project_pack_id = project.pack_ids.id
+        self.assertEqual(project.pack_ids.display_name, pack_v1.display_name)
+        self.assertEqual(project_pack_id, pack_v1.id)
+        self.assertEqual(pack_v1.name, "ISO 9001 Initial Implementation")
+        self.assertEqual(pack_v1.version, "1.0")
+
     def test_project_rejects_duplicate_pack_versions_but_allows_different_codes(self):
         pack_v1 = self._create_pack("PM-TST-PROJECT-VERSION", [self.controls[0]], version="1.0")
         pack_v11 = self._create_pack("PM-TST-PROJECT-VERSION", [self.controls[0]], version="1.1")
