@@ -69,7 +69,7 @@ AMENDMENT_REVISED_KEYS = frozenset(
     f"ISO9001-INITIAL-V11-{logical_id}" for logical_id in AMENDMENT_REVISED_LOGICAL_IDS
 )
 AMENDMENT_SHARED_KEYS = frozenset(
-    f"ISO9001-INITIAL-{i:03d}"
+    f"ISO9001-INITIAL-A{i:03d}"
     for i in range(1, 38)
     if f"A{i:03d}" not in AMENDMENT_REVISED_LOGICAL_IDS
 )
