@@ -34,6 +34,9 @@ There is no direct-to-`main` development workflow. Plane updates, Plane API
 calls, Plane work items, cycles, statuses, and checkpoints are not part of the
 current Definition of Done.
 
+Recent repository integration uses GitHub merge commits. Do not rewrite
+history; use the repository's approved merge method for each Pull Request.
+
 ## Definition of Done
 
 A change is complete when applicable scope, focused tests, regression gates,
