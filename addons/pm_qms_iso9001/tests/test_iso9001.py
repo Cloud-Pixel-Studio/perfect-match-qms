@@ -79,7 +79,7 @@ class TestPmQmsIso9001(TransactionCase):
         self.assertEqual(action.view_mode, "list,form")
         self.assertEqual(action.view_id, list_view)
         self.assertEqual(action.domain, "[('code', '=', 'PM-QMS-QUALITY-ISO9001'), ('edition', '=', '2015')]")
-        self.assertEqual(self._profile().name, "ISO 9001 Current Published Edition Mapping")
+        self.assertEqual(self._profile().name, "ISO 9001:2015 + Amendment 1:2024 Mapping")
 
     def test_standards_menu_is_visible_to_qms_personas_and_admin(self):
         menu_id = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards").id

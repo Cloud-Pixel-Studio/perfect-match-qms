@@ -1,0 +1,12 @@
+{
+  "schema_version": "m25.11-review-v1.1",
+  "source_pack_version": "1.0",
+  "target_pack_version": "1.1",
+  "shared_activity_count": 30,
+  "revised_activity_count": 7,
+  "revised_activity_logical_ids": ["A001", "A002", "A008", "A010", "A011", "A023", "A037"],
+  "evidence_definitions_reused": 37,
+  "control_count": 37,
+  "phase_count": 13,
+  "copyright_policy": "Proprietary Perfect Match narrative only; external references remain identifiers and metadata."
+}
