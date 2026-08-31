@@ -39,6 +39,7 @@ class TestM27Security(TransactionCase):
             {
                 "name": "M27 Fictional Risk A",
                 "code": "M27-RA",
+                "description": "M27 fictional risk fixture A",
                 "company_id": cls.company_a.id,
                 "organization_id": cls.organization_a.id,
                 "process_id": cls.process_a.id,
@@ -48,6 +49,7 @@ class TestM27Security(TransactionCase):
             {
                 "name": "M27 Fictional Risk B",
                 "code": "M27-RB",
+                "description": "M27 fictional risk fixture B",
                 "company_id": cls.company_b.id,
                 "organization_id": cls.organization_b.id,
                 "process_id": cls.process_b.id,
