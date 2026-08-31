@@ -50,6 +50,26 @@ Result: **61 tests, 0 failed, 0 errors**. The M27 class contributes 10 test
 methods. Odoo's per-module statistics are not additive to the final selected
 test total.
 
+The exact historical commands that produced the earlier reported 52-test and
+51-test counts were not recoverable from the repository, CI artifacts, or
+retained DEV logs. They are therefore not attributed to a particular omitted
+test. Equivalent current scope checks were run separately:
+
+```text
+docker exec pmqms-odoo-dev /entrypoint.sh odoo -d pmqms_m27_test -u pm_qms_app --test-enable --test-tags /pm_qms_app --stop-after-init --without-demo=True --log-level=test --http-port 18079
+```
+
+Result: **49 tests, 0 failed, 0 errors**.
+
+```text
+docker exec pmqms-odoo-dev /entrypoint.sh odoo -d pmqms_m27_test -u pm_qms_license --test-enable --test-tags /pm_qms_license --stop-after-init --without-demo=True --log-level=test --http-port 18079
+```
+
+Result: **12 tests, 0 failed, 0 errors**. The combined current scope selects
+61 tests; the separate runs demonstrate that the total varies with module/tag
+selection and that no current regression is omitted or failing. The historical
+51 versus 52 discrepancy remains unproven rather than guessed.
+
 Full QMS command:
 
 ```text
