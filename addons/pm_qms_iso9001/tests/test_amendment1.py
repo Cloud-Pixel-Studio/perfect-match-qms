@@ -26,6 +26,36 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         super().setUpClass()
         cls.company = cls.env.company
         cls.root = Path(__file__).parents[1]
+        cls.admin = cls.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "M25.11 Test Administrator",
+                "login": "m2511.test.administrator",
+                "email": "m2511.test.administrator@example.invalid",
+                "group_ids": [
+                    Command.set(
+                        [
+                            cls.env.ref("base.group_user").id,
+                            cls.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        cls.manager = cls.env["res.users"].with_context(no_reset_password=True).create(
+            {
+                "name": "M25.11 Test Manager",
+                "login": "m2511.test.manager",
+                "email": "m2511.test.manager@example.invalid",
+                "group_ids": [
+                    Command.set(
+                        [
+                            cls.env.ref("base.group_user").id,
+                            cls.env.ref("pm_qms_core.group_pm_qms_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
         cls.v1_blueprint = json.loads(
             (cls.root / "content" / "initial_implementation_v1.json").read_text()
         )
@@ -78,7 +108,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
                 "pack_ids": [Command.set([pack.id])],
             }
         )
-        project.with_user(self.env.ref("base.user_admin"))._sync_framework()
+        project.with_user(self.manager)._sync_framework()
         return project
 
     def test_versioned_packs_have_independent_complete_structure(self):
@@ -252,7 +282,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             limit=1,
         )
         control = profile.pack_id.control_line_ids.sorted("id")[0].control_id
-        admin_mapping_model = self.env["pm.qms.external.mapping"].with_user(self.env.ref("base.user_admin"))
+        admin_mapping_model = self.env["pm.qms.external.mapping"].with_user(self.admin)
         mapping = admin_mapping_model.create(
             {
                 "mapping_profile_id": profile.id,
@@ -261,7 +291,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
                 "mapping_type": "supporting",
             }
         )
-        mapping.with_user(self.env.ref("base.user_admin")).action_approve()
+        mapping.with_user(self.admin).action_approve()
         snapshot = (
             mapping.id,
             mapping.mapping_profile_id.id,

@@ -222,7 +222,12 @@ class TestPmQmsImplementation(TransactionCase):
             self.env["pm.qms.implementation.project"].create(values)
 
         project = self.env["pm.qms.implementation.project"].create(
-            {**values, "name": "Change project pack version", "pack_ids": [Command.set([pack_v1.id])]}
+            {
+                **values,
+                "name": "Change project pack version",
+                "code": "PM-TST-PROJECT-VERSION-VALID-2",
+                "pack_ids": [Command.set([pack_v1.id])],
+            }
         )
         with self.assertRaisesRegex(ValidationError, "Select only one version of each framework pack"):
             project.write({"pack_ids": [Command.set([pack_v1.id, pack_v11.id])]})
