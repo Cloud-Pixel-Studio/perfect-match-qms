@@ -4,6 +4,6 @@
         <field name="name">Perfect Match QMS mapping profile company boundary</field>
         <field name="model_id" ref="model_pm_qms_mapping_profile"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user')), (4, ref('pm_qms_core.group_qms_viewer'))]"/>
     </record>
 </odoo>
