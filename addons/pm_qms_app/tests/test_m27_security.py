@@ -71,6 +71,7 @@ class TestM27Security(TransactionCase):
                     "company_ids": [Command.set([company.id])],
                     "group_ids": [Command.set([cls.base_user.id, *(group.id for group in groups)])],
                     "qms_organization_ids": [Command.set([organization.id])],
+                    "qms_all_processes": True,
                     "qms_scope_configured": True,
                 }
             )
