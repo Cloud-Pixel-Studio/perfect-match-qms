@@ -224,6 +224,10 @@ class TestPmQmsImplementation(TransactionCase):
         self.assertEqual(suggestions[pack_v1.id], pack_v1.display_name)
         self.assertEqual(suggestions[pack_v11.id], pack_v11.display_name)
 
+        generic_pack = self._create_pack("PM-TST-GENERIC-DISPLAY", [self.controls[1]], version="v2.0")
+        generic_pack.with_user(self.admin).write({"name": "Perfect Match Quality Management Pack"})
+        self.assertEqual(generic_pack.display_name, "Perfect Match Quality Management Pack - v2.0")
+
         project = self._generate_project([pack_v1], name="Existing v1 display")
         project_pack_id = project.pack_ids.id
         self.assertEqual(project.pack_ids.display_name, pack_v1.display_name)
