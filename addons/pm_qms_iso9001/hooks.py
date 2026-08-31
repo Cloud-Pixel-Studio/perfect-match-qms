@@ -16,7 +16,7 @@ PROFILE_NOTES = (
 )
 
 
-def post_init_hook(env):
+def _ensure_iso9001_profile(env):
     company = env.ref("base.main_company")
     pack = env["pm.qms.framework.pack"].search(
         [
@@ -55,9 +55,25 @@ def post_init_hook(env):
             }
         )
     else:
+        _assert_definition(
+            profile,
+            {
+                "code": PROFILE_CODE,
+                "company_id": company.id,
+                "pack_id": pack.id,
+                "standard_name": "ISO 9001",
+                "edition": PROFILE_EDITION,
+                "publisher": "ISO",
+            },
+            "ISO 9001 mapping profile",
+        )
         profile.with_context(module=True).write({"name": PROFILE_NAME, "notes": PROFILE_NOTES})
     if profile.state == "draft":
         profile.with_context(module=True).action_activate()
+    return profile
+
+
+def post_init_hook(env):
     seed_iso9001_initial_implementation(env)
 
 
@@ -760,6 +776,7 @@ def _validate_amendment_evidence_profile(data):
 
 
 def seed_iso9001_initial_implementation(env):
+    _ensure_iso9001_profile(env)
     initial_blueprint = _initial_blueprint()
     amendment_blueprint = _amendment_blueprint()
     initial_authored = _initial_authored_content()
