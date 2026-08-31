@@ -2,75 +2,109 @@
 
 ## Scope
 
-M27 hardens authorization boundaries on a disposable DEV test database. The
-branch is based on main `d003ee6f3ab07ebafb6c2bee0ca4d6d3923420b1` and does not
-deploy or alter the canonical Demo, customer data, RC11, or ISO content.
+M27 hardens authorization boundaries on disposable DEV databases. The branch
+is based on main `d003ee6f3ab07ebafb6c2bee0ca4d6d3923420b1`; it does not deploy
+or alter the canonical Demo, customer data, RC11, ISO content, or Plane.
 
-The implementation commits are `807ceb385086f5f620b4cc47873efd0e206f8835`,
-`c67526dd0c2b2ec944cf2399d9017f3ceaafa73b`, and
-`f73524cd67490a42118cadfb405c54f474d2a0b9`.
+The functional changes are the viewer dashboard organization rule and the
+idempotent removal of the former QMS Administrator implication from the QMS
+Licensing Administrator group. No production `sudo()` call site was added or
+changed.
 
 ## Authorization decisions
 
-- QMS Viewer remains read-only for business records and dashboard transient
-  helpers.
+- QMS Viewer remains read-only for business records and transient dashboard
+  helpers. Dashboard helpers are owner-isolated and organization-scoped.
 - Cross-company and cross-organization direct-record reads are denied by the
   existing company and Mission 19 scope rules.
-- QMS Licensing Administrator no longer inherits QMS Administrator. It keeps
-  license workflow access but cannot write framework master data or users.
-- Portal/public QMS access is unsupported in v1.0; no custom QMS controller was
-  found.
-- Mail threads, activities, chatter, followers, attachments and workflow
+- QMS Licensing Administrator no longer inherits QMS Administrator. The XML
+  update uses `Command.unlink` for only that former implication; it does not
+  clear unrelated implications. Licensing retains its own workflow authority.
+- Portal/public QMS access is unsupported in v1.0; the test proves no model,
+  direct-ID, attachment, or message-post side channel is available.
+- Mail threads, activities, chatter, followers, attachments, and workflow
   behavior were not changed by M27.
 
 ## DEV fixture
 
-The fixture creates two fictional companies, two organizations, two processes,
-two risks, and scoped users for QMS Viewer, Quality Manager, Quality
-Supervisor, and QMS Licensing Administrator. It uses ORM test setup only in
-disposable `pmqms_test`; it is never a Demo seed and is not committed as data.
+`TestM27Security` creates fictional ORM data in disposable `pmqms_m27_test`:
+two companies, two organizations, three sites, two processes, two risks, one
+control, one evidence requirement, one control instance, one document, one
+evidence record, one binary attachment, one message, and one activity. It
+creates public, portal, QMS user, two scoped Viewers, Quality Manager, Quality
+Supervisor, QMS Administrator, QMS Licensing Administrator, and Technical
+Administrator personas. No fixture data is committed or sent to Demo.
 
 ## Commands and results
 
-The persistent DEV container was aligned to the branch head and `pm_qms_app`
-and `pm_qms_license` were updated in `pmqms_dev` with the Odoo entrypoint.
+The remote DEV source was aligned to corrective branch head `d73bf7e` and the
+tests ran against disposable databases only. `--without-demo=True` was used.
 
 Focused command:
 
 ```text
-docker exec pmqms-postgres-dev dropdb -U odoo --if-exists pmqms_test
-docker exec pmqms-odoo-dev /entrypoint.sh odoo -d pmqms_test --init <modules.txt contents> --test-enable --test-tags /pm_qms_app,/pm_qms_license --stop-after-init --without-demo=all --log-level=test --http-port 18079
+docker exec pmqms-odoo-dev /entrypoint.sh odoo -d pmqms_m27_test -u pm_qms_app,pm_qms_license --test-enable --test-tags /pm_qms_app,/pm_qms_license --stop-after-init --without-demo=True --log-level=test --http-port 18079
 ```
 
-Result: 55 tests, 0 failed, 0 errors. The M27 security class contributed five
-executed test methods.
+Result: **61 tests, 0 failed, 0 errors**. The M27 class contributes 10 test
+methods. Odoo's per-module statistics are not additive to the final selected
+test total.
 
-Full command:
+Full QMS command:
 
 ```text
-docker exec pmqms-postgres-dev dropdb -U odoo --if-exists pmqms_test
-docker exec pmqms-odoo-dev /entrypoint.sh odoo -d pmqms_test --init <modules.txt contents> --test-enable --test-tags <all module tags from modules.txt> --stop-after-init --without-demo=all --log-level=test --http-port 18079
+docker exec pmqms-odoo-dev /entrypoint.sh odoo -d pmqms_m27_full --init pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_iso9001,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality --test-enable --test-tags /pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_iso9001,/pm_qms_migration,/pm_qms_people,/pm_qms_calibration,/pm_qms_license,/pm_qms_app,/pm_qms_customer_quality,/pm_qms_action_center,/pm_qms_cost_quality --stop-after-init --without-demo=True --log-level=test --http-port 18079
 ```
 
-Result: 280 tests, 0 failed, 0 errors. A pre-existing docutils warning
-(`Unexpected indentation`) was emitted by an existing content check; the Odoo
-test result remained 0 failures and 0 errors.
+Result: **286 tests, 0 failed, 0 errors**. An earlier unfiltered disposable
+attempt selected Odoo/web tests and was stopped; it is not part of this QMS
+result.
 
-Static validation passed: addon validation, Python compilation, `git diff
---check`, secret scan, and content-safety scan.
+Upgrade rehearsal on disposable `pmqms_m27_upgrade` used ORM shell commands:
+
+- Before update on main, a licensing-only user also had QMS Administrator;
+  QMS-only and dual-role fixtures had their expected groups.
+- After `pm_qms_license` update from the corrective branch, licensing-only had
+  licensing access and no QMS Administrator; QMS-only remained unchanged; the
+  dual-role fixture retained both explicit roles.
+- A second identical module update produced the same group state. Company
+  count remained `1` throughout. No raw SQL and no Demo database were used.
+
+Static validation passed: Python compilation, XML parsing through module
+loading, addon validation, `git diff --check`, local secret scan, and content
+safety scan.
+
+## Authorization matrix
+
+`M27_AUTHORIZATION_MATRIX.csv` is a deterministic source inventory of 92
+declared QMS models, 3,312 persona/operation rows, and no customer data.
+Public/portal rows are runtime-denied by the all-model test. Direct runtime
+coverage protects the critical risk, document, evidence, dashboard, license,
+activation-request, and framework-pack surfaces. Other concrete models remain
+explicitly `REVIEW_REQUIRED` in the inventory until a model-specific fixture
+exists; abstract models are `NOT_APPLICABLE`. No P0/P1 critical surface is
+left untested by the M27 scope.
+
+The inventory is reproducible with:
+
+```text
+py -3 tools/security/m27_authorization_matrix.py --output <ignored-workspace>/M27_AUTHORIZATION_MATRIX.csv
+```
+
+Two runs produced the same SHA-256:
+`6554257a9ad89265fc23db8697641add82b744542ccd21b5a3d1528cb8328ed1`.
 
 ## Sudo inventory
 
-[`M27_SUDO_REVIEW.csv`](M27_SUDO_REVIEW.csv) inventories all 61 `.sudo()` call
-sites currently present under `addons`. Test-only setup/assertion calls are
-marked `scope_safe_and_regression_covered`. Production call sites are
-conservatively marked `justified_but_missing_regression_evidence` for future
-call-site-specific review; M27 added no sudo call.
+[`M27_SUDO_REVIEW.csv`](M27_SUDO_REVIEW.csv) inventories all **73** `.sudo()`
+sites under `addons`: **17 production** sites and **56 test-only** fixture or
+assertion sites. The production rows include the exact file, line, callable,
+purpose, scope boundary, mutation/read classification, and review status.
+M27 added **0 production sudo sites**. The 17 existing production sites are
+static P2 follow-up items; none is a new M27 privilege or a confirmed P0/P1
+finding.
 
-## Residual review
+## Status
 
-No confirmed P0 or P1 authorization finding remains from the M27 scope tested
-above. The conservative production sudo inventory is a P2 follow-up review,
-not a claim that every call site has been proven safe under every future
-workflow. M27 remains pending PR CI, Product Owner review, and merge
-authorization.
+M27 remains pending PR CI, Product Owner review, and merge authorization.
+Demo remains untouched and no release or Plane update is authorized here.

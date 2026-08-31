@@ -16,27 +16,32 @@ without changing Demo data, RC11, ISO content, or mail/chatter architecture.
 ## Decision
 
 1. Test authorization with a disposable two-company, two-organization DEV ORM
-   fixture and direct record operations.
+   fixture and direct record operations across public, portal, customer, and
+   technical personas.
 2. Keep QMS Viewer read-only for business records and transient dashboard
-   helpers; enforce cross-company and cross-organization isolation through the
-   existing ACL and record-rule model.
+   helpers; enforce cross-company, cross-organization, owner, and dashboard
+   organization isolation through ACLs and global record rules.
 3. Remove the unintended implication from QMS Licensing Administrator to QMS
-   Administrator. Licensing administration remains a distinct workflow role;
-   framework master-data and user administration remain unavailable.
+   Administrator with an idempotent `Command.unlink` update. Licensing
+   administration remains a distinct workflow role; framework master-data and
+   user administration remain unavailable.
 4. Keep portal/public QMS access unsupported in v1.0 rather than adding a new
-   route or controller.
-5. Inventory all `sudo()` calls for conservative follow-up review. Privileged
-   reads/writes must remain narrow, scoped, and independent of customer-facing
-   record aggregation.
+   route or controller. The test covers direct model, direct-ID, attachment,
+   and message-post side channels.
+5. Inventory all `sudo()` calls for conservative follow-up review, separating
+   existing production call sites from disposable test setup. Privileged
+   reads/writes must remain narrow and scoped.
 6. Keep mail.thread, mail.activity, chatter, followers, attachments and
    workflow behavior unchanged in this mission.
 
 ## Consequences
 
-The licensing role has a narrower authority boundary and a regression test
-protects it. Security fixture tests document tenant, role, direct-ID, and
-transient-helper behavior. Existing production sudo call sites are explicitly
-visible in the M27 evidence package for later call-site review.
+The licensing role has a narrower authority boundary and an update-idempotency
+regression test protects it. Security fixture tests document tenant, role,
+direct-ID, transient-helper, portal/public, owner, and organization behavior.
+The deterministic authorization inventory and exact production sudo call-site
+inventory are included as review evidence; existing production sudo sites
+remain a P2 follow-up, not a new M27 privilege.
 
 ## Non-goals
 
