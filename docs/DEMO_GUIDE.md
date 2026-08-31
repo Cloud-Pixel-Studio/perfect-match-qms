@@ -74,7 +74,8 @@ role is read-only and receives only records allowed by its organization/Site/
 Process scope.
 
 Demo passwords are stored outside Git through the VM credential mechanism. Do
-not place persona passwords in this guide, Plane, commits, or screenshots.
+not place persona passwords in this guide, project-management systems, commits,
+or screenshots.
 
 ## Commercial license walkthrough
 

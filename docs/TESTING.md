@@ -211,7 +211,8 @@ cd /opt/perfect-match/perfect-match-qms
 
 - New Odoo models need tests for creation, security-sensitive relationships, constraints, and workflow behavior.
 - Standard-pack tests must verify that seed/demo data contains Perfect Match proprietary wording only.
-- Do not mark Plane work items done until a repeatable verification command exists.
+- Do not close the related GitHub Issue or Pull Request until a repeatable
+  verification command exists.
 - Do not copy external standard text into tests. Use generic examples such as `Example Standard` and `X.X`.
 - External mapping tests may use metadata examples only. They must not use
   copied external requirement text as assertions or fixtures.

@@ -4,7 +4,7 @@
 
 Perfect Match Digital QMS is a standalone Odoo product. Odoo remains the
 application platform, QMS lifecycle state remains in the Perfect Match addons,
-and Plane remains the work-management system of record through supported APIs.
+and GitHub is the engineering and work-management system of record.
 This foundation does not implement licensing, commercial limits, full RBAC,
 ERP bridges, or Mission 19 scope.
 

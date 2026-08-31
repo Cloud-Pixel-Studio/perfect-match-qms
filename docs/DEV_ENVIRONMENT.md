@@ -13,7 +13,8 @@ Mission 02 establishes a local-only Odoo 19 development environment for Perfect 
 - Odoo filestore volume: `pmqms_dev_odoo_data`.
 - Runtime secrets and generated `odoo.conf` live outside Git under `/opt/perfect-match/secrets/odoo-dev/`.
 
-This stack is separate from the production-like Plane deployment. It does not share Plane volumes, networks, ports, databases, or environment files.
+This stack is isolated from unrelated infrastructure. It does not share
+production-like volumes, networks, ports, databases, or environment files.
 
 ## Quick Start
 
@@ -120,7 +121,7 @@ docker compose -f deployment/docker/dev/compose.yml logs --tail=100 odoo-dev
 
 - Do not expose DEV Odoo directly to the Internet.
 - Do not use production credentials in the DEV stack.
-- Do not connect DEV Odoo to the Plane database.
+- Do not connect DEV Odoo to any project-management database.
 - Do not commit generated config, database dumps, filestore content, or secrets.
 - Do not commit licensed external standard publications or copied external
   requirement text.

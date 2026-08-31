@@ -30,5 +30,5 @@ not receive financial-quality cost records or the Cost of Quality menu.
 
 Deployment operators must use the existing secrets mechanism for credentials,
 keep database management disabled at the public edge, and never place
-passwords, tokens, private keys, or database dumps in Git, Plane, screenshots,
-or customer documentation.
+passwords, tokens, private keys, or database dumps in Git, project-management
+systems, screenshots, or customer documentation.
