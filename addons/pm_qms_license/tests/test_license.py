@@ -214,6 +214,22 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertIn(quality_manager, license_action.group_ids)
         self.assertNotIn(viewer, license_action.group_ids)
 
+    def test_licensing_administrator_is_not_qms_administrator(self):
+        licensing_admin = self.env.ref("pm_qms_license.group_pm_qms_license_admin")
+        qms_admin = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+        license_model = self.env["pm.qms.license"]
+        activation_model = self.env["pm.qms.activation.request"]
+        framework_model = self.env["pm.qms.framework.pack"]
+
+        self.assertNotIn(qms_admin, licensing_admin.implied_ids)
+        licensing_admin_user = self._user("m27-license-admin", licensing_admin)
+        self.assertTrue(licensing_admin_user.has_group("pm_qms_license.group_pm_qms_license_admin"))
+        self.assertFalse(licensing_admin_user.has_group("pm_qms_core.group_pm_qms_administrator"))
+        self.assertTrue(license_model.with_user(licensing_admin_user).check_access_rights("read", raise_exception=False))
+        self.assertTrue(activation_model.with_user(licensing_admin_user).check_access_rights("create", raise_exception=False))
+        self.assertFalse(framework_model.with_user(licensing_admin_user).check_access_rights("write", raise_exception=False))
+        self.assertFalse(self.env["res.users"].with_user(licensing_admin_user).check_access_rights("write", raise_exception=False))
+
     def test_license_form_respects_activation_request_authority(self):
         """Exercise the compiled view metadata and web_read path used by the web client.
 
