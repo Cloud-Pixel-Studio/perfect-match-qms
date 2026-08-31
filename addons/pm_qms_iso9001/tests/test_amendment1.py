@@ -78,7 +78,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
                 "pack_ids": [Command.set([pack.id])],
             }
         )
-        project._sync_framework()
+        project.with_user(self.env.ref("base.user_admin"))._sync_framework()
         return project
 
     def test_versioned_packs_have_independent_complete_structure(self):
@@ -252,7 +252,8 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             limit=1,
         )
         control = profile.pack_id.control_line_ids.sorted("id")[0].control_id
-        mapping = self.env["pm.qms.external.mapping"].create(
+        admin_mapping_model = self.env["pm.qms.external.mapping"].with_user(self.env.ref("base.user_admin"))
+        mapping = admin_mapping_model.create(
             {
                 "mapping_profile_id": profile.id,
                 "control_id": control.id,
@@ -260,7 +261,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
                 "mapping_type": "supporting",
             }
         )
-        mapping.action_approve()
+        mapping.with_user(self.env.ref("base.user_admin")).action_approve()
         snapshot = (
             mapping.id,
             mapping.mapping_profile_id.id,

@@ -446,9 +446,9 @@ class TestPmQmsQualityPack(TransactionCase):
                 }
             )
         with self.assertRaises(AccessError):
-            mapping_a.write({"note": "Viewer cannot write mappings."})
+            mapping_a.with_user(viewer).write({"note": "Viewer cannot write mappings."})
         with self.assertRaises(AccessError):
-            mapping_a.unlink()
+            mapping_a.with_user(viewer).unlink()
 
     def test_m25_8_quality_requirements_have_stable_keys_and_criteria(self):
         requirements = self.quality_pack.control_line_ids.mapped(

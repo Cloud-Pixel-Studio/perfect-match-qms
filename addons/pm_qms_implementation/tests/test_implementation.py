@@ -211,6 +211,7 @@ class TestPmQmsImplementation(TransactionCase):
         pack_v11 = self._create_pack("PM-TST-PROJECT-VERSION", [self.controls[0]], version="1.1")
         values = {
             "name": "Reject duplicate framework lineage",
+            "code": "PM-TST-PROJECT-VERSION-VALID",
             "company_id": self.company.id,
             "organization_id": self.organization.id,
             "date_start": "2026-08-15",
