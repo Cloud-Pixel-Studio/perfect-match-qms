@@ -94,7 +94,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             activity = Activity.search(
                 [("definition_key", "=", key), ("company_id", "=", self.company.id)]
             )
-            self.assertEqual(len(activity), 1)
+            self.assertEqual(len(activity), 1, key)
             self.assertEqual(set(activity.applicable_pack_ids.ids), {self.v1_pack.id, self.v11_pack.id})
 
         for logical_id in AMENDMENT_REVISED_LOGICAL_IDS:
@@ -182,7 +182,14 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         )
         self.assertEqual(
             {item["activity_key"] for item in self.crosswalk["mappings"]},
-            set(self.v11_by_key),
+            {
+                (
+                    f"ISO9001-INITIAL-V11-{logical_id}"
+                    if logical_id in AMENDMENT_REVISED_LOGICAL_IDS
+                    else f"ISO9001-INITIAL-{logical_id}"
+                )
+                for logical_id in [f"A{i:03d}" for i in range(1, 38)]
+            },
         )
 
     def test_evidence_crosswalk_reuses_existing_generic_definitions(self):
