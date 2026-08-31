@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from odoo import Command
+from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -62,6 +64,23 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             item["activity_key"]: item for item in cls.v11_content["activities"]
         }
 
+    def _generate_project(self, pack, name):
+        organization = self.env["pm.qms.organization"].create(
+            {"name": f"{name} Organization", "code": f"{name[:8].upper()}-ORG", "company_id": self.company.id}
+        )
+        project = self.env["pm.qms.implementation.project"].create(
+            {
+                "name": name,
+                "company_id": self.company.id,
+                "organization_id": organization.id,
+                "date_start": "2026-08-15",
+                "target_date": "2026-09-30",
+                "pack_ids": [Command.set([pack.id])],
+            }
+        )
+        project._sync_framework()
+        return project
+
     def test_versioned_packs_have_independent_complete_structure(self):
         self.assertEqual(self.v1_pack.state, "active")
         self.assertEqual(self.v11_pack.state, "active")
@@ -79,6 +98,200 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         self.assertNotEqual(
             set(self.v1_pack.control_line_ids.ids),
             set(self.v11_pack.control_line_ids.ids),
+        )
+
+    def test_iso_pack_versions_cannot_be_selected_together(self):
+        with self.assertRaisesRegex(ValidationError, "Select only one version of each framework pack"):
+            self.env["pm.qms.implementation.project"].create(
+                {
+                    "name": "ISO version collision",
+                    "company_id": self.company.id,
+                    "organization_id": self.env["pm.qms.organization"].create(
+                        {"name": "ISO Collision Organization", "code": "ISO-COLLISION-ORG", "company_id": self.company.id}
+                    ).id,
+                    "date_start": "2026-08-15",
+                    "target_date": "2026-09-30",
+                    "pack_ids": [Command.set([self.v1_pack.id, self.v11_pack.id])],
+                }
+            )
+
+    def test_v1_and_v11_projects_generate_separate_methodology_task_identities(self):
+        v1_project = self._generate_project(self.v1_pack, "ISO V1 Project")
+        v1_keys = set(
+            v1_project.generated_task_ids.mapped("pm_activity_id.definition_key")
+        )
+        self.assertEqual(len(v1_keys), 37)
+        self.assertTrue(v1_keys.isdisjoint({f"ISO9001-INITIAL-V11-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS}))
+        self.assertEqual(
+            {f"ISO9001-INITIAL-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS} & v1_keys,
+            {f"ISO9001-INITIAL-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS},
+        )
+
+        v11_project = self._generate_project(self.v11_pack, "ISO V11 Project")
+        v11_keys = set(
+            v11_project.generated_task_ids.mapped("pm_activity_id.definition_key")
+        )
+        expected_v11_keys = set(AMENDMENT_SHARED_KEYS) | {
+            f"ISO9001-INITIAL-V11-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS
+        }
+        self.assertEqual(v11_keys, expected_v11_keys)
+        self.assertEqual(len(v11_keys), 37)
+        self.assertFalse(
+            v11_keys & {f"ISO9001-INITIAL-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS}
+        )
+
+    def test_existing_v1_project_is_unchanged_by_repeated_m25_11_seed(self):
+        project = self._generate_project(self.v1_pack, "ISO Existing V1 Project")
+        controls = tuple(
+            (
+                line.id,
+                line.control_id.id,
+                line.implementation_status,
+                line.applicability,
+                line.required_evidence_count,
+                line.accepted_evidence_count,
+                line.missing_evidence_count,
+                line.readiness_state,
+            )
+            for line in project.implementation_control_ids.sorted("id")
+        )
+        tasks = tuple(
+            (
+                task.id,
+                task.pm_activity_id.id,
+                task.pm_activity_id.definition_key,
+                task.state,
+                task.pm_required,
+            )
+            for task in project.generated_task_ids.sorted("id")
+        )
+        evidence_count = self.env["pm.qms.evidence"].search_count(
+            [("control_instance_id", "in", project.implementation_control_ids.mapped("control_instance_id").ids)]
+        )
+        snapshot = (
+            tuple(project.pack_ids.ids),
+            project.state,
+            project.implementation_type,
+            controls,
+            tasks,
+            evidence_count,
+            project.readiness_percent,
+            project.activity_completion_percent,
+            project.evidence_completion_percent,
+        )
+
+        seed_iso9001_initial_implementation(self.env)
+        seed_iso9001_initial_implementation(self.env)
+        seed_iso9001_initial_implementation(self.env)
+
+        self.assertEqual(tuple(project.pack_ids.ids), snapshot[0])
+        self.assertEqual(project.state, snapshot[1])
+        self.assertEqual(project.implementation_type, snapshot[2])
+        self.assertEqual(
+            tuple(
+                (
+                    line.id,
+                    line.control_id.id,
+                    line.implementation_status,
+                    line.applicability,
+                    line.required_evidence_count,
+                    line.accepted_evidence_count,
+                    line.missing_evidence_count,
+                    line.readiness_state,
+                )
+                for line in project.implementation_control_ids.sorted("id")
+            ),
+            snapshot[3],
+        )
+        self.assertEqual(
+            tuple(
+                (
+                    task.id,
+                    task.pm_activity_id.id,
+                    task.pm_activity_id.definition_key,
+                    task.state,
+                    task.pm_required,
+                )
+                for task in project.generated_task_ids.sorted("id")
+            ),
+            snapshot[4],
+        )
+        self.assertEqual(
+            self.env["pm.qms.evidence"].search_count(
+                [("control_instance_id", "in", project.implementation_control_ids.mapped("control_instance_id").ids)]
+            ),
+            snapshot[5],
+        )
+        self.assertEqual(project.readiness_percent, snapshot[6])
+        self.assertEqual(project.activity_completion_percent, snapshot[7])
+        self.assertEqual(project.evidence_completion_percent, snapshot[8])
+        self.assertFalse(
+            project.pack_ids.filtered(lambda pack: pack.code == INITIAL_PACK_CODE and pack.version == AMENDMENT_PACK_VERSION)
+        )
+
+    def test_v11_readiness_uses_generic_behavior_and_na_has_no_next_action(self):
+        project = self._generate_project(self.v11_pack, "ISO V11 Readiness Project")
+        tasks = project.generated_task_ids.filtered(
+            lambda task: task.pm_activity_id.definition_key.startswith("ISO9001-INITIAL-")
+        )
+        self.assertEqual(len(tasks), 37)
+        self.assertTrue(all(tasks.mapped("pm_required")))
+        line = project.implementation_control_ids.sorted("id")[0]
+        line.control_instance_id.write({"justification": "Outside this fictional implementation scope."})
+        line.control_instance_id.action_mark_not_applicable()
+        self.assertEqual(line.readiness_state, "not_applicable")
+        self.assertFalse(line.recommended_next_action)
+        project_line = project.implementation_control_ids.sorted("id")[1]
+        first = project_line._readiness_intelligence_values()
+        second = project_line._readiness_intelligence_values()
+        self.assertEqual(first, second)
+
+    def test_approved_mapping_is_preserved_by_repeated_seed(self):
+        profile = self.env["pm.qms.mapping.profile"].search(
+            [("code", "=", PROFILE_CODE), ("edition", "=", PROFILE_EDITION), ("company_id", "=", self.company.id)],
+            limit=1,
+        )
+        control = profile.pack_id.control_line_ids.sorted("id")[0].control_id
+        mapping = self.env["pm.qms.external.mapping"].create(
+            {
+                "mapping_profile_id": profile.id,
+                "control_id": control.id,
+                "reference": "4.1",
+                "mapping_type": "supporting",
+            }
+        )
+        mapping.action_approve()
+        snapshot = (
+            mapping.id,
+            mapping.mapping_profile_id.id,
+            mapping.control_id.id,
+            mapping.standard_name,
+            mapping.edition,
+            mapping.reference,
+            mapping.mapping_type,
+            mapping.review_status,
+        )
+        seed_iso9001_initial_implementation(self.env)
+        seed_iso9001_initial_implementation(self.env)
+        preserved = self.env["pm.qms.external.mapping"].browse(mapping.id)
+        self.assertEqual(
+            (
+                preserved.id,
+                preserved.mapping_profile_id.id,
+                preserved.control_id.id,
+                preserved.standard_name,
+                preserved.edition,
+                preserved.reference,
+                preserved.mapping_type,
+                preserved.review_status,
+            ),
+            snapshot,
+        )
+        self.assertEqual(
+            self.env["pm.qms.external.mapping"].search_count(
+                [("mapping_profile_id", "=", profile.id), ("reference", "=", "4.1")]
+            ),
+            1,
         )
 
     def test_shared_and_revised_activity_identity_and_pack_scope(self):

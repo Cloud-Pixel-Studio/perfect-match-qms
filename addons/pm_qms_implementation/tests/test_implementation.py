@@ -1,7 +1,7 @@
 from psycopg2 import IntegrityError
 
 from odoo import Command
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 from odoo.tools import mute_logger
@@ -111,14 +111,14 @@ class TestPmQmsImplementation(TransactionCase):
             }
         )
 
-    def _create_pack(self, code, controls, required=None, admin=None):
+    def _create_pack(self, code, controls, required=None, admin=None, version="1.0"):
         admin = admin or self.admin
         required = required or {}
         pack = self.env["pm.qms.framework.pack"].with_user(admin).create(
             {
                 "name": f"{code} Pack",
                 "code": code,
-                "version": "1.0",
+                "version": version,
                 "company_id": self.company.id,
                 "pack_type": "core",
                 "description": "Fictional Perfect Match pack for implementation tests.",
@@ -205,6 +205,40 @@ class TestPmQmsImplementation(TransactionCase):
             self.env["pm.qms.framework.pack.control"].with_user(self.admin).create(
                 {"pack_id": pack.id, "control_id": self.controls[1].id}
             )
+
+    def test_project_rejects_duplicate_pack_versions_but_allows_different_codes(self):
+        pack_v1 = self._create_pack("PM-TST-PROJECT-VERSION", [self.controls[0]], version="1.0")
+        pack_v11 = self._create_pack("PM-TST-PROJECT-VERSION", [self.controls[0]], version="1.1")
+        values = {
+            "name": "Reject duplicate framework lineage",
+            "company_id": self.company.id,
+            "organization_id": self.organization.id,
+            "date_start": "2026-08-15",
+            "target_date": "2026-09-30",
+            "pack_ids": [Command.set([pack_v1.id, pack_v11.id])],
+        }
+        with self.assertRaisesRegex(ValidationError, "Select only one version of each framework pack"):
+            self.env["pm.qms.implementation.project"].create(values)
+
+        project = self.env["pm.qms.implementation.project"].create(
+            {**values, "name": "Change project pack version", "pack_ids": [Command.set([pack_v1.id])]}
+        )
+        with self.assertRaisesRegex(ValidationError, "Select only one version of each framework pack"):
+            project.write({"pack_ids": [Command.set([pack_v1.id, pack_v11.id])]})
+        with self.env.cr.savepoint():
+            self.env.cr.execute(
+                "INSERT INTO pm_qms_implementation_project_pack_rel (implementation_project_id, pack_id) VALUES (%s, %s)",
+                (project.id, pack_v11.id),
+            )
+            project.invalidate_recordset(["pack_ids"])
+            with self.assertRaisesRegex(ValidationError, "Select only one version of each framework pack"):
+                project._validate_active_packs()
+
+        other_pack = self._create_pack("PM-TST-DIFFERENT-CODE", [self.controls[1]])
+        project.write({"pack_ids": [Command.set([pack_v1.id, other_pack.id])]})
+        project._sync_framework()
+        self.assertEqual(len(project.implementation_control_ids), 2)
+        self.assertEqual({pack.code for pack in project.pack_ids}, {pack_v1.code, other_pack.code})
 
     def test_generator_multi_pack_deduplication_source_packs_and_sync_idempotency(self):
         pack_a = self._create_pack("PM-TST-A", [self.controls[0], self.controls[1]], required={self.controls[1].id: False})
