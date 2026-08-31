@@ -8,7 +8,7 @@ pack remain usable without this add-on. Only reference identifiers and
 Perfect Match-authored metadata belong here; official standard text is never
 copied into the product.
     """,
-    "version": "19.0.8.0.0",
+    "version": "19.0.8.0.1",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",

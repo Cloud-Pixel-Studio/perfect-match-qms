@@ -2,7 +2,13 @@ from odoo.exceptions import AccessError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.pm_qms_iso9001.hooks import PROFILE_CODE, PROFILE_EDITION, post_init_hook
+from odoo.addons.pm_qms_iso9001.hooks import (
+    PROFILE_CODE,
+    PROFILE_EDITION,
+    PROFILE_NAME,
+    PROFILE_NOTES,
+    post_init_hook,
+)
 
 
 @tagged("-at_install", "post_install")
@@ -66,6 +72,38 @@ class TestPmQmsIso9001(TransactionCase):
         profile = self._profile()
         with self.assertRaises(AccessError):
             profile.with_user(self.manager).write({"name": "Not allowed"})
+
+    def test_normal_module_update_normalizes_existing_profile_metadata(self):
+        profile = self._profile()
+        before = {
+            "id": profile.id,
+            "pack_id": profile.pack_id.id,
+            "mapping_ids": tuple(profile.mapping_ids.ids),
+            "code": profile.code,
+            "edition": profile.edition,
+            "standard_name": profile.standard_name,
+            "publisher": profile.publisher,
+        }
+        profile.with_context(module=True).write(
+            {
+                "name": "ISO 9001 Current Published Edition Mapping",
+                "notes": "Legacy module-owned profile notes.",
+            }
+        )
+
+        self.env["pm.qms.framework.pack"].seed_iso9001_initial_implementation()
+
+        profile.invalidate_recordset()
+        self.assertEqual(profile.id, before["id"])
+        self.assertEqual(profile.name, PROFILE_NAME)
+        self.assertEqual(profile.notes, PROFILE_NOTES)
+        self.assertEqual(profile.pack_id.id, before["pack_id"])
+        self.assertEqual(tuple(profile.mapping_ids.ids), before["mapping_ids"])
+        self.assertEqual(profile.code, before["code"])
+        self.assertEqual(profile.edition, before["edition"])
+        self.assertEqual(profile.standard_name, before["standard_name"])
+        self.assertEqual(profile.publisher, before["publisher"])
+        self.assertEqual(profile.state, "active")
 
     def test_standards_menu_is_iso_only(self):
         menu = self.env.ref("pm_qms_iso9001.menu_pm_qms_standards")
