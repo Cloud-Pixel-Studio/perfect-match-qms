@@ -94,8 +94,8 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             item["activity_key"]: item for item in cls.v11_content["activities"]
         }
 
-    def _generate_project(self, pack, name):
-        organization = self.env["pm.qms.organization"].create(
+    def _generate_project(self, pack, name, organization=None):
+        organization = organization or self.env["pm.qms.organization"].create(
             {"name": f"{name} Organization", "code": f"{name[:8].upper()}-ORG", "company_id": self.company.id}
         )
         project = self.env["pm.qms.implementation.project"].create(
@@ -146,7 +146,10 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             )
 
     def test_v1_and_v11_projects_generate_separate_methodology_task_identities(self):
-        v1_project = self._generate_project(self.v1_pack, "ISO V1 Project")
+        organization = self.env["pm.qms.organization"].create(
+            {"name": "ISO Versioned Projects Organization", "code": "ISO-VERSIONED-ORG", "company_id": self.company.id}
+        )
+        v1_project = self._generate_project(self.v1_pack, "ISO V1 Project", organization=organization)
         v1_keys = set(
             v1_project.generated_task_ids.mapped("pm_activity_id.definition_key")
         )
@@ -158,7 +161,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             {f"ISO9001-INITIAL-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS},
         )
 
-        v11_project = self._generate_project(self.v11_pack, "ISO V11 Project")
+        v11_project = self._generate_project(self.v11_pack, "ISO V11 Project", organization=organization)
         v11_keys = set(
             v11_project.generated_task_ids.mapped("pm_activity_id.definition_key")
         )
