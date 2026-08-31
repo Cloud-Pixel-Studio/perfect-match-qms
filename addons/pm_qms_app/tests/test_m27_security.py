@@ -277,7 +277,7 @@ class TestM27Security(TransactionCase):
         self.assertTrue(control_line_model.check_access_rights("read", raise_exception=False))
         framework_menu = self.env.ref("pm_qms_core.menu_pm_qms_framework")
         framework_pack_menu = self.env.ref("pm_qms_implementation.menu_pm_qms_framework_packs")
-        self.assertIn(self.qms_admin_group, framework_menu.groups_id)
+        self.assertIn(self.qms_admin_group, framework_menu.group_ids)
         self.assertEqual(framework_pack_menu.action, f"ir.actions.act_window,{self.env.ref('pm_qms_implementation.action_pm_qms_framework_pack').id}")
         self.assertTrue(self.env["ir.ui.menu"].with_user(self.qms_admin_a).search([("id", "=", framework_menu.id)]))
         users_access_action = self.env.ref("pm_qms_app.action_pm_qms_users_access")
@@ -291,16 +291,20 @@ class TestM27Security(TransactionCase):
         custom_reports = report_model.search([("report_name", "like", "pm_qms")])
         self.assertFalse(custom_reports)
 
-        for model_name in (
+        customer_only_import_models = (
             "pm.qms.license.import.wizard",
             "pm.qms.document.import.wizard",
             "pm.qms.evidence.import.wizard",
             "pm.qms.mapping.import.wizard",
             "pm.qms.project.generator.wizard",
-        ):
+        )
+        for model_name in customer_only_import_models[1:]:
             with self.subTest(model=model_name):
                 self.assertFalse(self.env[model_name].with_user(self.viewer_a).check_access_rights("create", raise_exception=False))
                 self.assertFalse(self.env[model_name].with_user(self.licensing_admin).check_access_rights("create", raise_exception=False))
+        with self.subTest(model=customer_only_import_models[0]):
+            self.assertFalse(self.env[customer_only_import_models[0]].with_user(self.viewer_a).check_access_rights("create", raise_exception=False))
+            self.assertTrue(self.env[customer_only_import_models[0]].with_user(self.licensing_admin).check_access_rights("create", raise_exception=False))
 
         viewer_risk = self.env["pm.qms.risk"].with_user(self.viewer_a)
         self.assertTrue(viewer_risk.check_access_rights("read", raise_exception=False))
@@ -340,7 +344,7 @@ class TestM27Security(TransactionCase):
         with self.assertRaises(AccessError):
             self.env["pm.qms.risk"].with_user(self.licensing_admin).search([("id", "=", self.risk_a.id)])
         framework_menu = self.env.ref("pm_qms_core.menu_pm_qms_framework")
-        self.assertNotIn(self.licensing_admin_group, framework_menu.groups_id)
+        self.assertNotIn(self.licensing_admin_group, framework_menu.group_ids)
         with self.assertRaises(AccessError):
             self.env.ref("pm_qms_app.action_pm_qms_users_access").with_user(self.licensing_admin).read()
 
