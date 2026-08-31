@@ -230,6 +230,12 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertFalse(framework_model.with_user(licensing_admin_user).check_access_rights("write", raise_exception=False))
         self.assertFalse(self.env["res.users"].with_user(licensing_admin_user).check_access_rights("write", raise_exception=False))
 
+    def test_licensing_administrator_update_removes_only_former_implication(self):
+        template = Path(__file__).resolve().parents[1] / "security" / "security.xml"
+        content = template.read_text(encoding="utf-8")
+        self.assertIn("Command.unlink(ref('pm_qms_core.group_pm_qms_administrator'))", content)
+        self.assertNotIn("Command.clear()", content)
+
     def test_license_form_respects_activation_request_authority(self):
         """Exercise the compiled view metadata and web_read path used by the web client.
 
