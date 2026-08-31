@@ -1,5 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_pm_qms_mapping_profile_user,pm.qms.mapping.profile user,model_pm_qms_mapping_profile,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_mapping_profile_viewer,pm.qms.mapping.profile viewer,model_pm_qms_mapping_profile,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_mapping_profile_manager,pm.qms.mapping.profile manager,model_pm_qms_mapping_profile,pm_qms_core.group_pm_qms_manager,1,0,0,0
 access_pm_qms_mapping_profile_admin,pm.qms.mapping.profile admin,model_pm_qms_mapping_profile,pm_qms_core.group_pm_qms_administrator,1,1,1,1
+access_pm_qms_external_mapping_viewer,pm.qms.external.mapping viewer,model_pm_qms_external_mapping,pm_qms_core.group_qms_viewer,1,0,0,0
 access_pm_qms_mapping_import_wizard_admin,pm.qms.mapping.import.wizard admin,model_pm_qms_mapping_import_wizard,pm_qms_core.group_pm_qms_administrator,1,1,1,1

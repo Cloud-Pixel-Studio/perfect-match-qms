@@ -146,6 +146,13 @@ class PmQmsImplementationProject(models.Model):
                 raise ValidationError("Target assessment date cannot be before the implementation start date.")
             if project.actual_completion_date and project.date_start and project.actual_completion_date < project.date_start:
                 raise ValidationError("Completion date cannot be before the implementation start date.")
+        self._validate_pack_version_selection()
+
+    def _validate_pack_version_selection(self):
+        for project in self:
+            codes = project.pack_ids.mapped("code")
+            if len(codes) != len(set(codes)):
+                raise ValidationError("Select only one version of each framework pack.")
 
     @api.depends("assessment_ids.assessment_date", "assessment_ids.state")
     def _compute_latest_assessment(self):
@@ -220,6 +227,7 @@ class PmQmsImplementationProject(models.Model):
 
     def _validate_active_packs(self):
         for project in self:
+            project._validate_pack_version_selection()
             if not project.pack_ids:
                 raise UserError("Select at least one framework pack.")
             inactive = project.pack_ids.filtered(lambda pack: pack.state != "active")

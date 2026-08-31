@@ -8,6 +8,8 @@ from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
 from odoo.addons.pm_qms_iso9001.hooks import (
+    AMENDMENT_PACK_VERSION,
+    AMENDMENT_SHARED_KEYS,
     INITIAL_AUTHORED_CONTENT_FILES,
     INITIAL_PACK_CODE,
     INITIAL_PACK_VERSION,
@@ -29,6 +31,14 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             [
                 ("code", "=", INITIAL_PACK_CODE),
                 ("version", "=", INITIAL_PACK_VERSION),
+                ("company_id", "=", cls.company.id),
+            ],
+            limit=1,
+        )
+        cls.amendment_pack = cls.env["pm.qms.framework.pack"].search(
+            [
+                ("code", "=", INITIAL_PACK_CODE),
+                ("version", "=", AMENDMENT_PACK_VERSION),
                 ("company_id", "=", cls.company.id),
             ],
             limit=1,
@@ -62,6 +72,11 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
         cls.all_target_keys = (
             cls.target_keys | cls.m25_5_keys | cls.m25_6_keys | cls.m25_7_keys
         )
+
+    def _expected_pack_scope(self, definition_key):
+        if definition_key in AMENDMENT_SHARED_KEYS:
+            return self.pack | self.amendment_pack
+        return self.pack
 
     def test_blueprint_checkpoint_distribution_is_roadmap_aligned(self):
         counts = {}
@@ -219,7 +234,10 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             )
             self.assertEqual(len(line), 1)
             self.assertEqual(line.area_id.code, blueprint["phase_key"])
-            self.assertEqual(activity.applicable_pack_ids, self.pack)
+            self.assertEqual(
+                activity.applicable_pack_ids,
+                self._expected_pack_scope(activity.definition_key),
+            )
             self.assertEqual(activity.activity_kind, "qms_implementation")
             self.assertTrue(activity.readiness_required)
 
@@ -350,7 +368,10 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             )
             self.assertEqual(len(line), 1)
             self.assertEqual(line.area_id.code, blueprint["phase_key"])
-            self.assertEqual(activity.applicable_pack_ids, self.pack)
+            self.assertEqual(
+                activity.applicable_pack_ids,
+                self._expected_pack_scope(activity.definition_key),
+            )
             self.assertEqual(activity.activity_kind, "qms_implementation")
             self.assertTrue(activity.readiness_required)
 
@@ -490,7 +511,10 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             )
             self.assertEqual(len(line), 1)
             self.assertEqual(line.area_id.code, blueprint["phase_key"])
-            self.assertEqual(activity.applicable_pack_ids, self.pack)
+            self.assertEqual(
+                activity.applicable_pack_ids,
+                self._expected_pack_scope(activity.definition_key),
+            )
             self.assertEqual(activity.activity_kind, "qms_implementation")
             self.assertTrue(activity.readiness_required)
 
@@ -514,7 +538,10 @@ class TestPmQmsIso9001GuidedContent(TransactionCase):
             )
             self.assertEqual(len(line), 1)
             self.assertEqual(line.area_id.code, phase_key)
-            self.assertEqual(activity.applicable_pack_ids, self.pack)
+            self.assertEqual(
+                activity.applicable_pack_ids,
+                self._expected_pack_scope(activity.definition_key),
+            )
             self.assertEqual(activity.activity_kind, "qms_implementation")
             self.assertTrue(activity.readiness_required)
 

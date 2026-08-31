@@ -22,6 +22,7 @@ class TestPmQmsQualityPack(TransactionCase):
         cls.manager = cls._create_test_user("quality_manager", cls.qms_manager_group)
         cls.admin = cls._create_test_user("quality_admin", cls.qms_admin_group)
         cls.other_user = cls._create_test_user("quality_other", cls.qms_user_group, cls.other_company)
+        cls.other_admin = cls._create_test_user("quality_other_admin", cls.qms_admin_group, cls.other_company)
 
         cls.quality_pack = cls.env["pm.qms.framework.pack"].search(
             [
@@ -361,6 +362,93 @@ class TestPmQmsQualityPack(TransactionCase):
         self.assertFalse(
             self.env["pm.qms.implementation.project"].with_user(self.other_user).search([("id", "=", project.id)])
         )
+
+    def test_viewer_mapping_and_profile_access_stays_read_only_and_company_bound(self):
+        profile_a = self._example_profile("VIEWER-A")
+        control_a = self.quality_pack.control_line_ids.sorted("id")[0].control_id
+        mapping_a = self.env["pm.qms.external.mapping"].with_user(self.admin).create(
+            {
+                "mapping_profile_id": profile_a.id,
+                "control_id": control_a.id,
+                "reference": "VIEW-A-1",
+                "mapping_type": "supporting",
+            }
+        )
+
+        organization_b = self.env["pm.qms.organization"].with_user(self.other_admin).create(
+            {"name": "Viewer Boundary Organization B", "code": "VIEWER-B-ORG", "company_id": self.other_company.id}
+        )
+        process_b = self.env["pm.qms.process"].with_user(self.other_admin).create(
+            {
+                "name": "Viewer Boundary Process B",
+                "code": "VIEWER-B-PROC",
+                "organization_id": organization_b.id,
+                "company_id": self.other_company.id,
+            }
+        )
+        control_b = self.env["pm.qms.control"].with_user(self.other_admin).create(
+            {
+                "name": "Viewer Boundary Control B",
+                "code": "VIEWER-B-CTRL",
+                "objective": "A fictional cross-company control for access tests.",
+                "process_id": process_b.id,
+                "category": "process",
+            }
+        )
+        control_b.with_user(self.other_admin).action_activate()
+        pack_b = self.env["pm.qms.framework.pack"].with_user(self.other_admin).create(
+            {
+                "name": "Viewer Boundary Pack B",
+                "code": "VIEWER-B-PACK",
+                "version": "1.0",
+                "company_id": self.other_company.id,
+                "pack_type": "standard",
+            }
+        )
+        self.env["pm.qms.framework.pack.control"].with_user(self.other_admin).create(
+            {"pack_id": pack_b.id, "control_id": control_b.id, "sequence": 10, "required": True}
+        )
+        pack_b.with_user(self.other_admin).action_activate()
+        profile_b = self.env["pm.qms.mapping.profile"].with_user(self.other_admin).create(
+            {
+                "name": "Viewer Boundary Profile B",
+                "code": "VIEWER-B-PROFILE",
+                "company_id": self.other_company.id,
+                "pack_id": pack_b.id,
+                "standard_name": "Fictional Standard",
+                "edition": "Edition B",
+                "publisher": "Fictional Publisher",
+            }
+        )
+        profile_b.with_user(self.other_admin).action_activate()
+        mapping_b = self.env["pm.qms.external.mapping"].with_user(self.other_admin).create(
+            {
+                "mapping_profile_id": profile_b.id,
+                "control_id": control_b.id,
+                "reference": "VIEW-B-1",
+                "mapping_type": "supporting",
+            }
+        )
+
+        viewer = self._create_test_user("quality_viewer_boundary", self.env.ref("pm_qms_core.group_qms_viewer"))
+        profile_model = self.env["pm.qms.mapping.profile"].with_user(viewer)
+        mapping_model = self.env["pm.qms.external.mapping"].with_user(viewer)
+        self.assertEqual(profile_model.search_count([("id", "=", profile_a.id)]), 1)
+        self.assertEqual(profile_model.search_count([("id", "=", profile_b.id)]), 0)
+        self.assertEqual(mapping_model.search_count([("id", "=", mapping_a.id)]), 1)
+        self.assertEqual(mapping_model.search_count([("id", "=", mapping_b.id)]), 0)
+        with self.assertRaises(AccessError):
+            mapping_model.create(
+                {
+                    "mapping_profile_id": profile_a.id,
+                    "control_id": control_a.id,
+                    "reference": "VIEW-A-DENIED",
+                }
+            )
+        with self.assertRaises(AccessError):
+            mapping_a.with_user(viewer).write({"note": "Viewer cannot write mappings."})
+        with self.assertRaises(AccessError):
+            mapping_a.with_user(viewer).unlink()
 
     def test_m25_8_quality_requirements_have_stable_keys_and_criteria(self):
         requirements = self.quality_pack.control_line_ids.mapped(
