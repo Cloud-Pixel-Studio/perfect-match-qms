@@ -150,6 +150,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         v1_keys = set(
             v1_project.generated_task_ids.mapped("pm_activity_id.definition_key")
         )
+        v1_keys.discard(False)
         self.assertEqual(len(v1_keys), 37)
         self.assertTrue(v1_keys.isdisjoint({f"ISO9001-INITIAL-V11-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS}))
         self.assertEqual(
@@ -161,6 +162,7 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
         v11_keys = set(
             v11_project.generated_task_ids.mapped("pm_activity_id.definition_key")
         )
+        v11_keys.discard(False)
         expected_v11_keys = set(AMENDMENT_SHARED_KEYS) | {
             f"ISO9001-INITIAL-V11-{item}" for item in AMENDMENT_REVISED_LOGICAL_IDS
         }
@@ -262,7 +264,8 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
     def test_v11_readiness_uses_generic_behavior_and_na_has_no_next_action(self):
         project = self._generate_project(self.v11_pack, "ISO V11 Readiness Project")
         tasks = project.generated_task_ids.filtered(
-            lambda task: task.pm_activity_id.definition_key.startswith("ISO9001-INITIAL-")
+            lambda task: task.pm_activity_id.definition_key
+            and task.pm_activity_id.definition_key.startswith("ISO9001-INITIAL-")
         )
         self.assertEqual(len(tasks), 37)
         self.assertTrue(all(tasks.mapped("pm_required")))

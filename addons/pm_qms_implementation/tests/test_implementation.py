@@ -231,6 +231,7 @@ class TestPmQmsImplementation(TransactionCase):
         )
         with self.assertRaisesRegex(ValidationError, "Select only one version of each framework pack"):
             project.write({"pack_ids": [Command.set([pack_v1.id, pack_v11.id])]})
+        project.write({"pack_ids": [Command.set([pack_v1.id])]})
         with self.env.cr.savepoint():
             self.env.cr.execute(
                 "INSERT INTO pm_qms_implementation_project_pack_rel (implementation_project_id, pack_id) VALUES (%s, %s)",
