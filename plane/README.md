@@ -1,33 +1,21 @@
-# Plane Project Management Source
+# Historical Plane Planning Archive
 
-This directory stores the source artifacts for the Perfect Match Digital QMS Plane workspace.
+Status: RETIRED
 
-Plane is the operational project-management interface. This Git repository is the source of truth for project-management configuration where practical.
+Authority: NONE
 
-## Target Workspace
+Current engineering Source of Truth: GitHub
 
-- Name: PERFECT MATCH DIGITAL QMS
-- Suggested workspace identifier: PMQMS
+Files below this directory are historical snapshots. They are not the current
+backlog and are not execution instructions. Do not update them as part of
+normal engineering work. GitHub Issues, Pull Requests, CI, merge history, and
+releases supersede these artifacts.
 
-## Official Integration Path
+Historical PMQMS identifiers may be referenced for traceability only. The
+historical Plane importer was retired on 2026-08-30; its implementation remains
+available through Git history.
 
-Use official Plane mechanisms only:
-
-1. Plane-supported configuration tooling, if available for the installed edition/version.
-2. Official Plane REST API.
-3. Official Plane MCP integration, if later enabled and appropriate.
-
-The current self-hosted instance requires an API key for REST calls. Generate it in Plane under Profile Settings > Personal Access Tokens, then store it outside Git as a root-readable secret or environment variable such as `PLANE_API_KEY`.
-
-`PLANE_API_TOKEN` is accepted only as a backward-compatible alias by existing tooling. Prefer `PLANE_API_KEY` for new automation.
-
-Do not paste tokens into source files, Markdown documents, shell history, or Git commits.
-
-## Duplicate Prevention
-
-Before importing any artifact, the importer must list existing workspaces, projects, labels, modules, cycles, and work items and match by stable name/identifier. If an equivalent object exists, update it or skip it instead of creating duplicates.
-
-## Contents
+## Historical Contents
 
 - `projects/`: workspace project definitions.
 - `modules/`: module definitions by project.

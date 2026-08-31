@@ -26,5 +26,5 @@ Customer upgrade preflight compares the current and target lock and requires
 explicit `--approve-runtime-change` before a runtime change is accepted.
 
 This mission does not modify Demo data, database volumes, licenses, business
-records, or Odoo addon behavior. Plane, Odoo upstream, and unrelated utility
-containers are outside this runtime lock boundary.
+records, or Odoo addon behavior. Project-management services, Odoo upstream,
+and unrelated utility containers are outside this runtime lock boundary.

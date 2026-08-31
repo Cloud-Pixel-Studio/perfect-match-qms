@@ -63,17 +63,11 @@ Never commit:
 
 `.env.example` files are allowed only when they contain blank, local-only, or obvious placeholder values.
 
-## Plane Coordination
+## Governance Boundary
 
-Plane is used for work planning and evidence comments. Use Plane Compose, API, or MCP for work item updates. Do not connect directly to the Plane PostgreSQL database to create or edit tasks.
-
-When automation needs Plane access, use the configured self-hosted values:
-
-- `PLANE_BASE_URL`
-- `PLANE_WORKSPACE_SLUG`
-- `PLANE_API_KEY`
-
-Do not commit these values or tokens to GitHub.
+GitHub Issues, Pull Requests, QMS CI, merge history, and releases are the sole
+active engineering governance record. The repository `plane/` directory is a
+read-only historical archive; do not synchronize it or call a Plane API.
 
 ## Releases
 
@@ -98,7 +92,10 @@ Those belong in the encrypted offsite backup process, not in Git.
 
 ## Emergency Changes
 
-Emergency fixes should use `hotfix/*` branches and still pass CI. If branch protection allows an owner/admin bypass, reserve it for genuine emergency recovery and document the reason in Plane or release notes. Force pushes to `main` remain prohibited.
+Emergency fixes should use `hotfix/*` branches and still pass CI. If branch
+protection allows an owner/admin bypass, reserve it for genuine emergency
+recovery and document the reason in the GitHub Pull Request or release notes.
+Force pushes to `main` remain prohibited.
 
 ## Local Validation
 

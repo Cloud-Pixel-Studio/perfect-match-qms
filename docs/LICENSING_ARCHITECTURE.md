@@ -59,7 +59,8 @@ accounts, and privileged explicit exemptions do not consume a seat.
 Capacity checks run server-side on organization/site/user activation and role or
 account changes. A current license row is locked with `SELECT ... FOR UPDATE`
 while usage is re-read, serializing competing capacity activations without a
-global write lock. The service never modifies Plane PostgreSQL directly.
+global write lock. The service never modifies a project-management database
+directly.
 
 ## Data safety
 

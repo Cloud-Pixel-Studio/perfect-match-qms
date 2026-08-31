@@ -149,6 +149,14 @@ local binding. See [`docs/DEV_ENVIRONMENT.md`](docs/DEV_ENVIRONMENT.md),
 [`docs/DEVELOPMENT_WORKFLOW.md`](docs/DEVELOPMENT_WORKFLOW.md), and
 [`docs/TESTING.md`](docs/TESTING.md) for focused update and test procedures.
 
+## Engineering Governance
+
+GitHub is the sole active engineering Source of Truth. Define work in GitHub
+Issues, implement on focused branches, review through Pull Requests, use QMS
+CI as the automated gate, and integrate through `main`. The historical
+`plane/` directory is read-only reference material and is not an active
+backlog. See [`docs/GITHUB_GOVERNANCE.md`](docs/GITHUB_GOVERNANCE.md).
+
 ## Repository Structure
 
 ```text

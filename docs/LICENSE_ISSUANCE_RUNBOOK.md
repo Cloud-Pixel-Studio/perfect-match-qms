@@ -1,8 +1,8 @@
 # License Issuance and Replacement Runbook
 
 This runbook is for Perfect Match operators. Never paste a private key,
-customer password, API key, or full activation payload into GitHub, Plane,
-logs, or screenshots.
+customer password, API key, or full activation payload into GitHub, a
+project-management system, logs, or screenshots.
 
 ## Issue a license
 

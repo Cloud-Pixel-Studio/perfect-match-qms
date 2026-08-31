@@ -17,4 +17,7 @@ Large features require an implementation plan before coding.
 
 ## Execution Rules
 
-Do not code large features before the plan is accepted. Link implementation work to a Plane work item once Plane API access is configured. Document major decisions as ADRs.
+Do not code large features before the plan is accepted. Define active work in a
+GitHub Issue when appropriate and link the implementing Pull Request. The
+repository and GitHub history are the implementation record. Document major
+decisions as ADRs.

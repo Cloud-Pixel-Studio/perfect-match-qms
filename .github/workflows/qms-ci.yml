@@ -43,6 +43,9 @@ jobs:
       - name: External-standard content safety scan
         run: python deployment/scripts/qms-content-safety.py
 
+      - name: GitHub-only governance regression
+        run: bash deployment/scripts/tests/test_governance_source_of_truth.sh
+
       - name: Validate Docker Compose configuration
         run: bash deployment/scripts/odoo-dev.sh config
 

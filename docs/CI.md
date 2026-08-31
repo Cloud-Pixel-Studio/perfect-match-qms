@@ -24,8 +24,9 @@ The workflow runs:
 - Docker Compose configuration validation.
 - Odoo Mission 10 tests through `deployment/scripts/odoo-dev.sh test-mission10`.
 
-The CI does not require Plane database access and does not write to Plane. Plane
-updates remain API-only operational actions outside the CI job.
+The CI does not require a project-management database. GitHub Actions is the
+authoritative record for CI results; governance checks also ensure retired
+Plane integration is not reintroduced into active tooling.
 
 ## Local Equivalent
 

@@ -64,5 +64,6 @@ future work. This Mission 04 gate is a DEV validation foundation.
 The Oliva backup and restore scripts and runtime were retired in RC6. The
 historical backup procedure is preserved in prior release documentation only.
 The final retirement archive is VM-local, checksum-validated, outside Git, and
-must not be uploaded to GitHub, Plane, or a release. Do not recreate the pilot
-runtime to perform routine validation; use DEV and Demo instead.
+must not be uploaded to GitHub, a project-management system, or a release. Do
+not recreate the pilot runtime to perform routine validation; use DEV and Demo
+instead.

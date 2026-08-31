@@ -1,14 +1,14 @@
 # Development Workflow
 
-Target workflow:
+Active workflow:
 
-1. BACKLOG
+1. GitHub Issue
 2. READY
 3. IN DEVELOPMENT
 4. CODE REVIEW
 5. TESTING
 6. UAT
-7. DONE
+7. MERGED / DONE
 
 Critical path: Architecture, Infrastructure, Odoo development environment, PM QMS Core, Controls, Evidence, Document Control, Risk/NCR/CAPA, Audits, KPI, Management Review, ISO 9001 Pack, Project Generator, standalone product foundation, and secure access.
 
@@ -26,7 +26,7 @@ Use the isolated DEV stack:
 ./deployment/scripts/odoo-dev.sh test-core
 ```
 
-Before closing a Plane work item:
+Before closing the related GitHub Issue or Pull Request:
 
 - Make sure the related addon installs or updates cleanly.
 - Run the relevant Odoo test command.
