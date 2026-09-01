@@ -555,6 +555,7 @@ class TestM28Reproduction(TransactionCase):
         Person = self.env["pm.qms.person"].sudo()
         person_a = Person.create({"name": "M28 Person A", "organization_id": self.organization_a.id, "site_id": site_a.id})
         person_b = Person.create({"name": "M28 Person B", "organization_id": self.organization_a.id, "site_id": site_b.id})
+        person_c = Person.create({"name": "M28 Person C", "organization_id": self.organization_a.id, "site_id": site_b.id})
         role = self.env["pm.qms.role"].sudo().create({"name": "M28 Role", "code": "M28-ROLE", "company_id": self.company.id})
         competency = self.env["pm.qms.competency"].sudo().create({"name": "M28 Competency", "code": "M28-COMP", "company_id": self.company.id})
         requirement = self.env["pm.qms.role.competency.requirement"].sudo().create({"role_id": role.id, "competency_id": competency.id})
@@ -611,28 +612,28 @@ class TestM28Reproduction(TransactionCase):
                 "pm.qms.competency.assessment",
                 competency_a,
                 competency_b,
-                {"person_id": person_b.id, "competency_id": competency.id},
+                {"person_id": person_c.id, "competency_id": competency.id},
                 {"notes": "M28 unauthorized edit"},
             ),
             (
                 "pm.qms.competency.matrix.line",
                 matrix_a,
                 matrix_b,
-                {"person_id": person_b.id, "role_id": role.id, "requirement_id": requirement.id},
+                {"person_id": person_c.id, "role_id": role.id, "requirement_id": requirement.id},
                 {"person_id": person_a.id},
             ),
             (
                 "pm.qms.training.record",
                 training_a,
                 training_b,
-                {"person_id": person_b.id, "course_id": course.id},
+                {"person_id": person_c.id, "course_id": course.id},
                 {"notes": "M28 unauthorized edit"},
             ),
             (
                 "pm.qms.qualification.record",
                 qualification_a,
                 qualification_b,
-                {"person_id": person_b.id, "qualification_type_id": qualification_type.id},
+                {"person_id": person_c.id, "qualification_type_id": qualification_type.id},
                 {"notes": "M28 unauthorized edit"},
             ),
         )
