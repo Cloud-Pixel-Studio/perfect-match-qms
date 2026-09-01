@@ -185,6 +185,8 @@ class TestM28Reproduction(TransactionCase):
         self.assertLess(fields.Datetime.to_datetime(license_record.expires_at), fields.Datetime.now())
 
     def test_capa_children_inherit_parent_process_scope(self):
+        self.capa_a.sudo().write({"state": "analysis"})
+        self.capa_b.sudo().write({"state": "analysis"})
         child_specs = (
             ("pm.qms.capa.action", {"capa_id": self.capa_a.id, "name": "M28 scoped action A"}, {"name": "M28 action edit"}),
             ("pm.qms.capa.why", {"capa_id": self.capa_a.id, "sequence": 1, "question": "M28 why A"}, {"answer": "M28 answer"}),
