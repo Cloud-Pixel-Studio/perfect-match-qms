@@ -36,6 +36,9 @@ jobs:
           PMQMS_SECURITY_RUN_ID: ci
         run: bash deployment/scripts/security-audit.sh
 
+      - name: Run security evidence tests
+        run: python -m unittest tools.security.test_m27_evidence tools.security.test_pip_audit_evidence
+
       - name: Upload security audit artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

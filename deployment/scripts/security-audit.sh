@@ -372,18 +372,31 @@ run_pip_audit() {
   "recommendation": "Add a reviewed requirements lock or constraints file for the non-Odoo Python tooling/runtime before claiming dependency PASS."
 }
 JSON
-    status_json "$REPORT_DIR/pip-audit.status.json" "pip-audit" "NOT_EXECUTED" 0 "No reproducible Python dependency input exists."
+    "${PYTHON_BIN[@]}" "$REPO_ROOT/tools/security/pip_audit_evidence.py" \
+      --missing-input --input-path "" --output "$REPORT_DIR/pip-audit.status.json" >/dev/null
     return 0
   fi
 
   local rc=0
   "$pip_audit_bin" -r "$input_file" --format json --output "$REPORT_DIR/pip-audit.json" > "$REPORT_DIR/pip-audit.stdout" 2> "$REPORT_DIR/pip-audit.stderr" || rc=$?
   if [[ ! -s "$REPORT_DIR/pip-audit.json" ]]; then
-    status_json "$REPORT_DIR/pip-audit.status.json" "pip-audit" "INFRA_FAILURE" "$rc" "pip-audit did not produce JSON output."
+    "${PYTHON_BIN[@]}" "$REPO_ROOT/tools/security/pip_audit_evidence.py" \
+      --input-path "$input_file" --tool-exit-code "$rc" --output "$REPORT_DIR/pip-audit.status.json" >/dev/null || true
     INFRA_FAILURES=$((INFRA_FAILURES + 1))
     return 1
   fi
-  status_json "$REPORT_DIR/pip-audit.status.json" "pip-audit" "EXECUTED" "$rc" "pip-audit completed against $input_file."
+  local classifier_rc=0
+  "${PYTHON_BIN[@]}" "$REPO_ROOT/tools/security/pip_audit_evidence.py" \
+    --input "$REPORT_DIR/pip-audit.json" --input-path "$input_file" --tool-exit-code "$rc" \
+    --output "$REPORT_DIR/pip-audit.status.json" >/dev/null || classifier_rc=$?
+  if (( classifier_rc == 1 )); then
+    POLICY_FAILURES=$((POLICY_FAILURES + 1))
+    return 1
+  fi
+  if (( classifier_rc != 0 )); then
+    INFRA_FAILURES=$((INFRA_FAILURES + 1))
+    return 1
+  fi
 }
 
 run_secret_scan() {
@@ -474,6 +487,9 @@ versions = {
     "pip_audit": sys.argv[12],
 }
 
+sys.path.insert(0, str(report_dir.parents[2] / "tools" / "security"))
+from pip_audit_evidence import apply_to_summary
+
 def load_json(name):
     path = report_dir / name
     if not path.exists():
@@ -526,6 +542,7 @@ elif policy_failures > 0:
 elif enforcement_mode == "baseline":
     status = "BASELINE"
 
+pip_audit = load_json("pip-audit.status.json")
 summary = {
     "status": status,
     "enforcement_mode": enforcement_mode,
@@ -536,13 +553,20 @@ summary = {
     "policy_failures": policy_failures,
     "exit_code": exit_code,
 }
+summary = apply_to_summary(summary, pip_audit or {
+    "status": "ERROR/BLOCKED",
+    "policy_result": "ERROR",
+    "findings_count": 0,
+})
+exit_code = summary["exit_code"]
 summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 exit_code_path.write_text(f"{exit_code}\n", encoding="utf-8")
 print(
     "SECURITY_AUDIT_SUMMARY "
-    f"status={status} enforcement={enforcement_mode} critical={severity['CRITICAL']} "
+    f"status={summary['status']} enforcement={enforcement_mode} critical={severity['CRITICAL']} "
     f"high={severity['HIGH']} medium={severity['MEDIUM']} low={severity['LOW']} "
-    f"info={severity['INFO']} report_dir={report_dir}"
+    f"info={severity['INFO']} pip_audit={summary['pip_audit_status']} "
+    f"pip_audit_policy={summary['pip_audit_policy_result']} report_dir={report_dir}"
 )
 raise SystemExit(exit_code)
 PY

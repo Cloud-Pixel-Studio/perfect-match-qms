@@ -1,7 +1,8 @@
 # Security Audit Automation
 
-M29 adds a local, repeatable security and code-quality audit for Perfect Match
-QMS. The audit is intentionally local-first: it uses local OpenGrep rules,
+SEC-AUDIT-01 provides a local, repeatable security and code-quality baseline
+for Perfect Match QMS. Official roadmap M29 has not started. The audit is
+intentionally local-first: it uses local OpenGrep rules,
 isolated tool downloads, isolated Python virtual environments, and CI
 artifacts. It does not upload source code to third-party scanning services.
 
@@ -29,7 +30,7 @@ artifacts.
 | M27 sudo inventory | Yes | `tools/security/m27_sudo_inventory.py` reviews production and test-only `.sudo()` call sites. | Reuse as context; OpenGrep adds future-review detection. |
 | OpenGrep SAST | No | No existing OpenGrep/Semgrep-compatible scanner. | Add pinned OpenGrep binary install with local PMQMS rules, JSON and SARIF. |
 | Odoo quality lint | No | No OCA `pylint-odoo` workflow. | Add pinned `pylint`/`pylint-odoo` in an isolated venv against `addons/pm_qms_*`. |
-| Dependency vulnerability audit | Partial | Odoo/PostgreSQL/Alpine runtime images are pinned by digest; no Python requirements or lockfile exists. | Run Trivy for repo/config; run `pip-audit` only when a reproducible dependency input exists. |
+| Dependency vulnerability audit | Partial | Odoo/PostgreSQL/Alpine runtime images are pinned by digest; no Python requirements or lockfile exists. | Run Trivy for repo/config; classify pip-audit as `NOT_EXECUTED` until Issue #98 supplies a reproducible input. |
 | SBOM | No | No CycloneDX artifact is generated. | Add Trivy CycloneDX SBOM artifact. |
 | DAST/ZAP | No | No reproducible disposable local target is defined for passive ZAP. | Document as `NOT EXECUTED` until a local target URL and test account flow exist. |
 
@@ -42,11 +43,21 @@ artifacts.
 - `pylint==4.0.8`, `pylint-odoo==10.0.11` and `pip-audit==2.10.1` are installed
   in `.security-audit/cache/`, never in the Odoo runtime Python.
 - OpenGrep uses only repository-local rules in `security/opengrep/rules/`.
-- Findings are reported in baseline mode first. Critical findings and scanner
-  infrastructure failures still block the command.
+- Findings are reported in baseline mode first. Critical findings, untriaged
+  pip-audit vulnerabilities and scanner infrastructure failures affect the
+  command's exit decision.
+- pip-audit states are explicit: `NOT_EXECUTED` (no input), `PASS_NO_FINDINGS`,
+  `FINDINGS_UNTRIAGED` (non-zero policy result), and `ERROR/BLOCKED`.
+- The baseline reports **0 confirmed P0/P1 from executed OpenGrep, Trivy and
+  secret scans**. It does not claim total P0/P1 open is zero before triage.
+- 4,624 pylint-odoo messages remain untriaged under Issue #99.
 
 ## Exclusions
 
 Approved exclusions must be narrow and recorded in `security/exclusions.yml`.
 Inline OpenGrep suppressions must be localized to the exact line and must
 reference the matching exclusion record in review notes.
+
+Issues #98, #99 and #100 are SEC-AUDIT-01 follow-ups and possible future M29
+candidates. ZAP is `NOT_EXECUTED` under Issue #100. This workstream is a
+security baseline, not comprehensive production validation.

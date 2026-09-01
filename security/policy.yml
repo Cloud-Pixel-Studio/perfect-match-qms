@@ -47,6 +47,13 @@ tools:
   pip_audit:
     version: 2.10.1
     dependency_input_required: true
+    evidence_states:
+      no_input: NOT_EXECUTED
+      clean: PASS_NO_FINDINGS
+      vulnerabilities: FINDINGS_UNTRIAGED
+      tool_or_output_failure: ERROR/BLOCKED
+    vulnerability_policy: non_zero_policy_result
+    no_input_follow_up: "Issue #98"
   secret_scan:
     tool: deployment/scripts/secret-scan.py plus masked git history scan
   zap:
