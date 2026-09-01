@@ -497,6 +497,179 @@ class TestM28Reproduction(TransactionCase):
             self.assertTrue(getattr(rule, "global"), rule_id)
             self.assertIn("qms_effective_organization_ids", rule.domain_force, rule_id)
 
+    def test_management_review_audit_event_and_native_mail_runtime_isolation(self):
+        """Exercise organization and process boundaries on the remaining M28 surfaces."""
+        def assert_isolated(model_name, in_scope, out_scope, create_values, write_values, groupby="organization_id"):
+            scoped = self.env[model_name].with_user(self.viewer)
+            self.assertIn(in_scope, scoped.search([]), model_name)
+            self.assertNotIn(out_scope, scoped.search([]), model_name)
+            self.assertEqual(scoped.search_count([("id", "in", [in_scope.id, out_scope.id])]), 1, model_name)
+            if groupby in scoped._fields:
+                groups = scoped.read_group([("id", "in", [in_scope.id, out_scope.id])], ["__count"], [groupby])
+                self.assertTrue(groups, model_name)
+                self.assertTrue(all(group.get(groupby, [False])[0] != getattr(out_scope, groupby).id for group in groups), model_name)
+            with self.assertRaises(AccessError, msg=f"read:{model_name}"):
+                out_scope.read()
+            with self.assertRaises(AccessError, msg=f"create:{model_name}"):
+                scoped.create(create_values)
+            with self.assertRaises((AccessError, UserError), msg=f"write:{model_name}"):
+                out_scope.write(write_values)
+            with self.assertRaises((AccessError, UserError), msg=f"unlink:{model_name}"):
+                out_scope.unlink()
+
+        Decision = self.env["pm.qms.management.review.decision"].sudo()
+        decision_a = Decision.create(
+            {"review_id": self.review_a.id, "name": "M28 Decision A", "description": "Fictional decision A"}
+        )
+        decision_b = Decision.create(
+            {"review_id": self.review_b.id, "name": "M28 Decision B", "description": "Fictional decision B"}
+        )
+        assert_isolated(
+            "pm.qms.management.review.decision",
+            decision_a,
+            decision_b,
+            {"review_id": self.review_b.id, "name": "M28 Decision denied", "description": "Denied"},
+            {"description": "M28 unauthorized decision edit"},
+        )
+
+        Action = self.env["pm.qms.management.review.action"].sudo()
+        action_a = Action.create({"review_id": self.review_a.id, "name": "M28 Action A"})
+        action_b = Action.create({"review_id": self.review_b.id, "name": "M28 Action B"})
+        assert_isolated(
+            "pm.qms.management.review.action",
+            action_a,
+            action_b,
+            {"review_id": self.review_b.id, "name": "M28 Action denied"},
+            {"description": "M28 unauthorized action edit"},
+        )
+
+        Audit = self.env["pm.qms.audit"].sudo()
+        audit_a = Audit.create(
+            {
+                "name": "M28 Audit A",
+                "organization_id": self.organization_a.id,
+                "planned_start": "2026-03-01",
+                "planned_end": "2026-03-02",
+                "objective": "Fictional audit objective A",
+            }
+        )
+        audit_process_b = Audit.create(
+            {
+                "name": "M28 Audit Process B",
+                "organization_id": self.organization_a.id,
+                "planned_start": "2026-03-03",
+                "planned_end": "2026-03-04",
+                "objective": "Fictional audit objective process B",
+            }
+        )
+        audit_b = Audit.create(
+            {
+                "name": "M28 Audit B",
+                "organization_id": self.organization_b.id,
+                "planned_start": "2026-03-05",
+                "planned_end": "2026-03-06",
+                "objective": "Fictional audit objective B",
+            }
+        )
+        Scope = self.env["pm.qms.audit.scope"].sudo()
+        scope_a = Scope.create({"audit_id": audit_a.id, "organization_id": self.organization_a.id, "process_id": self.process_a.id, "description": "Scope A"})
+        scope_process_b = Scope.create({"audit_id": audit_process_b.id, "organization_id": self.organization_a.id, "process_id": self.process_b.id, "description": "Scope process B"})
+        scope_b = Scope.create({"audit_id": audit_b.id, "organization_id": self.organization_b.id, "description": "Scope B"})
+        assert_isolated(
+            "pm.qms.audit.scope", scope_a, scope_process_b,
+            {"audit_id": audit_process_b.id, "organization_id": self.organization_a.id, "process_id": self.process_b.id, "description": "Denied process scope"},
+            {"description": "M28 unauthorized scope edit"},
+            groupby="process_id",
+        )
+        assert_isolated(
+            "pm.qms.audit.scope", scope_a, scope_b,
+            {"audit_id": audit_b.id, "organization_id": self.organization_b.id, "description": "Denied organization scope"},
+            {"description": "M28 unauthorized organization scope edit"},
+        )
+
+        Criterion = self.env["pm.qms.audit.criterion"].sudo()
+        criterion_a = Criterion.create({"audit_id": audit_a.id, "name": "M28 Criterion A"})
+        criterion_b = Criterion.create({"audit_id": audit_b.id, "name": "M28 Criterion B"})
+        assert_isolated(
+            "pm.qms.audit.criterion", criterion_a, criterion_b,
+            {"audit_id": audit_b.id, "name": "M28 Denied Criterion"},
+            {"name": "M28 unauthorized criterion edit"},
+        )
+
+        PlanLine = self.env["pm.qms.audit.plan.line"].sudo()
+        plan_a = PlanLine.create({"audit_id": audit_a.id, "process_id": self.process_a.id, "activity": "Plan A"})
+        plan_process_b = PlanLine.create({"audit_id": audit_process_b.id, "process_id": self.process_b.id, "activity": "Plan process B"})
+        plan_b = PlanLine.create({"audit_id": audit_b.id, "activity": "Plan B"})
+        assert_isolated(
+            "pm.qms.audit.plan.line", plan_a, plan_process_b,
+            {"audit_id": audit_process_b.id, "process_id": self.process_b.id, "activity": "Denied process plan"},
+            {"activity": "M28 unauthorized plan edit"},
+            groupby="process_id",
+        )
+        assert_isolated(
+            "pm.qms.audit.plan.line", plan_a, plan_b,
+            {"audit_id": audit_b.id, "activity": "Denied organization plan"},
+            {"activity": "M28 unauthorized organization plan edit"},
+        )
+
+        Evidence = self.env["pm.qms.audit.evidence"].sudo()
+        evidence_a = Evidence.create({"audit_id": audit_a.id, "name": "M28 Evidence A", "description": "Evidence A"})
+        evidence_b = Evidence.create({"audit_id": audit_b.id, "name": "M28 Evidence B", "description": "Evidence B"})
+        assert_isolated(
+            "pm.qms.audit.evidence", evidence_a, evidence_b,
+            {"audit_id": audit_b.id, "name": "M28 Denied Evidence", "description": "Denied"},
+            {"description": "M28 unauthorized evidence edit"},
+        )
+        attachment_a = self.env["ir.attachment"].sudo().create(
+            {"name": "m28-audit-a.txt", "type": "binary", "datas": base64.b64encode(b"audit A").decode(), "res_model": evidence_a._name, "res_id": evidence_a.id}
+        )
+        attachment_b = self.env["ir.attachment"].sudo().create(
+            {"name": "m28-audit-b.txt", "type": "binary", "datas": base64.b64encode(b"audit B").decode(), "res_model": evidence_b._name, "res_id": evidence_b.id}
+        )
+        self.assertTrue(attachment_a.with_user(self.viewer).read(["name", "datas"]))
+        with self.assertRaises(AccessError):
+            attachment_b.with_user(self.viewer).read(["name"])
+        with self.assertRaises(AccessError):
+            attachment_b.with_user(self.viewer).read(["datas"])
+
+        Finding = self.env["pm.qms.audit.finding"].sudo()
+        finding_a = Finding.create({"audit_id": audit_a.id, "name": "M28 Finding A", "title": "Finding A", "objective_evidence": "Evidence A", "process_id": self.process_a.id})
+        finding_process_b = Finding.create({"audit_id": audit_process_b.id, "name": "M28 Finding process B", "title": "Finding process B", "objective_evidence": "Evidence process B", "process_id": self.process_b.id})
+        finding_b = Finding.create({"audit_id": audit_b.id, "name": "M28 Finding B", "title": "Finding B", "objective_evidence": "Evidence B"})
+        assert_isolated(
+            "pm.qms.audit.finding", finding_a, finding_process_b,
+            {"audit_id": audit_process_b.id, "name": "M28 Denied Finding", "title": "Denied", "objective_evidence": "Denied", "process_id": self.process_b.id},
+            {"description": "M28 unauthorized finding edit"},
+            groupby="process_id",
+        )
+        assert_isolated(
+            "pm.qms.audit.finding", finding_a, finding_b,
+            {"audit_id": audit_b.id, "name": "M28 Denied Organization Finding", "title": "Denied", "objective_evidence": "Denied"},
+            {"description": "M28 unauthorized organization finding edit"},
+        )
+
+        Event = self.env["pm.qms.event"].sudo()
+        event_a = Event.create({"name": "M28 Event A", "user_id": self.viewer.id, "company_id": self.company.id, "organization_id": self.organization_a.id, "res_model": evidence_a._name, "res_id": evidence_a.id, "record_name": "Evidence A"})
+        event_b = Event.create({"name": "M28 Event B", "user_id": self.viewer.id, "company_id": self.company.id, "organization_id": self.organization_b.id, "res_model": evidence_b._name, "res_id": evidence_b.id, "record_name": "Evidence B"})
+        assert_isolated(
+            "pm.qms.event", event_a, event_b,
+            {"name": "M28 Denied Event", "user_id": self.viewer.id, "company_id": self.company.id, "organization_id": self.organization_b.id, "res_model": evidence_b._name, "res_id": evidence_b.id},
+            {"name": "M28 event mutation"},
+        )
+
+        partner = self.env["res.partner"].sudo().create({"name": "M28 Native Mail Partner"})
+        native_activity = partner.activity_schedule(
+            "mail.mail_activity_data_todo", summary="M28 native non-QMS activity", user_id=self.viewer.id
+        )
+        native_activities = self.env["mail.activity"].with_user(self.viewer).search([("id", "=", native_activity.id)])
+        self.assertIn(native_activity, native_activities)
+        self.assertEqual(
+            self.env["mail.activity"].with_user(self.viewer).search_count([("id", "=", native_activity.id)]), 1
+        )
+        self.assertTrue(native_activity.with_user(self.viewer).read(["summary"]))
+        native_activity.with_user(self.viewer).write({"summary": "M28 native non-QMS activity updated"})
+        native_activity.with_user(self.viewer).unlink()
+
     def test_site_scoped_children_do_not_cross_site_within_organization(self):
         """Site-bound child records must inherit the user's selected site scope."""
         site_a = self.env["pm.qms.site"].sudo().create(
