@@ -52,12 +52,13 @@ class PmQmsEntitlementService(models.AbstractModel):
         return bool(self.current_license()) or self.env.context.get("pmqms_enforce_license")
 
     @api.model
-    def _license_or_raise(self):
-        license_record = self.current_license()
+    def _license_or_raise(self, license_record=None):
+        license_record = license_record or self.current_license()
         if not license_record:
             raise UserError("Commercial license is missing. Generate an activation request and import a signed license.")
-        if license_record.state not in USABLE_STATES:
-            raise UserError(f"Commercial license is {license_record.state.replace('_', ' ')} and cannot authorize new capacity.")
+        status = license_record.effective_state
+        if status not in USABLE_STATES:
+            raise UserError(f"Commercial license is {status.replace('_', ' ')} and cannot authorize new capacity.")
         return license_record
 
     @api.model
@@ -123,7 +124,7 @@ class PmQmsEntitlementService(models.AbstractModel):
         }
         return {
             "license": license_record,
-            "status": license_record.state if license_record else "missing",
+            "status": license_record.effective_state if license_record else "missing",
             "company": {"used": len(organizations), "limit": limits["company"], "remaining": max(limits["company"] - len(organizations), 0)},
             "site": {"used": len(sites), "limit": limits["site"], "remaining": max(limits["site"] - len(sites), 0)},
             "named_user": {"used": len(users), "limit": limits["named_user"], "remaining": max(limits["named_user"] - len(users), 0)},
@@ -133,7 +134,8 @@ class PmQmsEntitlementService(models.AbstractModel):
     def enforce_organization(self, organizations):
         if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
             return
-        self._locked_current_license()
+        license_record = self._locked_current_license()
+        self._license_or_raise(license_record)
         for organization in organizations:
             if organization.organization_kind != "operational" or not organization.active:
                 continue
@@ -148,7 +150,8 @@ class PmQmsEntitlementService(models.AbstractModel):
     def enforce_sites(self, sites):
         if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
             return
-        self._locked_current_license()
+        license_record = self._locked_current_license()
+        self._license_or_raise(license_record)
         for site in sites:
             if not site.active or site.organization_id.organization_kind != "operational":
                 continue
@@ -162,7 +165,8 @@ class PmQmsEntitlementService(models.AbstractModel):
     def enforce_named_users(self, users):
         if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
             return
-        self._locked_current_license()
+        license_record = self._locked_current_license()
+        self._license_or_raise(license_record)
         companies = users.mapped("company_id")
         for company in companies:
             usage = self.usage(company)

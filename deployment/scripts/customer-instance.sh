@@ -298,7 +298,7 @@ import_license() {
 from pathlib import Path
 record = env["pm.qms.license"].sudo().import_document(Path("/var/lib/pmqms-license/active.pmql").read_bytes())
 env.cr.commit()
-print("license_id=%s revision=%s state=%s environment=%s" % (record.license_id, record.license_revision, record.state, record.environment_short))
+print("license_id=%s revision=%s state=%s environment=%s" % (record.license_id, record.license_revision, record.effective_state, record.environment_short))
 PY
   jq --arg id "$license_id" '.license_id=$id | .deployment_state="licensed"' "$root/config/deployment-manifest.json" > "$root/config/deployment-manifest.json.tmp"
   mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"; chmod 600 "$root/config/deployment-manifest.json"
@@ -308,8 +308,9 @@ license_status() {
   local root; root="$(require_instance "$1")"; load_instance "$root"
   compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
 license = env["pm.qms.license"].sudo().current()
+status = env["pm.qms.license"].sudo().current_status()
 if not license: print("license_status=missing")
-else: print("license_status=%s license_id=%s company=%s/%s sites=%s/%s users=%s/%s environment=%s" % (license.state, license.license_id, license.company_usage, license.company_limit, license.site_usage, license.site_limit, license.named_user_usage, license.named_user_limit, license.environment_short))
+else: print("license_status=%s license_id=%s company=%s/%s sites=%s/%s users=%s/%s environment=%s" % (status["status"], license.license_id, license.company_usage, license.company_limit, license.site_usage, license.site_limit, license.named_user_usage, license.named_user_limit, license.environment_short))
 PY
 }
 
@@ -468,7 +469,8 @@ organization = env["pm.qms.organization"].sudo().search([("organization_kind", "
 if not organization: raise RuntimeError("No operational organization")
 if not env["pm.qms.person"].sudo().search_count([("organization_id", "=", organization.id), ("user_id", "!=", False)]): raise RuntimeError("No licensed first user")
 license = env["pm.qms.license"].sudo().current()
-if not license or license.state not in ("valid", "expiring"): raise RuntimeError("License is not usable")
+status = env["pm.qms.license"].sudo().current_status()["status"]
+if not license or status not in ("valid", "expiring"): raise RuntimeError("License is not usable")
 print("customer_ready_application=pass")
 PY
   if [[ "$ok" == 1 ]]; then echo "CUSTOMER_READY=YES"; else echo "CUSTOMER_READY=NO"; return 1; fi

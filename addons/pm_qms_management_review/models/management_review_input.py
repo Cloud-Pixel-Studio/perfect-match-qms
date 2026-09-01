@@ -6,6 +6,7 @@ class PmQmsManagementReviewInput(models.Model):
     _name = "pm.qms.management.review.input"
     _description = "Perfect Match QMS Management Review Input Snapshot"
     _inherit = ["mail.thread", "mail.activity.mixin"]
+    _rec_name = "title"
     _order = "category, title, id"
 
     review_id = fields.Many2one("pm.qms.management.review", required=True, ondelete="cascade", index=True)

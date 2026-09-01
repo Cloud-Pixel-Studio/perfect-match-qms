@@ -4,7 +4,18 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
 
 from ..services.environment import read_environment_id, short_environment_id
-from ..services.license_service import LicenseValidationError, validate_document
+from ..services.license_service import LicenseValidationError, effective_temporal_state, validate_document
+
+
+LICENSE_STATE_SELECTION = [
+    ("valid", "Valid"),
+    ("expiring", "Expiring"),
+    ("expired", "Expired"),
+    ("not_yet_valid", "Not Yet Valid"),
+    ("invalid_signature", "Invalid Signature"),
+    ("wrong_environment", "Wrong Environment"),
+    ("invalid_format", "Invalid Format"),
+]
 
 
 class PmQmsLicense(models.Model):
@@ -30,16 +41,14 @@ class PmQmsLicense(models.Model):
     signature = fields.Text(readonly=True)
     payload_json = fields.Text(string="Signed Payload", readonly=True)
     state = fields.Selection(
-        [
-            ("valid", "Valid"),
-            ("expiring", "Expiring"),
-            ("expired", "Expired"),
-            ("not_yet_valid", "Not Yet Valid"),
-            ("invalid_signature", "Invalid Signature"),
-            ("wrong_environment", "Wrong Environment"),
-            ("invalid_format", "Invalid Format"),
-        ],
+        LICENSE_STATE_SELECTION,
         required=True,
+        readonly=True,
+    )
+    effective_state = fields.Selection(
+        selection=LICENSE_STATE_SELECTION,
+        compute="_compute_effective_state",
+        string="Current Status",
         readonly=True,
     )
     is_current = fields.Boolean(default=True, readonly=True, index=True)
@@ -102,6 +111,16 @@ class PmQmsLicense(models.Model):
             record.site_usage = usage["site"]["used"]
             record.named_user_usage = usage["named_user"]["used"]
 
+    @api.depends("state", "not_before", "expires_at", "perpetual")
+    def _compute_effective_state(self):
+        for record in self:
+            record.effective_state = effective_temporal_state(
+                record.state,
+                record.not_before,
+                record.expires_at,
+                record.perpetual,
+            )
+
     @api.model
     def current(self):
         return self.sudo().search([("is_current", "=", True)], order="id desc", limit=1)
@@ -111,7 +130,7 @@ class PmQmsLicense(models.Model):
         current = self.current()
         if not current:
             return {"status": "missing", "license": False}
-        return {"status": current.state, "license": current}
+        return {"status": current.effective_state, "license": current}
 
     @api.model
     def _check_write_authority(self, vals):
