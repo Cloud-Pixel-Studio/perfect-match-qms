@@ -496,3 +496,158 @@ class TestM28Reproduction(TransactionCase):
             rule = self.env.ref(f"pm_qms_app.{rule_id}")
             self.assertTrue(getattr(rule, "global"), rule_id)
             self.assertIn("qms_effective_organization_ids", rule.domain_force, rule_id)
+
+    def test_site_scoped_children_do_not_cross_site_within_organization(self):
+        """Site-bound child records must inherit the user's selected site scope."""
+        site_a = self.env["pm.qms.site"].sudo().create(
+            {"name": "M28 Site A", "code": "M28-SITE-A", "organization_id": self.organization_a.id, "site_type": "office"}
+        )
+        site_b = self.env["pm.qms.site"].sudo().create(
+            {"name": "M28 Site B", "code": "M28-SITE-B", "organization_id": self.organization_a.id, "site_type": "warehouse"}
+        )
+        self.process_a.sudo().write({"site_ids": [Command.set([site_a.id])]})
+        self.process_b.sudo().write({"site_ids": [Command.set([site_b.id])]})
+        site_user = self.env["res.users"].sudo().with_context(no_reset_password=True).create(
+            {
+                "name": "M28 Site Scoped User",
+                "login": "m28.site.scoped",
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set([self.env.ref("base.group_user").id, self.env.ref("pm_qms_core.group_qms_quality_manager").id])],
+                "qms_organization_ids": [Command.set([self.organization_a.id])],
+                "qms_site_ids": [Command.set([site_a.id])],
+                "qms_process_ids": [Command.set([self.process_a.id])],
+            }
+        )
+        manager = self.env["res.users"].sudo().with_context(no_reset_password=True).create(
+            {
+                "name": "M28 Site Scoped Manager",
+                "login": "m28.site.manager",
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set([self.env.ref("base.group_user").id, self.env.ref("pm_qms_core.group_qms_manager").id])],
+                "qms_organization_ids": [Command.set([self.organization_a.id])],
+                "qms_site_ids": [Command.set([site_a.id])],
+                "qms_process_ids": [Command.set([self.process_a.id])],
+            }
+        )
+
+        Equipment = self.env["pm.qms.equipment"].sudo()
+        equipment_a = Equipment.create(
+            {"name": "M28 Gage A", "code": "M28-GAGE-A", "organization_id": self.organization_a.id, "site_id": site_a.id, "process_id": self.process_a.id}
+        )
+        equipment_b = Equipment.create(
+            {"name": "M28 Gage B", "code": "M28-GAGE-B", "organization_id": self.organization_a.id, "site_id": site_b.id, "process_id": self.process_b.id}
+        )
+        Event = self.env["pm.qms.calibration.event"].sudo()
+        event_a = Event.create({"equipment_id": equipment_a.id, "calibration_date": "2026-08-01"})
+        event_b = Event.create({"equipment_id": equipment_b.id, "calibration_date": "2026-08-01"})
+        Measurement = self.env["pm.qms.calibration.measurement.line"].sudo()
+        measurement_a = Measurement.create({"event_id": event_a.id, "parameter": "M28 parameter A"})
+        measurement_b = Measurement.create({"event_id": event_b.id, "parameter": "M28 parameter B"})
+        Assessment = self.env["pm.qms.calibration.impact.assessment"].sudo()
+        assessment_a = Assessment.create({"equipment_id": equipment_a.id, "event_id": event_a.id})
+        assessment_b = Assessment.create({"equipment_id": equipment_b.id, "event_id": event_b.id})
+        Affected = self.env["pm.qms.calibration.affected.reference"].sudo()
+        affected_a = Affected.create({"assessment_id": assessment_a.id, "name": "M28 affected A"})
+        affected_b = Affected.create({"assessment_id": assessment_b.id, "name": "M28 affected B"})
+
+        Person = self.env["pm.qms.person"].sudo()
+        person_a = Person.create({"name": "M28 Person A", "organization_id": self.organization_a.id, "site_id": site_a.id})
+        person_b = Person.create({"name": "M28 Person B", "organization_id": self.organization_a.id, "site_id": site_b.id})
+        role = self.env["pm.qms.role"].sudo().create({"name": "M28 Role", "code": "M28-ROLE", "company_id": self.company.id})
+        competency = self.env["pm.qms.competency"].sudo().create({"name": "M28 Competency", "code": "M28-COMP", "company_id": self.company.id})
+        requirement = self.env["pm.qms.role.competency.requirement"].sudo().create({"role_id": role.id, "competency_id": competency.id})
+        Assignment = self.env["pm.qms.person.role.assignment"].sudo()
+        assignment_a = Assignment.create({"person_id": person_a.id, "role_id": role.id})
+        assignment_b = Assignment.create({"person_id": person_b.id, "role_id": role.id})
+        AssessmentPerson = self.env["pm.qms.competency.assessment"].sudo()
+        competency_a = AssessmentPerson.create({"person_id": person_a.id, "competency_id": competency.id})
+        competency_b = AssessmentPerson.create({"person_id": person_b.id, "competency_id": competency.id})
+        Matrix = self.env["pm.qms.competency.matrix.line"].sudo()
+        matrix_a = Matrix.search([("person_id", "=", person_a.id), ("requirement_id", "=", requirement.id)], limit=1)
+        matrix_b = Matrix.search([("person_id", "=", person_b.id), ("requirement_id", "=", requirement.id)], limit=1)
+        Course = self.env["pm.qms.training.course"].sudo()
+        course = Course.create({"name": "M28 Course", "code": "M28-COURSE", "company_id": self.company.id})
+        Training = self.env["pm.qms.training.record"].sudo()
+        training_a = Training.create({"person_id": person_a.id, "course_id": course.id})
+        training_b = Training.create({"person_id": person_b.id, "course_id": course.id})
+        QualificationType = self.env["pm.qms.qualification.type"].sudo()
+        qualification_type = QualificationType.create({"name": "M28 Qualification", "code": "M28-QUAL", "company_id": self.company.id})
+        Qualification = self.env["pm.qms.qualification.record"].sudo()
+        qualification_a = Qualification.create({"person_id": person_a.id, "qualification_type_id": qualification_type.id})
+        qualification_b = Qualification.create({"person_id": person_b.id, "qualification_type_id": qualification_type.id})
+
+        site_scoped_records = (
+            (
+                "pm.qms.calibration.measurement.line",
+                measurement_a,
+                measurement_b,
+                {"event_id": event_b.id, "parameter": "M28 unauthorized measurement"},
+                {"notes": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.calibration.impact.assessment",
+                assessment_a,
+                assessment_b,
+                {"equipment_id": equipment_b.id, "event_id": event_b.id},
+                {"notes": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.calibration.affected.reference",
+                affected_a,
+                affected_b,
+                {"assessment_id": assessment_b.id, "name": "M28 unauthorized reference"},
+                {"description": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.person.role.assignment",
+                assignment_a,
+                assignment_b,
+                {"person_id": person_b.id, "role_id": role.id},
+                {"notes": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.competency.assessment",
+                competency_a,
+                competency_b,
+                {"person_id": person_b.id, "competency_id": competency.id},
+                {"notes": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.competency.matrix.line",
+                matrix_a,
+                matrix_b,
+                {"person_id": person_b.id, "role_id": role.id, "requirement_id": requirement.id},
+                {"person_id": person_a.id},
+            ),
+            (
+                "pm.qms.training.record",
+                training_a,
+                training_b,
+                {"person_id": person_b.id, "course_id": course.id},
+                {"notes": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.qualification.record",
+                qualification_a,
+                qualification_b,
+                {"person_id": person_b.id, "qualification_type_id": qualification_type.id},
+                {"notes": "M28 unauthorized edit"},
+            ),
+        )
+        for model_name, in_scope, out_scope, create_values, write_values in site_scoped_records:
+            scoped = self.env[model_name].with_user(site_user)
+            self.assertIn(in_scope, scoped.search([]), model_name)
+            self.assertNotIn(out_scope, scoped.search([]), model_name)
+            self.assertEqual(scoped.search_count([]), 1, model_name)
+            with self.assertRaises(AccessError, msg=model_name):
+                out_scope.with_user(site_user).read()
+            with self.assertRaises(AccessError, msg=model_name):
+                scoped.create(create_values)
+            with self.assertRaises(AccessError, msg=model_name):
+                out_scope.with_user(site_user).write(write_values)
+            with self.assertRaises(AccessError, msg=model_name):
+                out_scope.with_user(site_user).unlink()
+            with self.assertRaises(AccessError, msg=f"manager:{model_name}"):
+                out_scope.with_user(manager).read()
