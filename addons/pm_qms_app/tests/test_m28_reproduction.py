@@ -204,9 +204,23 @@ class TestM28Reproduction(TransactionCase):
         for model_name, in_scope_values, write_values in child_specs:
             context = {"pm_qms_capa_initialize": True} if model_name.endswith(("why", "is.is.not")) else {}
             Child = self.env[model_name].with_context(**context)
-            in_scope = Child.sudo().create(in_scope_values)
-            out_scope_values = dict(in_scope_values, capa_id=self.capa_b.id)
-            out_scope = Child.sudo().create(out_scope_values)
+            if model_name.endswith(".is.is.not"):
+                dimensions = (("what", 1), ("where", 2), ("when", 3), ("extent", 4))
+                in_scope = Child.sudo().create(
+                    [dict(in_scope_values, dimension=dimension, sequence=sequence) for dimension, sequence in dimensions]
+                )
+                out_scope = Child.sudo().create(
+                    [
+                        dict(in_scope_values, capa_id=self.capa_b.id, dimension=dimension, sequence=sequence)
+                        for dimension, sequence in dimensions
+                    ]
+                )
+                in_scope = in_scope.filtered(lambda row: row.dimension == "what")
+                out_scope = out_scope.filtered(lambda row: row.dimension == "what")
+            else:
+                in_scope = Child.sudo().create(in_scope_values)
+                out_scope_values = dict(in_scope_values, capa_id=self.capa_b.id)
+                out_scope = Child.sudo().create(out_scope_values)
             scoped = self.env[model_name].with_user(self.viewer)
             self.assertIn(in_scope, scoped.search([]))
             self.assertNotIn(out_scope, scoped.search([]))
@@ -219,11 +233,15 @@ class TestM28Reproduction(TransactionCase):
             with self.assertRaises(Exception) as unlink_error:
                 out_scope.with_user(self.viewer).unlink()
             self.assertIsInstance(unlink_error.exception, (AccessError, UserError))
-            create_values = dict(in_scope_values, capa_id=self.capa_b.id)
-            if model_name.endswith(".why"):
-                create_values["sequence"] = 2
-            elif model_name.endswith(".is.is.not"):
-                create_values.update(dimension="where", sequence=2)
+            if model_name.endswith(".is.is.not"):
+                create_values = [
+                    dict(in_scope_values, capa_id=self.capa_b.id, dimension=dimension, sequence=sequence)
+                    for dimension, sequence in dimensions
+                ]
+            else:
+                create_values = dict(in_scope_values, capa_id=self.capa_b.id)
+                if model_name.endswith(".why"):
+                    create_values["sequence"] = 2
             with self.assertRaises(AccessError):
                 scoped.with_context(**context).create(create_values)
 
