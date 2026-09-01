@@ -173,5 +173,5 @@ keys, Demo data and source-derived datasets are not committed.
 ## Status
 
 M27 remains incomplete pending exact-head CI and Product Owner merge review.
-The current branch head is the exact HEAD reported in the PR checkpoint.
+The current branch head is `86849693816672723b784d38efea18a3e691410f`.
 Demo, customer, production, RC11 and Plane remain untouched.
