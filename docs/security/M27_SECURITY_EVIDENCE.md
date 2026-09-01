@@ -38,17 +38,19 @@ creates public, portal, QMS user, two scoped Viewers, Quality Manager, Quality
 Supervisor, QMS Administrator, QMS Licensing Administrator, and Technical
 Administrator personas. No fixture data is committed or sent to Demo.
 
-The final focused and full counts are recorded in the PR body and checkpoint
-after the final branch commit. Historical 52/51 counts are not reused: the
-retained logs and CI artifacts did not contain the exact commands, tags or
-skips, so no omitted test is claimed. Equivalent scopes must be rerun after
-this corrective work.
+The historical 52/51 runs could not be reconstructed from retained logs or CI
+artifacts with their exact commands, tags, collection and skip details. They
+are therefore not used to claim an omission. The equivalent current scope was
+executed on a fresh database: 61 `pm_qms_app` tests and 14
+`pm_qms_license` tests selected, 63 combined tests, 0 failures, 0 errors and
+0 skipped tests. The new `TestM27Security` class contains 12 test methods; its
+methods are included in the `pm_qms_app` module total and are not double-counted.
 
 Required final commands are:
 
 ```text
-docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo -d pmqms_m27_test --init pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_iso9001,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality --test-enable --test-tags /pm_qms_app,/pm_qms_license --stop-after-init --without-demo=all --log-level=test
-bash deployment/scripts/odoo-dev.sh test-mission23
+docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo -d pmqms_m27_focus_final --init pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_iso9001,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality --test-enable --test-tags /pm_qms_app,/pm_qms_license --stop-after-init --without-demo=True --log-level=test
+docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo -d pmqms_m27_focus_final --init pm_qms_core,pm_qms_documents,pm_qms_evidence,pm_qms_risk,pm_qms_ncr,pm_qms_capa,pm_qms_audit,pm_qms_kpi,pm_qms_management_review,pm_qms_implementation,pm_qms_pack_quality,pm_qms_iso9001,pm_qms_migration,pm_qms_people,pm_qms_calibration,pm_qms_license,pm_qms_app,pm_qms_customer_quality,pm_qms_action_center,pm_qms_cost_quality --test-enable --test-tags /pm_qms_core,/pm_qms_documents,/pm_qms_evidence,/pm_qms_risk,/pm_qms_ncr,/pm_qms_capa,/pm_qms_audit,/pm_qms_kpi,/pm_qms_management_review,/pm_qms_implementation,/pm_qms_pack_quality,/pm_qms_iso9001,/pm_qms_migration,/pm_qms_people,/pm_qms_calibration,/pm_qms_license,/pm_qms_app,/pm_qms_customer_quality,/pm_qms_action_center,/pm_qms_cost_quality --stop-after-init --without-demo=True --log-level=test
 py -3 tools/security/m27_authorization_matrix.py --output <ignored-workspace>/matrix.csv
 py -3 tools/security/m27_authorization_matrix.py --output <ignored-workspace>/matrix.csv --validate
 py -3 tools/security/m27_sudo_inventory.py --output docs/security/M27_SUDO_REVIEW.csv --validate
@@ -69,7 +71,7 @@ for source-only evidence. The generator's validator rejects unsupported
 runtime claims and reports total, runtime, static, review, deferred,
 not-applicable, and untested P0/P1 counts.
 
-Final regenerated baseline before the final branch commit:
+Final regenerated baseline at the corrected evidence branch:
 
 - 2,845 matrix rows;
 - 645 runtime rows;
@@ -109,7 +111,8 @@ Final inventory counts are 17 production, 56 test-only, 14 with direct runtime
 regression coverage, 3 specifically static-reviewed/deferred P2 call sites, 0
 remediated, 0 unresolved P0, and 0 unresolved P1. The static rows are bounded
 configuration or aggregation reads whose domains and outputs are fixed or
-pre-scoped; follow-up is recorded per call site.
+pre-scoped; follow-up is recorded per call site. No new production `sudo()`
+site was introduced.
 
 ## Upgrade rehearsal
 
@@ -138,14 +141,23 @@ the static `Command.unlink` test. The reproducible pattern is:
 The declarative regression searches for `Command.unlink` and is not a
 substitute for this base-to-head rehearsal.
 
+The final rehearsal passed: fresh base install, first update, and second
+idempotent update. The licensing-only user lost only the former QMS
+Administrator implication; the QMS Administrator-only user was unchanged; the
+explicit dual-role user kept both roles; company and user counts were stable;
+and no business record was created or deleted.
+
 ## Static and content boundaries
 
 Addon validation, Python compilation, XML/CSV/JSON validation, `git diff
---check`, secret scanning, and content-safety scanning are required after the
-final branch changes. Historical source packages, customer data, credentials,
-private keys, Demo data and source-derived datasets are not committed.
+--check`, secret scanning, and content-safety scanning pass for the current
+branch. The final explicit-stack run selected 288 tests and reported 0
+failures, 0 errors and 0 skipped tests; it emitted 41 existing/deprecation
+warnings. Historical source packages, customer data, credentials, private
+keys, Demo data and source-derived datasets are not committed.
 
 ## Status
 
 M27 remains incomplete pending exact-head CI and Product Owner merge review.
+The current branch head is `5791bbe423bdf9065ad7d4a2738f4b734e3e6174`.
 Demo, customer, production, RC11 and Plane remain untouched.
