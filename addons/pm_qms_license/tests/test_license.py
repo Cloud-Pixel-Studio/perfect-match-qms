@@ -199,7 +199,8 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self._import()
         Organization = self.env["pm.qms.organization"].with_context(pmqms_enforce_license=True)
         other_company = self.env["res.company"].create({"name": "Mission 27 Other Company"})
-        before_ids = self.env["pm.qms.organization"].search([]).ids
+        organization_records = self.env["pm.qms.organization"].sudo().with_context(active_test=False)
+        before_ids = set(organization_records.search([]).ids)
         service = self.env["pm.qms.entitlement.service"]
 
         inactive = Organization.create(
@@ -224,7 +225,7 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertEqual(current_usage["company"]["used"], 1)
         self.assertEqual(other_usage["company"]["used"], 1)
         self.assertEqual(service.usage(self.company)["company"]["used"], 1)
-        self.assertEqual(set(self.env["pm.qms.organization"].search([]).ids), set(before_ids + [inactive.id, other.id]))
+        self.assertEqual(set(organization_records.search([]).ids), before_ids | {inactive.id, other.id})
         self.assertEqual(set(current_usage["company"]), {"used", "limit", "remaining"})
         self.assertNotIn("records", current_usage["company"])
 
