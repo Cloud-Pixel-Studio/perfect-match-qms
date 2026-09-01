@@ -1,6 +1,8 @@
+from datetime import timedelta
+
 from psycopg2 import IntegrityError
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -760,12 +762,13 @@ class TestPmQmsImplementation(TransactionCase):
         tasks = line.task_ids.sorted(lambda task: task.pm_activity_id.sequence)
         self.assertEqual(tasks[0].pm_activity_id, self.activity)
         self.assertEqual(tasks[1].pm_activity_id, later_activity)
-        tasks[0].with_user(self.manager).write({"date_deadline": "2026-10-01"})
-        tasks[1].with_user(self.manager).write({"date_deadline": "2026-09-01"})
+        today = fields.Date.today()
+        tasks[0].with_user(self.manager).write({"date_deadline": today + timedelta(days=2)})
+        tasks[1].with_user(self.manager).write({"date_deadline": today + timedelta(days=1)})
         values = line._readiness_intelligence_values()
         self.assertEqual(values["task_id"], tasks[0].id)
 
-        tasks[1].with_user(self.manager).write({"date_deadline": "2026-08-01"})
+        tasks[1].with_user(self.manager).write({"date_deadline": today - timedelta(days=1)})
         values = line._readiness_intelligence_values()
         self.assertEqual(values["task_id"], tasks[1].id)
 
