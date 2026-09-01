@@ -72,8 +72,8 @@ The authoritative finding statement is: **0 confirmed P0/P1 from executed
 OpenGrep, Trivy and secret scans.** This does not mean total P0/P1 open is
 zero before triage; the pylint-odoo baseline remains untriaged under Issue #99.
 
-The local command generated these evidence files under
-`.security-audit/reports/local-validation/`:
+The local command generates these evidence files under
+`.security-audit/reports/<run-id>/`:
 
 - `opengrep.json`
 - `opengrep.sarif`
