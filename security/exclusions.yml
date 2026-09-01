@@ -1,0 +1,45 @@
+schema_version: 1
+name: Perfect Match QMS security audit exclusions
+rules:
+  - rule: none
+    file: none
+    location: none
+    justification: No SEC-AUDIT-01 exclusions are approved at baseline creation.
+    owner: Product Owner
+    approved_on: null
+    review_or_expiration: null
+    compensating_evidence: none
+  - rule: pip-audit-no-dependency-input
+    file: repository dependency inputs
+    location: requirements or lockfile
+    justification: pip-audit is NOT_EXECUTED because no reproducible dependency input exists; this is not a clean dependency result.
+    owner: SEC-AUDIT-01
+    approved_on: null
+    review_or_expiration: Issue #98
+    compensating_evidence: Trivy repository scan and pinned runtime image review
+  - rule: pylint-odoo-baseline
+    file: addons/pm_qms_*
+    location: pylint-odoo report
+    justification: 4,624 pylint-odoo messages remain untriaged under Issue #99; baseline reporting does not claim they are resolved.
+    owner: SEC-AUDIT-01
+    approved_on: null
+    review_or_expiration: Issue #99
+    compensating_evidence: OpenGrep, Trivy and secret scan results are reported separately
+  - rule: zap-no-disposable-target
+    file: repository runtime target
+    location: OWASP ZAP
+    justification: ZAP is NOT_EXECUTED because no disposable local Odoo target is defined.
+    owner: SEC-AUDIT-01
+    approved_on: null
+    review_or_expiration: Issue #100
+    compensating_evidence: No DAST result claimed
+
+required_fields:
+  - rule
+  - file
+  - location
+  - justification
+  - owner
+  - approved_on
+  - review_or_expiration
+  - compensating_evidence

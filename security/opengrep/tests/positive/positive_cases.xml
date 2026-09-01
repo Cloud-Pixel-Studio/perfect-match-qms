@@ -1,0 +1,15 @@
+<odoo>
+    <record id="pmqms_positive_server_action" model="ir.actions.server">
+        <field name="name">Positive security test</field>
+        <field name="state">code</field>
+        <field name="code">eval(payload)</field>
+    </record>
+    <record id="pmqms_positive_cron" model="ir.cron">
+        <field name="name">Positive cron security test</field>
+        <field name="state">code</field>
+        <field name="code">model.sudo().run()</field>
+    </record>
+    <template id="pmqms_positive_template">
+        <t t-raw="payload"/>
+    </template>
+</odoo>

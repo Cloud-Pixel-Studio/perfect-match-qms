@@ -1,0 +1,40 @@
+rules:
+  - id: pmqms.xml.server-action-eval
+    languages: [generic]
+    severity: ERROR
+    message: XML-defined server action code must not use eval or exec.
+    metadata:
+      security_severity: HIGH
+      category: code-execution
+      license: PMQMS project-owned local rule
+    pattern-regex: '<field\s+name=["'']code["''][^>]*>[^<]*(?:eval|exec)\s*\('
+
+  - id: pmqms.xml.server-action-sudo-review
+    languages: [generic]
+    severity: INFO
+    message: XML-defined server action code using sudo() requires review.
+    metadata:
+      security_severity: INFO
+      category: privilege-review
+      license: PMQMS project-owned local rule
+    pattern-regex: '<field\s+name=["'']code["''][^>]*>[^<]*\.sudo\s*\('
+
+  - id: pmqms.xml.cron-code-review
+    languages: [generic]
+    severity: INFO
+    message: Cron records with inline code require review for auditability and idempotency.
+    metadata:
+      security_severity: INFO
+      category: cron-review
+      license: PMQMS project-owned local rule
+    pattern-regex: '<record\s+[^>]*model=["'']ir\.cron["''][\s\S]*?<field\s+name=["'']state["'']>code</field>'
+
+  - id: pmqms.xml.qweb-raw-output
+    languages: [generic]
+    severity: ERROR
+    message: QWeb t-raw output can introduce XSS unless the value is sanitized and justified.
+    metadata:
+      security_severity: HIGH
+      category: xss
+      license: PMQMS project-owned local rule
+    pattern-regex: '<t\s+[^>]*t-raw='

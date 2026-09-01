@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-EXCLUDED_DIRS = {".git", "__pycache__", ".mypy_cache", ".pytest_cache"}
+EXCLUDED_DIRS = {".git", ".security-audit", "__pycache__", ".mypy_cache", ".pytest_cache"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".gz", ".tgz"}
 PATTERNS = [
     re.compile(r"-----BEGIN (?:RSA |DSA |EC |OPENSSH |)PRIVATE KEY-----"),

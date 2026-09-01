@@ -1,0 +1,72 @@
+name: Security Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Run security audit
+        id: security_audit
+        continue-on-error: true
+        env:
+          PMQMS_SECURITY_RUN_ID: ci
+        run: bash deployment/scripts/security-audit.sh
+
+      - name: Run security evidence tests
+        run: python -m unittest tools.security.test_m27_evidence tools.security.test_pip_audit_evidence
+
+      - name: Upload security audit artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: security-audit-${{ github.run_id }}
+          path: .security-audit/reports/**
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload OpenGrep SARIF
+        if: always() && hashFiles('.security-audit/reports/ci/opengrep.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d
+        with:
+          sarif_file: .security-audit/reports/ci/opengrep.sarif
+          category: opengrep
+
+      - name: Upload Trivy SARIF
+        if: always() && hashFiles('.security-audit/reports/ci/trivy.sarif') != ''
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@6f5948dfacef28e207b48d0905cf90c03365536d
+        with:
+          sarif_file: .security-audit/reports/ci/trivy.sarif
+          category: trivy
+
+      - name: Enforce security audit result
+        if: always()
+        run: |
+          code_file=".security-audit/reports/ci/exit-code.txt"
+          test -f "$code_file"
+          exit "$(cat "$code_file")"

@@ -1,0 +1,14 @@
+.git/
+.security-audit/
+__pycache__/
+.pytest_cache/
+deployment/docker/.volumes/
+deployment/docker/data/
+deployment/docker/secrets/
+filestore/
+sessions/
+exports/
+backups/
+standards-private/
+licensed-standards/
+plane/
