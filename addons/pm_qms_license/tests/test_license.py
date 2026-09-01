@@ -195,6 +195,39 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         with self.assertRaises(AccessError):
             user.with_user(regular).write({"pmqms_license_exempt": True})
 
+    def test_organization_capacity_counts_active_current_company_only(self):
+        self._import()
+        Organization = self.env["pm.qms.organization"].with_context(pmqms_enforce_license=True)
+        other_company = self.env["res.company"].create({"name": "Mission 27 Other Company"})
+        before_ids = self.env["pm.qms.organization"].search([]).ids
+        service = self.env["pm.qms.entitlement.service"]
+
+        inactive = Organization.create(
+            {
+                "name": "Mission 27 Inactive Organization",
+                "code": "M27-INACTIVE",
+                "company_id": self.company.id,
+                "active": False,
+            }
+        )
+        other = Organization.create(
+            {
+                "name": "Mission 27 Other Organization",
+                "code": "M27-OTHER",
+                "company_id": other_company.id,
+            }
+        )
+        current_usage = service.usage(self.company)
+        other_usage = service.usage(other_company)
+
+        self.assertFalse(inactive.active)
+        self.assertEqual(current_usage["company"]["used"], 1)
+        self.assertEqual(other_usage["company"]["used"], 1)
+        self.assertEqual(service.usage(self.company)["company"]["used"], 1)
+        self.assertEqual(self.env["pm.qms.organization"].search([]).ids, before_ids + [inactive.id, other.id])
+        self.assertEqual(set(current_usage["company"]), {"used", "limit", "remaining"})
+        self.assertNotIn("records", current_usage["company"])
+
     def test_invalid_import_does_not_replace_current_license(self):
         current = self._import()
         broken = self._document(license_revision=2)

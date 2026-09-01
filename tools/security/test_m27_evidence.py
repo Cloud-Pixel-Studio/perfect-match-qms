@@ -44,6 +44,20 @@ class TestM27Evidence(unittest.TestCase):
                 rows = list(csv.DictReader(stream))
             self.assertTrue(all(row["invoker"] and row["follow_up"] for row in rows if row["site_type"] == "PRODUCTION_REVIEWED"))
 
+    def test_sudo_inventory_reports_uncovered_p1_instead_of_false_zero(self):
+        root = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory() as workspace:
+            output = Path(workspace) / "sudo.csv"
+            sudo_inventory.generate(root / "addons", output)
+            with output.open(encoding="utf-8", newline="") as stream:
+                rows = list(csv.DictReader(stream))
+        row = next(row for row in rows if row["file"] == "addons/pm_qms_license/services/entitlement_service.py" and row["line"] == "65")
+        row["runtime_covered"] = "NO"
+        summary = sudo_inventory.validate(rows)
+        self.assertEqual(summary["unresolved_p0"], 0)
+        self.assertEqual(summary["unresolved_p1"], 1)
+        self.assertEqual(summary["deferred_p2"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

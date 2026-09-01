@@ -108,10 +108,10 @@ PRODUCTION_DETAILS = {
         "scope": "License entitlement company/organization capacity only",
         "output_mutation": "Returns a count; no mutation",
         "audit_history": "No business event from a count",
-        "regression_test": "TestPmQmsCommercialLicensing capacity tests",
+        "regression_test": "TestPmQmsCommercialLicensing.test_organization_capacity_counts_active_current_company_only",
         "risk": "P1 authorization-sensitive",
-        "follow_up": "Retain fixed capacity predicates; add tenant fixture in M28",
-        "runtime_covered": "NO",
+        "follow_up": "Retain fixed active operational predicate; current and other-company count boundary is covered",
+        "runtime_covered": "YES",
     },
     ("addons/pm_qms_license/services/entitlement_service.py", "71"): {
         "invoker": "License capacity site count",
@@ -279,16 +279,39 @@ def validate(rows: list[dict[str, str]]) -> dict[str, int]:
             if not row[field]:
                 raise ValueError(f"empty production review field {field}: {row}")
     counts = Counter(row["site_type"] for row in rows)
+    unresolved_p0 = sum(
+        row["site_type"] == "PRODUCTION_REVIEWED"
+        and row["risk"].split(maxsplit=1)[0].upper() == "P0"
+        and row["runtime_covered"] != "YES"
+        for row in rows
+    )
+    unresolved_p1 = sum(
+        row["site_type"] == "PRODUCTION_REVIEWED"
+        and row["risk"].split(maxsplit=1)[0].upper() == "P1"
+        and row["runtime_covered"] != "YES"
+        for row in rows
+    )
+    static_review = sum(
+        row["site_type"] == "PRODUCTION_REVIEWED"
+        and row["risk"].split(maxsplit=1)[0].upper() not in {"P0", "P1"}
+        and row["runtime_covered"] != "YES"
+        for row in rows
+    )
     return {
         "total": len(rows),
         "production": counts["PRODUCTION_REVIEWED"],
         "test_only": counts["TEST_ONLY_FIXTURE"],
         "runtime_covered": sum(row["runtime_covered"] == "YES" for row in production),
-        "specific_static_review": sum(row["site_type"] == "PRODUCTION_REVIEWED" and row["runtime_covered"] != "YES" for row in rows),
+        "specific_static_review": static_review,
         "remediated": sum(row["remediated"] not in {"NO_NEW_SUDO_IN_M27", "NOT_APPLICABLE"} for row in rows),
-        "deferred_p2": sum(row["site_type"] == "PRODUCTION_REVIEWED" and row["risk"] == "P2 operational" and row["runtime_covered"] != "YES" for row in rows),
-        "unresolved_p0": 0,
-        "unresolved_p1": 0,
+        "deferred_p2": sum(
+            row["site_type"] == "PRODUCTION_REVIEWED"
+            and row["risk"].split(maxsplit=1)[0].upper() == "P2"
+            and row["runtime_covered"] != "YES"
+            for row in rows
+        ),
+        "unresolved_p0": unresolved_p0,
+        "unresolved_p1": unresolved_p1,
     }
 
 
