@@ -14,25 +14,25 @@
         <field name="name">M28 CAPA action scope</field>
         <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_action"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('capa_id.company_id', 'in', company_ids), ('capa_id.organization_id', 'in', user.qms_effective_organization_ids.ids), ('capa_id.process_id', 'in', user.qms_effective_process_ids.ids)]</field>
     </record>
     <record id="rule_m28_capa_why_scope" model="ir.rule">
         <field name="name">M28 CAPA five-why scope</field>
         <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_why"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('capa_id.company_id', 'in', company_ids), ('capa_id.organization_id', 'in', user.qms_effective_organization_ids.ids), ('capa_id.process_id', 'in', user.qms_effective_process_ids.ids)]</field>
     </record>
     <record id="rule_m28_capa_fishbone_scope" model="ir.rule">
         <field name="name">M28 CAPA fishbone scope</field>
         <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_fishbone"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('capa_id.company_id', 'in', company_ids), ('capa_id.organization_id', 'in', user.qms_effective_organization_ids.ids), ('capa_id.process_id', 'in', user.qms_effective_process_ids.ids)]</field>
     </record>
     <record id="rule_m28_capa_is_is_not_scope" model="ir.rule">
         <field name="name">M28 CAPA Is Is Not scope</field>
         <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_is_is_not"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('capa_id.company_id', 'in', company_ids), ('capa_id.organization_id', 'in', user.qms_effective_organization_ids.ids), ('capa_id.process_id', 'in', user.qms_effective_process_ids.ids)]</field>
     </record>
 
     <record id="rule_m28_management_review_input_scope" model="ir.rule">

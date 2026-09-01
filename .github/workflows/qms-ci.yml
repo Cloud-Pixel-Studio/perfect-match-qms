@@ -52,6 +52,9 @@ jobs:
       - name: Run customer deployment script regressions
         run: bash deployment/scripts/tests/test_customer_instance_cleanup.sh
 
+      - name: Run customer effective license status regression
+        run: bash deployment/scripts/tests/test_customer_instance_license_status.sh
+
       - name: Run runtime lock regressions
         run: bash deployment/scripts/tests/test_runtime_lock.sh
 

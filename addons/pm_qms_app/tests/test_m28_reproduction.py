@@ -23,6 +23,38 @@ class TestM28Reproduction(TransactionCase):
         cls.organization_b = cls.env["pm.qms.organization"].sudo().create(
             {"name": "M28 Reproduction Organization B", "code": "M28-REPRO-B", "company_id": cls.company.id}
         )
+        cls.process_a = cls.env["pm.qms.process"].sudo().create(
+            {
+                "name": "M28 Reproduction Process A",
+                "code": "M28-REPRO-PROCESS-A",
+                "organization_id": cls.organization_a.id,
+                "company_id": cls.company.id,
+            }
+        )
+        cls.process_b = cls.env["pm.qms.process"].sudo().create(
+            {
+                "name": "M28 Reproduction Process B",
+                "code": "M28-REPRO-PROCESS-B",
+                "organization_id": cls.organization_a.id,
+                "company_id": cls.company.id,
+            }
+        )
+        cls.capa_a = cls.env["pm.qms.capa"].sudo().create(
+            {
+                "name": "M28 Reproduction CAPA A",
+                "organization_id": cls.organization_a.id,
+                "process_id": cls.process_a.id,
+                "problem_statement": "M28 fictional process A issue.",
+            }
+        )
+        cls.capa_b = cls.env["pm.qms.capa"].sudo().create(
+            {
+                "name": "M28 Reproduction CAPA B",
+                "organization_id": cls.organization_a.id,
+                "process_id": cls.process_b.id,
+                "problem_statement": "M28 fictional process B issue.",
+            }
+        )
         cls.review_a = cls.env["pm.qms.management.review"].sudo().create(
             {
                 "name": "M28 Reproduction Review A",
@@ -73,7 +105,7 @@ class TestM28Reproduction(TransactionCase):
                 ],
                 "qms_organization_ids": [Command.set([cls.organization_a.id])],
                 "qms_all_sites": True,
-                "qms_all_processes": True,
+                "qms_process_ids": [Command.set([cls.process_a.id])],
             }
         )
 
@@ -151,6 +183,65 @@ class TestM28Reproduction(TransactionCase):
         self.assertEqual(license_record.effective_state, "expired")
         self.assertEqual(self.env["pm.qms.license"].current_status()["status"], "expired")
         self.assertLess(fields.Datetime.to_datetime(license_record.expires_at), fields.Datetime.now())
+
+    def test_capa_children_inherit_parent_process_scope(self):
+        child_specs = (
+            ("pm.qms.capa.action", {"capa_id": self.capa_a.id, "name": "M28 scoped action A"}, {"name": "M28 action edit"}),
+            ("pm.qms.capa.why", {"capa_id": self.capa_a.id, "sequence": 1, "question": "M28 why A"}, {"answer": "M28 answer"}),
+            (
+                "pm.qms.capa.fishbone",
+                {"capa_id": self.capa_a.id, "category": "people", "potential_cause": "M28 cause A"},
+                {"potential_cause": "M28 cause edit"},
+            ),
+            (
+                "pm.qms.capa.is.is.not",
+                {"capa_id": self.capa_a.id, "dimension": "what", "sequence": 1},
+                {"is_value": "M28 value edit"},
+            ),
+        )
+        for model_name, in_scope_values, write_values in child_specs:
+            context = {"pm_qms_capa_initialize": True} if model_name.endswith(("why", "is.is.not")) else {}
+            Child = self.env[model_name].with_context(**context)
+            in_scope = Child.sudo().create(in_scope_values)
+            out_scope_values = dict(in_scope_values, capa_id=self.capa_b.id)
+            out_scope = Child.sudo().create(out_scope_values)
+            scoped = self.env[model_name].with_user(self.viewer)
+            self.assertIn(in_scope, scoped.search([]))
+            self.assertNotIn(out_scope, scoped.search([]))
+            if "name" in in_scope_values:
+                self.assertNotIn(out_scope.id, [record_id for record_id, _label in scoped.name_search("M28")])
+            with self.assertRaises(AccessError):
+                out_scope.with_user(self.viewer).read()
+            with self.assertRaises((AccessError, UserError)):
+                out_scope.with_user(self.viewer).write(write_values)
+            with self.assertRaises((AccessError, UserError)):
+                out_scope.with_user(self.viewer).unlink()
+            with self.assertRaises(AccessError):
+                scoped.create(dict(in_scope_values, capa_id=self.capa_b.id))
+
+        action_a = self.capa_a.action_ids[:1]
+        action_b = self.capa_b.action_ids[:1]
+        message_a = action_a.sudo().message_post(body="M28 CAPA process A message", subtype_xmlid="mail.mt_note")
+        message_b = action_b.sudo().message_post(body="M28 CAPA process B message", subtype_xmlid="mail.mt_note")
+        activity_a = action_a.sudo().activity_schedule(
+            "mail.mail_activity_data_todo", summary="M28 CAPA activity A", user_id=self.viewer.id
+        )
+        activity_b = action_b.sudo().activity_schedule(
+            "mail.mail_activity_data_todo", summary="M28 CAPA activity B", user_id=self.viewer.id
+        )
+        attachment_a = self.env["ir.attachment"].sudo().create(
+            {"name": "m28-capa-a.txt", "type": "binary", "datas": base64.b64encode(b"A").decode(), "res_model": action_a._name, "res_id": action_a.id}
+        )
+        attachment_b = self.env["ir.attachment"].sudo().create(
+            {"name": "m28-capa-b.txt", "type": "binary", "datas": base64.b64encode(b"B").decode(), "res_model": action_b._name, "res_id": action_b.id}
+        )
+        self.assertIn(message_a, self.env["mail.message"].with_user(self.viewer).search([("model", "=", action_a._name)]))
+        self.assertNotIn(message_b, self.env["mail.message"].with_user(self.viewer).search([("model", "=", action_b._name)]))
+        self.assertIn(activity_a, self.env["mail.activity"].with_user(self.viewer).search([("res_model", "=", action_a._name)]))
+        self.assertNotIn(activity_b, self.env["mail.activity"].with_user(self.viewer).search([("res_model", "=", action_b._name)]))
+        self.assertTrue(attachment_a.with_user(self.viewer).read(["name"]))
+        with self.assertRaises(AccessError):
+            attachment_b.with_user(self.viewer).read(["name"])
 
     def test_expired_license_blocks_all_new_capacity_hooks(self):
         self._expired_license()
