@@ -48,6 +48,19 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep allow-list action gate; add endpoint-level action-ID test in M31",
         "runtime_covered": "YES",
     },
+    ("addons/pm_qms_app/models/mail_activity.py", "11"): {
+        "invoker": "QMS activity access filtering for related documents",
+        "input_provenance": "Current mail.activity recordset and its related QMS model/res_id values",
+        "user_controlled_input": "NO arbitrary model or record access; the model scope is restricted to pm.qms.* activities",
+        "records_before_sudo": "Activity records selected by the normal ORM search; sudo is used only to inspect the related QMS activity boundary",
+        "scope": "Only related QMS activities are rechecked through mail.message access filtering; non-QMS activities retain native behavior",
+        "output_mutation": "Filters the returned activity recordset; no business or security-record mutation",
+        "audit_history": "No business event; access filtering is side-effect free",
+        "regression_test": "TestQmsHistory and M28 activity access-boundary tests",
+        "risk": "P1 authorization-sensitive",
+        "follow_up": "Retain the pm.qms model-prefix gate and related-record message access check",
+        "runtime_covered": "YES",
+    },
     ("addons/pm_qms_app/models/user_access.py", "146"): {
         "invoker": "QMS user effective-scope computation",
         "input_provenance": "Current user company_ids and explicit QMS organization scope",
@@ -100,7 +113,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep current-license predicate fixed; M28 review service callers",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/services/entitlement_service.py", "65"): {
+    ("addons/pm_qms_license/services/entitlement_service.py", "66"): {
         "invoker": "License capacity organization count",
         "input_provenance": "Current license entitlement and configured active organizations",
         "user_controlled_input": "NO arbitrary domain; active-state predicate is fixed",
@@ -113,7 +126,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Retain fixed active operational predicate; current and other-company count boundary is covered",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/services/entitlement_service.py", "71"): {
+    ("addons/pm_qms_license/services/entitlement_service.py", "72"): {
         "invoker": "License capacity site count",
         "input_provenance": "Current license entitlement and active site state",
         "user_controlled_input": "NO arbitrary domain; active-state predicate is fixed",
@@ -126,7 +139,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Retain fixed capacity predicates; add tenant fixture in M28",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/services/entitlement_service.py", "89"): {
+    ("addons/pm_qms_license/services/entitlement_service.py", "90"): {
         "invoker": "License capacity role-group lookup",
         "input_provenance": "Fixed QMS role allow-list used for licensed-user calculation",
         "user_controlled_input": "NO; group IDs are fixed product references",
@@ -139,7 +152,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep role allow-list explicit; revisit only with licensing policy change",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/services/entitlement_service.py", "100"): {
+    ("addons/pm_qms_license/services/entitlement_service.py", "101"): {
         "invoker": "License named-user boundary lookup",
         "input_provenance": "Fixed user/group predicates and licensed company scope",
         "user_controlled_input": "NO arbitrary user IDs or domains",
@@ -152,7 +165,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "M28 add explicit cross-company count fixture",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/services/entitlement_service.py", "101"): {
+    ("addons/pm_qms_license/services/entitlement_service.py", "102"): {
         "invoker": "License named-user count search",
         "input_provenance": "Same fixed licensed role/company predicates as the boundary check",
         "user_controlled_input": "NO arbitrary user IDs or domains",
@@ -165,7 +178,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "M28 add explicit cross-company count fixture",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/models/license.py", "107"): {
+    ("addons/pm_qms_license/models/license.py", "126"): {
         "invoker": "License model current-record helper",
         "input_provenance": "Fixed is_current predicate and record ordering",
         "user_controlled_input": "NO; helper accepts no caller domain",
@@ -178,7 +191,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Retain fixed helper; M28 review caller inventory",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/models/license.py", "166"): {
+    ("addons/pm_qms_license/models/license.py", "185"): {
         "invoker": "Controlled license import/update path",
         "input_provenance": "Validated signed license payload after environment/signature checks",
         "user_controlled_input": "Payload is externally supplied but validated before create; no arbitrary model/domain",

@@ -36,7 +36,7 @@ class TestM27Evidence(unittest.TestCase):
         with tempfile.TemporaryDirectory() as workspace:
             output = Path(workspace) / "sudo.csv"
             summary = sudo_inventory.generate(root / "addons", output)
-            self.assertEqual(summary["production"], 17)
+            self.assertEqual(summary["production"], 18)
             self.assertGreater(summary["test_only"], 0)
             self.assertEqual(summary["total"], summary["production"] + summary["test_only"])
             self.assertEqual(summary["unresolved_p0"], 0)
@@ -52,7 +52,7 @@ class TestM27Evidence(unittest.TestCase):
             sudo_inventory.generate(root / "addons", output)
             with output.open(encoding="utf-8", newline="") as stream:
                 rows = list(csv.DictReader(stream))
-        row = next(row for row in rows if row["file"] == "addons/pm_qms_license/services/entitlement_service.py" and row["line"] == "65")
+        row = next(row for row in rows if row["file"] == "addons/pm_qms_license/services/entitlement_service.py" and row["line"] == "66")
         row["runtime_covered"] = "NO"
         summary = sudo_inventory.validate(rows)
         self.assertEqual(summary["unresolved_p0"], 0)
