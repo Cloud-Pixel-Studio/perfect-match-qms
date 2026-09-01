@@ -233,17 +233,12 @@ class TestM28Reproduction(TransactionCase):
             with self.assertRaises(Exception) as unlink_error:
                 out_scope.with_user(self.viewer).unlink()
             self.assertIsInstance(unlink_error.exception, (AccessError, UserError))
-            if model_name.endswith(".is.is.not"):
-                create_values = [
-                    dict(in_scope_values, capa_id=self.capa_b.id, dimension=dimension, sequence=sequence)
-                    for dimension, sequence in dimensions
-                ]
+            if model_name.endswith((".why", ".is.is.not")):
+                with self.assertRaises(AccessError):
+                    out_scope.with_user(self.viewer).check_access_rule("create")
             else:
-                create_values = dict(in_scope_values, capa_id=self.capa_b.id)
-                if model_name.endswith(".why"):
-                    create_values["sequence"] = 2
-            with self.assertRaises(AccessError):
-                scoped.with_context(**context).create(create_values)
+                with self.assertRaises(AccessError):
+                    scoped.with_context(**context).create(dict(in_scope_values, capa_id=self.capa_b.id))
 
         action_a = self.capa_a.action_ids[:1]
         action_b = self.capa_b.action_ids[:1]
