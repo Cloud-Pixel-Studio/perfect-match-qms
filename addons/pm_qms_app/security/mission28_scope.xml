@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Child records inherit the same tenant scope as their owning QMS record.
+         Company-level definitions remain reusable; records with an optional
+         organization are allowed only when they are explicitly unscoped. -->
+    <record id="rule_m28_event_scope" model="ir.rule">
+        <field name="name">M28 operational event scope</field>
+        <field name="model_id" ref="pm_qms_core.model_pm_qms_event"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('company_id', 'in', company_ids), '|', ('organization_id', '=', False), ('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+
+    <record id="rule_m28_capa_action_scope" model="ir.rule">
+        <field name="name">M28 CAPA action scope</field>
+        <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_action"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_capa_why_scope" model="ir.rule">
+        <field name="name">M28 CAPA five-why scope</field>
+        <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_why"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_capa_fishbone_scope" model="ir.rule">
+        <field name="name">M28 CAPA fishbone scope</field>
+        <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_fishbone"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_capa_is_is_not_scope" model="ir.rule">
+        <field name="name">M28 CAPA Is Is Not scope</field>
+        <field name="model_id" ref="pm_qms_capa.model_pm_qms_capa_is_is_not"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+
+    <record id="rule_m28_management_review_input_scope" model="ir.rule">
+        <field name="name">M28 management review input scope</field>
+        <field name="model_id" ref="pm_qms_management_review.model_pm_qms_management_review_input"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_management_review_decision_scope" model="ir.rule">
+        <field name="name">M28 management review decision scope</field>
+        <field name="model_id" ref="pm_qms_management_review.model_pm_qms_management_review_decision"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_management_review_action_scope" model="ir.rule">
+        <field name="name">M28 management review action scope</field>
+        <field name="model_id" ref="pm_qms_management_review.model_pm_qms_management_review_action"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+
+    <record id="rule_m28_audit_scope_scope" model="ir.rule">
+        <field name="name">M28 audit scope line scope</field>
+        <field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_scope"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_audit_criterion_scope" model="ir.rule">
+        <field name="name">M28 audit criterion scope</field>
+        <field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_criterion"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_audit_plan_line_scope" model="ir.rule">
+        <field name="name">M28 audit plan line scope</field>
+        <field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_plan_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_audit_evidence_scope" model="ir.rule">
+        <field name="name">M28 audit evidence scope</field>
+        <field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_evidence"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_audit_finding_scope" model="ir.rule">
+        <field name="name">M28 audit finding scope</field>
+        <field name="model_id" ref="pm_qms_audit.model_pm_qms_audit_finding"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('process_id', '=', False), ('process_id', 'in', user.qms_effective_process_ids.ids)]</field>
+    </record>
+
+    <record id="rule_m28_calibration_measurement_scope" model="ir.rule">
+        <field name="name">M28 calibration measurement scope</field>
+        <field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_measurement_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_calibration_impact_scope" model="ir.rule">
+        <field name="name">M28 calibration impact scope</field>
+        <field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_impact_assessment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_calibration_affected_reference_scope" model="ir.rule">
+        <field name="name">M28 calibration affected reference scope</field>
+        <field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_affected_reference"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+
+    <record id="rule_m28_person_role_assignment_scope" model="ir.rule">
+        <field name="name">M28 person role assignment scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_person_role_assignment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_role_competency_requirement_scope" model="ir.rule">
+        <field name="name">M28 role competency requirement scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_role_competency_requirement"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('organization_id', '=', False), ('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_competency_assessment_scope" model="ir.rule">
+        <field name="name">M28 competency assessment scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_competency_assessment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_competency_matrix_scope" model="ir.rule">
+        <field name="name">M28 competency matrix scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_competency_matrix_line"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_training_event_scope" model="ir.rule">
+        <field name="name">M28 training event scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_training_event"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('organization_id', '=', False), ('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_training_record_scope" model="ir.rule">
+        <field name="name">M28 training record scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_training_record"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_qualification_record_scope" model="ir.rule">
+        <field name="name">M28 qualification record scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_qualification_record"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_role_document_requirement_scope" model="ir.rule">
+        <field name="name">M28 role document requirement scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_role_document_requirement"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">['|', ('organization_id', '=', False), ('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+    <record id="rule_m28_document_acknowledgment_scope" model="ir.rule">
+        <field name="name">M28 document acknowledgment scope</field>
+        <field name="model_id" ref="pm_qms_people.model_pm_qms_document_acknowledgment"/>
+        <field name="global" eval="True"/>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+    </record>
+</odoo>

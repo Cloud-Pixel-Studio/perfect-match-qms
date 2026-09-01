@@ -7,7 +7,7 @@ into controlled review records. It captures historical snapshots of objectives,
 KPIs, customer and supplier performance, audits, risks, NCR, CAPA, previous
 actions, decisions, and follow-up actions.
     """,
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",

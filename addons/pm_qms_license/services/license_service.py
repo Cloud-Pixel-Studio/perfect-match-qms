@@ -2,7 +2,7 @@ import base64
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .environment import read_environment_id
@@ -29,6 +29,29 @@ REQUIRED_PAYLOAD_FIELDS = {
 
 class LicenseValidationError(ValueError):
     pass
+
+
+TEMPORAL_STATES = {"valid", "expiring", "expired", "not_yet_valid"}
+
+
+def effective_temporal_state(stored_state, not_before, expires_at, perpetual, now=None):
+    """Return the current term state without changing the signed license payload."""
+    if stored_state not in TEMPORAL_STATES:
+        return stored_state
+    now = now or datetime.now(timezone.utc)
+    if not_before and not_before.tzinfo is None:
+        not_before = not_before.replace(tzinfo=timezone.utc)
+    if expires_at and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if not_before and now < not_before:
+        return "not_yet_valid"
+    if perpetual:
+        return "valid"
+    if expires_at and now >= expires_at:
+        return "expired"
+    if expires_at and expires_at - now <= timedelta(days=30):
+        return "expiring"
+    return "valid"
 
 
 def canonical_payload(payload):
@@ -137,14 +160,13 @@ def validate_document(document, expected_environment_id=None, public_keys=None, 
     not_before = _parse_datetime(payload["not_before"], "not_before")
     expires_at = _parse_datetime(payload.get("expires_at"), "expires_at")
     issued_at = _parse_datetime(payload["issued_at"], "issued_at")
-    if not_before and now < not_before:
-        state = "not_yet_valid"
-    elif expires_at and now >= expires_at:
-        state = "expired"
-    elif expires_at and (expires_at - now).days <= 30:
-        state = "expiring"
-    else:
-        state = "valid"
+    state = effective_temporal_state(
+        "valid",
+        not_before,
+        expires_at,
+        payload["perpetual"],
+        now=now,
+    )
     return {
         "payload": payload,
         "signature": document["signature"],
