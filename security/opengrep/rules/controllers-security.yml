@@ -1,0 +1,101 @@
+rules:
+  - id: pmqms.controller.public-or-none-auth
+    languages: [python]
+    severity: WARNING
+    message: Public or unauthenticated Odoo routes require explicit review and tests.
+    metadata:
+      security_severity: MEDIUM
+      category: public-route
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: |
+          @http.route(..., auth="public", ...)
+          def $FUNC(...):
+              ...
+      - pattern: |
+          @http.route(..., auth='public', ...)
+          def $FUNC(...):
+              ...
+      - pattern: |
+          @http.route(..., auth="none", ...)
+          def $FUNC(...):
+              ...
+      - pattern: |
+          @http.route(..., auth='none', ...)
+          def $FUNC(...):
+              ...
+
+  - id: pmqms.controller.csrf-disabled
+    languages: [python]
+    severity: ERROR
+    message: csrf=False on an Odoo route requires explicit justification and compensating controls.
+    metadata:
+      security_severity: HIGH
+      category: csrf
+      license: PMQMS project-owned local rule
+    pattern: |
+      @http.route(..., csrf=False, ...)
+      def $FUNC(...):
+          ...
+
+  - id: pmqms.controller.public-request-env-sudo
+    languages: [python]
+    severity: ERROR
+    message: Public routes that combine request.env with sudo() can bypass customer boundaries.
+    metadata:
+      security_severity: HIGH
+      category: authorization
+      license: PMQMS project-owned local rule
+    patterns:
+      - pattern-inside: |
+          @http.route(..., auth=$AUTH, ...)
+          def $FUNC(...):
+              ...
+      - metavariable-regex:
+          metavariable: $AUTH
+          regex: ^["'](?:public|none)["']$
+      - pattern: request.env[$MODEL].sudo(...)
+
+  - id: pmqms.controller.attachment-sudo-download
+    languages: [python]
+    severity: ERROR
+    message: Attachment access from a controller must prove record ownership before sudo/browse/download.
+    metadata:
+      security_severity: HIGH
+      category: attachment-access
+      license: PMQMS project-owned local rule
+    patterns:
+      - pattern-inside: |
+          @http.route(..., auth=$AUTH, ...)
+          def $FUNC(...):
+              ...
+      - metavariable-regex:
+          metavariable: $AUTH
+          regex: ^["'](?:public|none)["']$
+      - pattern-either:
+          - pattern: request.env["ir.attachment"].sudo().browse(...)
+          - pattern: request.env['ir.attachment'].sudo().browse(...)
+
+  - id: pmqms.controller.public-sensitive-model-write
+    languages: [python]
+    severity: ERROR
+    message: Public controllers must not sudo-write sensitive QMS or platform models.
+    metadata:
+      security_severity: HIGH
+      category: authorization
+      license: PMQMS project-owned local rule
+    patterns:
+      - pattern-inside: |
+          @http.route(..., auth=$AUTH, ...)
+          def $FUNC(...):
+              ...
+      - metavariable-regex:
+          metavariable: $AUTH
+          regex: ^["'](?:public|none)["']$
+      - pattern: request.env[$MODEL].sudo().$OP(...)
+      - metavariable-regex:
+          metavariable: $MODEL
+          regex: ^["'](?:res\.users|res\.partner|ir\.attachment|pm\.qms\.(?:license|document|evidence|activation\.request|implementation\.project))["']$
+      - metavariable-regex:
+          metavariable: $OP
+          regex: ^(create|write|unlink)$

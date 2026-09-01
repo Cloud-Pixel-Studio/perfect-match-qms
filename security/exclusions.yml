@@ -1,0 +1,21 @@
+schema_version: 1
+name: Perfect Match QMS security audit exclusions
+rules:
+  - rule: none
+    file: none
+    location: none
+    justification: No M29 security-audit exclusions are approved at baseline creation.
+    owner: Product Owner
+    approved_on: null
+    review_or_expiration: null
+    compensating_evidence: none
+
+required_fields:
+  - rule
+  - file
+  - location
+  - justification
+  - owner
+  - approved_on
+  - review_or_expiration
+  - compensating_evidence

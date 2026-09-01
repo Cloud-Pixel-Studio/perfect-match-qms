@@ -251,6 +251,10 @@ def source_sites(addons_root: Path) -> list[tuple[str, str, str, str]]:
     return sites
 
 
+def is_test_fixture(file: str) -> bool:
+    return "/tests/" in file
+
+
 def generate(addons_root: Path, output: Path) -> dict[str, int]:
     rows = []
     for number, (addon, file, line, callable_text) in enumerate(source_sites(addons_root), 1):
@@ -259,6 +263,8 @@ def generate(addons_root: Path, output: Path) -> dict[str, int]:
             details = PRODUCTION_DETAILS[key]
             rows.append({"id": str(number), "addon": addon, "file": file, "line": line, "callable": callable_text, "site_type": "PRODUCTION_REVIEWED", **details, "remediated": "NO_NEW_SUDO_IN_M27"})
         else:
+            if not is_test_fixture(file):
+                raise ValueError(f"unreviewed production sudo site: {file}:{line}")
             rows.append({"id": str(number), "addon": addon, "file": file, "line": line, "callable": callable_text, "site_type": "TEST_ONLY_FIXTURE", "invoker": "Disposable test fixture or assertion", "input_provenance": "Test-defined fictional data", "user_controlled_input": "NO; test-controlled", "records_before_sudo": "Disposable test record setup", "scope": "Test transaction only", "output_mutation": "Test data setup/assertion only", "audit_history": "Not production history", "regression_test": "M27/full QMS test suite", "risk": "non-customer technical", "follow_up": "None; test-only", "runtime_covered": "YES", "remediated": "NOT_APPLICABLE"})
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="") as stream:

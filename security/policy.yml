@@ -1,0 +1,71 @@
+schema_version: 1
+name: Perfect Match QMS security audit policy
+enforcement_mode: baseline
+artifact_retention_days: 30
+
+severity_policy:
+  CRITICAL:
+    action: block
+    description: Confirmed critical vulnerabilities, secrets, or unsafe infrastructure findings block the gate.
+  HIGH:
+    action: block_when_confirmed_or_without_approved_baseline
+    description: High findings require triage and block after confirmation unless explicitly baselined.
+  MEDIUM:
+    action: report_and_triage
+    description: Medium findings are reported and must be triaged.
+  LOW:
+    action: report
+    description: Low findings are reported.
+  INFO:
+    action: report_optional
+    description: Informational findings are reported when useful for review.
+
+tools:
+  opengrep:
+    version: v1.29.0
+    linux_x86_source: https://github.com/opengrep/opengrep/releases/download/v1.29.0/opengrep_manylinux_x86
+    linux_x86_sha256: 3365ef49d04893e01338d85d9bbd49b2bd5261ad4c9c0df0a6a0f8d44232ae13
+    windows_x86_source: https://github.com/opengrep/opengrep/releases/download/v1.29.0/opengrep_windows_x86.exe
+    windows_x86_sha256: ee485b31912704dc6410bc43f04b5c6ad896697db56e360a98204abf95fa1025
+    rule_source: local
+    remote_rules_allowed: false
+  pylint_odoo:
+    pylint_version: 4.0.8
+    pylint_odoo_version: 10.0.11
+    scope: addons/pm_qms_*
+  trivy:
+    version: 0.74.0
+    linux_x86_source: https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-64bit.tar.gz
+    linux_x86_sha256: 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+    windows_x86_source: https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_windows-64bit.zip
+    windows_x86_sha256: 94c40e0696e4b907a74b7b2e1438d5d72ebaca83115817407f568a002d520842
+    scanners:
+      - vuln
+      - misconfig
+      - secret
+    include_unfixed: true
+  pip_audit:
+    version: 2.10.1
+    dependency_input_required: true
+  secret_scan:
+    tool: deployment/scripts/secret-scan.py plus masked git history scan
+  zap:
+    status: not_executed_by_default
+    reason: Requires a disposable local Odoo target URL and non-destructive passive configuration.
+
+excluded_paths:
+  - .git/
+  - .security-audit/
+  - __pycache__/
+  - .pytest_cache/
+  - deployment/docker/.volumes/
+  - deployment/docker/data/
+  - deployment/docker/secrets/
+  - filestore/
+  - sessions/
+  - exports/
+  - backups/
+  - standards-private/
+  - licensed-standards/
+  - plane/
+  - security/opengrep/tests/

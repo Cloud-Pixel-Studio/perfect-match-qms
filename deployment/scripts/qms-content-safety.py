@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-EXCLUDED_DIRS = {".git", "__pycache__", ".mypy_cache", ".pytest_cache"}
+EXCLUDED_DIRS = {".git", ".security-audit", "__pycache__", ".mypy_cache", ".pytest_cache"}
 TEXT_SUFFIXES = {".csv", ".example", ".md", ".py", ".rst", ".txt", ".xml", ".yml", ".yaml"}
 PRIVATE_STANDARD_DIRS = {"standards-private", "licensed-standards"}
 STANDARD_FILE_PATTERN = re.compile(r"(?i)(iso|iatf|as9100|as9120|cmmc|sae).*\.(pdf|docx?|xlsx?)$")

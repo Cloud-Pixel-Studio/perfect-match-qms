@@ -1,0 +1,47 @@
+rules:
+  - id: pmqms.odoo.sudo-review
+    languages: [python]
+    severity: INFO
+    message: Odoo sudo() bypasses normal record rules; this is a review item, not an automatic vulnerability.
+    metadata:
+      security_severity: INFO
+      category: privilege-review
+      license: PMQMS project-owned local rule
+    pattern: $OBJ.sudo(...)
+
+  - id: pmqms.odoo.superuser-elevation
+    languages: [python]
+    severity: ERROR
+    message: with_user(SUPERUSER_ID) is a superuser elevation and requires explicit justification.
+    metadata:
+      security_severity: HIGH
+      category: privilege-escalation
+      license: PMQMS project-owned local rule
+    pattern: $OBJ.with_user(SUPERUSER_ID)
+
+  - id: pmqms.odoo.sql-string-construction
+    languages: [python]
+    severity: ERROR
+    message: SQL built with interpolation or concatenation must be parameterized.
+    metadata:
+      security_severity: CRITICAL
+      category: sql-injection
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: $CR.execute(f"...")
+      - pattern: $CR.execute("..." % $VALUE)
+      - pattern: $CR.execute("...".format(...))
+      - pattern: $CR.execute("..." + $VALUE)
+      - pattern: $CR.execute($VALUE + "...")
+
+  - id: pmqms.odoo.dynamic-model-access
+    languages: [python]
+    severity: WARNING
+    message: Dynamic request-controlled model access requires allow-list validation.
+    metadata:
+      security_severity: MEDIUM
+      category: authorization
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: request.env[request.params.get(...)]
+      - pattern: request.env[$KW.get(...)]

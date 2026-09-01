@@ -1,0 +1,71 @@
+rules:
+  - id: pmqms.python.dangerous-eval-exec
+    languages: [python]
+    severity: ERROR
+    message: Dynamic eval or exec requires security review and should not process external input.
+    metadata:
+      security_severity: HIGH
+      category: code-execution
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: eval($EXPR)
+      - pattern: exec($EXPR)
+
+  - id: pmqms.python.unsafe-pickle
+    languages: [python]
+    severity: ERROR
+    message: Pickle deserialization can execute code and must not process untrusted data.
+    metadata:
+      security_severity: HIGH
+      category: deserialization
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: pickle.load($SOURCE)
+      - pattern: pickle.loads($SOURCE)
+
+  - id: pmqms.python.shell-command
+    languages: [python]
+    severity: ERROR
+    message: Shell command execution requires review; avoid shell=True and string commands.
+    metadata:
+      security_severity: HIGH
+      category: command-injection
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: os.system($COMMAND)
+      - pattern: os.popen($COMMAND)
+      - patterns:
+          - pattern: subprocess.$CALL(..., shell=True, ...)
+          - metavariable-regex:
+              metavariable: $CALL
+              regex: ^(run|call|check_call|check_output|Popen)$
+
+  - id: pmqms.python.insecure-token-random
+    languages: [python]
+    severity: WARNING
+    message: Random module output is not suitable for security tokens; use the secrets module.
+    metadata:
+      security_severity: MEDIUM
+      category: cryptography
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: random.random(...)
+      - pattern: random.choice(...)
+      - pattern: random.choices(...)
+      - pattern: random.randint(...)
+      - pattern: random.randrange(...)
+      - pattern: random.getrandbits(...)
+
+  - id: pmqms.python.external-path-write
+    languages: [python]
+    severity: ERROR
+    message: Writing to a path derived from HTTP request input requires path validation and containment.
+    metadata:
+      security_severity: HIGH
+      category: path-traversal
+      license: PMQMS project-owned local rule
+    pattern-either:
+      - pattern: open(request.params.get(...), "w", ...)
+      - pattern: open(request.params.get(...), "wb", ...)
+      - pattern: Path(request.params.get(...)).write_text(...)
+      - pattern: Path(request.params.get(...)).write_bytes(...)

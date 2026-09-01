@@ -1,0 +1,9 @@
+<odoo>
+    <record id="pmqms_negative_server_action" model="ir.actions.server">
+        <field name="name">Negative security test</field>
+        <field name="state">object_write</field>
+    </record>
+    <template id="pmqms_negative_template">
+        <t t-esc="payload"/>
+    </template>
+</odoo>
