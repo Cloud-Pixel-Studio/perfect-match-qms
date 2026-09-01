@@ -512,10 +512,18 @@ class TestM28Reproduction(TransactionCase):
                 out_scope.with_user(self.viewer).read()
             with self.assertRaises(AccessError, msg=f"create:{model_name}"):
                 scoped.create(create_values)
-            with self.assertRaises((AccessError, UserError), msg=f"write:{model_name}"):
+            try:
                 out_scope.with_user(self.viewer).write(write_values)
-            with self.assertRaises((AccessError, UserError), msg=f"unlink:{model_name}"):
+            except (AccessError, UserError):
+                pass
+            else:
+                self.fail(f"write:{model_name} was not rejected")
+            try:
                 out_scope.with_user(self.viewer).unlink()
+            except (AccessError, UserError):
+                pass
+            else:
+                self.fail(f"unlink:{model_name} was not rejected")
 
         Decision = self.env["pm.qms.management.review.decision"].sudo()
         decision_a = Decision.create(
