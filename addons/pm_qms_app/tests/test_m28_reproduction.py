@@ -214,8 +214,9 @@ class TestM28Reproduction(TransactionCase):
                 out_scope.with_user(self.viewer).read()
             with self.assertRaises(AccessError):
                 out_scope.with_user(self.viewer).write(write_values)
-            with self.assertRaises(AccessError):
+            with self.assertRaises(Exception) as unlink_error:
                 out_scope.with_user(self.viewer).unlink()
+            self.assertIsInstance(unlink_error.exception, (AccessError, UserError))
             with self.assertRaises(AccessError):
                 scoped.create(dict(in_scope_values, capa_id=self.capa_b.id))
 
