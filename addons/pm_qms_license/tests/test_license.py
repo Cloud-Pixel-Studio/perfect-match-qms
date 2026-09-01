@@ -195,6 +195,40 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         with self.assertRaises(AccessError):
             user.with_user(regular).write({"pmqms_license_exempt": True})
 
+    def test_organization_capacity_counts_active_current_company_only(self):
+        self._import()
+        Organization = self.env["pm.qms.organization"].with_context(pmqms_enforce_license=True)
+        other_company = self.env["res.company"].create({"name": "Mission 27 Other Company"})
+        organization_records = self.env["pm.qms.organization"].sudo().with_context(active_test=False)
+        before_ids = set(organization_records.search([]).ids)
+        service = self.env["pm.qms.entitlement.service"]
+
+        inactive = Organization.create(
+            {
+                "name": "Mission 27 Inactive Organization",
+                "code": "M27-INACTIVE",
+                "company_id": self.company.id,
+                "active": False,
+            }
+        )
+        other = Organization.create(
+            {
+                "name": "Mission 27 Other Organization",
+                "code": "M27-OTHER",
+                "company_id": other_company.id,
+            }
+        )
+        current_usage = service.usage(self.company)
+        other_usage = service.usage(other_company)
+
+        self.assertFalse(inactive.active)
+        self.assertEqual(current_usage["company"]["used"], 1)
+        self.assertEqual(other_usage["company"]["used"], 1)
+        self.assertEqual(service.usage(self.company)["company"]["used"], 1)
+        self.assertEqual(set(organization_records.search([]).ids), before_ids | {inactive.id, other.id})
+        self.assertEqual(set(current_usage["company"]), {"used", "limit", "remaining"})
+        self.assertNotIn("records", current_usage["company"])
+
     def test_invalid_import_does_not_replace_current_license(self):
         current = self._import()
         broken = self._document(license_revision=2)
@@ -213,6 +247,28 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertNotIn(viewer, license_menu.group_ids)
         self.assertIn(quality_manager, license_action.group_ids)
         self.assertNotIn(viewer, license_action.group_ids)
+
+    def test_licensing_administrator_is_not_qms_administrator(self):
+        licensing_admin = self.env.ref("pm_qms_license.group_pm_qms_license_admin")
+        qms_admin = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+        license_model = self.env["pm.qms.license"]
+        activation_model = self.env["pm.qms.activation.request"]
+        framework_model = self.env["pm.qms.framework.pack"]
+
+        self.assertNotIn(qms_admin, licensing_admin.implied_ids)
+        licensing_admin_user = self._user("m27-license-admin", licensing_admin)
+        self.assertTrue(licensing_admin_user.has_group("pm_qms_license.group_pm_qms_license_admin"))
+        self.assertFalse(licensing_admin_user.has_group("pm_qms_core.group_pm_qms_administrator"))
+        self.assertTrue(license_model.with_user(licensing_admin_user).check_access_rights("read", raise_exception=False))
+        self.assertTrue(activation_model.with_user(licensing_admin_user).check_access_rights("create", raise_exception=False))
+        self.assertFalse(framework_model.with_user(licensing_admin_user).check_access_rights("write", raise_exception=False))
+        self.assertFalse(self.env["res.users"].with_user(licensing_admin_user).check_access_rights("write", raise_exception=False))
+
+    def test_licensing_administrator_update_removes_only_former_implication(self):
+        template = Path(__file__).resolve().parents[1] / "security" / "security.xml"
+        content = template.read_text(encoding="utf-8")
+        self.assertIn("Command.unlink(ref('pm_qms_core.group_pm_qms_administrator'))", content)
+        self.assertNotIn("Command.clear()", content)
 
     def test_license_form_respects_activation_request_authority(self):
         """Exercise the compiled view metadata and web_read path used by the web client.

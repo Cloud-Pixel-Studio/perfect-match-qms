@@ -86,6 +86,7 @@
 - [ADR-062: Standard Add-on Architecture and ISO 9001 Separation](DECISIONS/ADR-062-mission23-standard-addon-architecture.md)
 - [ADR-063: Mission 24 Product Shell Navigation and Branding](DECISIONS/ADR-063-mission24-product-shell-navigation-branding.md)
 - [ADR-071: CAPA Root Cause Methodology Integrity](DECISIONS/ADR-071-capa-root-cause-methodology-integrity.md)
+- [ADR-073: M27 Security Hardening and Authorization Boundaries](DECISIONS/ADR-073-m27-security-hardening-authorization.md)
 
 The Oliva pilot runbook, implementation guide, onboarding checklist, and
 migration template are historical records only. They do not describe an active

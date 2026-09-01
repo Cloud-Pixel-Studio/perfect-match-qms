@@ -3,7 +3,8 @@
     <record id="group_pm_qms_license_admin" model="res.groups">
         <field name="name">QMS Licensing Administrator</field>
         <field name="privilege_id" ref="pm_qms_core.privilege_pm_qms"/>
-        <field name="implied_ids" eval="[Command.link(ref('pm_qms_core.group_pm_qms_administrator'))]"/>
+        <!-- Remove only the former QMS Administrator implication on update. -->
+        <field name="implied_ids" eval="[Command.unlink(ref('pm_qms_core.group_pm_qms_administrator'))]"/>
     </record>
 
     <record id="rule_pm_qms_license_qms" model="ir.rule">
