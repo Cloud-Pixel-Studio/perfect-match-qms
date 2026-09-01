@@ -382,7 +382,6 @@ JSON
   if [[ ! -s "$REPORT_DIR/pip-audit.json" ]]; then
     "${PYTHON_BIN[@]}" "$REPO_ROOT/tools/security/pip_audit_evidence.py" \
       --input-path "$input_file" --tool-exit-code "$rc" --output "$REPORT_DIR/pip-audit.status.json" >/dev/null || true
-    INFRA_FAILURES=$((INFRA_FAILURES + 1))
     return 1
   fi
   local classifier_rc=0
@@ -390,11 +389,9 @@ JSON
     --input "$REPORT_DIR/pip-audit.json" --input-path "$input_file" --tool-exit-code "$rc" \
     --output "$REPORT_DIR/pip-audit.status.json" >/dev/null || classifier_rc=$?
   if (( classifier_rc == 1 )); then
-    POLICY_FAILURES=$((POLICY_FAILURES + 1))
     return 1
   fi
   if (( classifier_rc != 0 )); then
-    INFRA_FAILURES=$((INFRA_FAILURES + 1))
     return 1
   fi
 }

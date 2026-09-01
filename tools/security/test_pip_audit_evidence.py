@@ -47,6 +47,42 @@ class TestPipAuditEvidence(unittest.TestCase):
         self.assertEqual(result["status"], "POLICY_FAILURE")
         self.assertEqual(result["exit_code"], 1)
 
+    def test_summary_adds_one_policy_failure_for_one_vulnerability(self):
+        base = {"status": "BASELINE", "policy_failures": 0, "infra_failures": 0, "exit_code": 0}
+        result = evidence.apply_to_summary(
+            base,
+            evidence.classify_output(json.dumps([{"vulns": [{"id": "PYSEC-0000"}]}]), 1),
+        )
+        self.assertEqual(result["policy_failures"], 1)
+        self.assertEqual(result["infra_failures"], 0)
+        self.assertEqual(result["status"], "POLICY_FAILURE")
+        self.assertEqual(result["exit_code"], 1)
+
+    def test_summary_adds_one_infra_failure_for_one_tool_failure(self):
+        base = {"status": "BASELINE", "policy_failures": 0, "infra_failures": 0, "exit_code": 0}
+        result = evidence.apply_to_summary(base, evidence.classify_output("not-json", 2))
+        self.assertEqual(result["policy_failures"], 0)
+        self.assertEqual(result["infra_failures"], 1)
+        self.assertEqual(result["status"], "INFRA_FAILURE")
+        self.assertEqual(result["exit_code"], 2)
+
+    def test_summary_preserves_unrelated_failures_without_duplication(self):
+        base = {"status": "POLICY_FAILURE", "policy_failures": 2, "infra_failures": 0, "exit_code": 1}
+        result = evidence.apply_to_summary(base, evidence.classify_output("[]", 0))
+        self.assertEqual(result["policy_failures"], 2)
+        self.assertEqual(result["infra_failures"], 0)
+        self.assertEqual(result["status"], "POLICY_FAILURE")
+        self.assertEqual(result["exit_code"], 1)
+
+    def test_summary_missing_input_adds_no_failure(self):
+        base = {"status": "BASELINE", "policy_failures": 0, "infra_failures": 0, "exit_code": 0}
+        result = evidence.apply_to_summary(base, evidence.classify_missing_input())
+        self.assertEqual(result["policy_failures"], 0)
+        self.assertEqual(result["infra_failures"], 0)
+        self.assertEqual(result["pip_audit_status"], evidence.NOT_EXECUTED)
+        self.assertEqual(result["pip_audit_policy_result"], "NOT_APPLICABLE")
+        self.assertEqual(result["exit_code"], 0)
+
     def test_cli_writes_distinct_tool_failure(self):
         with tempfile.TemporaryDirectory() as workspace:
             root = Path(workspace)
