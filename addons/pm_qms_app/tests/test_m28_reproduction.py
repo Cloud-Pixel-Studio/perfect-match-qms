@@ -509,13 +509,13 @@ class TestM28Reproduction(TransactionCase):
                 self.assertTrue(groups, model_name)
                 self.assertTrue(all(group.get(groupby, [False])[0] != getattr(out_scope, groupby).id for group in groups), model_name)
             with self.assertRaises(AccessError, msg=f"read:{model_name}"):
-                out_scope.read()
+                out_scope.with_user(self.viewer).read()
             with self.assertRaises(AccessError, msg=f"create:{model_name}"):
                 scoped.create(create_values)
             with self.assertRaises((AccessError, UserError), msg=f"write:{model_name}"):
-                out_scope.write(write_values)
+                out_scope.with_user(self.viewer).write(write_values)
             with self.assertRaises((AccessError, UserError), msg=f"unlink:{model_name}"):
-                out_scope.unlink()
+                out_scope.with_user(self.viewer).unlink()
 
         Decision = self.env["pm.qms.management.review.decision"].sudo()
         decision_a = Decision.create(
