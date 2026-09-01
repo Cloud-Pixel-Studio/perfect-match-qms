@@ -11,6 +11,9 @@ dashboard helpers and the idempotent removal of the former QMS Administrator
 implication from the QMS Licensing Administrator group. No production
 `sudo()` call site was added by M27.
 
+The affected addon versions are `pm_qms_app` `19.0.1.4.5` and
+`pm_qms_license` `19.0.1.0.1`.
+
 ## Authorization decisions
 
 - QMS Viewer is read-only for business records and may create only its own
@@ -41,10 +44,15 @@ Administrator personas. No fixture data is committed or sent to Demo.
 The historical 52/51 runs could not be reconstructed from retained logs or CI
 artifacts with their exact commands, tags, collection and skip details. They
 are therefore not used to claim an omission. The equivalent current scope was
-executed on a fresh database: 61 `pm_qms_app` tests and 14
-`pm_qms_license` tests selected, 63 combined tests, 0 failures, 0 errors and
+executed on a fresh database: 61 `pm_qms_app` tests and 15
+`pm_qms_license` tests selected, 64 combined tests, 0 failures, 0 errors and
 0 skipped tests. The new `TestM27Security` class contains 12 test methods; its
 methods are included in the `pm_qms_app` module total and are not double-counted.
+
+The focused evidence-tool suite contains 4 tests and reports 0 failures, 0
+errors and 0 skipped tests. Its false-pass regression changes a generated P1
+production row to `runtime_covered=NO` and observes `unresolved_p1=1` while
+leaving the two genuine deferred P2 rows as `deferred_p2=2`.
 
 Required final commands are:
 
@@ -101,14 +109,14 @@ customer persona claim.
 
 ## Production sudo review
 
-`M27_SUDO_REVIEW.csv` inventories all 73 `.sudo()` sites under `addons`: 17
-production and 56 test-only. Every production row has a specific invoker,
+`M27_SUDO_REVIEW.csv` inventories all 74 `.sudo()` sites under `addons`: 17
+production and 57 test-only. Every production row has a specific invoker,
 input provenance, user-controlled-input assessment, pre-sudo selection,
 company/organization scope, output/mutation behavior, audit/history behavior,
 existing regression, risk and follow-up. The 17 sites are unchanged by M27.
 
-Final inventory counts are 17 production, 56 test-only, 14 with direct runtime
-regression coverage, 3 specifically static-reviewed/deferred P2 call sites, 0
+Final inventory counts are 17 production, 57 test-only, 15 with direct runtime
+regression coverage, 2 specifically static-reviewed/deferred P2 call sites, 0
 remediated, 0 unresolved P0, and 0 unresolved P1. The static rows are bounded
 configuration or aggregation reads whose domains and outputs are fixed or
 pre-scoped; follow-up is recorded per call site. No new production `sudo()`
@@ -121,28 +129,34 @@ the static `Command.unlink` test. The reproducible pattern is:
 
 1. Create a disposable database named `pmqms_m27_upgrade_<run-id>` from base
    `d003ee6f3ab07ebafb6c2bee0ca4d6d3923420b1`, with the QMS stack installed and
-   `pm_qms_license` at `19.0.1.0.0`.
+   `pm_qms_app` at `19.0.1.4.4` and `pm_qms_license` at `19.0.1.0.0`.
 2. Create fictional licensing-only, QMS-only, and dual-role users through the
    Odoo ORM shell; record company count and role states before update.
-3. Point the mounted DEV source to the corrective branch and run:
+3. Point the mounted DEV source to the corrective branch and run both affected
+   addon updates:
 
    ```text
-   docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo -d <db> -u pm_qms_license --stop-after-init --without-demo=all
+   docker compose -f deployment/docker/dev/compose.yml run --rm odoo-dev odoo -d <db> -u pm_qms_app,pm_qms_license --stop-after-init --without-demo=all
    ```
 
 4. Assert licensing-only loses only the former QMS Administrator implication,
    QMS-only is unchanged, the dual-role user retains both explicit roles, and
    company count remains stable.
-5. Run the identical `-u pm_qms_license` command a second time and assert the
-   same role states and company count.
+5. Run the identical `-u pm_qms_app,pm_qms_license` command a second time and
+   assert the same role states, loaded rule/action metadata, and company/user
+   counts.
 6. Drop only the disposable database using the supported PostgreSQL/container
    command. Do not run the rehearsal against Demo and do not include secrets.
 
 The declarative regression searches for `Command.unlink` and is not a
 substitute for this base-to-head rehearsal.
 
-The final rehearsal passed: fresh base install, first update, and second
-idempotent update. The licensing-only user lost only the former QMS
+The final rehearsal passed for both affected addons: fresh base install, first
+update of `pm_qms_app,pm_qms_license`, and second idempotent update. The first
+and second update both reported `pm_qms_app` `19.0.1.4.5` and `pm_qms_license`
+`19.0.1.0.1`; the Viewer dashboard rule XMLID count was 1, the Licensing Admin
+implication was absent, and company/user counts remained 1/4. The
+licensing-only user lost only the former QMS
 Administrator implication; the QMS Administrator-only user was unchanged; the
 explicit dual-role user kept both roles; company and user counts were stable;
 and no business record was created or deleted.
@@ -159,5 +173,5 @@ keys, Demo data and source-derived datasets are not committed.
 ## Status
 
 M27 remains incomplete pending exact-head CI and Product Owner merge review.
-The current branch head is `b3a696e42f97fc44208831fe68fd3c434e34c470`.
+The current branch head is the exact HEAD reported in the PR checkpoint.
 Demo, customer, production, RC11 and Plane remain untouched.

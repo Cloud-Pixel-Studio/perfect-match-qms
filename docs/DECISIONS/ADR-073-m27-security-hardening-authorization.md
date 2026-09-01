@@ -40,11 +40,17 @@ without changing Demo data, RC11, ISO content, or mail/chatter architecture.
    to the appropriate endpoint-validation mission.
 7. Keep mail.thread, mail.activity, chatter, followers, attachments and
    workflow behavior unchanged in this mission.
+8. Cover the entitlement service organization-capacity `sudo()` boundary with
+   a disposable two-company ORM test that counts only active operational
+   organizations for the requested company and returns counts rather than
+   records. Compute unresolved P0/P1 and deferred-P2 evidence from inventory
+   rows; never publish hardcoded zeroes.
 
 ## Consequences
 
 The licensing role has a narrower authority boundary and an update-idempotency
-regression test protects it. Security fixture tests document tenant, role,
+regression test protects it. The affected runtime addons are versioned at
+`pm_qms_app` `19.0.1.4.5` and `pm_qms_license` `19.0.1.0.1`. Security fixture tests document tenant, role,
 direct-ID, transient-helper, portal/public, owner, organization, framework
 administration, and native action behavior. The deterministic authorization
 inventory and exact production sudo call-site inventory are included as review

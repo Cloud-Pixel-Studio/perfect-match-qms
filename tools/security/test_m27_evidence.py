@@ -37,7 +37,7 @@ class TestM27Evidence(unittest.TestCase):
             output = Path(workspace) / "sudo.csv"
             summary = sudo_inventory.generate(root / "addons", output)
             self.assertEqual(summary["production"], 17)
-            self.assertEqual(summary["test_only"], 56)
+            self.assertEqual(summary["test_only"], 57)
             self.assertEqual(summary["unresolved_p0"], 0)
             self.assertEqual(summary["unresolved_p1"], 0)
             with output.open(encoding="utf-8", newline="") as stream:
