@@ -644,5 +644,41 @@ class TestPmQmsManagementReview(TransactionCase):
             self.assertEqual(self.env[model].search_count([]), count, model)
 
         changed_review = review.with_user(manager)
+        baseline_messages = self.env["mail.message"].sudo().search(
+            [("model", "=", "pm.qms.management.review"), ("res_id", "=", review.id)]
+        )
+        baseline_message_ids = set(baseline_messages.ids)
+        baseline_tracking_ids = set(
+            self.env["mail.tracking.value"].sudo().search(
+                [("mail_message_id", "in", baseline_messages.ids)]
+            ).ids
+        )
+        self.assertFalse(changed_review.env.context.get("tracking_disable"))
+        self.assertIn("name", changed_review._track_get_fields())
+        self.env.cr.precommit.data.pop("mail.tracking.pm.qms.management.review", None)
         changed_review.write({"name": "User-adjusted management review"})
+        pending_tracking = self.env.cr.precommit.data.get("mail.tracking.pm.qms.management.review", {})
+        self.assertTrue(pending_tracking.get(review.id), "normal user write did not prepare tracking")
+        self.env.flush_all()
+        review._track_finalize()
         self.assertEqual(changed_review.name, "User-adjusted management review")
+
+        messages = self.env["mail.message"].sudo().search(
+            [
+                ("model", "=", "pm.qms.management.review"),
+                ("res_id", "=", review.id),
+                ("tracking_value_ids", "!=", False),
+            ],
+            order="id desc",
+        )
+        new_messages = messages.filtered(lambda message: message.id not in baseline_message_ids)
+        self.assertEqual(len(new_messages), 1)
+        tracking = new_messages.tracking_value_ids.sudo().filtered(
+            lambda value: value.id not in baseline_tracking_ids and value.field_id.name == "name"
+        )
+        self.assertEqual(len(tracking), 1)
+        self.assertEqual(tracking.field_id.name, "name")
+        with self.assertRaises(AccessError):
+            new_messages.with_user(manager).write({"body": "History rewrite attempt."})
+        with self.assertRaises(AccessError):
+            tracking.with_user(manager).unlink()

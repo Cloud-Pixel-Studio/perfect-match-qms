@@ -3,7 +3,7 @@
 ## Scope
 
 This document records sanitized evidence for the corrective work associated
-with Issue #88 and Issue #90. It describes the observed behavior without
+with Issue #88, Issue #90, and the operational follow-up Issue #92. It describes the observed behavior without
 including message bodies, addresses, user names, customer values, database
 identifiers, or other source-system content.
 
@@ -23,9 +23,12 @@ The supplied Demo backup was verified before use:
 The modeled distribution was 43 messages for management-review snapshot input
 records and 7 for QMS people. The eight unmodeled rows were outgoing mail
 queue records in exception state, without a business model or record link.
-They were not reproduced by the isolated seed-update reproduction and are
-therefore treated as a separate unreconciled mail-queue event, not silently
-attributed to the seed correction.
+They had zero tracking values, were not reproduced by the final corrected
+isolated seed cycle, and show no evidence that they were QMS record chatter.
+They are classified and tracked in Issue
+[#92](https://github.com/Cloud-Pixel-Studio/perfect-match-qms/issues/92) as a
+P2 operational/email follow-up. They are not resolved or silently ignored;
+no message deletion or rewriting is authorized.
 
 No message body, author identity, recipient, customer identifier, or raw
 source value is retained in this evidence.
@@ -53,12 +56,16 @@ and 7 QMS-person messages. It produced no new tracking values and no new
 business records. The eight unmodeled outgoing rows observed in the live
 window did not occur in this reproduction.
 
-After applying the corrective branch to a fresh restore of the same backup,
-the first seed execution produced 22 messages from normal seed activity and
-three newly required snapshot inputs. The second identical execution produced
-zero new messages, tracking values, activities, followers, attachments, or
-business records. The existing CAPA Why warning remained an expected fixture
-warning and did not affect the command exit status.
+The final corrective branch was then installed in a fresh disposable database,
+with the externally issued test license imported through the supported shell
+procedure. The first corrected seed produced the fictional fixture with stable
+counts, including 260 `mail.message`, 13 `mail.tracking.value`, 0
+`mail.activity`, 23 `mail.followers`, 57 `ir.attachment`, 4 training records,
+and 4 qualification records. The second identical corrected seed exited 0 and
+left every listed count unchanged. No unmodeled outgoing password-change
+messages were created by the corrected cycle. The existing CAPA Why warning
+remained an expected fixture warning and did not affect the command exit
+status.
 
 ## Root cause
 
@@ -68,6 +75,9 @@ warning and did not affect the command exit status.
 2. The Demo `upsert` helper always wrote the payload to an existing record,
    including unchanged QMS-person values. Tracked fields therefore emitted
    messages even when the logical value was unchanged.
+3. The seed rewrote managed passwords for existing technical and QMS persona
+   accounts. Odoo treated those writes as password changes and queued outgoing
+   security messages on repeat runs.
 
 ## Corrective design
 
@@ -81,6 +91,8 @@ warning and did not affect the command exit status.
 - Snapshot event/date updates occur only when the synchronized content changes.
 - The generic Demo `upsert` helper compares scalar, relational, and command-set
   values before writing.
+- Managed passwords are applied only when a Demo account is created; existing
+  account passwords are not rewritten by a repeat seed.
 - Normal user edits and normal tracked QMS changes remain on the standard Mail
   tracking path.
 
@@ -96,5 +108,9 @@ models, delete existing messages, or change customer data.
   a tracked message; the idempotency test also exercises a normal user write
   after the system synchronization path.
 - Demo seed tests assert that generic no-op upserts do not call `write()`.
+- Demo seed tests execute Odoo many2many command semantics in order and assert
+  that an already-satisfied link is not written while a missing link is.
+- Demo seed tests assert that existing technical and QMS persona passwords are
+  not rewritten during repeat seeding.
 - The isolated reproduction was executed against a disposable database with
   the documented Odoo module update command and the repository seed script.

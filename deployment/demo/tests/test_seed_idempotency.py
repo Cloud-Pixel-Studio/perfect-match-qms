@@ -323,6 +323,111 @@ class SeedIdentityTests(unittest.TestCase):
 
         self.assertEqual(writes, [])
 
+    def test_many2many_commands_follow_odoo_semantics(self):
+        namespace = load_seed_helpers("field_value_equal")
+        equal = namespace["field_value_equal"]
+
+        class Field:
+            type = "many2many"
+
+        class Relation:
+            def __init__(self, ids):
+                self.ids = ids
+
+        field = Field()
+
+        def assert_equal(current_ids, commands, expected):
+            self.assertEqual(equal(Relation(current_ids), field, commands), expected)
+
+        assert_equal({1, 2}, [(4, 1, 0)], True)
+        assert_equal({1}, [(4, 2, 0)], False)
+        assert_equal({1, 2}, [(6, 0, [1, 2])], True)
+        assert_equal({1, 2}, [(6, 0, [1])], False)
+        assert_equal({1, 2}, [(3, 2, 0)], False)
+        assert_equal({1, 2}, [(3, 9, 0)], True)
+        assert_equal(set(), [(5, 0, 0)], True)
+        assert_equal({1}, [(5, 0, 0)], False)
+        assert_equal({1}, [(0, 0, {})], False)
+        assert_equal({1}, [(1, 1, {})], False)
+        assert_equal({1}, [(99, 1, 0)], False)
+        assert_equal({1, 2}, [(5, 0, 0), (4, 2, 0), (4, 1, 0)], True)
+        assert_equal({1}, [(2, 1, 0)], False)
+
+    def test_generic_upsert_only_writes_missing_many2many_links(self):
+        namespace = load_seed_helpers("upsert", "field_value_equal")
+
+        class Field:
+            readonly = False
+            type = "many2many"
+
+        class Relation:
+            def __init__(self, ids):
+                self.ids = ids
+
+        def run(current_ids, commands):
+            writes = []
+
+            class Record:
+                def __getitem__(self, key):
+                    return Relation(set(current_ids))
+
+                def write(self, values):
+                    writes.append(values)
+
+            class Model:
+                _fields = {"company_ids": Field()}
+
+                def search(self, domain, limit=1):
+                    return Record()
+
+                def browse(self):
+                    return None
+
+            class Savepoint:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *args):
+                    return False
+
+            class Cursor:
+                def savepoint(self):
+                    return Savepoint()
+
+            class Env:
+                cr = Cursor()
+
+                def __getitem__(self, key):
+                    return Model()
+
+            namespace["model_exists"] = lambda _model_name: True
+            namespace["domain_for"] = lambda _model_name, **_kwargs: [("id", "=", 1)]
+            namespace["filtered"] = lambda _model_name, vals: dict(vals)
+            namespace["env"] = Env()
+            namespace["warnings"] = []
+            namespace["upsert"]("demo.model", vals={"company_ids": commands})
+            return writes
+
+        self.assertEqual(run({1, 2}, [(4, 1, 0)]), [])
+        self.assertEqual(run({1}, [(4, 2, 0)]), [{"company_ids": [(4, 2, 0)]}])
+
+    def test_existing_persona_password_is_not_rewritten(self):
+        seed = Path(__file__).parents[1] / "seed_demo.py"
+        source = seed.read_text(encoding="utf-8")
+        existing_user_block = source[source.index('if user:'):source.index('users[role] = user')]
+        self.assertNotIn('writable = {k: v for k, v in vals.items() if k != "login" and "password"', existing_user_block)
+        self.assertIn('if persona_password:', existing_user_block)
+        self.assertIn('vals["password"] = persona_password', existing_user_block)
+
+    def test_existing_technical_admin_password_is_not_rewritten(self):
+        seed = Path(__file__).parents[1] / "seed_demo.py"
+        source = seed.read_text(encoding="utf-8")
+        admin_block = source[source.index('technical_admin_values = {'):source.index('framework_organization =')]
+        self.assertNotIn('technical_admin_values["password"] = ADMIN_PASSWORD\nif technical_admin:', admin_block)
+        self.assertIn('if technical_admin:', admin_block)
+        self.assertIn('if ADMIN_PASSWORD:', admin_block)
+        self.assertIn('technical_admin_values["password"] = ADMIN_PASSWORD', admin_block)
+
     def test_validator_has_canonical_process_and_duplicate_gates(self):
         source = VALIDATE_PATH.read_text(encoding="utf-8")
         for code in (

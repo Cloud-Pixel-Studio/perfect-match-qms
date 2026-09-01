@@ -183,13 +183,36 @@ def field_value_equal(current, field, incoming):
         incoming_id = incoming.id if hasattr(incoming, "id") else incoming
         return current.id == incoming_id
     if field.type == "many2many":
-        desired = set()
+        original = set(current.ids)
+        desired = set(original)
         for command in incoming or []:
-            if isinstance(command, (list, tuple)) and command and command[0] == 6:
-                desired = set(command[2])
-            elif isinstance(command, (list, tuple)) and command and command[0] == 4:
+            if not isinstance(command, (list, tuple)) or len(command) < 1:
+                return False
+            operation = command[0]
+            if operation == 0 or operation == 1:
+                return False
+            if operation == 2:
+                if len(command) < 2:
+                    return False
+                if command[1] in desired:
+                    return False
+            elif operation == 3:
+                if len(command) < 2:
+                    return False
+                desired.discard(command[1])
+            elif operation == 4:
+                if len(command) < 2:
+                    return False
                 desired.add(command[1])
-        return set(current.ids) == desired
+            elif operation == 5:
+                desired.clear()
+            elif operation == 6:
+                if len(command) < 3 or not isinstance(command[2], (list, tuple, set)):
+                    return False
+                desired = set(command[2])
+            else:
+                return False
+        return original == desired
     return current == incoming
 
 
@@ -269,12 +292,12 @@ technical_admin_values = {
 }
 if base_user and system_admin and qms_admin:
     technical_admin_values["group_ids"] = [Command.set([base_user.id, system_admin.id, qms_admin.id])]
-if ADMIN_PASSWORD:
-    technical_admin_values["password"] = ADMIN_PASSWORD
 if technical_admin:
     technical_admin.write(technical_admin_values)
 else:
     technical_admin_values["login"] = ADMIN_LOGIN
+    if ADMIN_PASSWORD:
+        technical_admin_values["password"] = ADMIN_PASSWORD
     technical_admin = env["res.users"].with_context(no_reset_password=True).create(technical_admin_values)
 
 # The framework/library organization is internal product content, not a
@@ -361,13 +384,18 @@ for full_name, login, role in user_specs:
     if assigned_groups:
         vals["group_ids"] = [Command.set(sorted(set(assigned_groups)))]
     persona_password_file = PERSONA_PASSWORD_DIR / role.lower().replace(" ", "-")
-    if persona_password_file.is_file():
-        vals["password"] = persona_password_file.read_text(encoding="utf-8").strip()
+    persona_password = (
+        persona_password_file.read_text(encoding="utf-8").strip()
+        if persona_password_file.is_file()
+        else None
+    )
     user = env["res.users"].with_context(no_reset_password=True).search([("login", "=", login)], limit=1)
     if user:
         writable = {k: v for k, v in vals.items() if k != "login"}
         user.write(writable)
     else:
+        if persona_password:
+            vals["password"] = persona_password
         user = env["res.users"].with_context(no_reset_password=True).create(vals)
     users[role] = user
 
