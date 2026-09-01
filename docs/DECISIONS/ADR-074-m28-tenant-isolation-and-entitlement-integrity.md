@@ -45,10 +45,18 @@ release tags and ISO content are also outside this decision.
 ## Evidence boundary
 
 The M28 regression creates fictional same-company organizations and child
-records in disposable DEV only. It covers direct search, name search, grouped
-read, direct read, write, unlink, in-scope create, out-of-scope create, native
+records in disposable DEV only. The current focused run loads 10 M28
+reproduction tests (12 `pm_qms_app` tests including the existing shell tests)
+and covers direct search, name search, grouped read, direct read, write,
+unlink, in-scope create, out-of-scope create, native
 message/attachment/activity access, and exact license term boundaries. The
 authorization matrix records the intended model/persona/operation contract.
+
+Two disposable customer-style test instances also provide runtime evidence for
+distinct database, filestore volume, bridge network, environment identity,
+secret directory, and license directory boundaries. A license issued for
+instance A is rejected when presented to instance B; both instances otherwise
+remain independently licensed and healthy.
 
 This evidence is ORM/runtime evidence. It does not claim that arbitrary custom
 HTTP controllers are isolated; endpoint validation remains an explicit later

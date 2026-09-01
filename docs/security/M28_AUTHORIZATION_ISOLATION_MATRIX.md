@@ -10,22 +10,22 @@ rows preserve their existing role boundaries.
 | `pm.qms.management.review.input` | Quality Manager A | search, read, name_search, read_group | A visible; B absent/denied | PASS | `TestM28Reproduction.test_same_company_child_record_isolated_for_all_record_access` |
 | `pm.qms.management.review.input` | Quality Manager A | create | A parent allowed; B parent denied | PASS | same test, ORM create |
 | `pm.qms.management.review.input` | Quality Manager A | write, unlink | B denied | PASS | same test, direct record operations |
-| `pm.qms.capa.*` child records | scoped QMS user | read, create, write, unlink | organization scope required | Rule coverage present; representative runtime pending | `test_m28_child_scope_rules_cover_required_record_families` |
-| `pm.qms.management.review.{decision,action}` | scoped QMS user | read, create, write, unlink | organization scope required | Rule coverage present; representative runtime pending | rule inventory plus parent-derived organization field |
-| `pm.qms.audit.{scope,criterion,plan.line,evidence,finding}` | scoped QMS user | read, create, write, unlink | organization and optional process scope | Rule coverage present; representative runtime pending | rule inventory and process domain |
-| `pm.qms.calibration.{measurement.line,impact.assessment,affected.reference}` | scoped QMS user | read, create, write, unlink | organization scope required | Rule coverage present; representative runtime pending | rule inventory and equipment-derived organization |
-| `pm.qms.person.role.assignment` and competency records | scoped QMS user | read, create, write, unlink | person organization scope required | Rule coverage present; representative runtime pending | rule inventory and person-derived organization |
-| training and qualification records | scoped QMS user | read, create, write, unlink, autocomplete | organization scope required | Rule coverage present; representative runtime pending | rule inventory and related-person scope |
-| `pm.qms.event` | scoped QMS user | read, create, write, unlink | company and organization scope required | Rule coverage present | `test_m28_child_scope_rules_cover_required_record_families` |
+| `pm.qms.capa.*` child records | scoped QMS user | read, create, write, unlink | organization scope required | PASS | `test_capa_children_inherit_parent_process_scope` and `test_m28_child_scope_rules_cover_required_record_families` |
+| `pm.qms.management.review.{decision,action}` | scoped QMS user | read, create, write, unlink | organization scope required | PASS | `test_management_review_audit_event_and_native_mail_runtime_isolation` |
+| `pm.qms.audit.{scope,criterion,plan.line,evidence,finding}` | scoped QMS user | read, create, write, unlink | organization and optional process scope | PASS | `test_management_review_audit_event_and_native_mail_runtime_isolation` |
+| `pm.qms.calibration.{measurement.line,impact.assessment,affected.reference}` | scoped QMS user | read, create, write, unlink | organization scope required | PASS | `test_site_scoped_children_do_not_cross_site_within_organization` |
+| `pm.qms.person.role.assignment` and competency records | scoped QMS user | read, create, write, unlink | person organization scope required | PASS | `test_site_scoped_children_do_not_cross_site_within_organization` |
+| training and qualification records | scoped QMS user | read, create, write, unlink, autocomplete | organization scope required | PASS | `test_site_scoped_children_do_not_cross_site_within_organization` |
+| `pm.qms.event` | scoped QMS user | read, create, write, unlink | company and organization scope required | PASS | `test_management_review_audit_event_and_native_mail_runtime_isolation` |
 | `mail.message` linked to a QMS child | Quality Manager A | native read | A message readable; B message denied | PASS | `test_native_mail_and_attachment_routes_follow_child_scope` |
 | `ir.attachment` linked to a QMS child | Quality Manager A | native read | A attachment readable; B attachment denied | PASS | same test, native ORM access |
 | `mail.activity` linked to a QMS child | Quality Manager A | search, read, write, unlink | assignment does not bypass QMS document scope | PASS | same test plus `pm_qms_app.models.mail_activity` |
-| `mail.activity` linked to a non-QMS model | any existing persona | native mail activity behavior | unchanged | Preserved by `pm.qms.*`-only branch | code scope review |
+| `mail.activity` linked to a non-QMS model | any existing persona | native mail activity behavior | unchanged | PASS; native create/search/read/write/unlink exercised | `test_management_review_audit_event_and_native_mail_runtime_isolation` |
 | current commercial license | any customer persona | status/readiness | effective temporal state is authoritative | PASS | `test_license_temporal_boundaries_*` |
 | operational organization, site, named user | customer activation workflow | create/reactivate | valid or expiring term and capacity required | PASS for expired hooks | `test_expired_license_blocks_all_new_capacity_hooks` |
 | framework administration | QMS customer persona | read/write/create | existing administrator boundary preserved | PASS in M27; no M28 group change | M27 security regression reused |
-| customer-style instance A vs B | operator | database, filestore, network, identity, secrets, license | unique per instance; no cross-use | Deployment template contract; disposable config inspection | customer deployment compose/config review |
-| license A in environment B | operator/runtime | activation/use | wrong environment unusable | Existing license validation contract; no M28 bypass | license validation tests |
+| customer-style instance A vs B | operator | database, filestore, network, identity, secrets, license | unique per instance; no cross-use | PASS; two disposable test instances healthy with distinct resources | controlled disposable A/B runtime check |
+| license A in environment B | operator/runtime | activation/use | wrong environment unusable | PASS; A license rejected in B and B license remained valid | controlled disposable A/B license crossover |
 
 ## Operation semantics
 
