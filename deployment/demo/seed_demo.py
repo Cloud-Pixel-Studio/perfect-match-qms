@@ -161,7 +161,13 @@ def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, requi
     try:
         with env.cr.savepoint():
             if record:
-                writable = {k: v for k, v in payload.items() if k not in ("code",) and not model._fields[k].readonly}
+                writable = {
+                    k: v
+                    for k, v in payload.items()
+                    if k not in ("code",)
+                    and not model._fields[k].readonly
+                    and not field_value_equal(record[k], model._fields[k], v)
+                }
                 if writable:
                     record.write(writable)
             else:
@@ -170,6 +176,21 @@ def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, requi
     except Exception as exc:
         warnings.append(f"{model_name}:{code or name}:{exc.__class__.__name__}:{exc}")
         return model.browse()
+
+
+def field_value_equal(current, field, incoming):
+    if field.type == "many2one":
+        incoming_id = incoming.id if hasattr(incoming, "id") else incoming
+        return current.id == incoming_id
+    if field.type == "many2many":
+        desired = set()
+        for command in incoming or []:
+            if isinstance(command, (list, tuple)) and command and command[0] == 6:
+                desired = set(command[2])
+            elif isinstance(command, (list, tuple)) and command and command[0] == 4:
+                desired.add(command[1])
+        return set(current.ids) == desired
+    return current == incoming
 
 
 def upsert_capa_why(capa, sequence, answer):

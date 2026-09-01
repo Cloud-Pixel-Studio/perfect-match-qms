@@ -272,6 +272,57 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertNotIn("organization_id", source)
         self.assertNotIn("company_id", source)
 
+    def test_generic_upsert_skips_unchanged_values(self):
+        namespace = load_seed_helpers("upsert", "field_value_equal")
+        writes = []
+
+        class Field:
+            readonly = False
+            type = "char"
+
+        class Record:
+            def __getitem__(self, key):
+                return "same value"
+
+            def write(self, values):
+                writes.append(values)
+
+        class Model:
+            _fields = {"name": Field()}
+
+            def search(self, domain, limit=1):
+                return Record()
+
+            def browse(self):
+                return None
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        class Cursor:
+            def savepoint(self):
+                return Savepoint()
+
+        class Env:
+            cr = Cursor()
+
+            def __getitem__(self, key):
+                return Model()
+
+        namespace["model_exists"] = lambda _model_name: True
+        namespace["domain_for"] = lambda _model_name, **_kwargs: [("name", "=", "demo")]
+        namespace["filtered"] = lambda _model_name, vals: dict(vals)
+        namespace["env"] = Env()
+        namespace["warnings"] = []
+
+        namespace["upsert"]("demo.model", name="same value")
+
+        self.assertEqual(writes, [])
+
     def test_validator_has_canonical_process_and_duplicate_gates(self):
         source = VALIDATE_PATH.read_text(encoding="utf-8")
         for code in (

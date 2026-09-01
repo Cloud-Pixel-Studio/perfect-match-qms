@@ -69,6 +69,7 @@ class TestPmQmsManagementReview(TransactionCase):
                 "company_id": cls.other_company.id,
             }
         )
+        cls.env.cr.precommit.data.pop("mail.tracking.pm.qms.management.review", None)
 
     @classmethod
     def _create_test_user(cls, login, group, company=None):
@@ -609,3 +610,39 @@ class TestPmQmsManagementReview(TransactionCase):
             review.input_ids.with_user(manager).unlink()
         review.input_ids.with_user(admin).write({"notes": "Privileged correction note."})
         self.assertEqual(review.input_ids[:1].notes, "Privileged correction note.")
+
+    def test_repeated_snapshot_generation_is_idempotent(self):
+        manager = self._create_test_user("pmqms.mr.idempotency", self.qms_manager_group)
+        review = self._prepare_review_with_snapshot(manager)
+        generated = review.with_context(active_test=False).input_ids.filtered(
+            lambda item: item.is_system_generated
+        )
+        generated_ids = generated.ids
+        generated_values = {
+            item.id: (item.title, item.source_identifier, item.text_value, item.active)
+            for item in generated
+        }
+        counts = {
+            model: self.env[model].search_count([])
+            for model in ("mail.message", "mail.tracking.value", "mail.activity", "mail.followers", "ir.attachment")
+        }
+
+        review.with_user(manager).action_generate_snapshot()
+
+        repeated = review.with_context(active_test=False).input_ids.filtered(
+            lambda item: item.is_system_generated
+        )
+        self.assertEqual(repeated.ids, generated_ids)
+        self.assertEqual(
+            {
+                item.id: (item.title, item.source_identifier, item.text_value, item.active)
+                for item in repeated
+            },
+            generated_values,
+        )
+        for model, count in counts.items():
+            self.assertEqual(self.env[model].search_count([]), count, model)
+
+        changed_review = review.with_user(manager)
+        changed_review.write({"name": "User-adjusted management review"})
+        self.assertEqual(changed_review.name, "User-adjusted management review")
