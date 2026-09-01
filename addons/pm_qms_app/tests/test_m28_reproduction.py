@@ -759,6 +759,21 @@ class TestM28Reproduction(TransactionCase):
         Qualification = self.env["pm.qms.qualification.record"].sudo()
         qualification_a = Qualification.create({"person_id": person_a.id, "qualification_type_id": qualification_type.id})
         qualification_b = Qualification.create({"person_id": person_b.id, "qualification_type_id": qualification_type.id})
+        Document = self.env["pm.qms.document"].sudo()
+        document = Document.create(
+            {
+                "name": "M28 Controlled Procedure",
+                "code": "M28-DOC-SCOPE",
+                "organization_id": self.organization_a.id,
+                "process_id": self.process_a.id,
+            }
+        )
+        revision = self.env["pm.qms.document.revision"].sudo().create(
+            {"document_id": document.id, "revision": "M28-A"}
+        )
+        Acknowledgment = self.env["pm.qms.document.acknowledgment"].sudo()
+        acknowledgment_a = Acknowledgment.create({"person_id": person_a.id, "revision_id": revision.id})
+        acknowledgment_b = Acknowledgment.create({"person_id": person_b.id, "revision_id": revision.id})
 
         site_scoped_records = (
             (
@@ -816,6 +831,13 @@ class TestM28Reproduction(TransactionCase):
                 qualification_b,
                 {"person_id": person_c.id, "qualification_type_id": qualification_type.id},
                 {"notes": "M28 unauthorized edit"},
+            ),
+            (
+                "pm.qms.document.acknowledgment",
+                acknowledgment_a,
+                acknowledgment_b,
+                {"person_id": person_c.id, "revision_id": revision.id},
+                {"person_id": person_c.id},
             ),
         )
         for model_name, in_scope, out_scope, create_values, write_values in site_scoped_records:
