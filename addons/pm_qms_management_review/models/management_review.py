@@ -195,17 +195,36 @@ class PmQmsManagementReview(models.Model):
         for review in self:
             if review.state not in ("draft", "preparing"):
                 raise UserError("Snapshots can only be generated while the review is draft or preparing.")
-            review.input_ids.filtered(lambda item: item.is_system_generated).unlink()
             snapshot_date = fields.Datetime.now()
-            review.with_context(pm_qms_management_review_workflow=True).write({"snapshot_date": snapshot_date})
-            review._generate_snapshot_inputs(snapshot_date)
-            review._log_qms_event(
-                event_type="review",
-                previous_state=review.state,
-                new_state=review.state,
-                reviewer=self.env.user,
-                decision="Management review snapshot generated",
+            touched = set()
+            changes = set()
+            snapshot_review = review.with_context(
+                pm_qms_snapshot_touched=touched,
+                pm_qms_snapshot_changes=changes,
             )
+            snapshot_review._generate_snapshot_inputs(snapshot_date)
+
+            generated = review.with_context(active_test=False).input_ids.filtered(
+                lambda item: item.is_system_generated
+            )
+            stale = generated.filtered(lambda item: item.id not in touched and item.active)
+            if stale:
+                stale.with_context(tracking_disable=True).write({"active": False})
+                changes.add("stale")
+
+            if changes:
+                current = self.env["pm.qms.management.review.input"].browse(touched).exists()
+                current.with_context(tracking_disable=True).write({"snapshot_date": snapshot_date})
+                review.with_context(pm_qms_management_review_workflow=True).write(
+                    {"snapshot_date": snapshot_date}
+                )
+                review._log_qms_event(
+                    event_type="review",
+                    previous_state=review.state,
+                    new_state=review.state,
+                    reviewer=self.env.user,
+                    decision="Management review snapshot generated",
+                )
 
     def action_mark_ready(self):
         for review in self:
@@ -266,7 +285,48 @@ class PmQmsManagementReview(models.Model):
             "is_system_generated": values.pop("is_system_generated", True),
         }
         payload.update(values)
-        return self.env["pm.qms.management.review.input"].create(payload)
+        Input = self.env["pm.qms.management.review.input"]
+        identity = [
+            ("review_id", "=", self.id),
+            ("category", "=", category),
+            ("source_type", "=", source_type),
+            ("is_system_generated", "=", True),
+        ]
+        if payload.get("source_identifier"):
+            identity.append(("source_identifier", "=", payload["source_identifier"]))
+        else:
+            identity.append(("source_identifier", "=", False))
+            identity.append(("title", "=", title))
+
+        existing = Input.with_context(active_test=False).search(identity, order="id", limit=1)
+        if not existing:
+            record = Input.with_context(tracking_disable=True).create(payload)
+            self.env.context.get("pm_qms_snapshot_changes", set()).add("create")
+        else:
+            writable = {
+                name: value
+                for name, value in payload.items()
+                if name not in ("snapshot_date", "is_system_generated")
+                and name in existing._fields
+                and not existing._fields[name].readonly
+                and not self._snapshot_value_equal(existing[name], existing._fields[name], value)
+            }
+            if existing.active is False:
+                writable["active"] = True
+            if writable:
+                existing.with_context(tracking_disable=True).write(writable)
+                self.env.context.get("pm_qms_snapshot_changes", set()).add("write")
+            record = existing
+
+        self.env.context.get("pm_qms_snapshot_touched", set()).add(record.id)
+        return record
+
+    @staticmethod
+    def _snapshot_value_equal(current, field, incoming):
+        if field.type == "many2one":
+            incoming_id = incoming.id if hasattr(incoming, "id") else incoming
+            return current.id == incoming_id
+        return current == incoming
 
     def _generate_snapshot_inputs(self, snapshot_date):
         for review in self:

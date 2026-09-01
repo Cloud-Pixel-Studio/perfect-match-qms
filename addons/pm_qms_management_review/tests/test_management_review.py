@@ -69,6 +69,7 @@ class TestPmQmsManagementReview(TransactionCase):
                 "company_id": cls.other_company.id,
             }
         )
+        cls.env.cr.precommit.data.pop("mail.tracking.pm.qms.management.review", None)
 
     @classmethod
     def _create_test_user(cls, login, group, company=None):
@@ -609,3 +610,75 @@ class TestPmQmsManagementReview(TransactionCase):
             review.input_ids.with_user(manager).unlink()
         review.input_ids.with_user(admin).write({"notes": "Privileged correction note."})
         self.assertEqual(review.input_ids[:1].notes, "Privileged correction note.")
+
+    def test_repeated_snapshot_generation_is_idempotent(self):
+        manager = self._create_test_user("pmqms.mr.idempotency", self.qms_manager_group)
+        review = self._prepare_review_with_snapshot(manager)
+        generated = review.with_context(active_test=False).input_ids.filtered(
+            lambda item: item.is_system_generated
+        )
+        generated_ids = generated.ids
+        generated_values = {
+            item.id: (item.title, item.source_identifier, item.text_value, item.active)
+            for item in generated
+        }
+        counts = {
+            model: self.env[model].search_count([])
+            for model in ("mail.message", "mail.tracking.value", "mail.activity", "mail.followers", "ir.attachment")
+        }
+
+        review.with_user(manager).action_generate_snapshot()
+
+        repeated = review.with_context(active_test=False).input_ids.filtered(
+            lambda item: item.is_system_generated
+        )
+        self.assertEqual(repeated.ids, generated_ids)
+        self.assertEqual(
+            {
+                item.id: (item.title, item.source_identifier, item.text_value, item.active)
+                for item in repeated
+            },
+            generated_values,
+        )
+        for model, count in counts.items():
+            self.assertEqual(self.env[model].search_count([]), count, model)
+
+        changed_review = review.with_user(manager)
+        baseline_messages = self.env["mail.message"].sudo().search(
+            [("model", "=", "pm.qms.management.review"), ("res_id", "=", review.id)]
+        )
+        baseline_message_ids = set(baseline_messages.ids)
+        baseline_tracking_ids = set(
+            self.env["mail.tracking.value"].sudo().search(
+                [("mail_message_id", "in", baseline_messages.ids)]
+            ).ids
+        )
+        self.assertFalse(changed_review.env.context.get("tracking_disable"))
+        self.assertIn("name", changed_review._track_get_fields())
+        self.env.cr.precommit.data.pop("mail.tracking.pm.qms.management.review", None)
+        changed_review.write({"name": "User-adjusted management review"})
+        pending_tracking = self.env.cr.precommit.data.get("mail.tracking.pm.qms.management.review", {})
+        self.assertTrue(pending_tracking.get(review.id), "normal user write did not prepare tracking")
+        self.env.flush_all()
+        review._track_finalize()
+        self.assertEqual(changed_review.name, "User-adjusted management review")
+
+        messages = self.env["mail.message"].sudo().search(
+            [
+                ("model", "=", "pm.qms.management.review"),
+                ("res_id", "=", review.id),
+                ("tracking_value_ids", "!=", False),
+            ],
+            order="id desc",
+        )
+        new_messages = messages.filtered(lambda message: message.id not in baseline_message_ids)
+        self.assertEqual(len(new_messages), 1)
+        tracking = new_messages.tracking_value_ids.sudo().filtered(
+            lambda value: value.id not in baseline_tracking_ids and value.field_id.name == "name"
+        )
+        self.assertEqual(len(tracking), 1)
+        self.assertEqual(tracking.field_id.name, "name")
+        with self.assertRaises(AccessError):
+            new_messages.with_user(manager).write({"body": "History rewrite attempt."})
+        with self.assertRaises(AccessError):
+            tracking.with_user(manager).unlink()
