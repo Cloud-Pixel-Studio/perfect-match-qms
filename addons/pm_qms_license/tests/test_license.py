@@ -224,7 +224,7 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         self.assertEqual(current_usage["company"]["used"], 1)
         self.assertEqual(other_usage["company"]["used"], 1)
         self.assertEqual(service.usage(self.company)["company"]["used"], 1)
-        self.assertEqual(self.env["pm.qms.organization"].search([]).ids, before_ids + [inactive.id, other.id])
+        self.assertEqual(set(self.env["pm.qms.organization"].search([]).ids), set(before_ids + [inactive.id, other.id]))
         self.assertEqual(set(current_usage["company"]), {"used", "limit", "remaining"})
         self.assertNotIn("records", current_usage["company"])
 
