@@ -10,7 +10,7 @@
                 <field name="customer_name"/>
                 <field name="edition"/>
                 <field name="environment_short"/>
-                <field name="state"/>
+                <field name="effective_state"/>
                 <field name="is_current"/>
             </list>
         </field>
@@ -28,15 +28,15 @@
                 </header>
                 <sheet>
                     <div class="oe_title"><h1>Perfect Match QMS License</h1></div>
-                    <div class="alert alert-info" role="alert" invisible="state not in ('valid', 'expiring')">
+                    <div class="alert alert-info" role="alert" invisible="effective_state not in ('valid', 'expiring')">
                         This signed license is verified locally. No Internet connection is required for normal operation.
                     </div>
-                    <div class="alert alert-warning" role="alert" invisible="state in ('valid', 'expiring')">
+                    <div class="alert alert-warning" role="alert" invisible="effective_state in ('valid', 'expiring')">
                         This environment needs a valid signed commercial license before additional capacity can be activated. Existing QMS data remains readable and exportable.
                     </div>
                     <group>
                         <group string="License">
-                            <field name="state" widget="badge" decoration-success="state == 'valid'" decoration-warning="state in ('expiring', 'not_yet_valid')" decoration-danger="state in ('expired', 'invalid_signature', 'wrong_environment', 'invalid_format')"/>
+                            <field name="effective_state" widget="badge" decoration-success="effective_state == 'valid'" decoration-warning="effective_state in ('expiring', 'not_yet_valid')" decoration-danger="effective_state in ('expired', 'invalid_signature', 'wrong_environment', 'invalid_format')"/>
                             <field name="license_id"/>
                             <field name="license_revision"/>
                             <field name="customer_name"/>

@@ -7,7 +7,7 @@ verification and server-side capacity enforcement for operational companies,
 sites, and named QMS users. It is intentionally separate from permissions and
 scope, and it does not require continuous Internet access.
     """,
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",

@@ -2,5 +2,6 @@ from . import test_app_shell
 from . import test_mission19_security
 from . import test_mission19_control_read_scope
 from . import test_m27_security
+from . import test_m28_reproduction
 
 from . import test_qms_history_ui

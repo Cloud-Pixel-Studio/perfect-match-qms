@@ -321,7 +321,7 @@ class TestPmQmsCommercialLicensing(TransactionCase):
             {field_name: {} for field_name in quality_manager_fields}
         )
         self.assertEqual(quality_manager_read[0]["license_id"], license_record.license_id)
-        self.assertEqual(quality_manager_read[0]["state"], license_record.state)
+        self.assertEqual(quality_manager_read[0]["effective_state"], license_record.effective_state)
         self.assertEqual(quality_manager_read[0]["site_limit"], license_record.site_limit)
         self.assertEqual(quality_manager_read[0]["named_user_limit"], license_record.named_user_limit)
 
