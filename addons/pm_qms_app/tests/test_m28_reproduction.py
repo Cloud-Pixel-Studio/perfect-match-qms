@@ -218,7 +218,7 @@ class TestM28Reproduction(TransactionCase):
                 out_scope.with_user(self.viewer).unlink()
             self.assertIsInstance(unlink_error.exception, (AccessError, UserError))
             with self.assertRaises(AccessError):
-                scoped.create(dict(in_scope_values, capa_id=self.capa_b.id))
+                scoped.with_context(**context).create(dict(in_scope_values, capa_id=self.capa_b.id))
 
         action_a = self.capa_a.action_ids[:1]
         action_b = self.capa_b.action_ids[:1]
