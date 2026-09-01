@@ -525,7 +525,7 @@ class TestM28Reproduction(TransactionCase):
                 "login": "m28.site.manager",
                 "company_id": self.company.id,
                 "company_ids": [Command.set([self.company.id])],
-                "group_ids": [Command.set([self.env.ref("base.group_user").id, self.env.ref("pm_qms_core.group_qms_manager").id])],
+                "group_ids": [Command.set([self.env.ref("base.group_user").id, self.env.ref("pm_qms_core.group_pm_qms_manager").id])],
                 "qms_organization_ids": [Command.set([self.organization_a.id])],
                 "qms_site_ids": [Command.set([site_a.id])],
                 "qms_process_ids": [Command.set([self.process_a.id])],

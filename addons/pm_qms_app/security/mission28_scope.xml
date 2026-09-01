@@ -89,26 +89,26 @@
         <field name="name">M28 calibration measurement scope</field>
         <field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_measurement_line"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('event_id.equipment_id.site_id', '=', False), ('event_id.equipment_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_calibration_impact_scope" model="ir.rule">
         <field name="name">M28 calibration impact scope</field>
         <field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_impact_assessment"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('equipment_id.site_id', '=', False), ('equipment_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_calibration_affected_reference_scope" model="ir.rule">
         <field name="name">M28 calibration affected reference scope</field>
         <field name="model_id" ref="pm_qms_calibration.model_pm_qms_calibration_affected_reference"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('assessment_id.equipment_id.site_id', '=', False), ('assessment_id.equipment_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
 
     <record id="rule_m28_person_role_assignment_scope" model="ir.rule">
         <field name="name">M28 person role assignment scope</field>
         <field name="model_id" ref="pm_qms_people.model_pm_qms_person_role_assignment"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('person_id.site_id', '=', False), ('person_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_role_competency_requirement_scope" model="ir.rule">
         <field name="name">M28 role competency requirement scope</field>
@@ -120,13 +120,13 @@
         <field name="name">M28 competency assessment scope</field>
         <field name="model_id" ref="pm_qms_people.model_pm_qms_competency_assessment"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('person_id.site_id', '=', False), ('person_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_competency_matrix_scope" model="ir.rule">
         <field name="name">M28 competency matrix scope</field>
         <field name="model_id" ref="pm_qms_people.model_pm_qms_competency_matrix_line"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('person_id.site_id', '=', False), ('person_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_training_event_scope" model="ir.rule">
         <field name="name">M28 training event scope</field>
@@ -138,13 +138,13 @@
         <field name="name">M28 training record scope</field>
         <field name="model_id" ref="pm_qms_people.model_pm_qms_training_record"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('person_id.site_id', '=', False), ('person_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_qualification_record_scope" model="ir.rule">
         <field name="name">M28 qualification record scope</field>
         <field name="model_id" ref="pm_qms_people.model_pm_qms_qualification_record"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('person_id.site_id', '=', False), ('person_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
     <record id="rule_m28_role_document_requirement_scope" model="ir.rule">
         <field name="name">M28 role document requirement scope</field>
@@ -156,6 +156,6 @@
         <field name="name">M28 document acknowledgment scope</field>
         <field name="model_id" ref="pm_qms_people.model_pm_qms_document_acknowledgment"/>
         <field name="global" eval="True"/>
-        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids)]</field>
+        <field name="domain_force">[('organization_id', 'in', user.qms_effective_organization_ids.ids), '|', ('person_id.site_id', '=', False), ('person_id.site_id', 'in', user.qms_effective_site_ids.ids)]</field>
     </record>
 </odoo>
