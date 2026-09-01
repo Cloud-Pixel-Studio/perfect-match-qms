@@ -604,7 +604,7 @@ class TestM28Reproduction(TransactionCase):
                 "pm.qms.person.role.assignment",
                 assignment_a,
                 assignment_b,
-                {"person_id": person_b.id, "role_id": role.id},
+                {"person_id": person_b.id, "role_id": role.id, "effective_date": "2026-09-02"},
                 {"notes": "M28 unauthorized edit"},
             ),
             (
