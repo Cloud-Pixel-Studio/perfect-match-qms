@@ -135,7 +135,7 @@ usage() {
   cat <<'EOF'
 Usage: customer-instance.sh <command> [arguments]
   init <slug> [--type customer|test] [--domain domain] [--release tag] [--port port]
-  provision <slug> --bundle bundle.tar.gz [--type customer|test]
+  provision <slug> --bundle bundle.tar.gz [--type customer|test] [--port port]
   credentials|config|up|down|health <slug>
   runtime-images [<slug>]
   runtime-verify [<slug>]
@@ -147,7 +147,7 @@ Usage: customer-instance.sh <command> [arguments]
   bootstrap-customer <slug> --company-name name --company-code code --user-login login --user-name name [--user-password-file file]
   create-site <slug> --code code --name name --type site-type
   backup <slug> [--recipient-file file] [--off-host-dir dir] [--class intraday|daily|monthly]
-  restore-validate <slug> <backup.tar.age> [--identity-file file]
+  restore-validate <slug> <backup.tar.age> [--identity-file file] [--verification-file file]
   retention <slug> [--now utc] [--apply]
   upgrade <slug> --to <release-tag> [--approve-runtime-change]
   customer-ready <slug>
@@ -241,10 +241,10 @@ credentials() {
 }
 
 provision() (
-  local slug="$1"; shift; local bundle="" type="test"
-  while [[ $# -gt 0 ]]; do case "$1" in --bundle) bundle="${2:-}"; shift 2;; --type) type="${2:-}"; shift 2;; *) die "unknown provision option: $1";; esac; done
+  local slug="$1"; shift; local bundle="" type="test" port="8180"
+  while [[ $# -gt 0 ]]; do case "$1" in --bundle) bundle="${2:-}"; shift 2;; --type) type="${2:-}"; shift 2;; --port) port="${2:-}"; shift 2;; *) die "unknown provision option: $1";; esac; done
   [[ -f "$bundle" ]] || die "bundle not found"; [[ "$type" == test || "$type" == customer ]] || die "invalid type"
-  init_instance "$slug" --type "$type"
+  init_instance "$slug" --type "$type" --port "$port"
   local root; root="$(require_instance "$slug")"; load_instance "$root"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
   tar -xzf "$bundle" -C "$tmp"; [[ -d "$tmp/addons" ]] || die "bundle has no addons"
   [[ -s "$tmp/deployment/runtime/runtime-lock.json" && -s "$tmp/manifest.json" ]] || die "bundle has no runtime lock or manifest"
@@ -406,10 +406,11 @@ backup() (
 )
 
 restore_validate() (
-  local source_slug="$1" archive="$2"; shift 2; local identity_file="${PMQMS_BACKUP_IDENTITY_FILE:-}"; while [[ $# -gt 0 ]]; do case "$1" in --identity-file) identity_file="${2:-}"; shift 2;; *) die "unknown restore-validate option: $1";; esac; done
+  local source_slug="$1" archive="$2"; shift 2; local identity_file="${PMQMS_BACKUP_IDENTITY_FILE:-}" verification_file=""; while [[ $# -gt 0 ]]; do case "$1" in --identity-file) identity_file="${2:-}"; shift 2;; --verification-file) verification_file="${2:-}"; shift 2;; *) die "unknown restore-validate option: $1";; esac; done
   local source_root; source_root="$(require_instance "$source_slug")"; load_instance "$source_root"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
   local source_database="$DATABASE_NAME" source_environment_id="$ENVIRONMENT_ID_FILE" source_product_version="$PRODUCT_VERSION" source_port="$HTTP_PORT"
   [[ -n "$identity_file" ]] || die "restore identity is required via --identity-file or PMQMS_BACKUP_IDENTITY_FILE"
+  [[ -z "$verification_file" || -f "$verification_file" ]] || die "restore verification file is missing"
   [[ -f "$archive" && -f "$archive.sha256" && -f "$archive.manifest.json" ]] || die "backup archive, manifest, or checksum is missing"
   local recovery="${source_slug}-recovery"; [[ ! -e "$(instance_dir "$recovery")" ]] || die "recovery instance already exists"
   init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$source_product_version"
@@ -457,6 +458,37 @@ restore_validate() (
     fi
   '
   health "$recovery"; local license_output; license_output="$(license_status "$recovery")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
+  if [[ -n "$verification_file" ]]; then
+    local verification_dir; verification_dir="$(dirname "$verification_file")"
+    compose "$recovery" run --rm -v "$verification_file:/tmp/recovery-verification.json:ro" -v "$verification_dir:/tmp/recovery-evidence" odoo odoo shell -d "$target_database" --log-level=error <<'PY'
+from pathlib import Path
+import base64, hashlib, json
+
+expected = json.loads(Path("/tmp/recovery-verification.json").read_text(encoding="utf-8"))
+Organization = env["pm.qms.organization"].sudo()
+organization = Organization.search([("code", "=", expected["organization_code"])], limit=1)
+project = env["pm.qms.implementation.project"].sudo().search(
+    [("name", "=", expected["implementation_name"]), ("organization_id", "=", organization.id)], limit=1
+)
+attachment = env["ir.attachment"].sudo().search(
+    [("name", "=", expected["attachment_name"]), ("res_model", "=", "pm.qms.organization"), ("res_id", "=", organization.id)], limit=1
+)
+if not organization or not project or not attachment:
+    raise RuntimeError("fictional recovery fixture is missing")
+attachment_sha256 = hashlib.sha256(base64.b64decode(attachment.datas)).hexdigest()
+if attachment_sha256 != expected["attachment_sha256"]:
+    raise RuntimeError("restored attachment checksum mismatch")
+counts = {model: env[model].sudo().search_count([]) for model in expected["counts"]}
+if counts != expected["counts"]:
+    raise RuntimeError("restored selected record counts differ")
+if env["mail.mail"].sudo().search_count([("state", "=", "outgoing")]):
+    raise RuntimeError("restored environment has outgoing email")
+result = dict(expected)
+result.update({"organization_id": organization.id, "implementation_id": project.id, "attachment_sha256": attachment_sha256, "counts": counts})
+Path("/tmp/recovery-evidence/restored.json").write_text(json.dumps(result, sort_keys=True), encoding="utf-8")
+print("recovery_record_validation=pass")
+PY
+  fi
   echo "restore_validation=pass"
 )
 

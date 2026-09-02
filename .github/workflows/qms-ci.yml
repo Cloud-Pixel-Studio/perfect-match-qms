@@ -58,6 +58,9 @@ jobs:
       - name: Run M29.1 real age integration
         run: bash tools/backup/test_m29_real_age.sh
 
+      - name: Run M29.1 disposable Linux Odoo restore rehearsal
+        run: bash deployment/scripts/tests/test_customer_instance_restore.sh
+
       - name: Run customer effective license status regression
         run: bash deployment/scripts/tests/test_customer_instance_license_status.sh
 

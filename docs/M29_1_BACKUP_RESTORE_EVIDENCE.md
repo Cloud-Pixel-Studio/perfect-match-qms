@@ -46,6 +46,15 @@ claims live Odoo performance evidence. A later authorized disposable Odoo
 rehearsal must measure actual RPO/RTO, database/filestore preservation,
 tenant isolation, cron/email behavior, and restore time.
 
+CI also runs `deployment/scripts/tests/test_customer_instance_restore.sh` on
+the pinned Linux runtime. It creates a uniquely named fictional test instance,
+loads a temporary test license, creates one implementation and one known-byte
+attachment, stops the source before recovery, runs the real customer backup and
+restore commands, validates the restored record/count set and attachment hash,
+and destroys the source and recovery resources in a finalizer. Its RTO is a
+measurement for that disposable rehearsal only. The recovery-point age and
+documented six-hour RPO target do not prove a recurring production schedule.
+
 The wrapper takes a maintenance/write-stop window: it records ordered quiesce,
 database snapshot, filestore snapshot, and quiesce-end timestamps, stops and
 restores the prior Odoo service state, and leaves PostgreSQL running only as
