@@ -204,16 +204,23 @@ wait_for_count() {
 }
 start_timer() {
   local timer="$1" start_output
-  if ! start_output="$(as_root "$SYSTEMCTL" start "$timer" 2>&1)"; then
+  set +e
+  start_output="$(as_root "$SYSTEMCTL" start "$timer" 2>&1)"
+  local start_status=$?
+  set -e
+  if (( start_status != 0 )); then
     printf '%s\n' "$start_output" >&2
     as_root "$SYSTEMCTL" status "$timer" --no-pager || true
     as_root journalctl -u "$timer" -n 20 --no-pager || true
     return 1
   fi
+  [[ -z "$start_output" ]] || printf '%s\n' "$start_output"
 }
 
 # One real calendar timer activation establishes the persistent timer stamp.
+echo "systemd_runtime_phase=start_intraday_timer"
 start_timer "$RUNTIME_INSTANCE_TIMER"
+echo "systemd_runtime_phase=wait_intraday_activation"
 wait_for_count intraday 1
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
 
