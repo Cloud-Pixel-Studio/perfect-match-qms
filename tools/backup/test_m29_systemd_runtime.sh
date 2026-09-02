@@ -17,6 +17,8 @@ as_root() {
 AGE_VERSION="1.2.1"
 AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50"
 AGE_URL="https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
+RUN_AS_USER="$(id -un)"
+RUN_AS_GROUP="$(id -gn)"
 PREFIX="pmqms-m292-runtime-${GITHUB_RUN_ID:-local}-$$"
 WORK="$(mktemp -d "/var/tmp/${PREFIX}.XXXXXX")"
 INSTANCE_BASE="${WORK}/instances"
@@ -132,6 +134,8 @@ EOF
   sed \
     -e 's/^OnFailure=.*/OnFailure=/' \
     -e "s#^ExecStart=.*#ExecStart=${wrapper}#" \
+    -e "s/^User=.*/User=${RUN_AS_USER}/" \
+    -e "s/^Group=.*/Group=${RUN_AS_GROUP}/" \
     -e 's/^RestartSec=.*/RestartSec=1s/' \
     -e 's/^StartLimitIntervalSec=.*/StartLimitIntervalSec=30s/' \
     -e 's/^ProtectSystem=.*/ProtectSystem=off/' \
