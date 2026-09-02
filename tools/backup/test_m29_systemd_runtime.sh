@@ -125,12 +125,20 @@ printf '%s\\n' "\$(date +%s)" >> "${WORK}/${tier}.invocations"
 exec /usr/bin/env bash "${ROOT}/deployment/scripts/customer-backup-scheduler.sh" run --tier "${tier}" --config "${WORK}/config.json"
 EOF
   chmod 755 "$wrapper"
+  # The hosted runner's containerized systemd cannot create the namespaces
+  # used by the production hardening directives. Keep those directives in
+  # the committed units; this disposable activation test exercises timer,
+  # service, retry, and backup behavior without requiring that host feature.
   sed \
     -e 's/^OnFailure=.*/OnFailure=/' \
     -e "s#^ExecStart=.*#ExecStart=${wrapper}#" \
     -e 's/^RestartSec=.*/RestartSec=1s/' \
     -e 's/^StartLimitIntervalSec=.*/StartLimitIntervalSec=30s/' \
-    -e "/^\[Service\]/a Environment=PMQMS_CUSTOMER_INSTANCE_ROOT=${INSTANCE_BASE}\\nEnvironment=PMQMS_AGE_BIN=${AGE_BIN}\\nEnvironment=PMQMS_AGE_VERSION=${AGE_VERSION}\\nEnvironment=PATH=${WORK}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\\nEnvironment=PMQMS_TEST_BACKUP_SLEEP=${sleep_seconds}\\nReadWritePaths=${WORK} ${INSTANCE_BASE}" \
+    -e 's/^ProtectSystem=.*/ProtectSystem=off/' \
+    -e 's/^ProtectHome=.*/ProtectHome=off/' \
+    -e 's/^PrivateTmp=.*/PrivateTmp=false/' \
+    -e '/^ReadWritePaths=/d' \
+    -e "/^\[Service\]/a Environment=PMQMS_CUSTOMER_INSTANCE_ROOT=${INSTANCE_BASE}\\nEnvironment=PMQMS_AGE_BIN=${AGE_BIN}\\nEnvironment=PMQMS_AGE_VERSION=${AGE_VERSION}\\nEnvironment=PATH=${WORK}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\\nEnvironment=PMQMS_TEST_BACKUP_SLEEP=${sleep_seconds}" \
     "$source" > "$output"
 }
 
