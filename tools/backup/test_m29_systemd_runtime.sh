@@ -382,7 +382,8 @@ status_json="$(cat "$WORK/status.json")"
 status_compact="$(tr -d '[:space:]' <<< "$status_json")"
 grep -F '"last_result":"SUCCESS"' <<< "$status_compact" >/dev/null
 grep -F '"consecutive_failures":0' <<< "$status_compact" >/dev/null
-[[ -f "$WORK/off-host"/*manifest.json ]]
+manifest_count="$(find "$WORK/off-host" -maxdepth 1 -type f -name '*manifest.json' | wc -l)"
+(( manifest_count >= 1 ))
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$COLLISION_RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" >/dev/null 2>&1 || true
 
 echo "systemd_runtime=PASS"
