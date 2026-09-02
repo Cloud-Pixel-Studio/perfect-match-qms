@@ -282,7 +282,9 @@ wait_for_inactive_service() {
 wait_for_active_service() {
   local service="$1" deadline=$((SECONDS + 30))
   while (( SECONDS < deadline )); do
-    as_root "$SYSTEMCTL" is-active --quiet "$service" && return 0
+    local state
+    state="$(as_root "$SYSTEMCTL" show -p ActiveState --value "$service" 2>/dev/null || true)"
+    [[ "$state" == active || "$state" == activating ]] && return 0
     sleep 0.2
   done
   as_root "$SYSTEMCTL" status "$service" --no-pager || true
