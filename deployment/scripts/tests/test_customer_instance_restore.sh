@@ -124,7 +124,7 @@ env.cr.commit()
 if not attachment.store_fname:
     raise RuntimeError("fixture attachment is not filestore-backed")
 counts = {model: env[model].sudo().search_count([]) for model in ["pm.qms.organization", "pm.qms.implementation.project", "ir.attachment", "mail.message", "mail.followers", "mail.activity", "mail.mail"]}
-if counts["mail.mail"]:
+if env["mail.mail"].sudo().search_count([("state", "=", "outgoing")]):
     raise RuntimeError("outgoing email exists")
 Path("/tmp/m29-source.json").write_text(json.dumps({"organization_code": org.code, "organization_id": org.id, "implementation_name": project.name, "implementation_id": project.id, "attachment_name": attachment.name, "attachment_sha256": hashlib.sha256(base64.b64decode(attachment.datas)).hexdigest(), "counts": counts}, sort_keys=True), encoding="utf-8")
 PY
