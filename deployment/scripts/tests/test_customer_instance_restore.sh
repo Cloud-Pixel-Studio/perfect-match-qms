@@ -160,6 +160,7 @@ printf x > "$WORK/nonempty/file"
 
 jq --arg sha "0000000000000000000000000000000000000000000000000000000000000000" \
   '.attachment_sha256=$sha' "$WORK/source.json" > "$WORK/bad-verification.json"
+chmod 644 "$WORK/bad-verification.json"
 ! M29_ORG_CODE="$M29_ORG_CODE" M29_PROJECT_NAME="$M29_PROJECT_NAME" M29_ATTACHMENT_NAME="$M29_ATTACHMENT_NAME" \
   PMQMS_AGE_BIN="$AGE_BIN" PMQMS_AGE_VERSION="$AGE_VERSION" \
   bash "$CUSTOMER_SCRIPT" restore-validate "$SLUG" "$ARCHIVE" --identity-file "$WORK/identity.age" \
@@ -167,6 +168,7 @@ jq --arg sha "0000000000000000000000000000000000000000000000000000000000000000" 
 [[ ! -e "$INSTANCE_ROOT/${SLUG}-recovery" ]]
 
 cp "$WORK/source.json" "$WORK/verification.json"
+chmod 644 "$WORK/verification.json"
 RTO_START_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 RTO_START_EPOCH="$(date +%s)"
 M29_ORG_CODE="$M29_ORG_CODE" M29_PROJECT_NAME="$M29_PROJECT_NAME" M29_ATTACHMENT_NAME="$M29_ATTACHMENT_NAME" \
