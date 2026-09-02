@@ -10,6 +10,22 @@ INSTANCE_ROOT="$TEST_ROOT/instances/$SLUG"
 export PMQMS_CUSTOMER_INSTANCE_ROOT="$TEST_ROOT/instances"
 export TMPDIR="$TEST_ROOT/tmp"
 mkdir -p "$TMPDIR" "$INSTANCE_ROOT/config" "$INSTANCE_ROOT/backups"
+RECIPIENT_FILE="$TEST_ROOT/backup-recipient"
+printf 'fictional recipient\n' > "$RECIPIENT_FILE"
+AGE_WRAPPER="$TEST_ROOT/age-wrapper"
+cat > "$AGE_WRAPPER" <<'AGE'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == --version ]]; then echo 'age 1.2.1'; exit 0; fi
+output=""; input=""
+while [[ $# -gt 0 ]]; do
+  [[ "$1" == -o ]] && { output="$2"; shift 2; continue; }
+  input="$1"; shift
+done
+cp "$input" "$output"
+AGE
+chmod +x "$AGE_WRAPPER"
+export PMQMS_AGE_BIN="$AGE_WRAPPER" PMQMS_AGE_VERSION=1.2.1 PMQMS_BACKUP_RECIPIENT_FILE="$RECIPIENT_FILE" PMQMS_BACKUP_IDENTITY_FILE="$RECIPIENT_FILE"
 
 cleanup_test() {
   git -C "$(cd "$SCRIPT_DIR/../.." && pwd)" tag -d "$TEST_RELEASE" >/dev/null 2>&1 || true
@@ -62,7 +78,7 @@ docker() {
 upgrade "$SLUG" --to "$TEST_RELEASE"
 upgrade "$SLUG" --to "$TEST_RELEASE"
 
-backup_archive=("$INSTANCE_ROOT"/backups/*.tar.gz)
+backup_archive=("$INSTANCE_ROOT"/backups/*.tar.age)
 [[ -f "${backup_archive[0]}" ]] || { echo "backup artifact was not created" >&2; exit 1; }
 grep -q '"product_version": "v99.99.99-rc0"' "$INSTANCE_ROOT/config/deployment-manifest.json" || {
   echo "upgrade manifest was not updated" >&2

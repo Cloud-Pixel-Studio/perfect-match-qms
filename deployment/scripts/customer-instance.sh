@@ -10,6 +10,7 @@ MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
 COMPOSE_TEMPLATE="$REPO_ROOT/deployment/docker/customer/compose.yml.template"
 ODOO_TEMPLATE="$REPO_ROOT/deployment/docker/customer/odoo.conf.template"
 RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
+BACKUP_TOOL="$REPO_ROOT/tools/backup/m29_backup.py"
 
 die() { echo "ERROR: $*" >&2; exit 2; }
 log() { echo "CUSTOMER: $*"; }
@@ -145,8 +146,9 @@ Usage: customer-instance.sh <command> [arguments]
   license-status <slug>
   bootstrap-customer <slug> --company-name name --company-code code --user-login login --user-name name [--user-password-file file]
   create-site <slug> --code code --name name --type site-type
-  backup <slug>
-  restore-validate <slug> <backup.tar.gz>
+  backup <slug> [--recipient-file file] [--off-host-dir dir] [--class intraday|daily|monthly]
+  restore-validate <slug> <backup.tar.age> [--identity-file file]
+  retention <slug> [--now utc] [--apply]
   upgrade <slug> --to <release-tag> [--approve-runtime-change]
   customer-ready <slug>
   bundle --output file.tar.gz [--release tag]
@@ -362,33 +364,57 @@ PY
 }
 
 backup() (
-  local root; root="$(require_instance "$1")"; load_instance "$root"; mkdir -p "$root/backups"; chmod 700 "$root/backups"
+  local slug="$1"; shift; local recipient_file="${PMQMS_BACKUP_RECIPIENT_FILE:-}" off_host_dir="" recovery_class="daily"
+  while [[ $# -gt 0 ]]; do case "$1" in --recipient-file) recipient_file="${2:-}"; shift 2;; --off-host-dir) off_host_dir="${2:-}"; shift 2;; --class) recovery_class="${2:-}"; shift 2;; *) die "unknown backup option: $1";; esac; done
+  local root; root="$(require_instance "$slug")"; load_instance "$root"; mkdir -p "$root/backups"; chmod 700 "$root/backups"
+  [[ -n "$recipient_file" ]] || die "encrypted backup recipient is required via --recipient-file or PMQMS_BACKUP_RECIPIENT_FILE"
+  [[ -f "$recipient_file" ]] || die "encrypted backup recipient file is missing"
   compose "$root" up -d postgres >/dev/null
-  local stamp archive tmp=""; stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.gz"; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
+  local stamp archive tmp=""; stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.age"; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
   compose "$root" exec -T postgres pg_dump -U odoo -d "$DATABASE_NAME" --format=custom > "$tmp/db.dump"
   docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$tmp:/backup" "$ALPINE_IMAGE" sh -c "cd /odoo-data && if [ -d filestore/$DATABASE_NAME ]; then tar -czf /backup/filestore.tar.gz filestore/$DATABASE_NAME; else tar -czf /backup/filestore.tar.gz --files-from /dev/null; fi"
-  cp "$root/config/environment_id" "$tmp/environment_id"; [[ -f "$root/license/active.pmql" ]] && cp "$root/license/active.pmql" "$tmp/active.pmql" || true
-  printf 'instance_slug=%s\nproduct_version=%s\ndatabase=%s\nbackup_created_utc=%s\n' "$INSTANCE_SLUG" "$PRODUCT_VERSION" "$DATABASE_NAME" "$stamp" > "$tmp/manifest.txt"
-  tar -C "$tmp" -czf "$archive" .; sha256sum "$archive" > "$archive.sha256"; tar -tzf "$archive" >/dev/null
-  echo "backup=$archive"; echo "checksum=$archive.sha256"
+  cp "$root/config/environment_id" "$tmp/environment_id"
+  cp "$root/config/runtime-lock.json" "$tmp/runtime-lock.json"
+  cp "$root/config/deployment-manifest.json" "$tmp/deployment-manifest.json"
+  local source_release_sha; source_release_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+  local component_args=(--component "db.dump=$tmp/db.dump" --component "filestore.tar.gz=$tmp/filestore.tar.gz" --component "environment_id=$tmp/environment_id" --component "runtime-lock.json=$tmp/runtime-lock.json" --component "deployment-manifest.json=$tmp/deployment-manifest.json")
+  if [[ -f "$root/license/active.pmql" ]]; then cp "$root/license/active.pmql" "$tmp/active.pmql"; component_args+=(--component "active.pmql=$tmp/active.pmql"); fi
+  python3 "$BACKUP_TOOL" pack --output "$archive" --recipient-file "$recipient_file" --source-instance "$INSTANCE_SLUG" --source-database "$DATABASE_NAME" --source-environment-id "$(tr -d '\n' < "$root/config/environment_id")" --product-version "$PRODUCT_VERSION" --source-release-sha "$source_release_sha" --recovery-point-class "$recovery_class" "${component_args[@]}"
+  if [[ -n "$off_host_dir" ]]; then python3 "$BACKUP_TOOL" transfer --archive "$archive" --destination "$off_host_dir"; fi
+  echo "backup=$archive"; echo "checksum=$archive.sha256"; echo "manifest=$archive.manifest.json"
 )
 
 restore_validate() (
-  local source_slug="$1" archive="$2"; local source; source="$(require_instance "$source_slug")"; load_instance "$source"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
-  [[ -f "$archive" && -f "$archive.sha256" ]] || die "backup archive/checksum not found"; sha256sum -c "$archive.sha256" >/dev/null 2>&1 || die "backup checksum failed"
+  local source_slug="$1" archive="$2"; shift 2; local identity_file="${PMQMS_BACKUP_IDENTITY_FILE:-}"; while [[ $# -gt 0 ]]; do case "$1" in --identity-file) identity_file="${2:-}"; shift 2;; *) die "unknown restore-validate option: $1";; esac; done
+  local source; source="$(require_instance "$source_slug")"; load_instance "$source"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
+  [[ -n "$identity_file" ]] || die "restore identity is required via --identity-file or PMQMS_BACKUP_IDENTITY_FILE"
+  [[ -f "$archive" && -f "$archive.sha256" && -f "$archive.manifest.json" ]] || die "backup archive, manifest, or checksum is missing"
   local recovery="${source_slug}-recovery"; [[ ! -e "$(instance_dir "$recovery")" ]] || die "recovery instance already exists"
   init_instance "$recovery" --type test --port "$((HTTP_PORT + 1))" --release "$PRODUCT_VERSION"
-  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"; tar -xzf "$archive" -C "$tmp"
-  cp "$tmp/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$tmp/active.pmql" ]] && cp "$tmp/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
-  cp "$source/config/runtime-lock.json" "$target/config/runtime-lock.json"; chmod 600 "$target/config/runtime-lock.json"
+  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"; local payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --output "$payload"
+  cp "$payload/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$payload/active.pmql" ]] && cp "$payload/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
+  cp "$payload/runtime-lock.json" "$target/config/runtime-lock.json"; chmod 600 "$target/config/runtime-lock.json"
+  cp "$payload/deployment-manifest.json" "$target/config/deployment-manifest.json"
+  jq --arg slug "$INSTANCE_SLUG" --arg type "$ENVIRONMENT_TYPE" --arg product "$PRODUCT_VERSION" \
+    '.instance_slug=$slug | .environment_type=$type | .product_version=$product | .deployment_state="restored"' \
+    "$target/config/deployment-manifest.json" > "$target/config/deployment-manifest.json.tmp"
+  mv "$target/config/deployment-manifest.json.tmp" "$target/config/deployment-manifest.json"
+  chmod 600 "$target/config/deployment-manifest.json"
   update_manifest_runtime "$target" "$target/config/runtime-lock.json"
   render_files "$target"
   cp -a "$source/runtime/addons/." "$target/runtime/addons/"; compose "$target" up -d postgres >/dev/null
   for _ in {1..30}; do compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1 && break; sleep 1; done
   compose "$target" exec -T postgres createdb -U odoo "$DATABASE_NAME" 2>/dev/null || true
-  compose "$target" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$tmp/db.dump"
+  compose "$target" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$payload/db.dump"
+  docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data" -v "$payload:/backup:ro" "$ALPINE_IMAGE" sh -c "cd /odoo-data && tar -xzf /backup/filestore.tar.gz"
   health "$recovery"; license_status "$recovery"; destroy "$recovery" --confirm-ephemeral
   echo "restore_validation=pass"
+)
+
+retention() (
+  local slug="$1"; shift; local root; root="$(require_instance "$slug")"; load_instance "$root"
+  local args=(--directory "$root/backups"); while [[ $# -gt 0 ]]; do case "$1" in --now) args+=(--now "${2:-}"); shift 2;; --apply) args+=(--apply); shift;; *) die "unknown retention option: $1";; esac; done
+  python3 "$BACKUP_TOOL" retention "${args[@]}"
 )
 
 bundle() (
@@ -488,5 +514,5 @@ destroy() {
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   command="${1:-}"; shift || true
   case "$command" in
-    init) init_instance "$@";; provision) provision "$@";; credentials) credentials "$@";; config) config "$@";; runtime-images) runtime_images "$@";; runtime-verify) runtime_verify "$@";; runtime-fetch) runtime_fetch "$@";; up) up "$@";; down) down "$@";; health) health "$@";; bootstrap) bootstrap "$@";; activation-request) activation_request "$@";; import-license) import_license "$@";; license-status) license_status "$@";; bootstrap-customer) bootstrap_customer "$@";; create-site) create_site "$@";; backup) backup "$@";; restore-validate) restore_validate "$@";; upgrade) upgrade "$@";; customer-ready) customer_ready "$@";; bundle) bundle "$@";; destroy) destroy "$@";; help|-h|--help) usage;; *) usage; exit 2;; esac
+    init) init_instance "$@";; provision) provision "$@";; credentials) credentials "$@";; config) config "$@";; runtime-images) runtime_images "$@";; runtime-verify) runtime_verify "$@";; runtime-fetch) runtime_fetch "$@";; up) up "$@";; down) down "$@";; health) health "$@";; bootstrap) bootstrap "$@";; activation-request) activation_request "$@";; import-license) import_license "$@";; license-status) license_status "$@";; bootstrap-customer) bootstrap_customer "$@";; create-site) create_site "$@";; backup) backup "$@";; restore-validate) restore_validate "$@";; retention) retention "$@";; upgrade) upgrade "$@";; customer-ready) customer_ready "$@";; bundle) bundle "$@";; destroy) destroy "$@";; help|-h|--help) usage;; *) usage; exit 2;; esac
 fi

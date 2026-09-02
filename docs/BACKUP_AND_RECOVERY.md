@@ -56,8 +56,12 @@ The backup archive includes DEV configuration to support restoration. Do not
 commit backup archives, extracted backups, database dumps, filestore archives,
 or generated configuration into Git.
 
-Production backup, retention, encryption, offsite storage, and monitoring are
-future work. This Mission 04 gate is a DEV validation foundation.
+Customer M29.1 backup tooling is separate from this DEV backup foundation.
+Customer recovery points use an encrypted age archive, a per-component
+manifest, and an external checksum. Off-host transfer and retention are
+explicit operator actions; no cloud provider is selected by the repository.
+Production RPO/RTO and monitoring remain approval gates, and no live Demo or
+customer restore is authorized by the tooling tests.
 
 ## Retired Oliva Pilot Archive
 
