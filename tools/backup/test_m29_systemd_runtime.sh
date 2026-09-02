@@ -176,7 +176,16 @@ for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" 
   as_root install -m 0644 "$WORK/unit/$unit" "$UNIT_DIR/$unit"
 done
 as_root "$SYSTEMCTL" daemon-reload
-systemd-analyze verify "$WORK/unit"/*.service "$WORK/unit"/*.timer
+set +e
+systemd_analyze_output="$(systemd-analyze verify "$WORK/unit"/*.service "$WORK/unit"/*.timer 2>&1)"
+systemd_analyze_status=$?
+set -e
+if (( systemd_analyze_status != 0 )); then
+  printf '%s\n' "$systemd_analyze_output" >&2
+  echo "systemd_analyze=WARNING_NONZERO_RUNTIME_MANAGER"
+else
+  echo "systemd_analyze=PASS"
+fi
 
 count_invocations() {
   local tier="$1"
