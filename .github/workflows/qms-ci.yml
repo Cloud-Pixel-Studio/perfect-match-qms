@@ -70,6 +70,9 @@ jobs:
       - name: Run M29.2 disposable recurring rehearsal
         run: bash tools/backup/test_m29_scheduler_rehearsal.sh
 
+      - name: Run M29.2 disposable systemd runtime rehearsal
+        run: bash tools/backup/test_m29_systemd_runtime.sh
+
       - name: Run customer effective license status regression
         run: bash deployment/scripts/tests/test_customer_instance_license_status.sh
 

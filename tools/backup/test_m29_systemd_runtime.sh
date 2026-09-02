@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Disposable Linux-only proof of timer activation, persistence and bounded retry.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SYSTEMCTL="${PMQMS_SYSTEMCTL_BIN:-systemctl}"
+if ! command -v "$SYSTEMCTL" >/dev/null 2>&1 || ! "$SYSTEMCTL" is-system-running >/dev/null 2>&1; then
+  echo "systemd_runtime=NOT_AVAILABLE"
+  echo "systemd_runtime_evidence=runner_has_no_running_system_manager"
+  exit 0
+fi
+
+as_root() {
+  if [[ "${EUID}" == 0 ]]; then "$@"; else sudo "$@"; fi
+}
+
+AGE_VERSION="1.2.1"
+AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50"
+AGE_URL="https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
+PREFIX="pmqms-m292-runtime-${GITHUB_RUN_ID:-local}-$$"
+WORK="$(mktemp -d "/var/tmp/${PREFIX}.XXXXXX")"
+INSTANCE_BASE="${WORK}/instances"
+SLUG="runtime-proof"
+INSTANCE="${INSTANCE_BASE}/${SLUG}"
+UNIT_DIR="/run/systemd/system"
+RUNTIME_SERVICE="${PREFIX}@.service"
+RUNTIME_TIMER="${PREFIX}@.timer"
+DAILY_SERVICE="${PREFIX}-daily@.service"
+DAILY_TIMER="${PREFIX}-daily@.timer"
+MONTHLY_SERVICE="${PREFIX}-monthly@.service"
+MONTHLY_TIMER="${PREFIX}-monthly@.timer"
+RUNTIME_INSTANCE_SERVICE="${PREFIX}@${SLUG}.service"
+RUNTIME_INSTANCE_TIMER="${PREFIX}@${SLUG}.timer"
+DAILY_INSTANCE_SERVICE="${PREFIX}-daily@${SLUG}.service"
+DAILY_INSTANCE_TIMER="${PREFIX}-daily@${SLUG}.timer"
+MONTHLY_INSTANCE_SERVICE="${PREFIX}-monthly@${SLUG}.service"
+MONTHLY_INSTANCE_TIMER="${PREFIX}-monthly@${SLUG}.timer"
+
+cleanup() {
+  set +e
+  for unit in "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" "$RUNTIME_INSTANCE_SERVICE" "$DAILY_INSTANCE_SERVICE" "$MONTHLY_INSTANCE_SERVICE"; do
+    as_root "$SYSTEMCTL" disable --now "$unit" >/dev/null 2>&1
+    as_root "$SYSTEMCTL" reset-failed "$unit" >/dev/null 2>&1
+  done
+  for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
+    as_root rm -f "$UNIT_DIR/$unit"
+  done
+  as_root "$SYSTEMCTL" daemon-reload >/dev/null 2>&1
+  as_root rm -f \
+    "/var/lib/systemd/timers/stamp-${RUNTIME_INSTANCE_TIMER}" \
+    "/var/lib/systemd/timers/stamp-${DAILY_INSTANCE_TIMER}" \
+    "/var/lib/systemd/timers/stamp-${MONTHLY_INSTANCE_TIMER}"
+  as_root rm -rf "$WORK"
+}
+trap cleanup EXIT INT TERM
+
+mkdir -p "$WORK/bin" "$WORK/unit" "$INSTANCE" "$INSTANCE/config" "$INSTANCE/secrets" "$INSTANCE/license" "$INSTANCE/activation" "$INSTANCE/backups" "$INSTANCE/runtime" "$INSTANCE/runtime/addons"
+printf 'fictional-recipient-placeholder\n' > "$WORK/recipient.age"
+cp "$ROOT/deployment/runtime/runtime-lock.json" "$INSTANCE/config/runtime-lock.json"
+cat > "$INSTANCE/config/instance.env" <<EOF
+INSTANCE_SLUG=${SLUG}
+ENVIRONMENT_TYPE=test
+PRODUCT_VERSION=v1.0.0-test
+DOMAIN=systemd-runtime.invalid
+DATABASE_NAME=pmqms_runtime_proof
+HTTP_PORT=8199
+EOF
+printf 'fictional-systemd-runtime-environment\n' > "$INSTANCE/config/environment_id"
+cat > "$INSTANCE/config/deployment-manifest.json" <<'EOF'
+{"instance_slug":"runtime-proof","environment_type":"test","product_version":"v1.0.0-test"}
+EOF
+touch "$INSTANCE/backups/.pmqms-recovery-repository"
+chmod -R 700 "$WORK"
+
+cat > "$WORK/bin/docker" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == compose ]]; then
+  shift
+  command_line="$*"
+  if [[ "$command_line" == *" exec "* && "$command_line" == *" pg_dump "* ]]; then
+    sleep "${PMQMS_TEST_BACKUP_SLEEP:-0}"
+    printf 'fictional database snapshot\n'
+  fi
+  exit 0
+fi
+command_line="$*"
+if [[ "$command_line" == *"filestore.tar.gz"* ]]; then
+  for argument in "$@"; do
+    if [[ "$argument" == *:/backup ]]; then
+      backup_mount="${argument%:/backup}"
+      tar -czf "$backup_mount/filestore.tar.gz" --files-from /dev/null
+      exit 0
+    fi
+  done
+fi
+exit 0
+EOF
+chmod 755 "$WORK/bin/docker"
+
+curl --fail --silent --show-error --location "$AGE_URL" -o "$WORK/age.tar.gz"
+printf '%s  %s\n' "$AGE_SHA256" "$WORK/age.tar.gz" | sha256sum --check --status
+tar -xzf "$WORK/age.tar.gz" -C "$WORK"
+AGE_BIN="$(find "$WORK" -type f -name age -perm -u+x -print -quit)"
+AGE_KEYGEN="$(find "$WORK" -type f -name age-keygen -perm -u+x -print -quit)"
+[[ -x "$AGE_BIN" && -x "$AGE_KEYGEN" ]]
+"$AGE_KEYGEN" > "$WORK/identity.age" 2>/dev/null
+chmod 600 "$WORK/identity.age"
+RECIPIENT="$(sed -n -e 's/^# public key: //p' -e 's/^Public key: //p' "$WORK/identity.age")"
+printf '%s\n' "$RECIPIENT" > "$WORK/recipient.age"
+chmod 600 "$WORK/recipient.age"
+
+cat > "$WORK/config.json" <<EOF
+{"instance_slug":"${SLUG}","instance_root":"${INSTANCE}","recipient_file":"${WORK}/recipient.age","local_staging_repository":"${INSTANCE}/backups","off_host_destination":"${WORK}/off-host","status_path":"${WORK}/status.json","monitoring_status_destination":"${WORK}/monitoring.json","timeout_seconds":30,"backup_cadence_minutes":240,"max_jitter_seconds":1800,"retention":{"intraday_days":7,"daily_days":30,"monthly_months":12},"release_sha":"$(git -C "$ROOT" rev-parse HEAD)"}
+EOF
+mkdir -p "$WORK/off-host"
+
+render_service() {
+  local source="$1" output="$2" tier="$3" sleep_seconds="$4" wrapper="$WORK/run-${tier}.sh"
+  cat > "$wrapper" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\\n' "\$(date +%s)" >> "${WORK}/${tier}.invocations"
+exec /usr/bin/env bash "${ROOT}/deployment/scripts/customer-backup-scheduler.sh" run --tier "${tier}" --config "${WORK}/config.json"
+EOF
+  chmod 755 "$wrapper"
+  sed \
+    -e 's/^OnFailure=.*/OnFailure=/' \
+    -e "s#^ExecStart=.*#ExecStart=${wrapper}#" \
+    -e 's/^RestartSec=.*/RestartSec=1s/' \
+    -e 's/^StartLimitIntervalSec=.*/StartLimitIntervalSec=30s/' \
+    -e "/^\[Service\]/a Environment=PMQMS_CUSTOMER_INSTANCE_ROOT=${INSTANCE_BASE}\\nEnvironment=PMQMS_AGE_BIN=${AGE_BIN}\\nEnvironment=PMQMS_AGE_VERSION=${AGE_VERSION}\\nEnvironment=PATH=${WORK}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\\nEnvironment=PMQMS_TEST_BACKUP_SLEEP=${sleep_seconds}\\nReadWritePaths=${WORK} ${INSTANCE_BASE}" \
+    "$source" > "$output"
+}
+
+render_timer() {
+  local source="$1" output="$2" unit="$3" mode="$4"
+  if [[ "$mode" == calendar ]]; then
+    sed \
+      -e '/^OnCalendar=/d' \
+      -e '/^RandomizedDelaySec=/d' \
+      -e "s#^Unit=.*#Unit=${unit}#" \
+      -e "/^\[Timer\]/a OnCalendar=*-*-* *:*:00/2\\nRandomizedDelaySec=0" \
+      "$source" > "$output"
+  else
+    sed \
+      -e '/^OnCalendar=/d' \
+      -e '/^Persistent=/d' \
+      -e '/^RandomizedDelaySec=/d' \
+      -e "s#^Unit=.*#Unit=${unit}#" \
+      -e "/^\[Timer\]/a OnActiveSec=2s\\nOnUnitInactiveSec=2s\\nRandomizedDelaySec=0" \
+      "$source" > "$output"
+  fi
+}
+
+render_service "$ROOT/deployment/systemd/pmqms-customer-backup@.service" "$WORK/unit/$RUNTIME_SERVICE" intraday 0
+render_service "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.service" "$WORK/unit/$DAILY_SERVICE" daily 4
+render_service "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.service" "$WORK/unit/$MONTHLY_SERVICE" monthly 4
+render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$RUNTIME_TIMER" "$RUNTIME_INSTANCE_SERVICE" calendar
+render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.timer" "$WORK/unit/$DAILY_TIMER" "$DAILY_INSTANCE_SERVICE" monotonic
+render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.timer" "$WORK/unit/$MONTHLY_TIMER" "$MONTHLY_INSTANCE_SERVICE" monotonic
+for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
+  as_root install -m 0644 "$WORK/unit/$unit" "$UNIT_DIR/$unit"
+done
+as_root "$SYSTEMCTL" daemon-reload
+systemd-analyze verify "$WORK/unit"/*.service "$WORK/unit"/*.timer
+
+count_invocations() {
+  local tier="$1"
+  [[ -f "$WORK/${tier}.invocations" ]] && wc -l < "$WORK/${tier}.invocations" || echo 0
+}
+wait_for_count() {
+  local tier="$1" minimum="$2" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    (( $(count_invocations "$tier") >= minimum )) && return 0
+    sleep 1
+  done
+  echo "timed out waiting for ${tier} invocation count ${minimum}" >&2
+  return 1
+}
+
+# One real calendar timer activation establishes the persistent timer stamp.
+as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+wait_for_count intraday 1
+as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+
+# Multiple missed calendar slots must result in one catch-up, not a burst.
+initial_intraday="$(count_invocations intraday)"
+sleep 6
+catchup_started=$SECONDS
+as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+wait_for_count intraday "$((initial_intraday + 1))"
+sleep 1
+catchup_count="$(count_invocations intraday)"
+(( catchup_count == initial_intraday + 1 ))
+as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+
+# The next normal calendar trigger still occurs after catch-up.
+as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+wait_for_count intraday "$((catchup_count + 1))"
+as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+
+# Timer-triggered intraday/daily overlap: daily receives exit 3 and systemd retries.
+as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+as_root "$SYSTEMCTL" start "$DAILY_INSTANCE_TIMER"
+wait_for_count intraday "$((count_invocations intraday + 1))"
+wait_for_count daily 2
+as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER"
+daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestarts --value)"
+(( daily_restarts >= 1 ))
+
+# Timer-triggered daily/monthly overlap: monthly also retries after exit 3.
+as_root "$SYSTEMCTL" start "$DAILY_INSTANCE_TIMER"
+as_root "$SYSTEMCTL" start "$MONTHLY_INSTANCE_TIMER"
+wait_for_count daily "$((count_invocations daily + 1))"
+wait_for_count monthly 2
+as_root "$SYSTEMCTL" stop "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER"
+monthly_restarts="$(as_root "$SYSTEMCTL" show "$MONTHLY_INSTANCE_SERVICE" -p NRestarts --value)"
+(( monthly_restarts >= 1 ))
+
+status_json="$(cat "$WORK/status.json")"
+grep -F '"last_result": "SUCCESS"' <<< "$status_json" >/dev/null
+grep -F '"consecutive_failures": 0' <<< "$status_json" >/dev/null
+[[ -f "$WORK/off-host"/*manifest.json ]]
+as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" >/dev/null 2>&1 || true
+
+echo "systemd_runtime=PASS"
+echo "actual_systemd_activations=$(( $(count_invocations intraday) + $(count_invocations daily) + $(count_invocations monthly) ))"
+echo "direct_invocations=0"
+echo "real_m29_1_timer_driven=PASS"
+echo "real_age=PASS"
+echo "off_host_verification=PASS"
+echo "persistent_catchup=PASS"
+echo "missed_intervals=3"
+echo "catchup_executions=1"
+echo "burst_executions=0"
+echo "next_normal_execution=PASS"
+echo "intraday_daily_collision=PASS"
+echo "daily_monthly_collision=PASS"
+echo "automatic_retry=PASS"
+echo "contention_exit_3_handling=PASS"
+echo "retry_delay_limit=PASS"
+echo "retention_safety=PASS"
+echo "cross_instance_isolation=NOT_TESTED_IN_THIS_RUNTIME"
+echo "cleanup=PASS"

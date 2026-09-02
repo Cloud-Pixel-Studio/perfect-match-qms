@@ -26,6 +26,14 @@ grep -F 'enable pmqms-customer-backup@fictional-customer.timer' "$SYSTEMCTL_LOG"
 if command -v systemd-analyze >/dev/null 2>&1; then
   systemd-analyze verify "$ROOT/../systemd"/*.service "$ROOT/../systemd"/*.timer
 fi
+for unit in \
+  pmqms-customer-backup@.service \
+  pmqms-customer-backup-daily@.service \
+  pmqms-customer-backup-monthly@.service; do
+  grep -F 'Restart=on-failure' "$ROOT/../systemd/$unit" >/dev/null
+  grep -F 'RestartSec=30s' "$ROOT/../systemd/$unit" >/dev/null
+  grep -F 'StartLimitBurst=3' "$ROOT/../systemd/$unit" >/dev/null
+done
 bash "$ROOT/customer-backup-scheduler.sh" remove fictional-customer >/dev/null
 bash "$ROOT/customer-backup-scheduler.sh" remove fictional-customer >/dev/null
 grep -F 'disable --now pmqms-customer-backup@fictional-customer.timer pmqms-customer-backup-daily@fictional-customer.timer pmqms-customer-backup-monthly@fictional-customer.timer' "$SYSTEMCTL_LOG" >/dev/null

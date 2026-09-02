@@ -127,3 +127,9 @@ is not configured by this repository. Production scheduler installation is
 **NOT EXECUTED** by M29.2, so recurring production RPO remains unproven until
 an authorized customer deployment and operational observation. Persistent
 catch-up is configured in the units but not runtime-proven by CI.
+
+Before production installation, run the disposable Linux systemd runtime gate
+from the repository. It must report actual timer-triggered service activations,
+one catch-up after multiple missed test slots, and automatic bounded retry for
+intraday/daily and daily/monthly lock contention. A `NOT_AVAILABLE` result means
+the host has no running systemd manager and is not evidence of catch-up.

@@ -44,6 +44,14 @@ isolated. Separate daily/monthly points make retention classification explicit.
 host-downtime behavior is not proven by repository CI. Operational deployment,
 external alerting, and customer-specific policy remain outside this change.
 
+The service templates use `Restart=on-failure` with a bounded restart delay and
+burst limit. This allows a timer-triggered lock collision (CLI exit 3) to be
+retried by systemd without treating contention as a successful backup. The
+disposable Linux runtime gate in
+`tools/backup/test_m29_systemd_runtime.sh` is the evidence path for validating
+timer activation, persistent catch-up, and cross-tier retry; test-only timer
+overrides do not alter the production cadence or jitter configuration.
+
 ## Alternatives rejected
 
 - A completion-time loop was rejected because its schedule drifts.

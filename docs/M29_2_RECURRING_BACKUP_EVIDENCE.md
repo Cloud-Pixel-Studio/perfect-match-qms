@@ -41,6 +41,16 @@ catch-up test is not part of this repository CI. Persistent catch-up is
 nonblocking lock, cross-tier contention behavior, lock release, and retry after
 contention; they do not claim live concurrent systemd service execution.
 
+The disposable Linux runtime gate is implemented in
+`tools/backup/test_m29_systemd_runtime.sh`. When run on a host with a running
+systemd manager, it installs uniquely named temporary copies of the committed
+units, uses accelerated test-only timer overrides, and exercises the real
+M29.1 backup path with fictional data. It records timer-triggered invocation
+counts, persistence catch-up, and systemd retry after cross-tier exit 3. A
+runner without a system manager reports `NOT_AVAILABLE` and does not constitute
+runtime proof. Production jitter and production recurring RPO remain separate
+operational evidence.
+
 The rehearsal is evidence for the scheduler contract and disposable execution
 only. External alert delivery, recurring production observation, customer
 policy approval, and an operational RPO are not claimed.
@@ -60,6 +70,7 @@ missing state/configuration.
 python -m unittest tools.backup.test_m29_scheduler
 bash deployment/scripts/tests/test_customer_backup_scheduler.sh
 bash tools/backup/test_m29_scheduler_rehearsal.sh
+bash tools/backup/test_m29_systemd_runtime.sh
 ```
 
 Generated archives, identities, status files, and reports remain in temporary

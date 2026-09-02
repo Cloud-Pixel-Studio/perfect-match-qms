@@ -1,6 +1,8 @@
 [Unit]
 Description=Perfect Match customer daily backup for %i
 OnFailure=pmqms-customer-backup-failure@%i.service
+StartLimitIntervalSec=15min
+StartLimitBurst=3
 
 [Service]
 Type=oneshot
@@ -18,4 +20,5 @@ LockPersonality=true
 RestrictSUIDSGID=true
 RestrictRealtime=true
 ReadWritePaths=/opt/perfect-match/instances /opt/perfect-match/off-host /var/run/docker.sock
-Restart=no
+Restart=on-failure
+RestartSec=30s
