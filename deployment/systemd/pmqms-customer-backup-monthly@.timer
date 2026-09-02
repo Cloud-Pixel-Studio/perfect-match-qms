@@ -1,0 +1,12 @@
+[Unit]
+Description=Perfect Match customer monthly UTC backup schedule for %i
+
+[Timer]
+OnCalendar=*-*-01 01:30:00 UTC
+Persistent=true
+RandomizedDelaySec=30min
+AccuracySec=1s
+Unit=pmqms-customer-backup-monthly@%i.service
+
+[Install]
+WantedBy=timers.target

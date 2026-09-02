@@ -1,0 +1,8 @@
+[Unit]
+Description=Perfect Match customer backup failure hook for %i
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/logger --tag=pmqms-backup "backup scheduler failure for instance %i"
+NoNewPrivileges=true
+PrivateTmp=true

@@ -1,0 +1,17 @@
+[Unit]
+Description=Perfect Match customer four-hour UTC backup schedule for %i
+
+[Timer]
+OnCalendar=*-*-* 00:00:00 UTC
+OnCalendar=*-*-* 04:00:00 UTC
+OnCalendar=*-*-* 08:00:00 UTC
+OnCalendar=*-*-* 12:00:00 UTC
+OnCalendar=*-*-* 16:00:00 UTC
+OnCalendar=*-*-* 20:00:00 UTC
+Persistent=true
+RandomizedDelaySec=30min
+AccuracySec=1s
+Unit=pmqms-customer-backup@%i.service
+
+[Install]
+WantedBy=timers.target
