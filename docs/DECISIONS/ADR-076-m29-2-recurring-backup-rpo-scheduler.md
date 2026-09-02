@@ -40,8 +40,9 @@ and observed.
 The design avoids completion-time schedule drift, bounds the designed RPO
 interval, supports safe catch-up after downtime, and keeps customer instances
 isolated. Separate daily/monthly points make retention classification explicit.
-Operational deployment, external alerting, and customer-specific policy remain
-outside this change.
+`Persistent=true` configures one catch-up opportunity after downtime, but live
+host-downtime behavior is not proven by repository CI. Operational deployment,
+external alerting, and customer-specific policy remain outside this change.
 
 ## Alternatives rejected
 

@@ -92,7 +92,10 @@ normal provisioning method is forbidden.
 M29.2 provides templated systemd services and timers per customer instance.
 Production intraday slots are fixed UTC at 00:00, 04:00, 08:00, 12:00, 16:00,
 and 20:00, with `Persistent=true` and at most a 30-minute randomized delay.
-The designed maximum interval is 4.5 hours, below the six-hour RPO target.
+The nominal logical cadence is 14,400 seconds. With the configured maximum
+1,800-second delay, the maximum scheduled-start interval is 16,200 seconds
+(4.5 hours), below the six-hour RPO target. Production jitter is not measured
+until deployment.
 Daily and monthly points run at 00:45 UTC daily and 01:30 UTC on the first
 calendar day, respectively. Retention is 7 days for intraday, 30 days for
 daily, and 12 calendar months for monthly points.
@@ -122,4 +125,5 @@ backup writes sanitized failure status, preserves the previous successful
 point, releases the lock, and does not run retention. External alert delivery
 is not configured by this repository. Production scheduler installation is
 **NOT EXECUTED** by M29.2, so recurring production RPO remains unproven until
-an authorized customer deployment and operational observation.
+an authorized customer deployment and operational observation. Persistent
+catch-up is configured in the units but not runtime-proven by CI.

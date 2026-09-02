@@ -17,8 +17,11 @@ PROVEN** by this repository change.
 - Monthly tier: 01:30 UTC on the first calendar day.
 - Retention: intraday 7 days, daily 30 days, monthly 12 calendar months.
 
-The designed schedule semantics pass because the maximum interval is below the
-RPO target. This is distinct from production deployment evidence.
+The designed schedule semantics pass because the maximum scheduled-start
+interval is below the RPO target. This is distinct from production deployment
+evidence. The 14,400-second value is the nominal logical cadence, not an
+observed wall-clock interval. Production jitter is not measured; the configured
+maximum is 1,800 seconds.
 
 ## Disposable rehearsal
 
@@ -26,9 +29,17 @@ RPO target. This is distinct from production deployment evidence.
 1.2.1 release, verifies its pinned SHA-256, generates an ephemeral identity in
 a temporary directory, and runs the actual M29.1 pack, deep verify, transfer,
 and retention commands against fictional data. A test-only accelerated driver
-invokes multiple scheduled slots, exercises a controlled failure, confirms
-next-run recovery, checks off-host artifacts and status health, and cleans the
-temporary workspace. It never uses production identities or instances.
+directly invokes the scheduler with simulated UTC timestamps; it is not an
+actual systemd timer activation and its wall-clock interval is not reported as
+production cadence. It exercises a controlled failure, confirms next-run
+recovery, checks off-host artifacts and status health, and cleans the temporary
+workspace. It never uses production identities or instances.
+
+The production units contain `Persistent=true`, but a live host-downtime
+catch-up test is not part of this repository CI. Persistent catch-up is
+**CONFIGURED, NOT RUNTIME PROVEN**. The focused tests prove the shared
+nonblocking lock, cross-tier contention behavior, lock release, and retry after
+contention; they do not claim live concurrent systemd service execution.
 
 The rehearsal is evidence for the scheduler contract and disposable execution
 only. External alert delivery, recurring production observation, customer

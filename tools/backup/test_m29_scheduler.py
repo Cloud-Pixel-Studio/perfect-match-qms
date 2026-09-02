@@ -40,7 +40,7 @@ class SchedulerTests(unittest.TestCase):
         self.temp.cleanup()
 
     def result(self, _config, tier, now):
-        return scheduler.BackupResult(f"{tier}-20260902.tar.age", "a" * 64, scheduler.format_utc(now))
+        return scheduler.BackupResult(f"{tier}-{scheduler.format_utc(now)}.tar.age".replace(":", ""), "a" * 64, scheduler.format_utc(now))
 
     def test_schedule_is_fixed_utc_and_below_rpo(self):
         semantics = scheduler.schedule_semantics()
@@ -157,6 +157,23 @@ class SchedulerTests(unittest.TestCase):
         monthly = now.replace(day=1, hour=1, minute=30)
         self.assertEqual(scheduler.run_once(self.config, tier="monthly", now=monthly, backup_runner=self.result, retention_runner=lambda *_: None), 0)
         self.assertEqual(json.loads(self.config.status_path.read_text(encoding="utf-8"))["last_result"], "SUCCESS")
+
+    def test_cross_tier_contention_is_nonblocking_and_retry_completes(self):
+        now = scheduler.parse_utc("2026-09-02T00:00:00Z")
+        retention_tiers = []
+
+        def record_retention(_config, _now):
+            retention_tiers.append("completed")
+
+        with scheduler.instance_lock(self.config):
+            with self.assertRaises(scheduler.AlreadyRunning):
+                scheduler.run_once(self.config, tier="daily", now=now, backup_runner=self.result, retention_runner=record_retention)
+        self.assertEqual(retention_tiers, [])
+        self.assertEqual(scheduler.run_once(self.config, tier="daily", now=now, backup_runner=self.result, retention_runner=record_retention), 0)
+        self.assertEqual(retention_tiers, ["completed"])
+        status = json.loads(self.config.status_path.read_text(encoding="utf-8"))
+        self.assertEqual(status["last_result"], "SUCCESS")
+        self.assertIn("daily-", status["archive_identifier"])
 
     def test_unit_templates_are_fixed_and_do_not_use_shell_interpolation(self):
         unit_dir = Path(__file__).resolve().parents[2] / "deployment" / "systemd"
