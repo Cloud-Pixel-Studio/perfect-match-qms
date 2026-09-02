@@ -74,7 +74,8 @@ runtime_fetch() {
   docker pull "$(jq -er '.alpine.image' "$lock")"
 }
 update_manifest_runtime() {
-  local root="$1" lock="$2" manifest="$root/config/deployment-manifest.json"
+  local root="$1" lock="$2"
+  local manifest="$root/config/deployment-manifest.json"
   validate_runtime_lock "$lock"
   jq --arg schema "$(jq -r '.schema_version' "$lock")" \
     --arg lock_sha "$(sha256sum "$lock" | awk '{print $1}')" \
@@ -88,7 +89,8 @@ update_manifest_runtime() {
   chmod 600 "$manifest"
 }
 runtime_manifest_gate() {
-  local root="$1" lock="$root/config/runtime-lock.json" manifest="$root/config/deployment-manifest.json" product="$root/config/product-manifest.json"
+  local root="$1"
+  local lock="$root/config/runtime-lock.json" manifest="$root/config/deployment-manifest.json" product="$root/config/product-manifest.json"
   load_runtime_for_root "$root"
   runtime_verify_lock "$lock"
   [[ -s "$manifest" && -s "$product" ]] || die "deployment/product manifests are missing"
