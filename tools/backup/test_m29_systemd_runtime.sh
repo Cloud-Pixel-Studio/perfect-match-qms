@@ -321,8 +321,8 @@ echo "systemd_runtime_phase=intraday_daily_timers_stopped"
 wait_for_inactive_service "$COLLISION_RUNTIME_INSTANCE_SERVICE"
 wait_for_inactive_service "$DAILY_INSTANCE_SERVICE"
 echo "systemd_runtime_phase=intraday_daily_services_finished"
-daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestarts --value)"
-(( daily_restarts >= 1 ))
+daily_collision_attempts="$(count_invocations daily)"
+(( daily_collision_attempts >= daily_before_collision + 2 ))
 
 # Timer-triggered daily/monthly overlap: monthly also retries after exit 3.
 daily_before_monthly="$(count_invocations daily)"
@@ -342,8 +342,8 @@ echo "systemd_runtime_phase=daily_monthly_timers_stopped"
 wait_for_inactive_service "$DAILY_INSTANCE_SERVICE"
 wait_for_inactive_service "$MONTHLY_INSTANCE_SERVICE"
 echo "systemd_runtime_phase=daily_monthly_services_finished"
-monthly_restarts="$(as_root "$SYSTEMCTL" show "$MONTHLY_INSTANCE_SERVICE" -p NRestarts --value)"
-(( monthly_restarts >= 1 ))
+monthly_collision_attempts="$(count_invocations monthly)"
+(( monthly_collision_attempts >= monthly_before_collision + 2 ))
 
 status_json="$(cat "$WORK/status.json")"
 grep -F '"last_result": "SUCCESS"' <<< "$status_json" >/dev/null
