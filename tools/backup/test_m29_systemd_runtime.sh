@@ -116,7 +116,8 @@ EOF
 mkdir -p "$WORK/off-host"
 
 render_service() {
-  local source="$1" output="$2" tier="$3" sleep_seconds="$4" wrapper="$WORK/run-${tier}.sh"
+  local source="$1" output="$2" tier="$3" sleep_seconds="$4"
+  local wrapper="$WORK/run-${tier}.sh"
   cat > "$wrapper" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
