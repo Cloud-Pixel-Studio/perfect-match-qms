@@ -213,7 +213,8 @@ wait_for_count() {
   return 1
 }
 start_timer() {
-  local timer="$1" start_output
+  local timer="$1" service="${1%.timer}.service" start_output
+  as_root "$SYSTEMCTL" reset-failed "$service" >/dev/null 2>&1 || true
   set +e
   start_output="$(as_root "$SYSTEMCTL" start --no-block "$timer" 2>&1)"
   local start_status=$?
