@@ -204,7 +204,10 @@ wait_for_count() {
     (( $(count_invocations "$tier") >= minimum )) && return 0
     sleep 1
   done
-  as_root "$SYSTEMCTL" status "${PREFIX}@${SLUG}.timer" "${PREFIX}@${SLUG}.service" --no-pager || true
+  local service="${PREFIX}-${tier}@${SLUG}.service" timer="${PREFIX}-${tier}@${SLUG}.timer"
+  as_root "$SYSTEMCTL" status "$timer" "$service" --no-pager || true
+  as_root journalctl -u "$service" -n 50 --no-pager || true
+  as_root journalctl -u "$timer" -n 20 --no-pager || true
   as_root "$SYSTEMCTL" list-timers --all --no-pager | grep -F "$PREFIX" || true
   echo "timed out waiting for ${tier} invocation count ${minimum}" >&2
   return 1
