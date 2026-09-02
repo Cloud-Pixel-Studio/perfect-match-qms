@@ -460,6 +460,9 @@ restore_validate() (
     fi
   '
   if ! health "$recovery"; then
+    printf 'recovery_root=%s\n' "$target" >&2
+    printf 'recovery_runtime_lock=%s\n' "$target/config/runtime-lock.json" >&2
+    ls -la "$target/config" >&2 || true
     compose "$recovery" logs --no-color --tail=120 odoo >&2 || true
     die "recovery Odoo did not become healthy"
   fi
