@@ -7,6 +7,7 @@ AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50"
 AGE_URL="https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
 WORK="$(mktemp -d)"
 trap 'rm -rf -- "$WORK"' EXIT
+umask 077
 
 curl --fail --silent --show-error --location "$AGE_URL" -o "$WORK/age.tar.gz"
 printf '%s  %s\n' "$AGE_SHA256" "$WORK/age.tar.gz" | sha256sum --check --status
@@ -17,7 +18,7 @@ AGE_KEYGEN="$(find "$WORK" -type f -name age-keygen -perm -u+x -print -quit)"
 
 "$AGE_KEYGEN" > "$WORK/identity.age"
 chmod 600 "$WORK/identity.age"
-RECIPIENT="$(sed -n 's/^# public key: //p' "$WORK/identity.age")"
+RECIPIENT="$(sed -n -e 's/^# public key: //p' -e 's/^Public key: //p' "$WORK/identity.age")"
 [[ "$RECIPIENT" =~ ^age1[[:alnum:]]+$ ]]
 printf '%s\n' "$RECIPIENT" > "$WORK/recipient.age"
 

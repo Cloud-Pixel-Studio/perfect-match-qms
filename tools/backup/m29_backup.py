@@ -103,7 +103,7 @@ def expected_age_version() -> str:
 
 
 def actual_age_version(output: str) -> str:
-    match = re.search(r"\bage\s+(\d+\.\d+\.\d+)\b", output)
+    match = re.search(r"^(?:age[ \t]+)?v?(\d+\.\d+\.\d+)[ \t]*$", output, flags=re.MULTILINE)
     if not match:
         raise BackupError("age version output is not recognized")
     return match.group(1)
