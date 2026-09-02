@@ -86,3 +86,40 @@ Recovering the same customer preserves its identity and license. A new
 customer always receives a new slug, database, filestore, secrets, environment
 identity, activation request, and license. Copying a customer directory as a
 normal provisioning method is forbidden.
+
+## Recurring scheduler
+
+M29.2 provides templated systemd services and timers per customer instance.
+Production intraday slots are fixed UTC at 00:00, 04:00, 08:00, 12:00, 16:00,
+and 20:00, with `Persistent=true` and at most a 30-minute randomized delay.
+The designed maximum interval is 4.5 hours, below the six-hour RPO target.
+Daily and monthly points run at 00:45 UTC daily and 01:30 UTC on the first
+calendar day, respectively. Retention is 7 days for intraday, 30 days for
+daily, and 12 calendar months for monthly points.
+
+Use one root-owned configuration file per instance outside Git. It contains
+paths and policy only; no private age identity or credential is stored there:
+
+```json
+{
+  "instance_slug": "northstar-precision",
+  "instance_root": "/opt/perfect-match/instances/northstar-precision",
+  "recipient_file": "/etc/perfect-match/backup/recipient.age",
+  "local_staging_repository": "/opt/perfect-match/instances/northstar-precision/backups",
+  "off_host_destination": "/opt/perfect-match/off-host/northstar-precision",
+  "status_path": "/var/lib/perfect-match/backup-status/northstar-precision.json",
+  "monitoring_status_destination": "/var/lib/perfect-match/backup-status/northstar-precision-monitoring.json",
+  "timeout_seconds": 1800,
+  "backup_cadence_minutes": 240,
+  "max_jitter_seconds": 1800,
+  "retention": {"intraday_days": 7, "daily_days": 30, "monthly_months": 12}
+}
+```
+
+`health` returns 0 while the latest verified point is no older than six hours,
+1 when stale, and 2 for missing or invalid state/configuration. A failed
+backup writes sanitized failure status, preserves the previous successful
+point, releases the lock, and does not run retention. External alert delivery
+is not configured by this repository. Production scheduler installation is
+**NOT EXECUTED** by M29.2, so recurring production RPO remains unproven until
+an authorized customer deployment and operational observation.

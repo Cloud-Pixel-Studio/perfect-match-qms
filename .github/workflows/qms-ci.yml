@@ -61,6 +61,15 @@ jobs:
       - name: Run M29.1 disposable Linux Odoo restore rehearsal
         run: bash deployment/scripts/tests/test_customer_instance_restore.sh
 
+      - name: Run M29.2 scheduler tests
+        run: python -m unittest tools.backup.test_m29_scheduler
+
+      - name: Validate M29.2 systemd units and installation idempotency
+        run: bash deployment/scripts/tests/test_customer_backup_scheduler.sh
+
+      - name: Run M29.2 disposable recurring rehearsal
+        run: bash tools/backup/test_m29_scheduler_rehearsal.sh
+
       - name: Run customer effective license status regression
         run: bash deployment/scripts/tests/test_customer_instance_license_status.sh
 

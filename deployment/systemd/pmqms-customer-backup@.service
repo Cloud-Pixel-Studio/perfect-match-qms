@@ -1,0 +1,22 @@
+[Unit]
+Description=Perfect Match customer intraday backup for %i
+Documentation=man:systemd.service
+OnFailure=pmqms-customer-backup-failure@%i.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+TimeoutStartSec=30min
+RuntimeMaxSec=30min
+ExecStart=/usr/bin/env bash /opt/perfect-match/perfect-match-qms/deployment/scripts/customer-backup-scheduler.sh run --tier intraday --config /etc/perfect-match/customer-backup/%i.json
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+ReadWritePaths=/opt/perfect-match/instances /opt/perfect-match/off-host /var/run/docker.sock
+Restart=no

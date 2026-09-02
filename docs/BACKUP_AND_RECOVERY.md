@@ -71,3 +71,20 @@ The final retirement archive is VM-local, checksum-validated, outside Git, and
 must not be uploaded to GitHub, a project-management system, or a release. Do
 not recreate the pilot runtime to perform routine validation; use DEV and Demo
 instead.
+
+## M29.2 recurring RPO scheduler
+
+The customer scheduler uses the M29.1 encrypted backup, off-host transfer, and
+retention interfaces. Its production systemd timer uses six fixed UTC slots
+every four hours, is persistent across downtime, and has at most 30 minutes of
+random delay. The designed maximum interval is 4.5 hours against the six-hour
+RPO target. Daily and monthly points are separately classified at 00:45 UTC
+and 01:30 UTC on day one, with retention of 7 days, 30 days, and 12 months.
+
+Each instance has external configuration, a nonblocking lock, and atomic status
+artifacts. Retention runs only after archive and off-host verification. Failure
+returns nonzero, preserves the previous success, and emits a sanitized local
+systemd event. Health returns 0 healthy, 1 stale, and 2 configuration or
+infrastructure error. M29.2 does not install a production scheduler or prove
+recurring production RPO; deployment and external alerting remain future
+operational gates.
