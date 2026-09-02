@@ -68,7 +68,11 @@ jq -n --arg key "$PUBLIC_KEY" '{keys:{"m29-ci-test":$key}}' > "$WORK/public_keys
 
 bash "$CUSTOMER_SCRIPT" provision "$SLUG" --bundle "$WORK/bundle.tar.gz" --type test --port "$PORT" >/dev/null
 SOURCE_ROOT="$INSTANCE_ROOT/$SLUG"
-cp "$WORK/public_keys.json" "$SOURCE_ROOT/runtime/addons/pm_qms_license/data/public_keys.json"
+# The provisioned addon tree is intentionally read-only. Overlay the ephemeral
+# test key through a root container so the rehearsal never weakens that boundary.
+docker run --rm --user root -v "$WORK/public_keys.json:/input/public_keys.json:ro" \
+  -v "$SOURCE_ROOT/runtime/addons/pm_qms_license/data:/data" "$ALPINE_IMAGE" \
+  sh -eu -c 'cp /input/public_keys.json /data/public_keys.json && chmod 644 /data/public_keys.json'
 bash "$CUSTOMER_SCRIPT" bootstrap "$SLUG" >/dev/null
 SOURCE_ENVIRONMENT_ID="$(tr -d '\n' < "$SOURCE_ROOT/config/environment_id")"
 docker run --rm -v "$REPO_ROOT:/repo:ro" -v "$WORK:/work" "$ODOO_IMAGE" \
