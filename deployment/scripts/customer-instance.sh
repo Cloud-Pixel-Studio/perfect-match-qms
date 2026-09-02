@@ -459,7 +459,11 @@ restore_validate() (
       mv "$work/filestore/$SOURCE_DATABASE" "/odoo-data/filestore/$TARGET_DATABASE"
     fi
   '
-  health "$recovery"; local license_output; license_output="$(license_status "$recovery")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
+  if ! health "$recovery"; then
+    compose "$recovery" logs --no-color --tail=120 odoo >&2 || true
+    die "recovery Odoo did not become healthy"
+  fi
+  local license_output; license_output="$(license_status "$recovery")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
   if [[ -n "$verification_file" ]]; then
     local verification_dir; verification_dir="$(dirname "$verification_file")"
     compose "$recovery" run --rm -v "$verification_file:/tmp/recovery-verification.json:ro" -v "$verification_dir:/tmp/recovery-evidence" odoo odoo shell -d "$target_database" --log-level=error <<'PY'
