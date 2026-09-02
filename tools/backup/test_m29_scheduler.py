@@ -174,6 +174,14 @@ class SchedulerTests(unittest.TestCase):
         status = json.loads(self.config.status_path.read_text(encoding="utf-8"))
         self.assertEqual(status["last_result"], "SUCCESS")
         self.assertIn("daily-", status["archive_identifier"])
+        monthly_now = scheduler.parse_utc("2026-09-02T01:30:00Z")
+        with scheduler.instance_lock(self.config):
+            with self.assertRaises(scheduler.AlreadyRunning):
+                scheduler.run_once(self.config, tier="monthly", now=monthly_now, backup_runner=self.result, retention_runner=record_retention)
+        self.assertEqual(scheduler.run_once(self.config, tier="monthly", now=monthly_now, backup_runner=self.result, retention_runner=record_retention), 0)
+        self.assertEqual(len(retention_tiers), 2)
+        status = json.loads(self.config.status_path.read_text(encoding="utf-8"))
+        self.assertIn("monthly-", status["archive_identifier"])
 
     def test_unit_templates_are_fixed_and_do_not_use_shell_interpolation(self):
         unit_dir = Path(__file__).resolve().parents[2] / "deployment" / "systemd"
