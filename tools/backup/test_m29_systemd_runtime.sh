@@ -153,7 +153,7 @@ render_timer() {
       -e '/^OnCalendar=/d' \
       -e '/^RandomizedDelaySec=/d' \
       -e "s#^Unit=.*#Unit=${unit}#" \
-      -e "/^\[Timer\]/a OnCalendar=*-*-* *:*:00/2\\nRandomizedDelaySec=0" \
+      -e "/^\[Timer\]/a OnCalendar=*-*-* *:*:00/10\\nRandomizedDelaySec=0" \
       "$source" > "$output"
   else
     sed \
@@ -242,7 +242,7 @@ echo "systemd_runtime_phase=intraday_timer_stopped"
 # Multiple missed calendar slots must result in one catch-up, not a burst.
 initial_intraday="$(count_invocations intraday)"
 echo "systemd_runtime_phase=begin_persistent_catchup"
-sleep 6
+sleep 25
 catchup_started=$SECONDS
 start_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=wait_persistent_catchup"
