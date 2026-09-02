@@ -166,7 +166,7 @@ render_timer() {
       -e '/^Persistent=/d' \
       -e '/^RandomizedDelaySec=/d' \
       -e "s#^Unit=.*#Unit=${unit}#" \
-      -e "/^\[Timer\]/a OnActiveSec=2s\\nOnUnitInactiveSec=2s\\nRandomizedDelaySec=0" \
+      -e "/^\[Timer\]/a OnActiveSec=2s\\nRandomizedDelaySec=0" \
       "$source" > "$output"
   fi
 }
