@@ -212,7 +212,7 @@ wait_for_count() {
 start_timer() {
   local timer="$1" start_output
   set +e
-  start_output="$(as_root "$SYSTEMCTL" start "$timer" 2>&1)"
+  start_output="$(as_root "$SYSTEMCTL" start --no-block "$timer" 2>&1)"
   local start_status=$?
   set -e
   if (( start_status != 0 )); then
@@ -222,6 +222,15 @@ start_timer() {
     return 1
   fi
   [[ -z "$start_output" ]] || printf '%s\n' "$start_output"
+  for _ in {1..30}; do
+    if as_root "$SYSTEMCTL" is-active --quiet "$timer"; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  as_root "$SYSTEMCTL" status "$timer" --no-pager || true
+  echo "timed out starting ${timer}" >&2
+  return 1
 }
 stop_timer() {
   local timer="$1" stop_output
