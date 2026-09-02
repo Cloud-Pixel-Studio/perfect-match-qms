@@ -245,9 +245,12 @@ echo "systemd_runtime_phase=begin_persistent_catchup"
 sleep 6
 catchup_started=$SECONDS
 start_timer "$RUNTIME_INSTANCE_TIMER"
+echo "systemd_runtime_phase=wait_persistent_catchup"
 wait_for_count intraday "$((initial_intraday + 1))"
+echo "systemd_runtime_phase=persistent_catchup_observed count=$(count_invocations intraday)"
 sleep 1
 catchup_count="$(count_invocations intraday)"
+echo "systemd_runtime_phase=persistent_catchup_count count=${catchup_count} expected=$((initial_intraday + 1))"
 (( catchup_count == initial_intraday + 1 ))
 stop_timer "$RUNTIME_INSTANCE_TIMER"
 
