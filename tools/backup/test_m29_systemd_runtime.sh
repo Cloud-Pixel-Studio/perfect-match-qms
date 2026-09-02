@@ -216,6 +216,19 @@ start_timer() {
   fi
   [[ -z "$start_output" ]] || printf '%s\n' "$start_output"
 }
+stop_timer() {
+  local timer="$1" stop_output
+  set +e
+  stop_output="$(as_root "$SYSTEMCTL" stop "$timer" 2>&1)"
+  local stop_status=$?
+  set -e
+  if (( stop_status != 0 )); then
+    printf '%s\n' "$stop_output" >&2
+    as_root "$SYSTEMCTL" status "$timer" --no-pager || true
+    return 1
+  fi
+  [[ -z "$stop_output" ]] || printf '%s\n' "$stop_output"
+}
 
 # One real calendar timer activation establishes the persistent timer stamp.
 echo "systemd_runtime_phase=start_intraday_timer"
@@ -223,7 +236,7 @@ start_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=wait_intraday_activation"
 wait_for_count intraday 1
 echo "systemd_runtime_phase=intraday_activation_observed"
-as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+stop_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=intraday_timer_stopped"
 
 # Multiple missed calendar slots must result in one catch-up, not a burst.
@@ -236,12 +249,12 @@ wait_for_count intraday "$((initial_intraday + 1))"
 sleep 1
 catchup_count="$(count_invocations intraday)"
 (( catchup_count == initial_intraday + 1 ))
-as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+stop_timer "$RUNTIME_INSTANCE_TIMER"
 
 # The next normal calendar trigger still occurs after catch-up.
 start_timer "$RUNTIME_INSTANCE_TIMER"
 wait_for_count intraday "$((catchup_count + 1))"
-as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+stop_timer "$RUNTIME_INSTANCE_TIMER"
 
 # Timer-triggered intraday/daily overlap: daily receives exit 3 and systemd retries.
 start_timer "$RUNTIME_INSTANCE_TIMER"
