@@ -94,6 +94,8 @@ bash "$CUSTOMER_SCRIPT" import-license "$SLUG" "$WORK/active.pmql" >/dev/null
 bash "$CUSTOMER_SCRIPT" bootstrap "$SLUG" >/dev/null
 printf 'M29 fictional attachment bytes for %s\n' "$RUN_ID" > "$WORK/attachment.txt"
 chmod 644 "$WORK/attachment.txt"
+touch "$WORK/source.json"
+chmod 666 "$WORK/source.json"
 printf '%s' "$RUN_ID" > "$WORK/qm-password"
 chmod 600 "$WORK/qm-password"
 bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" --company-name "M29 Fictional Recovery Lab" \
@@ -109,21 +111,22 @@ export M29_ATTACHMENT_NAME="M29 Known Attachment ${RUN_ID}.txt"
   -e "M29_ORG_CODE=$M29_ORG_CODE" \
   -e "M29_PROJECT_NAME=$M29_PROJECT_NAME" \
   -e "M29_ATTACHMENT_NAME=$M29_ATTACHMENT_NAME" \
-  -v "$WORK:/evidence" odoo odoo shell -d "$SOURCE_DB" --log-level=error <<'PY'
+  -v "$WORK/attachment.txt:/tmp/m29-attachment.txt:ro" \
+  -v "$WORK/source.json:/tmp/m29-source.json" odoo odoo shell -d "$SOURCE_DB" --log-level=error <<'PY'
 from pathlib import Path
 import base64, hashlib, json, os
 org = env["pm.qms.organization"].sudo().search([("code", "=", os.environ["M29_ORG_CODE"])], limit=1)
 if not org:
     raise RuntimeError("fictional organization is missing")
 project = env["pm.qms.implementation.project"].sudo().create({"name": os.environ["M29_PROJECT_NAME"], "organization_id": org.id, "company_id": org.company_id.id, "target_date": "2026-12-31"})
-attachment = env["ir.attachment"].sudo().create({"name": os.environ["M29_ATTACHMENT_NAME"], "datas": base64.b64encode(Path("/evidence/attachment.txt").read_bytes()), "res_model": "pm.qms.organization", "res_id": org.id, "mimetype": "text/plain"})
+attachment = env["ir.attachment"].sudo().create({"name": os.environ["M29_ATTACHMENT_NAME"], "datas": base64.b64encode(Path("/tmp/m29-attachment.txt").read_bytes()), "res_model": "pm.qms.organization", "res_id": org.id, "mimetype": "text/plain"})
 env.cr.commit()
 if not attachment.store_fname:
     raise RuntimeError("fixture attachment is not filestore-backed")
 counts = {model: env[model].sudo().search_count([]) for model in ["pm.qms.organization", "pm.qms.implementation.project", "ir.attachment", "mail.message", "mail.followers", "mail.activity", "mail.mail"]}
 if counts["mail.mail"]:
     raise RuntimeError("outgoing email exists")
-Path("/evidence/source.json").write_text(json.dumps({"organization_code": org.code, "organization_id": org.id, "implementation_name": project.name, "implementation_id": project.id, "attachment_name": attachment.name, "attachment_sha256": hashlib.sha256(base64.b64decode(attachment.datas)).hexdigest(), "counts": counts}, sort_keys=True), encoding="utf-8")
+Path("/tmp/m29-source.json").write_text(json.dumps({"organization_code": org.code, "organization_id": org.id, "implementation_name": project.name, "implementation_id": project.id, "attachment_name": attachment.name, "attachment_sha256": hashlib.sha256(base64.b64decode(attachment.datas)).hexdigest(), "counts": counts}, sort_keys=True), encoding="utf-8")
 PY
 SOURCE_ATTACHMENT_SHA="$(jq -r .attachment_sha256 "$WORK/source.json")"
 SOURCE_COUNTS="$(jq -c .counts "$WORK/source.json")"
