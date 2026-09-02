@@ -93,6 +93,7 @@ docker run --rm --user root -v "$REPO_ROOT:/repo:ro" -v "$WORK:/work" "$ODOO_IMA
 bash "$CUSTOMER_SCRIPT" import-license "$SLUG" "$WORK/active.pmql" >/dev/null
 bash "$CUSTOMER_SCRIPT" bootstrap "$SLUG" >/dev/null
 printf 'M29 fictional attachment bytes for %s\n' "$RUN_ID" > "$WORK/attachment.txt"
+chmod 644 "$WORK/attachment.txt"
 printf '%s' "$RUN_ID" > "$WORK/qm-password"
 chmod 600 "$WORK/qm-password"
 bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" --company-name "M29 Fictional Recovery Lab" \
