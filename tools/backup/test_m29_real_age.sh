@@ -16,7 +16,7 @@ AGE_BIN="$(find "$WORK" -type f -name age -perm -u+x -print -quit)"
 AGE_KEYGEN="$(find "$WORK" -type f -name age-keygen -perm -u+x -print -quit)"
 [[ -x "$AGE_BIN" && -x "$AGE_KEYGEN" ]]
 
-"$AGE_KEYGEN" > "$WORK/identity.age"
+"$AGE_KEYGEN" > "$WORK/identity.age" 2>/dev/null
 chmod 600 "$WORK/identity.age"
 RECIPIENT="$(sed -n -e 's/^# public key: //p' -e 's/^Public key: //p' "$WORK/identity.age")"
 [[ "$RECIPIENT" =~ ^age1[[:alnum:]]+$ ]]
@@ -53,7 +53,7 @@ python3 tools/backup/m29_backup.py unpack --archive "$ARCHIVE" --identity-file "
 cmp "$WORK/db.dump" "$WORK/unpacked/db.dump"
 mkdir "$WORK/off-host"
 python3 tools/backup/m29_backup.py transfer --archive "$ARCHIVE" --destination "$WORK/off-host"
-python3 tools/backup/m29_backup.py transfer --archive "$ARCHIVE" --destination "$WORK/off-host" | grep -F '\"idempotent\": true' >/dev/null
+python3 tools/backup/m29_backup.py transfer --archive "$ARCHIVE" --destination "$WORK/off-host" | grep -F '"idempotent": true' >/dev/null
 mkdir "$WORK/retention"
 touch "$WORK/retention/.pmqms-recovery-repository"
 cp "$ARCHIVE" "$WORK/retention/"
