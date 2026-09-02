@@ -86,7 +86,7 @@ bash "$CUSTOMER_SCRIPT" up "$SLUG" >/dev/null
 "${SOURCE_COMPOSE[@]}" run --rm odoo odoo -d "$SOURCE_DB" \
   --init "pm_qms_core,pm_qms_people,pm_qms_license" --without-demo=all --stop-after-init >/dev/null
 SOURCE_ENVIRONMENT_ID="$(tr -d '\n' < "$SOURCE_ROOT/config/environment_id")"
-docker run --rm -v "$REPO_ROOT:/repo:ro" -v "$WORK:/work" "$ODOO_IMAGE" \
+docker run --rm --user root -v "$REPO_ROOT:/repo:ro" -v "$WORK:/work" "$ODOO_IMAGE" \
   python3 /repo/deployment/scripts/issue-license.py --private-key /work/license-key.pem --output /work/active.pmql \
   --environment-id "$SOURCE_ENVIRONMENT_ID" --customer-name "M29 Fictional Recovery Lab" \
   --key-id m29-ci-test --license-id "M29-CI-${RUN_ID}" --company-limit 1 --site-limit 2 --named-user-limit 2 >/dev/null
