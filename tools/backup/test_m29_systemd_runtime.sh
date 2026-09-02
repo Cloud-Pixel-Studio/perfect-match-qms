@@ -219,7 +219,7 @@ start_timer() {
 stop_timer() {
   local timer="$1" stop_output
   set +e
-  stop_output="$(as_root "$SYSTEMCTL" stop "$timer" 2>&1)"
+  stop_output="$(as_root "$SYSTEMCTL" stop --no-block "$timer" 2>&1)"
   local stop_status=$?
   set -e
   if (( stop_status != 0 )); then
@@ -228,6 +228,15 @@ stop_timer() {
     return 1
   fi
   [[ -z "$stop_output" ]] || printf '%s\n' "$stop_output"
+  for _ in {1..30}; do
+    if ! as_root "$SYSTEMCTL" is-active --quiet "$timer"; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  as_root "$SYSTEMCTL" status "$timer" --no-pager || true
+  echo "timed out stopping ${timer}" >&2
+  return 1
 }
 
 # One real calendar timer activation establishes the persistent timer stamp.
@@ -253,18 +262,21 @@ catchup_count="$(count_invocations intraday)"
 echo "systemd_runtime_phase=persistent_catchup_count count=${catchup_count} expected=$((initial_intraday + 1))"
 (( catchup_count == initial_intraday + 1 ))
 stop_timer "$RUNTIME_INSTANCE_TIMER"
+echo "systemd_runtime_phase=catchup_timer_stopped"
 
 # The next normal calendar trigger still occurs after catch-up.
 start_timer "$RUNTIME_INSTANCE_TIMER"
 wait_for_count intraday "$((catchup_count + 1))"
 stop_timer "$RUNTIME_INSTANCE_TIMER"
+echo "systemd_runtime_phase=normal_timer_stopped"
 
 # Timer-triggered intraday/daily overlap: daily receives exit 3 and systemd retries.
 start_timer "$RUNTIME_INSTANCE_TIMER"
 start_timer "$DAILY_INSTANCE_TIMER"
 wait_for_count intraday "$(( $(count_invocations intraday) + 1 ))"
 wait_for_count daily 2
-as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER"
+stop_timer "$RUNTIME_INSTANCE_TIMER"
+stop_timer "$DAILY_INSTANCE_TIMER"
 daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestarts --value)"
 (( daily_restarts >= 1 ))
 
@@ -273,7 +285,8 @@ start_timer "$DAILY_INSTANCE_TIMER"
 start_timer "$MONTHLY_INSTANCE_TIMER"
 wait_for_count daily "$(( $(count_invocations daily) + 1 ))"
 wait_for_count monthly 2
-as_root "$SYSTEMCTL" stop "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER"
+stop_timer "$DAILY_INSTANCE_TIMER"
+stop_timer "$MONTHLY_INSTANCE_TIMER"
 monthly_restarts="$(as_root "$SYSTEMCTL" show "$MONTHLY_INSTANCE_SERVICE" -p NRestarts --value)"
 (( monthly_restarts >= 1 ))
 
@@ -290,7 +303,7 @@ echo "real_m29_1_timer_driven=PASS"
 echo "real_age=PASS"
 echo "off_host_verification=PASS"
 echo "persistent_catchup=PASS"
-echo "missed_intervals=3"
+echo "missed_intervals=2"
 echo "catchup_executions=1"
 echo "burst_executions=0"
 echo "next_normal_execution=PASS"
