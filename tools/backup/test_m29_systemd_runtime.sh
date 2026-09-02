@@ -275,6 +275,20 @@ wait_for_inactive_service() {
   echo "timed out waiting for ${service} to finish" >&2
   return 1
 }
+wait_for_successful_status() {
+  local deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    if [[ -f "$WORK/status.json" ]] \
+      && grep -F '"last_result": "SUCCESS"' "$WORK/status.json" >/dev/null \
+      && grep -F '"consecutive_failures": 0' "$WORK/status.json" >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  cat "$WORK/status.json" >&2 || true
+  echo "timed out waiting for successful scheduler status" >&2
+  return 1
+}
 wait_for_inactive_service "$RUNTIME_INSTANCE_SERVICE"
 
 # Multiple missed calendar slots must result in one catch-up, not a burst.
@@ -344,6 +358,7 @@ wait_for_inactive_service "$MONTHLY_INSTANCE_SERVICE"
 echo "systemd_runtime_phase=daily_monthly_services_finished"
 monthly_collision_attempts="$(count_invocations monthly)"
 (( monthly_collision_attempts >= monthly_before_collision + 2 ))
+wait_for_successful_status
 
 status_json="$(cat "$WORK/status.json")"
 grep -F '"last_result": "SUCCESS"' <<< "$status_json" >/dev/null
