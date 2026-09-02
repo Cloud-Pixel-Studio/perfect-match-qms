@@ -309,8 +309,8 @@ PY
   mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"; chmod 600 "$root/config/deployment-manifest.json"
 }
 
-license_status() {
-  local root; root="$(require_instance "$1")"; load_instance "$root"
+license_status_root() {
+  local root="$1"; load_instance "$root"
   compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
 license = env["pm.qms.license"].sudo().current()
 status = env["pm.qms.license"].sudo().current_status()
@@ -318,6 +318,7 @@ if not license: print("license_status=missing")
 else: print("license_status=%s license_id=%s company=%s/%s sites=%s/%s users=%s/%s environment=%s" % (status["status"], license.license_id, license.company_usage, license.company_limit, license.site_usage, license.site_limit, license.named_user_usage, license.named_user_limit, license.environment_short))
 PY
 }
+license_status() { local root; root="$(require_instance "$1")"; license_status_root "$root"; }
 
 bootstrap_customer() {
   local slug="$1"; shift; local company_name="" company_code="" user_login="" user_name="" password_file="" email=""
@@ -465,10 +466,10 @@ restore_validate() (
     docker logs --tail=120 "pmqms-customer-${recovery}-odoo-1" >&2 || true
     die "recovery Odoo did not become healthy"
   fi
-  local license_output; license_output="$(license_status "$recovery")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
+  local license_output; license_output="$(license_status_root "$target")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
   if [[ -n "$verification_file" ]]; then
     local verification_dir; verification_dir="$(dirname "$verification_file")"
-    compose "$recovery" run --rm -v "$verification_file:/tmp/recovery-verification.json:ro" -v "$verification_dir:/tmp/recovery-evidence" odoo odoo shell -d "$target_database" --log-level=error <<'PY'
+    compose "$target" run --rm -v "$verification_file:/tmp/recovery-verification.json:ro" -v "$verification_dir:/tmp/recovery-evidence" odoo odoo shell -d "$target_database" --log-level=error <<'PY'
 from pathlib import Path
 import base64, hashlib, json
 
