@@ -82,7 +82,7 @@ docker run --rm --user root -v "$WORK/public_keys.json:/input/public_keys.json:r
   sh -eu -c 'cp /input/public_keys.json /data/public_keys.json && chmod 644 /data/public_keys.json'
 SOURCE_DB="$(jq -r .database_name "$SOURCE_ROOT/config/deployment-manifest.json")"
 SOURCE_COMPOSE=(docker compose --project-name "pmqms-customer-$SLUG" --env-file "$SOURCE_ROOT/config/instance.env" -f "$SOURCE_ROOT/runtime/compose.yml")
-"${SOURCE_COMPOSE[@]}" up -d postgres >/dev/null
+bash "$CUSTOMER_SCRIPT" up "$SLUG" >/dev/null
 "${SOURCE_COMPOSE[@]}" run --rm odoo odoo -d "$SOURCE_DB" \
   --init "pm_qms_core,pm_qms_people,pm_qms_license" --without-demo=all --stop-after-init >/dev/null
 SOURCE_ENVIRONMENT_ID="$(tr -d '\n' < "$SOURCE_ROOT/config/environment_id")"
