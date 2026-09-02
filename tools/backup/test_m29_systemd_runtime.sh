@@ -292,12 +292,14 @@ wait_for_active_service() {
   return 1
 }
 wait_for_successful_status() {
-  local deadline=$((SECONDS + 30))
+  local deadline=$((SECONDS + 30)) status_compact
   while (( SECONDS < deadline )); do
-    if [[ -f "$WORK/status.json" ]] \
-      && grep -F '"last_result": "SUCCESS"' "$WORK/status.json" >/dev/null \
-      && grep -F '"consecutive_failures": 0' "$WORK/status.json" >/dev/null; then
-      return 0
+    if [[ -f "$WORK/status.json" ]]; then
+      status_compact="$(tr -d '[:space:]' < "$WORK/status.json")"
+      if grep -F '"last_result":"SUCCESS"' <<< "$status_compact" >/dev/null \
+        && grep -F '"consecutive_failures":0' <<< "$status_compact" >/dev/null; then
+        return 0
+      fi
     fi
     sleep 1
   done
