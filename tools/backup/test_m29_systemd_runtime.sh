@@ -262,7 +262,7 @@ stop_timer "$RUNTIME_INSTANCE_TIMER"
 # Timer-triggered intraday/daily overlap: daily receives exit 3 and systemd retries.
 start_timer "$RUNTIME_INSTANCE_TIMER"
 start_timer "$DAILY_INSTANCE_TIMER"
-wait_for_count intraday "$((count_invocations intraday + 1))"
+wait_for_count intraday "$(( $(count_invocations intraday) + 1 ))"
 wait_for_count daily 2
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER"
 daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestarts --value)"
@@ -271,7 +271,7 @@ daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestar
 # Timer-triggered daily/monthly overlap: monthly also retries after exit 3.
 start_timer "$DAILY_INSTANCE_TIMER"
 start_timer "$MONTHLY_INSTANCE_TIMER"
-wait_for_count daily "$((count_invocations daily + 1))"
+wait_for_count daily "$(( $(count_invocations daily) + 1 ))"
 wait_for_count monthly 2
 as_root "$SYSTEMCTL" stop "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER"
 monthly_restarts="$(as_root "$SYSTEMCTL" show "$MONTHLY_INSTANCE_SERVICE" -p NRestarts --value)"
