@@ -463,7 +463,7 @@ restore_validate() (
     printf 'recovery_root=%s\n' "$target" >&2
     printf 'recovery_runtime_lock=%s\n' "$target/config/runtime-lock.json" >&2
     ls -la "$target/config" >&2 || true
-    compose "$recovery" logs --no-color --tail=120 odoo >&2 || true
+    docker logs --tail=120 "pmqms-customer-${recovery}-odoo-1" >&2 || true
     die "recovery Odoo did not become healthy"
   fi
   local license_output; license_output="$(license_status "$recovery")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
