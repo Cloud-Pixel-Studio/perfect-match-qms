@@ -38,7 +38,16 @@ monthly points within 12 months, and skips invalid/incomplete archives.
 
 The focused tests use fictional files and a local age-compatible test double;
 they prove manifest, encryption invocation, checksum, transfer, retention,
-and fail-closed behavior without claiming cryptographic-provider or live
-Odoo performance evidence. A later authorized disposable Odoo rehearsal must
-measure actual RPO/RTO, database/filestore preservation, tenant isolation,
-cron/email behavior, and restore time.
+calendar boundaries, atomic collision handling, and fail-closed behavior.
+`tools/backup/test_m29_real_age.sh` downloads the official Linux amd64 age
+1.2.1 release, verifies its published SHA-256, and proves pack, deep verify,
+unpack, transfer idempotency, and retention with fictional data. Neither test
+claims live Odoo performance evidence. A later authorized disposable Odoo
+rehearsal must measure actual RPO/RTO, database/filestore preservation,
+tenant isolation, cron/email behavior, and restore time.
+
+The wrapper takes a maintenance/write-stop window: it records ordered quiesce,
+database snapshot, filestore snapshot, and quiesce-end timestamps, stops and
+restores the prior Odoo service state, and leaves PostgreSQL running only as
+needed for the dump. The restore rehearsal is disposable and never targets
+Demo, production, or customer data.

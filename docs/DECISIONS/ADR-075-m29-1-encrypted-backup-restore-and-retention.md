@@ -31,6 +31,16 @@ manifests, checksums, unsafe paths, corrupted archives, and decryption errors
 fail closed. Transfer copies the archive and both evidence sidecars to a
 different operator-supplied directory and verifies the copied bytes.
 
+The customer wrapper creates the database and filestore snapshots inside an
+explicit maintenance/write-stop window and records their ordered UTC
+boundaries in the manifest. It stops a running Odoo service before the
+snapshots and restores that service state on exit, including failure paths.
+The recovery helper rejects non-regular or unexpected archive members,
+duplicate names, traversal/absolute names, sidecar collisions, and sensitive
+component sources. The official age 1.2.1 Linux integration is SHA-256 pinned
+in CI; the private identity remains generated and disposable outside the
+repository.
+
 Retention is an explicit dry-run first and applies only to a validated
 instance backup directory. The policy is 7 days for intraday, 30 days for
 daily, and 12 months for monthly points; invalid archives are retained for

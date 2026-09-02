@@ -150,13 +150,72 @@ else: runpy.run_path(sys.argv[0].replace('age-wrapper.py', 'age-fake.py'), run_n
         target = self.root / "off-host"
         result = self.run_tool("transfer", "--archive", str(archive), "--destination", str(target))
         self.assertEqual(result.returncode, 0, result.stderr)
+        result = self.run_tool("transfer", "--archive", str(archive), "--destination", str(target))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('"idempotent": true', result.stdout)
         (target / archive.name).write_bytes(b"partial")
         result = self.run_tool("verify", "--archive", str(target / archive.name))
         self.assertEqual(result.returncode, 2)
 
+    def test_version_pin_collision_and_consistency_fail_closed(self):
+        component_args = sum(
+            (["--component", f"{name}={self.source / name}"] for name in (
+                "db.dump", "filestore.tar.gz", "environment_id", "runtime-lock.json", "deployment-manifest.json"
+            )),
+            [],
+        )
+        self.env["PMQMS_AGE_VERSION"] = "1.2.10"
+        result = self.run_tool(
+            "pack", "--output", str(self.root / "wrong-version.tar.age"), "--recipient-file", str(self.recipient),
+            "--source-instance", "fictional-test", "--source-database", "pmqms_fictional",
+            "--source-environment-id", "fictional-environment-id", "--product-version", "test",
+            "--source-release-sha", "f" * 40, *component_args,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.env["PMQMS_AGE_VERSION"] = "1.2.1"
+        archive = self.pack()
+        result = self.run_tool(
+            "pack", "--output", str(archive), "--recipient-file", str(self.recipient),
+            "--source-instance", "fictional-test", "--source-database", "pmqms_fictional",
+            "--source-environment-id", "fictional-environment-id", "--product-version", "test",
+            "--source-release-sha", "f" * 40, *component_args,
+        )
+        self.assertEqual(result.returncode, 2)
+        manifest = json.loads(Path(f"{archive}.manifest.json").read_text())
+        manifest["consistency"]["database_snapshot_utc"] = "2026-09-01T11:00:00Z"
+        Path(f"{archive}.manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        result = self.run_tool("verify", "--archive", str(archive))
+        self.assertEqual(result.returncode, 2)
+
+    def test_retention_calendar_and_failure_injection(self):
+        self.assertEqual(
+            m29_backup.add_months(m29_backup.parse_utc("2024-02-29T12:00:00Z"), 12).date().isoformat(),
+            "2025-02-28",
+        )
+        retention_dir = self.root / "failure-retention"
+        retention_dir.mkdir()
+        (retention_dir / m29_backup.RECOVERY_MARKER).touch()
+        old = self.pack("2026-08-01T12:00:00Z", "failure-old.tar.age", "intraday")
+        for suffix in (".manifest.json", ".sha256"):
+            Path(f"{old}{suffix}").replace(retention_dir / f"{old.name}{suffix}")
+        old.replace(retention_dir / old.name)
+        newest = self.pack("2026-09-01T12:00:00Z", "failure-new.tar.age", "daily")
+        for suffix in (".manifest.json", ".sha256"):
+            Path(f"{newest}{suffix}").replace(retention_dir / f"{newest.name}{suffix}")
+        newest.replace(retention_dir / newest.name)
+        env = {**self.env, "PMQMS_RETENTION_FAIL_AFTER": "0"}
+        result = subprocess.run(
+            [sys.executable, str(m29_backup.__file__), "retention", "--directory", str(retention_dir),
+             "--now", "2026-09-02T12:00:00Z", "--apply"],
+            env=env, text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertTrue((retention_dir / old.name).exists())
+
     def test_retention_dry_run_apply_and_newest_protection(self):
         retention_dir = self.root / "retention"
         retention_dir.mkdir()
+        (retention_dir / m29_backup.RECOVERY_MARKER).touch()
         old = self.pack("2026-08-01T12:00:00Z", "old.tar.age", "intraday")
         new = self.pack("2026-09-01T12:00:00Z", "new.tar.age", "daily")
         for archive in (old, new):

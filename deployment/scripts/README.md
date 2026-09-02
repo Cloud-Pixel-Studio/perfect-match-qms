@@ -20,8 +20,11 @@ they do not pull mutable tags.
 Customer recovery points are created with `customer-instance.sh backup` using
 the pinned external age tool and a public recipient file. The command writes
 an encrypted archive, an immutable manifest with component checksums, and a
-checksum sidecar. `retention` defaults to dry-run and only operates inside an
-instance's external backup directory. `restore-validate` requires a separate
-private age identity, validates all checksums before extraction, and only
-allows disposable test instances. Keys, archives, restored data, and off-host
-destinations remain outside Git.
+checksum sidecar. Snapshots are recorded inside a maintenance/write-stop
+window, with the prior Odoo service state restored on both success and
+failure. `retention` defaults to dry-run and only operates inside an instance's
+marked external recovery repository. `restore-validate` requires a separate
+private age identity, validates all checksums before extraction, remaps the
+filestore to the disposable target database, and only allows disposable test
+instances. Keys, archives, restored data, and off-host destinations remain
+outside Git.

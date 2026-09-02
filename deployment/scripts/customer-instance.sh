@@ -367,47 +367,96 @@ backup() (
   local slug="$1"; shift; local recipient_file="${PMQMS_BACKUP_RECIPIENT_FILE:-}" off_host_dir="" recovery_class="daily"
   while [[ $# -gt 0 ]]; do case "$1" in --recipient-file) recipient_file="${2:-}"; shift 2;; --off-host-dir) off_host_dir="${2:-}"; shift 2;; --class) recovery_class="${2:-}"; shift 2;; *) die "unknown backup option: $1";; esac; done
   local root; root="$(require_instance "$slug")"; load_instance "$root"; mkdir -p "$root/backups"; chmod 700 "$root/backups"
+  touch "$root/backups/.pmqms-recovery-repository"
   [[ -n "$recipient_file" ]] || die "encrypted backup recipient is required via --recipient-file or PMQMS_BACKUP_RECIPIENT_FILE"
   [[ -f "$recipient_file" ]] || die "encrypted backup recipient file is missing"
+  local odoo_id="" was_running=0 tmp="" archive="" stamp="" quiesce_start_utc="" database_snapshot_utc="" filestore_snapshot_utc="" quiesce_end_utc=""
+  backup_cleanup() {
+    local rc=$?
+    trap - EXIT
+    if [[ "$was_running" == 1 ]]; then compose "$root" start odoo >/dev/null 2>&1 || rc=1; fi
+    cleanup_temp_dir "$tmp" || rc=1
+    exit "$rc"
+  }
+  trap backup_cleanup EXIT
+  tmp="$(new_temp_dir)"
+  quiesce_start_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  odoo_id="$(compose "$root" ps -q odoo 2>/dev/null || true)"
+  if [[ -n "$odoo_id" && "$(docker inspect -f '{{.State.Running}}' "$odoo_id" 2>/dev/null || true)" == true ]]; then
+    was_running=1
+    compose "$root" stop odoo >/dev/null
+    [[ "$(docker inspect -f '{{.State.Running}}' "$odoo_id" 2>/dev/null || true)" == false ]] || die "Odoo service did not stop for the consistency window"
+  fi
   compose "$root" up -d postgres >/dev/null
-  local stamp archive tmp=""; stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.age"; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
+  stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.age"
   compose "$root" exec -T postgres pg_dump -U odoo -d "$DATABASE_NAME" --format=custom > "$tmp/db.dump"
+  database_snapshot_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$tmp:/backup" "$ALPINE_IMAGE" sh -c "cd /odoo-data && if [ -d filestore/$DATABASE_NAME ]; then tar -czf /backup/filestore.tar.gz filestore/$DATABASE_NAME; else tar -czf /backup/filestore.tar.gz --files-from /dev/null; fi"
+  filestore_snapshot_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   cp "$root/config/environment_id" "$tmp/environment_id"
   cp "$root/config/runtime-lock.json" "$tmp/runtime-lock.json"
   cp "$root/config/deployment-manifest.json" "$tmp/deployment-manifest.json"
   local source_release_sha; source_release_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
   local component_args=(--component "db.dump=$tmp/db.dump" --component "filestore.tar.gz=$tmp/filestore.tar.gz" --component "environment_id=$tmp/environment_id" --component "runtime-lock.json=$tmp/runtime-lock.json" --component "deployment-manifest.json=$tmp/deployment-manifest.json")
   if [[ -f "$root/license/active.pmql" ]]; then cp "$root/license/active.pmql" "$tmp/active.pmql"; component_args+=(--component "active.pmql=$tmp/active.pmql"); fi
-  python3 "$BACKUP_TOOL" pack --output "$archive" --recipient-file "$recipient_file" --source-instance "$INSTANCE_SLUG" --source-database "$DATABASE_NAME" --source-environment-id "$(tr -d '\n' < "$root/config/environment_id")" --product-version "$PRODUCT_VERSION" --source-release-sha "$source_release_sha" --recovery-point-class "$recovery_class" "${component_args[@]}"
+  quiesce_end_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  python3 "$BACKUP_TOOL" pack --output "$archive" --recipient-file "$recipient_file" --source-instance "$INSTANCE_SLUG" --source-database "$DATABASE_NAME" --source-environment-id "$(tr -d '\n' < "$root/config/environment_id")" --product-version "$PRODUCT_VERSION" --source-release-sha "$source_release_sha" --recovery-point-class "$recovery_class" --created-utc "$quiesce_end_utc" --quiesce-start-utc "$quiesce_start_utc" --database-snapshot-utc "$database_snapshot_utc" --filestore-snapshot-utc "$filestore_snapshot_utc" --quiesce-end-utc "$quiesce_end_utc" "${component_args[@]}"
   if [[ -n "$off_host_dir" ]]; then python3 "$BACKUP_TOOL" transfer --archive "$archive" --destination "$off_host_dir"; fi
   echo "backup=$archive"; echo "checksum=$archive.sha256"; echo "manifest=$archive.manifest.json"
 )
 
 restore_validate() (
   local source_slug="$1" archive="$2"; shift 2; local identity_file="${PMQMS_BACKUP_IDENTITY_FILE:-}"; while [[ $# -gt 0 ]]; do case "$1" in --identity-file) identity_file="${2:-}"; shift 2;; *) die "unknown restore-validate option: $1";; esac; done
-  local source; source="$(require_instance "$source_slug")"; load_instance "$source"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
+  local source_root; source_root="$(require_instance "$source_slug")"; load_instance "$source_root"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
+  local source_database="$DATABASE_NAME" source_environment_id="$ENVIRONMENT_ID_FILE" source_product_version="$PRODUCT_VERSION" source_port="$HTTP_PORT"
   [[ -n "$identity_file" ]] || die "restore identity is required via --identity-file or PMQMS_BACKUP_IDENTITY_FILE"
   [[ -f "$archive" && -f "$archive.sha256" && -f "$archive.manifest.json" ]] || die "backup archive, manifest, or checksum is missing"
   local recovery="${source_slug}-recovery"; [[ ! -e "$(instance_dir "$recovery")" ]] || die "recovery instance already exists"
-  init_instance "$recovery" --type test --port "$((HTTP_PORT + 1))" --release "$PRODUCT_VERSION"
-  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"; local payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --output "$payload"
+  init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$source_product_version"
+  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local target_database="$DATABASE_NAME" tmp="" payload=""
+  restore_cleanup() {
+    local rc=$?
+    trap - EXIT
+    if [[ -d "$(instance_dir "$recovery")" ]]; then destroy "$recovery" --confirm-ephemeral >/dev/null 2>&1 || rc=1; fi
+    cleanup_temp_dir "$tmp" || rc=1
+    exit "$rc"
+  }
+  trap restore_cleanup EXIT
+  tmp="$(new_temp_dir)"; payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --expected-instance "$source_slug" --expected-database "$source_database" --output "$payload"
   cp "$payload/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$payload/active.pmql" ]] && cp "$payload/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
   cp "$payload/runtime-lock.json" "$target/config/runtime-lock.json"; chmod 600 "$target/config/runtime-lock.json"
   cp "$payload/deployment-manifest.json" "$target/config/deployment-manifest.json"
-  jq --arg slug "$INSTANCE_SLUG" --arg type "$ENVIRONMENT_TYPE" --arg product "$PRODUCT_VERSION" \
+  jq --arg slug "$recovery" --arg type "test" --arg product "$source_product_version" \
     '.instance_slug=$slug | .environment_type=$type | .product_version=$product | .deployment_state="restored"' \
     "$target/config/deployment-manifest.json" > "$target/config/deployment-manifest.json.tmp"
   mv "$target/config/deployment-manifest.json.tmp" "$target/config/deployment-manifest.json"
   chmod 600 "$target/config/deployment-manifest.json"
   update_manifest_runtime "$target" "$target/config/runtime-lock.json"
   render_files "$target"
-  cp -a "$source/runtime/addons/." "$target/runtime/addons/"; compose "$target" up -d postgres >/dev/null
-  for _ in {1..30}; do compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1 && break; sleep 1; done
-  compose "$target" exec -T postgres createdb -U odoo "$DATABASE_NAME" 2>/dev/null || true
-  compose "$target" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$payload/db.dump"
-  docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data" -v "$payload:/backup:ro" "$ALPINE_IMAGE" sh -c "cd /odoo-data && tar -xzf /backup/filestore.tar.gz"
-  health "$recovery"; license_status "$recovery"; destroy "$recovery" --confirm-ephemeral
+  cp -a "$source_root/runtime/addons/." "$target/runtime/addons/"; compose "$target" up -d postgres >/dev/null
+  local postgres_ready=0; for _ in {1..30}; do if compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1; then postgres_ready=1; break; fi; sleep 1; done
+  [[ "$postgres_ready" == 1 ]] || die "recovery PostgreSQL did not become ready"
+  compose "$target" exec -T postgres createdb -U odoo "$target_database" >/dev/null
+  compose "$target" exec -T postgres pg_restore -U odoo -d "$target_database" --no-owner --role=odoo < "$payload/db.dump"
+  docker run --rm -e SOURCE_DATABASE="$source_database" -e TARGET_DATABASE="$target_database" -v "pmqms_${recovery}_odoo_data:/odoo-data" -v "$payload:/backup:ro" "$ALPINE_IMAGE" sh -eu -c '
+    work=/tmp/filestore-restore
+    mkdir -p "$work"
+    tar -tzf /backup/filestore.tar.gz > "$work/members"
+    while IFS= read -r member; do
+      case "$member" in
+        "filestore/$SOURCE_DATABASE"|"filestore/$SOURCE_DATABASE/"*) ;;
+        *) echo "unexpected filestore member" >&2; exit 1;;
+      esac
+      case "$member" in /**|*".."*) echo "unsafe filestore member" >&2; exit 1;; esac
+    done < "$work/members"
+    tar -xzf /backup/filestore.tar.gz -C "$work"
+    if [ -d "$work/filestore/$SOURCE_DATABASE" ]; then
+      mkdir -p /odoo-data/filestore
+      rm -rf "/odoo-data/filestore/$TARGET_DATABASE"
+      mv "$work/filestore/$SOURCE_DATABASE" "/odoo-data/filestore/$TARGET_DATABASE"
+    fi
+  '
+  health "$recovery"; local license_output; license_output="$(license_status "$recovery")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
   echo "restore_validation=pass"
 )
 
