@@ -12,7 +12,7 @@ AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50"
 AGE_URL="https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
 RUN_NUMBER="${GITHUB_RUN_ID:-$$}"
 RUN_ID="${RUN_NUMBER}-$$"
-SLUG="m291-dr-${RUN_ID}"
+SLUG="m291-dr-test-${RUN_ID}"
 PORT="$((18000 + (RUN_NUMBER % 900) + (${GITHUB_RUN_ATTEMPT:-1} % 50)))"
 WORK="$(mktemp -d)"
 INSTANCE_ROOT="$WORK/instances"
@@ -24,14 +24,14 @@ cleanup() {
   local rc=$?
   trap - EXIT
   if [[ -f "$INSTANCE_ROOT/$SLUG/config/instance.env" ]]; then
-    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || { printf 'cleanup_source_destroy=FAIL\n' >&2; rc=1; }
+    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || rc=1
   fi
   if [[ -d "$WORK" ]]; then
     if [[ -n "${ALPINE_IMAGE:-}" ]] && command -v docker >/dev/null 2>&1; then
       docker run --rm --user root -v "$WORK:/cleanup" "$ALPINE_IMAGE" \
-        sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || { printf 'cleanup_workspace=FAIL\n' >&2; rc=1; }
+        sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || rc=1
     else
-      rm -rf -- "$WORK" || { printf 'cleanup_workspace=FAIL\n' >&2; rc=1; }
+      rm -rf -- "$WORK" || rc=1
     fi
   fi
   exit "$rc"

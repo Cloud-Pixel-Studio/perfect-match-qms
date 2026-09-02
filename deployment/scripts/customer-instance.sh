@@ -422,8 +422,8 @@ restore_validate() (
   restore_cleanup() {
     local rc=$?
     trap - EXIT
-    if [[ -d "$(instance_dir "$recovery")" ]]; then destroy "$recovery" --confirm-ephemeral >/dev/null 2>&1 || { printf 'recovery_cleanup=FAIL\n' >&2; rc=1; }; fi
-    cleanup_temp_dir "$tmp" || { printf 'recovery_temp_cleanup=FAIL\n' >&2; rc=1; }
+    if [[ -d "$(instance_dir "$recovery")" ]]; then destroy "$recovery" --confirm-ephemeral >/dev/null 2>&1 || rc=1; fi
+    cleanup_temp_dir "$tmp" || rc=1
     exit "$rc"
   }
   trap restore_cleanup EXIT
