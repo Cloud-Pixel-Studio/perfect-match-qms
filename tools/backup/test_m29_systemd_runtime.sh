@@ -176,6 +176,8 @@ wait_for_count() {
     (( $(count_invocations "$tier") >= minimum )) && return 0
     sleep 1
   done
+  as_root "$SYSTEMCTL" status "${PREFIX}@${SLUG}.timer" "${PREFIX}@${SLUG}.service" --no-pager || true
+  as_root "$SYSTEMCTL" list-timers --all --no-pager | grep -F "$PREFIX" || true
   echo "timed out waiting for ${tier} invocation count ${minimum}" >&2
   return 1
 }
