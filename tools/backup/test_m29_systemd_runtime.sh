@@ -222,10 +222,13 @@ echo "systemd_runtime_phase=start_intraday_timer"
 start_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=wait_intraday_activation"
 wait_for_count intraday 1
+echo "systemd_runtime_phase=intraday_activation_observed"
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
+echo "systemd_runtime_phase=intraday_timer_stopped"
 
 # Multiple missed calendar slots must result in one catch-up, not a burst.
 initial_intraday="$(count_invocations intraday)"
+echo "systemd_runtime_phase=begin_persistent_catchup"
 sleep 6
 catchup_started=$SECONDS
 start_timer "$RUNTIME_INSTANCE_TIMER"
