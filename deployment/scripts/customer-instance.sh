@@ -264,11 +264,12 @@ provision() (
 up() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" up -d; }
 down() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" down; }
 config() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" config >/dev/null; echo "customer_compose=valid"; }
-health() {
-  local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" up -d >/dev/null; local code=000
+health_root() {
+  local root="$1"; load_instance "$root"; compose "$root" up -d >/dev/null; local code=000
   for _ in {1..60}; do code="$(curl -s -o /tmp/pmqms-customer-health.html -w '%{http_code}' "http://127.0.0.1:$HTTP_PORT/web/login?db=$DATABASE_NAME" || true)"; [[ "$code" =~ ^(200|302|303)$ ]] && break; sleep 1; done
   echo "customer_http=$code"; [[ "$code" =~ ^(200|302|303)$ ]]
 }
+health() { local root; root="$(require_instance "$1")"; health_root "$root"; }
 
 bootstrap() {
   local root; root="$(require_instance "$1")"; load_instance "$root"; local modules; modules="$(module_list)"
@@ -460,10 +461,7 @@ restore_validate() (
     fi
     chown -R 100:101 /odoo-data
   '
-  if ! health "$recovery"; then
-    printf 'recovery_instance_root_base=%s\n' "$INSTANCE_ROOT_BASE" >&2
-    printf 'recovery_instance_dir=%s\n' "$(instance_dir "$recovery")" >&2
-    printf 'recovery_runtime_lock=%s\n' "$(instance_dir "$recovery")/config/runtime-lock.json" >&2
+  if ! health_root "$target"; then
     docker logs --tail=120 "pmqms-customer-${recovery}-odoo-1" >&2 || true
     die "recovery Odoo did not become healthy"
   fi
