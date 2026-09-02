@@ -27,12 +27,16 @@ INSTANCE="${INSTANCE_BASE}/${SLUG}"
 UNIT_DIR="/run/systemd/system"
 RUNTIME_SERVICE="${PREFIX}@.service"
 RUNTIME_TIMER="${PREFIX}@.timer"
+COLLISION_RUNTIME_SERVICE="${PREFIX}-collision@.service"
+COLLISION_RUNTIME_TIMER="${PREFIX}-collision@.timer"
 DAILY_SERVICE="${PREFIX}-daily@.service"
 DAILY_TIMER="${PREFIX}-daily@.timer"
 MONTHLY_SERVICE="${PREFIX}-monthly@.service"
 MONTHLY_TIMER="${PREFIX}-monthly@.timer"
 RUNTIME_INSTANCE_SERVICE="${PREFIX}@${SLUG}.service"
 RUNTIME_INSTANCE_TIMER="${PREFIX}@${SLUG}.timer"
+COLLISION_RUNTIME_INSTANCE_SERVICE="${PREFIX}-collision@${SLUG}.service"
+COLLISION_RUNTIME_INSTANCE_TIMER="${PREFIX}-collision@${SLUG}.timer"
 DAILY_INSTANCE_SERVICE="${PREFIX}-daily@${SLUG}.service"
 DAILY_INSTANCE_TIMER="${PREFIX}-daily@${SLUG}.timer"
 MONTHLY_INSTANCE_SERVICE="${PREFIX}-monthly@${SLUG}.service"
@@ -40,16 +44,17 @@ MONTHLY_INSTANCE_TIMER="${PREFIX}-monthly@${SLUG}.timer"
 
 cleanup() {
   set +e
-  for unit in "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" "$RUNTIME_INSTANCE_SERVICE" "$DAILY_INSTANCE_SERVICE" "$MONTHLY_INSTANCE_SERVICE"; do
+  for unit in "$RUNTIME_INSTANCE_TIMER" "$COLLISION_RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" "$RUNTIME_INSTANCE_SERVICE" "$COLLISION_RUNTIME_INSTANCE_SERVICE" "$DAILY_INSTANCE_SERVICE" "$MONTHLY_INSTANCE_SERVICE"; do
     as_root "$SYSTEMCTL" disable --now "$unit" >/dev/null 2>&1
     as_root "$SYSTEMCTL" reset-failed "$unit" >/dev/null 2>&1
   done
-  for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
+  for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$COLLISION_RUNTIME_SERVICE" "$COLLISION_RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
     as_root rm -f "$UNIT_DIR/$unit"
   done
   as_root "$SYSTEMCTL" daemon-reload >/dev/null 2>&1
   as_root rm -f \
     "/var/lib/systemd/timers/stamp-${RUNTIME_INSTANCE_TIMER}" \
+    "/var/lib/systemd/timers/stamp-${COLLISION_RUNTIME_INSTANCE_TIMER}" \
     "/var/lib/systemd/timers/stamp-${DAILY_INSTANCE_TIMER}" \
     "/var/lib/systemd/timers/stamp-${MONTHLY_INSTANCE_TIMER}"
   as_root rm -rf "$WORK"
@@ -166,13 +171,15 @@ render_timer() {
   fi
 }
 
-render_service "$ROOT/deployment/systemd/pmqms-customer-backup@.service" "$WORK/unit/$RUNTIME_SERVICE" intraday 0
+render_service "$ROOT/deployment/systemd/pmqms-customer-backup@.service" "$WORK/unit/$RUNTIME_SERVICE" intraday 4
+render_service "$ROOT/deployment/systemd/pmqms-customer-backup@.service" "$WORK/unit/$COLLISION_RUNTIME_SERVICE" intraday 4
 render_service "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.service" "$WORK/unit/$DAILY_SERVICE" daily 4
 render_service "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.service" "$WORK/unit/$MONTHLY_SERVICE" monthly 4
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$RUNTIME_TIMER" "$RUNTIME_INSTANCE_SERVICE" calendar
+render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$COLLISION_RUNTIME_TIMER" "$COLLISION_RUNTIME_INSTANCE_SERVICE" monotonic
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.timer" "$WORK/unit/$DAILY_TIMER" "$DAILY_INSTANCE_SERVICE" monotonic
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.timer" "$WORK/unit/$MONTHLY_TIMER" "$MONTHLY_INSTANCE_SERVICE" monotonic
-for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
+for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$COLLISION_RUNTIME_SERVICE" "$COLLISION_RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
   as_root install -m 0644 "$WORK/unit/$unit" "$UNIT_DIR/$unit"
 done
 as_root "$SYSTEMCTL" daemon-reload
@@ -247,6 +254,19 @@ wait_for_count intraday 1
 echo "systemd_runtime_phase=intraday_activation_observed"
 stop_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=intraday_timer_stopped"
+wait_for_inactive_service() {
+  local service="$1" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    if ! as_root "$SYSTEMCTL" is-active --quiet "$service"; then
+      return 0
+    fi
+    sleep 1
+  done
+  as_root "$SYSTEMCTL" status "$service" --no-pager || true
+  echo "timed out waiting for ${service} to finish" >&2
+  return 1
+}
+wait_for_inactive_service "$RUNTIME_INSTANCE_SERVICE"
 
 # Multiple missed calendar slots must result in one catch-up, not a burst.
 initial_intraday="$(count_invocations intraday)"
@@ -269,24 +289,33 @@ start_timer "$RUNTIME_INSTANCE_TIMER"
 wait_for_count intraday "$((catchup_count + 1))"
 stop_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=normal_timer_stopped"
+wait_for_inactive_service "$RUNTIME_INSTANCE_SERVICE"
 
 # Timer-triggered intraday/daily overlap: daily receives exit 3 and systemd retries.
-start_timer "$RUNTIME_INSTANCE_TIMER"
+intraday_before_collision="$(count_invocations intraday)"
+daily_before_collision="$(count_invocations daily)"
+start_timer "$COLLISION_RUNTIME_INSTANCE_TIMER"
 start_timer "$DAILY_INSTANCE_TIMER"
-wait_for_count intraday "$(( $(count_invocations intraday) + 1 ))"
-wait_for_count daily 2
-stop_timer "$RUNTIME_INSTANCE_TIMER"
+wait_for_count intraday "$(( intraday_before_collision + 1 ))"
+wait_for_count daily "$(( daily_before_collision + 2 ))"
+stop_timer "$COLLISION_RUNTIME_INSTANCE_TIMER"
 stop_timer "$DAILY_INSTANCE_TIMER"
+wait_for_inactive_service "$COLLISION_RUNTIME_INSTANCE_SERVICE"
+wait_for_inactive_service "$DAILY_INSTANCE_SERVICE"
 daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestarts --value)"
 (( daily_restarts >= 1 ))
 
 # Timer-triggered daily/monthly overlap: monthly also retries after exit 3.
+daily_before_monthly="$(count_invocations daily)"
+monthly_before_collision="$(count_invocations monthly)"
 start_timer "$DAILY_INSTANCE_TIMER"
 start_timer "$MONTHLY_INSTANCE_TIMER"
-wait_for_count daily "$(( $(count_invocations daily) + 1 ))"
-wait_for_count monthly 2
+wait_for_count daily "$(( daily_before_monthly + 1 ))"
+wait_for_count monthly "$(( monthly_before_collision + 2 ))"
 stop_timer "$DAILY_INSTANCE_TIMER"
 stop_timer "$MONTHLY_INSTANCE_TIMER"
+wait_for_inactive_service "$DAILY_INSTANCE_SERVICE"
+wait_for_inactive_service "$MONTHLY_INSTANCE_SERVICE"
 monthly_restarts="$(as_root "$SYSTEMCTL" show "$MONTHLY_INSTANCE_SERVICE" -p NRestarts --value)"
 (( monthly_restarts >= 1 ))
 
@@ -294,7 +323,7 @@ status_json="$(cat "$WORK/status.json")"
 grep -F '"last_result": "SUCCESS"' <<< "$status_json" >/dev/null
 grep -F '"consecutive_failures": 0' <<< "$status_json" >/dev/null
 [[ -f "$WORK/off-host"/*manifest.json ]]
-as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" >/dev/null 2>&1 || true
+as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$COLLISION_RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" >/dev/null 2>&1 || true
 
 echo "systemd_runtime=PASS"
 echo "actual_systemd_activations=$(( $(count_invocations intraday) + $(count_invocations daily) + $(count_invocations monthly) ))"
