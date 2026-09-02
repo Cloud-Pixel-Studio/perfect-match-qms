@@ -104,7 +104,11 @@ export M29_ORG_CODE="M29-DR-${RUN_ID}"
 export M29_PROJECT_NAME="M29 Fictional Implementation ${RUN_ID}"
 export M29_ATTACHMENT_NAME="M29 Known Attachment ${RUN_ID}.txt"
 
-"${SOURCE_COMPOSE[@]}" run --rm -v "$WORK:/evidence" odoo odoo shell -d "$SOURCE_DB" --log-level=error <<'PY'
+"${SOURCE_COMPOSE[@]}" run --rm \
+  -e "M29_ORG_CODE=$M29_ORG_CODE" \
+  -e "M29_PROJECT_NAME=$M29_PROJECT_NAME" \
+  -e "M29_ATTACHMENT_NAME=$M29_ATTACHMENT_NAME" \
+  -v "$WORK:/evidence" odoo odoo shell -d "$SOURCE_DB" --log-level=error <<'PY'
 from pathlib import Path
 import base64, hashlib, json, os
 org = env["pm.qms.organization"].sudo().search([("code", "=", os.environ["M29_ORG_CODE"])], limit=1)
