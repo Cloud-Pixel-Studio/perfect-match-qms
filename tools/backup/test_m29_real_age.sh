@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Integration proof uses the official upstream release in a disposable workspace.
 AGE_VERSION="1.2.1"
-AGE_SHA256="55b941732d9fc88b0db9f954f2de2bb5a8bacb6479063b2cf5f244ffbb9b3f3a"
+AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50"
 AGE_URL="https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
 WORK="$(mktemp -d)"
 trap 'rm -rf -- "$WORK"' EXIT
