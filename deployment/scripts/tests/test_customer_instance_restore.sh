@@ -39,7 +39,7 @@ LOCK_SHA="$(sha256sum "$WORK/bundle/deployment/runtime/runtime-lock.json" | awk 
 ODOO_IMAGE="$(jq -er '.odoo.image' "$RUNTIME_LOCK")"
 POSTGRES_IMAGE="$(jq -er '.postgres.image' "$RUNTIME_LOCK")"
 ALPINE_IMAGE="$(jq -er '.alpine.image' "$RUNTIME_LOCK")"
-jq -er '.odoo.image, .postgres.image, .alpine.image' "$RUNTIME_LOCK" | xargs -r docker pull >/dev/null
+while IFS= read -r image; do docker pull "$image" >/dev/null; done < <(jq -er '.odoo.image, .postgres.image, .alpine.image' "$RUNTIME_LOCK")
 jq -n --arg source "$(git -C "$REPO_ROOT" rev-parse HEAD)" --arg lock "$LOCK_SHA" --arg odoo "$ODOO_IMAGE" --arg postgres "$POSTGRES_IMAGE" \
   '{product_version:"m29.1-ci-rehearsal",source_sha:$source,runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres,contains_demo_data:false,contains_private_signing_key:false}' \
   > "$WORK/bundle/manifest.json"
