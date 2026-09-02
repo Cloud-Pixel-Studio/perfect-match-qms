@@ -80,13 +80,18 @@ SOURCE_ROOT="$INSTANCE_ROOT/$SLUG"
 docker run --rm --user root -v "$WORK/public_keys.json:/input/public_keys.json:ro" \
   -v "$SOURCE_ROOT/runtime/addons/pm_qms_license/data:/data" "$ALPINE_IMAGE" \
   sh -eu -c 'cp /input/public_keys.json /data/public_keys.json && chmod 644 /data/public_keys.json'
-bash "$CUSTOMER_SCRIPT" bootstrap "$SLUG" >/dev/null
+SOURCE_DB="$(jq -r .database_name "$SOURCE_ROOT/config/deployment-manifest.json")"
+SOURCE_COMPOSE=(docker compose --project-name "pmqms-customer-$SLUG" --env-file "$SOURCE_ROOT/config/instance.env" -f "$SOURCE_ROOT/runtime/compose.yml")
+"${SOURCE_COMPOSE[@]}" up -d postgres >/dev/null
+"${SOURCE_COMPOSE[@]}" run --rm odoo odoo -d "$SOURCE_DB" \
+  --init "pm_qms_core,pm_qms_people,pm_qms_license" --without-demo=all --stop-after-init >/dev/null
 SOURCE_ENVIRONMENT_ID="$(tr -d '\n' < "$SOURCE_ROOT/config/environment_id")"
 docker run --rm -v "$REPO_ROOT:/repo:ro" -v "$WORK:/work" "$ODOO_IMAGE" \
   python3 /repo/deployment/scripts/issue-license.py --private-key /work/license-key.pem --output /work/active.pmql \
   --environment-id "$SOURCE_ENVIRONMENT_ID" --customer-name "M29 Fictional Recovery Lab" \
   --key-id m29-ci-test --license-id "M29-CI-${RUN_ID}" --company-limit 1 --site-limit 2 --named-user-limit 2 >/dev/null
 bash "$CUSTOMER_SCRIPT" import-license "$SLUG" "$WORK/active.pmql" >/dev/null
+bash "$CUSTOMER_SCRIPT" bootstrap "$SLUG" >/dev/null
 printf 'M29 fictional attachment bytes for %s\n' "$RUN_ID" > "$WORK/attachment.txt"
 printf '%s' "$RUN_ID" > "$WORK/qm-password"
 chmod 600 "$WORK/qm-password"
@@ -95,8 +100,6 @@ bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" --company-name "M29 Fictional
   --user-name "M29 Recovery Quality Manager" --user-email "quality.manager.${RUN_ID}@example.invalid" \
   --user-password-file "$WORK/qm-password" >/dev/null
 
-SOURCE_DB="$(jq -r .database_name "$SOURCE_ROOT/config/deployment-manifest.json")"
-SOURCE_COMPOSE=(docker compose --project-name "pmqms-customer-$SLUG" --env-file "$SOURCE_ROOT/config/instance.env" -f "$SOURCE_ROOT/runtime/compose.yml")
 export M29_ORG_CODE="M29-DR-${RUN_ID}"
 export M29_PROJECT_NAME="M29 Fictional Implementation ${RUN_ID}"
 export M29_ATTACHMENT_NAME="M29 Known Attachment ${RUN_ID}.txt"
