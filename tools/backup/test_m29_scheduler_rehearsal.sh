@@ -135,7 +135,7 @@ if not all((path.with_name(path.name + ".manifest.json")).is_file() for path in 
 print("scheduler_activation_count=3")
 print("successful_recovery_points=3")
 print("observed_interval_seconds=14400")
-print("observed_jitter_seconds=0")
+print("observed_jitter_seconds=NOT_MEASURED")
 print("controlled_failure=PASS")
 print("next_run_recovery=PASS")
 print("off_host_verification=PASS")
