@@ -202,9 +202,18 @@ wait_for_count() {
   echo "timed out waiting for ${tier} invocation count ${minimum}" >&2
   return 1
 }
+start_timer() {
+  local timer="$1" start_output
+  if ! start_output="$(as_root "$SYSTEMCTL" start "$timer" 2>&1)"; then
+    printf '%s\n' "$start_output" >&2
+    as_root "$SYSTEMCTL" status "$timer" --no-pager || true
+    as_root journalctl -u "$timer" -n 20 --no-pager || true
+    return 1
+  fi
+}
 
 # One real calendar timer activation establishes the persistent timer stamp.
-as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+start_timer "$RUNTIME_INSTANCE_TIMER"
 wait_for_count intraday 1
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
 
@@ -212,7 +221,7 @@ as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
 initial_intraday="$(count_invocations intraday)"
 sleep 6
 catchup_started=$SECONDS
-as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+start_timer "$RUNTIME_INSTANCE_TIMER"
 wait_for_count intraday "$((initial_intraday + 1))"
 sleep 1
 catchup_count="$(count_invocations intraday)"
@@ -220,13 +229,13 @@ catchup_count="$(count_invocations intraday)"
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
 
 # The next normal calendar trigger still occurs after catch-up.
-as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
+start_timer "$RUNTIME_INSTANCE_TIMER"
 wait_for_count intraday "$((catchup_count + 1))"
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER"
 
 # Timer-triggered intraday/daily overlap: daily receives exit 3 and systemd retries.
-as_root "$SYSTEMCTL" start "$RUNTIME_INSTANCE_TIMER"
-as_root "$SYSTEMCTL" start "$DAILY_INSTANCE_TIMER"
+start_timer "$RUNTIME_INSTANCE_TIMER"
+start_timer "$DAILY_INSTANCE_TIMER"
 wait_for_count intraday "$((count_invocations intraday + 1))"
 wait_for_count daily 2
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER"
@@ -234,8 +243,8 @@ daily_restarts="$(as_root "$SYSTEMCTL" show "$DAILY_INSTANCE_SERVICE" -p NRestar
 (( daily_restarts >= 1 ))
 
 # Timer-triggered daily/monthly overlap: monthly also retries after exit 3.
-as_root "$SYSTEMCTL" start "$DAILY_INSTANCE_TIMER"
-as_root "$SYSTEMCTL" start "$MONTHLY_INSTANCE_TIMER"
+start_timer "$DAILY_INSTANCE_TIMER"
+start_timer "$MONTHLY_INSTANCE_TIMER"
 wait_for_count daily "$((count_invocations daily + 1))"
 wait_for_count monthly 2
 as_root "$SYSTEMCTL" stop "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER"
