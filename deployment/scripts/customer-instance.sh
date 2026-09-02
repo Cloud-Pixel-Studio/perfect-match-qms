@@ -441,7 +441,7 @@ restore_validate() (
   [[ "$postgres_ready" == 1 ]] || die "recovery PostgreSQL did not become ready"
   compose "$target" exec -T postgres createdb -U odoo "$target_database" >/dev/null
   compose "$target" exec -T postgres pg_restore -U odoo -d "$target_database" --no-owner --role=odoo < "$payload/db.dump"
-  docker run --rm -e SOURCE_DATABASE="$source_database" -e TARGET_DATABASE="$target_database" -v "pmqms_${recovery}_odoo_data:/odoo-data" -v "$payload:/backup:ro" "$ALPINE_IMAGE" sh -eu -c '
+  docker run --rm --user root -e SOURCE_DATABASE="$source_database" -e TARGET_DATABASE="$target_database" -v "pmqms_${recovery}_odoo_data:/odoo-data" -v "$payload:/backup:ro" "$ALPINE_IMAGE" sh -eu -c '
     work=/tmp/filestore-restore
     mkdir -p "$work"
     tar -tzf /backup/filestore.tar.gz > "$work/members"
@@ -458,11 +458,9 @@ restore_validate() (
       rm -rf "/odoo-data/filestore/$TARGET_DATABASE"
       mv "$work/filestore/$SOURCE_DATABASE" "/odoo-data/filestore/$TARGET_DATABASE"
     fi
+    chown -R 100:101 /odoo-data
   '
   if ! health "$recovery"; then
-    printf 'recovery_root=%s\n' "$target" >&2
-    printf 'recovery_runtime_lock=%s\n' "$target/config/runtime-lock.json" >&2
-    ls -la "$target/config" >&2 || true
     docker logs --tail=120 "pmqms-customer-${recovery}-odoo-1" >&2 || true
     die "recovery Odoo did not become healthy"
   fi
