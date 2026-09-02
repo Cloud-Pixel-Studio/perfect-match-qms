@@ -379,8 +379,9 @@ monthly_collision_attempts="$(count_invocations monthly)"
 wait_for_successful_status
 
 status_json="$(cat "$WORK/status.json")"
-grep -F '"last_result": "SUCCESS"' <<< "$status_json" >/dev/null
-grep -F '"consecutive_failures": 0' <<< "$status_json" >/dev/null
+status_compact="$(tr -d '[:space:]' <<< "$status_json")"
+grep -F '"last_result":"SUCCESS"' <<< "$status_compact" >/dev/null
+grep -F '"consecutive_failures":0' <<< "$status_compact" >/dev/null
 [[ -f "$WORK/off-host"/*manifest.json ]]
 as_root "$SYSTEMCTL" stop "$RUNTIME_INSTANCE_TIMER" "$COLLISION_RUNTIME_INSTANCE_TIMER" "$DAILY_INSTANCE_TIMER" "$MONTHLY_INSTANCE_TIMER" >/dev/null 2>&1 || true
 
