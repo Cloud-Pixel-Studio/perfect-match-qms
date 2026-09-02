@@ -461,6 +461,9 @@ restore_validate() (
     chown -R 100:101 /odoo-data
   '
   if ! health "$recovery"; then
+    printf 'recovery_instance_root_base=%s\n' "$INSTANCE_ROOT_BASE" >&2
+    printf 'recovery_instance_dir=%s\n' "$(instance_dir "$recovery")" >&2
+    printf 'recovery_runtime_lock=%s\n' "$(instance_dir "$recovery")/config/runtime-lock.json" >&2
     docker logs --tail=120 "pmqms-customer-${recovery}-odoo-1" >&2 || true
     die "recovery Odoo did not become healthy"
   fi
