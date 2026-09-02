@@ -24,14 +24,14 @@ cleanup() {
   local rc=$?
   trap - EXIT
   if [[ -f "$INSTANCE_ROOT/$SLUG/config/instance.env" ]]; then
-    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || rc=1
+    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || { printf 'cleanup_source_destroy=FAIL\n' >&2; rc=1; }
   fi
   if [[ -d "$WORK" ]]; then
     if [[ -n "${ALPINE_IMAGE:-}" ]] && command -v docker >/dev/null 2>&1; then
       docker run --rm --user root -v "$WORK:/cleanup" "$ALPINE_IMAGE" \
-        sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || rc=1
+        sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || { printf 'cleanup_workspace=FAIL\n' >&2; rc=1; }
     else
-      rm -rf -- "$WORK" || rc=1
+      rm -rf -- "$WORK" || { printf 'cleanup_workspace=FAIL\n' >&2; rc=1; }
     fi
   fi
   exit "$rc"
