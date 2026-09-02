@@ -374,8 +374,8 @@ backup() (
   backup_cleanup() {
     local rc=$?
     trap - EXIT
-    if [[ "$was_running" == 1 ]]; then compose "$root" start odoo >/dev/null 2>&1 || rc=1; fi
-    cleanup_temp_dir "$tmp" || rc=1
+    if [[ "${was_running:-0}" == 1 && -n "${root:-}" ]]; then compose "$root" start odoo >/dev/null 2>&1 || rc=1; fi
+    cleanup_temp_dir "${tmp:-}" || rc=1
     exit "$rc"
   }
   trap backup_cleanup EXIT
@@ -388,7 +388,7 @@ backup() (
     [[ "$(docker inspect -f '{{.State.Running}}' "$odoo_id" 2>/dev/null || true)" == false ]] || die "Odoo service did not stop for the consistency window"
   fi
   compose "$root" up -d postgres >/dev/null
-  stamp="$(date -u +%Y%m%dT%H%M%SZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.age"
+  stamp="$(date -u +%Y%m%dT%H%M%S%NZ)"; archive="$root/backups/${INSTANCE_SLUG}-${stamp}.tar.age"
   compose "$root" exec -T postgres pg_dump -U odoo -d "$DATABASE_NAME" --format=custom > "$tmp/db.dump"
   database_snapshot_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$tmp:/backup" "$ALPINE_IMAGE" sh -c "cd /odoo-data && if [ -d filestore/$DATABASE_NAME ]; then tar -czf /backup/filestore.tar.gz filestore/$DATABASE_NAME; else tar -czf /backup/filestore.tar.gz --files-from /dev/null; fi"
