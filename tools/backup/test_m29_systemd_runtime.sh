@@ -278,6 +278,16 @@ wait_for_inactive_service() {
   echo "timed out waiting for ${service} to finish" >&2
   return 1
 }
+wait_for_active_service() {
+  local service="$1" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    as_root "$SYSTEMCTL" is-active --quiet "$service" && return 0
+    sleep 0.2
+  done
+  as_root "$SYSTEMCTL" status "$service" --no-pager || true
+  echo "timed out waiting for ${service} to start" >&2
+  return 1
+}
 wait_for_successful_status() {
   local deadline=$((SECONDS + 30))
   while (( SECONDS < deadline )); do
@@ -346,8 +356,8 @@ daily_before_monthly="$(count_invocations daily)"
 monthly_before_collision="$(count_invocations monthly)"
 echo "systemd_runtime_phase=start_daily_monthly_timers"
 start_timer "$DAILY_INSTANCE_TIMER"
-wait_for_count daily "$(( daily_before_monthly + 1 ))"
-sleep 1
+wait_for_active_service "$DAILY_INSTANCE_SERVICE"
+echo "systemd_runtime_phase=daily_service_active"
 start_timer "$MONTHLY_INSTANCE_TIMER"
 echo "systemd_runtime_phase=daily_monthly_timers_started"
 echo "systemd_runtime_phase=monthly_daily_observed"
