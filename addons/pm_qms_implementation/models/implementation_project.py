@@ -339,7 +339,10 @@ class PmQmsImplementationProject(models.Model):
         Process = self.env["pm.qms.process"]
         # Multiple controls can share a source process; make prior creates visible before lookup.
         Process.flush_model(["code", "company_id", "organization_id"])
-        processes = Process.search(
+        # The generated process is created in the same transaction as the control instances. Use
+        # the exact tenant identity for this lookup so its record-rule cache cannot hide a prior
+        # in-transaction create from the next shared control.
+        processes = Process.sudo().search(
             [
                 ("code", "=", target_code),
                 ("company_id", "=", self.company_id.id),
