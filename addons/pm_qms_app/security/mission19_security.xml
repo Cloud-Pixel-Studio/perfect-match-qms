@@ -24,7 +24,7 @@
         <field name="model_id" ref="pm_qms_core.model_pm_qms_organization"/>
         <field name="global" eval="True"/>
         <field name="perm_read" eval="False"/><field name="perm_write" eval="False"/><field name="perm_unlink" eval="False"/>
-        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="domain_force">[('company_id', 'in', company_ids), ('organization_kind', '!=', 'framework')]</field>
     </record>
     <record id="rule_m19_site_scope" model="ir.rule">
         <field name="name">Mission 19 site scope</field>

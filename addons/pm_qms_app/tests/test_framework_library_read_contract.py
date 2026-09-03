@@ -205,6 +205,15 @@ class TestFrameworkLibraryReadContract(TransactionCase):
                 }
             )
         with self.assertRaises(AccessError):
+            self.env["pm.qms.organization"].with_user(self.manager).create(
+                {
+                    "name": "M30.4 Unauthorized Framework Organization",
+                    "code": "M304-UNAUTHORIZED-ORGANIZATION",
+                    "company_id": self.company.id,
+                    "organization_kind": "framework",
+                }
+            )
+        with self.assertRaises(AccessError):
             self.env["pm.qms.control"].with_user(self.manager).create(
                 {
                     "name": "M30.4 Unauthorized Framework Control",
