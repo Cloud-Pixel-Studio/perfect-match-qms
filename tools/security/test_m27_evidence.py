@@ -36,7 +36,7 @@ class TestM27Evidence(unittest.TestCase):
         with tempfile.TemporaryDirectory() as workspace:
             output = Path(workspace) / "sudo.csv"
             summary = sudo_inventory.generate(root / "addons", output)
-            self.assertEqual(summary["production"], 18)
+            self.assertEqual(summary["production"], 19)
             self.assertGreater(summary["test_only"], 0)
             self.assertEqual(summary["total"], summary["production"] + summary["test_only"])
             self.assertEqual(summary["unresolved_p0"], 0)

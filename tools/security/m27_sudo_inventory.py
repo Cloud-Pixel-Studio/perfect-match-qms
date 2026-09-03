@@ -61,7 +61,20 @@ PRODUCTION_DETAILS = {
         "follow_up": "Retain the pm.qms model-prefix gate and related-record message access check",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_app/models/user_access.py", "146"): {
+    ("addons/pm_qms_app/models/user_access.py", "140"): {
+        "invoker": "QMS user effective-scope computation",
+        "input_provenance": "Current res.users scope configuration already selected by the ORM",
+        "user_controlled_input": "NO arbitrary model, domain or record ID; scope values are assigned through authorized administration",
+        "records_before_sudo": "Current user record only",
+        "scope": "Superuser mode is used only to compute the configured scope fields without re-entering their dependent record rules",
+        "output_mutation": "Populates computed scope fields; no organization, process or user configuration mutation",
+        "audit_history": "No business event from a computed read",
+        "regression_test": "M30.5 control-instance authorization and Mission 19 process boundary tests",
+        "risk": "P1 authorization-sensitive",
+        "follow_up": "Retain explicit company and organization bounds on all scope searches",
+        "runtime_covered": "YES",
+    },
+    ("addons/pm_qms_app/models/user_access.py", "149"): {
         "invoker": "QMS user effective-scope computation",
         "input_provenance": "Current user company_ids and explicit QMS organization scope",
         "user_controlled_input": "User controls assigned scope only through authorized Users & Access administration",
@@ -74,7 +87,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "M28 broaden cross-tenant scope fixture; retain company predicate before sudo",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_app/models/user_access.py", "152"): {
+    ("addons/pm_qms_app/models/user_access.py", "154"): {
         "invoker": "QMS user effective-process-scope computation",
         "input_provenance": "Computed organization IDs from the same current-user scope",
         "user_controlled_input": "User controls assigned organization scope only through authorized administration",
