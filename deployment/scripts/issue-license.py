@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument("--company-limit", type=int, default=1)
     parser.add_argument("--site-limit", type=int, default=3)
     parser.add_argument("--named-user-limit", type=int, default=1)
-    parser.add_argument("--key-id", default="pmqms-demo-2026")
+    parser.add_argument("--key-id", default=license_service.DEFAULT_ISSUANCE_KEY_ID)
     parser.add_argument("--expires-at", default=None, help="ISO-8601 UTC timestamp; omit for perpetual license")
     return parser.parse_args()
 
