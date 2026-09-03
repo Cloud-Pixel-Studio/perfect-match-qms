@@ -775,6 +775,9 @@ class TestM28Reproduction(TransactionCase):
         acknowledgment_a = Acknowledgment.create({"person_id": person_a.id, "revision_id": revision.id})
         acknowledgment_b = Acknowledgment.create({"person_id": person_b.id, "revision_id": revision.id})
 
+        unauthorized_assignment_date = fields.Date.to_string(
+            fields.Date.context_today(self) + timedelta(days=1)
+        )
         site_scoped_records = (
             (
                 "pm.qms.calibration.measurement.line",
@@ -801,7 +804,7 @@ class TestM28Reproduction(TransactionCase):
                 "pm.qms.person.role.assignment",
                 assignment_a,
                 assignment_b,
-                {"person_id": person_b.id, "role_id": role.id, "effective_date": "2026-09-03"},
+                {"person_id": person_b.id, "role_id": role.id, "effective_date": unauthorized_assignment_date},
                 {"notes": "M28 unauthorized edit"},
             ),
             (
