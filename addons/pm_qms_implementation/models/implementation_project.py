@@ -1,5 +1,7 @@
 from datetime import datetime, time
 
+from psycopg2 import IntegrityError
+
 from odoo import Command, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
@@ -299,9 +301,11 @@ class PmQmsImplementationProject(models.Model):
                 resolved[control_id]["area_ids"].add(line.area_id.id)
         return resolved
 
-    def _find_or_create_control_instance(self, control):
+    def _find_or_create_control_instance(self, control, target_process=None):
         self.ensure_one()
         ControlInstance = self.env["pm.qms.control.instance"]
+        # Refreshing the effective process scope after materialization keeps this lookup within
+        # the customer's normal record rules while making the new instance visible to re-sync.
         existing = ControlInstance.search(
             [
                 ("organization_id", "=", self.organization_id.id),
@@ -315,12 +319,13 @@ class PmQmsImplementationProject(models.Model):
             raise UserError("Duplicate control instances exist for the same organization and control.")
         if existing:
             return existing[0]
+        target_process = target_process or self._target_process_for_control(control)
         return ControlInstance.create(
             {
                 "name": control.name,
                 "control_id": control.id,
                 "organization_id": self.organization_id.id,
-                "process_id": self._target_process_for_control(control).id,
+                "process_id": target_process.id,
                 "owner_id": self.project_manager_id.id or False,
                 "target_date": self.target_date,
             }
@@ -329,31 +334,57 @@ class PmQmsImplementationProject(models.Model):
     def _target_process_for_control(self, control):
         self.ensure_one()
         source_process = control.process_id
-        if not source_process.organization_id or source_process.organization_id == self.organization_id:
+        if not source_process:
+            raise UserError("A framework control must reference a source process before implementation.")
+        if source_process.organization_id == self.organization_id:
+            if source_process.company_id != self.company_id:
+                raise UserError("The source process company does not match the implementation company.")
             return source_process
         target_code = f"{self.organization_id.code}-{source_process.code}"
-        process = self.env["pm.qms.process"].search(
-            [
-                ("code", "=", target_code),
-                ("company_id", "=", self.company_id.id),
-            ],
-            limit=1,
-        )
-        if process:
-            return process
-        return self.env["pm.qms.process"].create(
-            {
-                "name": source_process.name,
-                "code": target_code,
-                "description": source_process.description,
-                "organization_id": self.organization_id.id,
-                "company_id": self.company_id.id,
-                "process_type": source_process.process_type,
-                "department": source_process.department,
-                "inputs": source_process.inputs,
-                "outputs": source_process.outputs,
-            }
-        )
+        Process = self.env["pm.qms.process"]
+        # Multiple controls can share a source process; make prior creates visible before lookup.
+        Process.flush_model(["code", "company_id", "organization_id"])
+        # The generated process is created in the same transaction as the control instances. Use
+        # the exact tenant identity for lookup and retry a concurrent/in-transaction create.
+        identity_domain = [
+            ("code", "=", target_code),
+            ("company_id", "=", self.company_id.id),
+            ("organization_id", "=", self.organization_id.id),
+        ]
+        processes = Process.search(identity_domain, limit=2)
+        if len(processes) > 1:
+            raise UserError(
+                "Multiple operational processes match the same implementation identity: "
+                f"{target_code}."
+            )
+        if processes:
+            return processes[0]
+        values = {
+            "name": source_process.name,
+            "code": target_code,
+            "description": source_process.description,
+            "organization_id": self.organization_id.id,
+            "company_id": self.company_id.id,
+            "process_type": source_process.process_type,
+            "department": source_process.department,
+            "inputs": source_process.inputs,
+            "outputs": source_process.outputs,
+        }
+        try:
+            with self.env.cr.savepoint():
+                process = Process.create(values)
+        except IntegrityError:
+            processes = Process.search(identity_domain, limit=2)
+            if len(processes) > 1:
+                raise UserError(
+                    "Multiple operational processes match the same implementation identity: "
+                    f"{target_code}."
+                )
+            if not processes:
+                raise
+            process = processes[0]
+        self.env.user.invalidate_recordset(["qms_effective_process_ids"])
+        return process
 
     def _task_deadline(self):
         self.ensure_one()
@@ -416,9 +447,9 @@ class PmQmsImplementationProject(models.Model):
         created_or_updated = self.env["pm.qms.implementation.control"]
         for project in self:
             resolved = project._resolve_pack_controls()
+            resolved_processes = {}
             for info in resolved.values():
                 control = info["control"]
-                instance = project._find_or_create_control_instance(control)
                 line = self.env["pm.qms.implementation.control"].search(
                     [
                         ("implementation_project_id", "=", project.id),
@@ -426,6 +457,16 @@ class PmQmsImplementationProject(models.Model):
                     ],
                     limit=1,
                 )
+                source_process_id = control.process_id.id
+                if line and line.control_instance_id:
+                    instance = line.control_instance_id
+                    resolved_processes.setdefault(source_process_id, instance.process_id)
+                else:
+                    target_process = resolved_processes.get(source_process_id)
+                    if not target_process:
+                        target_process = project._target_process_for_control(control)
+                        resolved_processes[source_process_id] = target_process
+                    instance = project._find_or_create_control_instance(control, target_process)
                 pack_ids = list(info["pack_ids"])
                 area_ids = list(info["area_ids"])
                 if line:

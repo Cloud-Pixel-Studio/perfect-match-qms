@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from psycopg2 import IntegrityError
 
@@ -311,6 +312,201 @@ class TestPmQmsImplementation(TransactionCase):
                 project.generated_task_ids.search_count([("pm_implementation_project_id", "=", project.id)]),
                 self.env["pm.qms.control.instance"].search_count([("organization_id", "=", self.organization.id)]),
             ),
+        )
+
+    def _create_framework_resolution_fixture(self):
+        framework_org = self.env["pm.qms.organization"].create(
+            {
+                "name": "Framework Resolution Library",
+                "code": "PM-IMP-FRAMEWORK",
+                "company_id": self.company.id,
+                "organization_kind": "framework",
+            }
+        )
+        source_process = self.env["pm.qms.process"].create(
+            {
+                "name": "Framework Shared Process",
+                "code": "PM-IMP-FRAMEWORK-PROC",
+                "organization_id": framework_org.id,
+                "company_id": self.company.id,
+            }
+        )
+        controls = []
+        for number in range(1, 3):
+            control = self.env["pm.qms.control"].create(
+                {
+                    "name": f"Framework Resolution Control {number}",
+                    "code": f"PM-IMP-FRAMEWORK-C{number}",
+                    "objective": f"Apply framework resolution behavior {number}.",
+                    "process_id": source_process.id,
+                    "category": "process",
+                }
+            )
+            control.action_activate()
+            controls.append(control)
+        self.env["pm.qms.activity"].create(
+            {
+                "control_id": controls[0].id,
+                "name": "Confirm operational process resolution",
+                "description": "Confirm the customer process is available.",
+            }
+        )
+        pack = self._create_pack("PM-TST-FRAMEWORK-RESOLUTION", controls)
+        customer_org = self.env["pm.qms.organization"].create(
+            {
+                "name": "Resolution Customer Organization",
+                "code": "PM-IMP-CUSTOMER",
+                "company_id": self.company.id,
+            }
+        )
+        self.manager.sudo().write(
+            {
+                "qms_organization_ids": [Command.set([customer_org.id])],
+                "qms_all_sites": True,
+                "qms_all_processes": True,
+                "qms_process_ids": [Command.clear()],
+            }
+        )
+        return framework_org, source_process, controls, pack, customer_org
+
+    def test_clean_customer_generation_materializes_shared_framework_process_once(self):
+        framework_org, source_process, controls, pack, customer_org = self._create_framework_resolution_fixture()
+        source_before = source_process.read(["code", "organization_id", "company_id"])[0]
+
+        project = self._generate_project(
+            [pack],
+            name="Clean customer framework resolution",
+            organization=customer_org,
+            manager=self.manager,
+        )
+
+        target_processes = self.env["pm.qms.process"].search(
+            [
+                ("code", "=", f"{customer_org.code}-{source_process.code}"),
+                ("organization_id", "=", customer_org.id),
+            ]
+        )
+        self.assertEqual(len(target_processes), 1)
+        self.assertEqual(target_processes.company_id, self.company)
+        self.assertEqual(target_processes.organization_id, customer_org)
+        self.assertEqual(len(project.implementation_control_ids), 2)
+        self.assertEqual(
+            self.env["pm.qms.control.instance"].search_count([("organization_id", "=", customer_org.id)]),
+            2,
+        )
+        self.assertGreater(
+            self.env["project.task"].search_count(
+                [("pm_implementation_project_id", "=", project.id), ("pm_generated", "=", True)]
+            ),
+            0,
+        )
+        self.assertEqual(source_process.read(["code", "organization_id", "company_id"])[0], source_before)
+        effective_orgs = self.manager.qms_effective_organization_ids
+        self.assertIn(customer_org, effective_orgs)
+        self.assertNotIn(framework_org, effective_orgs)
+
+        counts = (
+            self.env["pm.qms.process"].search_count([("organization_id", "=", customer_org.id)]),
+            len(project.implementation_control_ids),
+            self.env["pm.qms.control.instance"].search_count([("organization_id", "=", customer_org.id)]),
+            self.env["project.task"].search_count(
+                [("pm_implementation_project_id", "=", project.id), ("pm_generated", "=", True)]
+            ),
+        )
+        project.with_user(self.manager).action_sync_framework()
+        project.with_user(self.manager).action_sync_framework()
+        self.assertEqual(
+            counts,
+            (
+                self.env["pm.qms.process"].search_count([("organization_id", "=", customer_org.id)]),
+                len(project.implementation_control_ids),
+                self.env["pm.qms.control.instance"].search_count([("organization_id", "=", customer_org.id)]),
+                self.env["project.task"].search_count(
+                    [("pm_implementation_project_id", "=", project.id), ("pm_generated", "=", True)]
+                ),
+            ),
+        )
+
+    def test_existing_operational_process_is_reused(self):
+        _, source_process, _, pack, customer_org = self._create_framework_resolution_fixture()
+        existing = self.env["pm.qms.process"].create(
+            {
+                "name": "Existing Customer Process",
+                "code": f"{customer_org.code}-{source_process.code}",
+                "organization_id": customer_org.id,
+                "company_id": self.company.id,
+            }
+        )
+
+        project = self._generate_project(
+            [pack],
+            name="Reuse existing customer process",
+            organization=customer_org,
+            manager=self.manager,
+        )
+        self.assertEqual(
+            self.env["pm.qms.process"].search_count(
+                [("code", "=", existing.code), ("organization_id", "=", customer_org.id)]
+            ),
+            1,
+        )
+        self.assertTrue(
+            all(line.control_instance_id.process_id == existing for line in project.implementation_control_ids)
+        )
+
+    def test_duplicate_operational_process_match_fails_clearly(self):
+        _, source_process, controls, _, customer_org = self._create_framework_resolution_fixture()
+        project = self.env["pm.qms.implementation.project"].new(
+            {"organization_id": customer_org.id, "company_id": self.company.id}
+        )
+        process_model = self.env["pm.qms.process"]
+        duplicate_candidates = self.process | self.same_company_other_process
+        with patch.object(type(process_model), "search", return_value=duplicate_candidates):
+            with self.assertRaisesRegex(UserError, "Multiple operational processes match"):
+                project._target_process_for_control(controls[0])
+
+    def test_cross_company_source_process_is_never_reused(self):
+        control = self.env["pm.qms.control"].create(
+            {
+                "name": "Cross-company framework control",
+                "code": "PM-IMP-CROSS-COMPANY",
+                "objective": "Prove company isolation during process resolution.",
+                "process_id": self.other_process.id,
+                "category": "process",
+            }
+        )
+        project = self.env["pm.qms.implementation.project"].new(
+            {"organization_id": self.organization.id, "company_id": self.company.id}
+        )
+
+        resolved = project._target_process_for_control(control)
+
+        self.assertNotEqual(resolved, self.other_process)
+        self.assertEqual(resolved.company_id, self.company)
+        self.assertEqual(resolved.organization_id, self.organization)
+
+    def test_framework_source_process_remains_immutable_after_resolution(self):
+        _, source_process, controls, _, customer_org = self._create_framework_resolution_fixture()
+        source_fields = [
+            "name",
+            "code",
+            "organization_id",
+            "company_id",
+            "process_type",
+            "department",
+            "inputs",
+            "outputs",
+        ]
+        before = source_process.read(source_fields)[0]
+        project = self.env["pm.qms.implementation.project"].new(
+            {"organization_id": customer_org.id, "company_id": self.company.id}
+        )
+
+        project._target_process_for_control(controls[0])
+
+        self.assertEqual(
+            source_process.read(source_fields)[0],
+            before,
         )
 
     def test_existing_control_instance_is_reused_and_other_organization_is_ignored(self):
