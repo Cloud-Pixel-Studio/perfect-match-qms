@@ -329,19 +329,32 @@ class PmQmsImplementationProject(models.Model):
     def _target_process_for_control(self, control):
         self.ensure_one()
         source_process = control.process_id
-        if not source_process.organization_id or source_process.organization_id == self.organization_id:
+        if not source_process:
+            raise UserError("A framework control must reference a source process before implementation.")
+        if source_process.organization_id == self.organization_id:
+            if source_process.company_id != self.company_id:
+                raise UserError("The source process company does not match the implementation company.")
             return source_process
         target_code = f"{self.organization_id.code}-{source_process.code}"
-        process = self.env["pm.qms.process"].search(
+        Process = self.env["pm.qms.process"]
+        # Multiple controls can share a source process; make prior creates visible before lookup.
+        Process.flush_model(["code", "company_id", "organization_id"])
+        processes = Process.search(
             [
                 ("code", "=", target_code),
                 ("company_id", "=", self.company_id.id),
+                ("organization_id", "=", self.organization_id.id),
             ],
-            limit=1,
+            limit=2,
         )
-        if process:
-            return process
-        return self.env["pm.qms.process"].create(
+        if len(processes) > 1:
+            raise UserError(
+                "Multiple operational processes match the same implementation identity: "
+                f"{target_code}."
+            )
+        if processes:
+            return processes[0]
+        process = Process.create(
             {
                 "name": source_process.name,
                 "code": target_code,
@@ -354,6 +367,8 @@ class PmQmsImplementationProject(models.Model):
                 "outputs": source_process.outputs,
             }
         )
+        self.env.user.invalidate_recordset(["qms_effective_process_ids"])
+        return process
 
     def _task_deadline(self):
         self.ensure_one()

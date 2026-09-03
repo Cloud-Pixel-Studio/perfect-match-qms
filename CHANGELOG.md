@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Made operational process resolution idempotent when multiple framework
+  controls share a source process, while preserving company and organization
+  boundaries.
+
 ## 1.0.0-rc7 - 2026-08-23
 
 - Froze the standalone Perfect Match QMS baseline after Mission 20 with signed
