@@ -31,10 +31,13 @@ Required payload fields include `schema_version`, `license_id`,
 `license_revision`, customer/edition, environment UUID, company/site/named-user
 limits, dates, perpetual flag, and `key_id`.
 
-Only the public key registry is shipped in `data/public_keys.json`. Private
-signing keys live outside Git and Docker images, for example in
-`/opt/perfect-match/secrets/license-authority/`, owner-readable only. `key_id`
-and public-key fingerprints allow future key rotation without changing the
+Only public verification keys are shipped in `data/public_keys.json`.
+`pmqms-demo-2026` remains registered as a historical verifier, while
+`pmqms-license-2026` is the active issuance authority. The corresponding
+private signing key lives outside Git, Docker images, and customer instances
+at `/opt/perfect-match/secrets/license-authority/pmqms-license-2026.pem`,
+owner-readable only. `key_id` and public-key fingerprints allow rotation while
+old and new signed licenses remain verifiable without changing the license
 format. Verification is entirely local: the product has no phone-home call,
 license cloud dependency, or continuous Internet requirement.
 

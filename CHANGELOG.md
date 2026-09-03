@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added the external `pmqms-license-2026` issuance authority while retaining
+  `pmqms-demo-2026` for historical license verification.
 - Made operational process resolution idempotent when multiple framework
   controls share a source process, while preserving company and organization
   boundaries.

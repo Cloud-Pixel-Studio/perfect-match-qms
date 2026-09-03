@@ -9,6 +9,7 @@ from .environment import read_environment_id
 
 
 CANONICALIZATION = "UTF-8 JSON with sorted keys, compact separators, no ASCII escaping"
+DEFAULT_ISSUANCE_KEY_ID = "pmqms-license-2026"
 REQUIRED_PAYLOAD_FIELDS = {
     "schema_version",
     "license_id",
