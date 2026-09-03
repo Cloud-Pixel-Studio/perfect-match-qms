@@ -1,5 +1,7 @@
 from datetime import datetime, time
 
+from psycopg2 import IntegrityError
+
 from odoo import Command, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
@@ -340,16 +342,13 @@ class PmQmsImplementationProject(models.Model):
         # Multiple controls can share a source process; make prior creates visible before lookup.
         Process.flush_model(["code", "company_id", "organization_id"])
         # The generated process is created in the same transaction as the control instances. Use
-        # the exact tenant identity for this lookup so its record-rule cache cannot hide a prior
-        # in-transaction create from the next shared control.
-        processes = Process.sudo().search(
-            [
-                ("code", "=", target_code),
-                ("company_id", "=", self.company_id.id),
-                ("organization_id", "=", self.organization_id.id),
-            ],
-            limit=2,
-        )
+        # the exact tenant identity for lookup and retry a concurrent/in-transaction create.
+        identity_domain = [
+            ("code", "=", target_code),
+            ("company_id", "=", self.company_id.id),
+            ("organization_id", "=", self.organization_id.id),
+        ]
+        processes = Process.sudo().search(identity_domain, limit=2)
         if len(processes) > 1:
             raise UserError(
                 "Multiple operational processes match the same implementation identity: "
@@ -357,19 +356,30 @@ class PmQmsImplementationProject(models.Model):
             )
         if processes:
             return processes[0]
-        process = Process.create(
-            {
-                "name": source_process.name,
-                "code": target_code,
-                "description": source_process.description,
-                "organization_id": self.organization_id.id,
-                "company_id": self.company_id.id,
-                "process_type": source_process.process_type,
-                "department": source_process.department,
-                "inputs": source_process.inputs,
-                "outputs": source_process.outputs,
-            }
-        )
+        values = {
+            "name": source_process.name,
+            "code": target_code,
+            "description": source_process.description,
+            "organization_id": self.organization_id.id,
+            "company_id": self.company_id.id,
+            "process_type": source_process.process_type,
+            "department": source_process.department,
+            "inputs": source_process.inputs,
+            "outputs": source_process.outputs,
+        }
+        try:
+            with self.env.cr.savepoint():
+                process = Process.create(values)
+        except IntegrityError:
+            processes = Process.sudo().search(identity_domain, limit=2)
+            if len(processes) > 1:
+                raise UserError(
+                    "Multiple operational processes match the same implementation identity: "
+                    f"{target_code}."
+                )
+            if not processes:
+                raise
+            process = processes[0]
         self.env.user.invalidate_recordset(["qms_effective_process_ids"])
         return process
 
