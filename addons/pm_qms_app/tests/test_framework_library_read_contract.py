@@ -194,6 +194,8 @@ class TestFrameworkLibraryReadContract(TransactionCase):
         with self.assertRaises(AccessError):
             self.framework_process.with_user(self.manager).unlink()
         with self.assertRaises(AccessError):
+            self.framework_org.with_user(self.manager).unlink()
+        with self.assertRaises(AccessError):
             self.framework_control.with_user(self.manager).unlink()
         with self.assertRaises(AccessError):
             self.env["pm.qms.process"].with_user(self.manager).create(
