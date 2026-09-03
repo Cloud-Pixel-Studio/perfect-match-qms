@@ -301,7 +301,7 @@ class PmQmsImplementationProject(models.Model):
                 resolved[control_id]["area_ids"].add(line.area_id.id)
         return resolved
 
-    def _find_or_create_control_instance(self, control):
+    def _find_or_create_control_instance(self, control, target_process=None):
         self.ensure_one()
         ControlInstance = self.env["pm.qms.control.instance"]
         # Refreshing the effective process scope after materialization keeps this lookup within
@@ -319,12 +319,13 @@ class PmQmsImplementationProject(models.Model):
             raise UserError("Duplicate control instances exist for the same organization and control.")
         if existing:
             return existing[0]
+        target_process = target_process or self._target_process_for_control(control)
         return ControlInstance.create(
             {
                 "name": control.name,
                 "control_id": control.id,
                 "organization_id": self.organization_id.id,
-                "process_id": self._target_process_for_control(control).id,
+                "process_id": target_process.id,
                 "owner_id": self.project_manager_id.id or False,
                 "target_date": self.target_date,
             }
@@ -446,9 +447,9 @@ class PmQmsImplementationProject(models.Model):
         created_or_updated = self.env["pm.qms.implementation.control"]
         for project in self:
             resolved = project._resolve_pack_controls()
+            resolved_processes = {}
             for info in resolved.values():
                 control = info["control"]
-                instance = project._find_or_create_control_instance(control)
                 line = self.env["pm.qms.implementation.control"].search(
                     [
                         ("implementation_project_id", "=", project.id),
@@ -456,6 +457,16 @@ class PmQmsImplementationProject(models.Model):
                     ],
                     limit=1,
                 )
+                source_process_id = control.process_id.id
+                if line and line.control_instance_id:
+                    instance = line.control_instance_id
+                    resolved_processes.setdefault(source_process_id, instance.process_id)
+                else:
+                    target_process = resolved_processes.get(source_process_id)
+                    if not target_process:
+                        target_process = project._target_process_for_control(control)
+                        resolved_processes[source_process_id] = target_process
+                    instance = project._find_or_create_control_instance(control, target_process)
                 pack_ids = list(info["pack_ids"])
                 area_ids = list(info["area_ids"])
                 if line:
