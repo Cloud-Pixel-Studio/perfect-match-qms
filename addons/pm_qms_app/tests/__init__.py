@@ -6,3 +6,4 @@ from . import test_m27_security
 from . import test_m28_reproduction
 
 from . import test_qms_history_ui
+from . import test_m30_5_control_instance_authorization

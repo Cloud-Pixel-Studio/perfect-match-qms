@@ -137,7 +137,10 @@ class ResUsers(models.Model):
 
     @api.depends("qms_organization_ids", "qms_scope_configured", "qms_all_sites", "qms_site_ids", "qms_all_processes", "qms_process_ids")
     def _compute_qms_effective_scope(self):
+        self = self.sudo()
         for user in self:
+            # Scope configuration is the authority used to build the record-rule
+            # domains, so read it without re-entering those domains.
             organizations = user.qms_organization_ids
             # Legacy test fixtures predate explicit Mission 19 scope. Keep their tests representative
             # without granting this fallback to real users or explicitly configured empty scopes.
@@ -147,12 +150,19 @@ class ResUsers(models.Model):
                     [("company_id", "in", user.company_ids.ids)]
                 )
             sites = organizations.mapped("site_ids") if legacy_fallback or user.qms_all_sites else user.qms_site_ids
-            processes = organizations.mapped("process_ids") if legacy_fallback or user.qms_all_processes else user.qms_process_ids
             # Search with sudo to avoid re-entering the process rule while computing its scope.
             available_processes = self.env["pm.qms.process"].sudo().search(
                 [("organization_id", "in", organizations.ids)]
             )
-            processes |= available_processes.filtered(lambda process: process.site_ids & sites)
+            # All-process scope is organization-based, so it must include a process created
+            # earlier in the same transaction even when it has no site links yet. Preserve
+            # the existing selected-site expansion for explicitly scoped users.
+            if legacy_fallback or user.qms_all_processes:
+                processes = available_processes
+            else:
+                processes = user.qms_process_ids | available_processes.filtered(
+                    lambda process: process.site_ids & sites
+                )
             user.qms_effective_organization_ids = organizations
             user.qms_effective_site_ids = sites
             user.qms_effective_process_ids = processes
