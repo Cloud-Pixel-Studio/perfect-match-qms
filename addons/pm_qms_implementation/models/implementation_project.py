@@ -304,9 +304,9 @@ class PmQmsImplementationProject(models.Model):
     def _find_or_create_control_instance(self, control):
         self.ensure_one()
         ControlInstance = self.env["pm.qms.control.instance"]
-        # Re-sync must find an instance created earlier in this transaction even when the
-        # customer's process scope cache has not yet exposed its process to a normal read.
-        existing = ControlInstance.sudo().search(
+        # Refreshing the effective process scope after materialization keeps this lookup within
+        # the customer's normal record rules while making the new instance visible to re-sync.
+        existing = ControlInstance.search(
             [
                 ("organization_id", "=", self.organization_id.id),
                 ("control_id", "=", control.id),
@@ -350,7 +350,7 @@ class PmQmsImplementationProject(models.Model):
             ("company_id", "=", self.company_id.id),
             ("organization_id", "=", self.organization_id.id),
         ]
-        processes = Process.sudo().search(identity_domain, limit=2)
+        processes = Process.search(identity_domain, limit=2)
         if len(processes) > 1:
             raise UserError(
                 "Multiple operational processes match the same implementation identity: "
@@ -373,7 +373,7 @@ class PmQmsImplementationProject(models.Model):
             with self.env.cr.savepoint():
                 process = Process.create(values)
         except IntegrityError:
-            processes = Process.sudo().search(identity_domain, limit=2)
+            processes = Process.search(identity_domain, limit=2)
             if len(processes) > 1:
                 raise UserError(
                     "Multiple operational processes match the same implementation identity: "
