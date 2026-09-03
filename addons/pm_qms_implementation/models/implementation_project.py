@@ -304,7 +304,9 @@ class PmQmsImplementationProject(models.Model):
     def _find_or_create_control_instance(self, control):
         self.ensure_one()
         ControlInstance = self.env["pm.qms.control.instance"]
-        existing = ControlInstance.search(
+        # Re-sync must find an instance created earlier in this transaction even when the
+        # customer's process scope cache has not yet exposed its process to a normal read.
+        existing = ControlInstance.sudo().search(
             [
                 ("organization_id", "=", self.organization_id.id),
                 ("control_id", "=", control.id),
