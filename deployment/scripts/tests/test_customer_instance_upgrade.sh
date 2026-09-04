@@ -63,6 +63,7 @@ make_instance() {
   rm -rf -- "$root"
   mkdir -p "$root/config" "$root/secrets" "$root/license" "$root/activation" "$root/runtime/addons" "$root/runtime/release/deployment/customer" "$root/runtime/release/deployment/docker/customer"
   cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$root/config/runtime-lock.json"
+  printf 'fixture-environment-id\n' > "$root/config/environment_id"
   printf 'INSTANCE_SLUG=%s\nENVIRONMENT_TYPE=test\nPRODUCT_VERSION=%s\nSOURCE_RELEASE_SHA=%s\nDOMAIN=test.invalid\nDATABASE_NAME=pmqms_%s\nHTTP_PORT=19180\n' \
     "$slug" "$product" "$source" "$slug" > "$root/config/instance.env"
   printf 'old-master\n' > "$root/secrets/odoo_master_password"
@@ -117,13 +118,31 @@ capture_rollback_data() {
   tar -czf "$snapshot/filestore.tar.gz" --files-from /dev/null
 }
 restore_rollback_data() { :; }
+restore_rollback_files() {
+  local root="$1" snapshot="$2"
+  rm -rf -- "$root/runtime/addons" "$root/runtime/release" "$root/runtime/.m30-8-previous"
+  cp -a "$snapshot/addons" "$root/runtime/addons"
+  cp -a "$snapshot/release" "$root/runtime/release"
+  cp "$snapshot/config/instance.env" "$root/config/instance.env"
+  cp "$snapshot/config/deployment-manifest.json" "$root/config/deployment-manifest.json"
+  cp "$snapshot/config/product-manifest.json" "$root/config/product-manifest.json"
+  cp "$snapshot/config/runtime-lock.json" "$root/config/runtime-lock.json"
+  cp "$snapshot/config/environment_id" "$root/config/environment_id"
+  [[ -f "$snapshot/modules.txt" ]] && cp "$snapshot/modules.txt" "$root/runtime/modules.txt"
+  [[ -f "$snapshot/active.pmql" ]] && cp "$snapshot/active.pmql" "$root/license/active.pmql"
+  return 0
+}
 compose() {
   case "$*" in
     *" -u "*) [[ "${FAIL_MODULE_UPDATE:-0}" != 1 ]] || return 23;;
   esac
   return 0
 }
-health_root() { [[ "${FAIL_HEALTH:-0}" != 1 ]]; }
+HEALTH_CALLS=0
+health_root() {
+  HEALTH_CALLS=$((HEALTH_CALLS + 1))
+  [[ "${FAIL_HEALTH:-0}" != 1 || "$HEALTH_CALLS" -gt 1 ]]
+}
 CUSTOMER_READY_CALLS=0
 test_customer_ready() {
   CUSTOMER_READY_CALLS=$((CUSTOMER_READY_CALLS + 1))
@@ -158,6 +177,7 @@ reset_case() {
   FAIL_MODULE_UPDATE=0
   FAIL_HEALTH=0
   FAIL_TARGET_READY_CALL=0
+  HEALTH_CALLS=0
   CUSTOMER_READY_CALLS=0
 }
 

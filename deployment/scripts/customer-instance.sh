@@ -163,7 +163,7 @@ prepare_permissions() {
   local root="$1"
   load_runtime_for_root "$root"
   runtime_verify_lock "$RUNTIME_LOCK_PATH"
-  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" -v "$root/activation:/activation" "$ODOO_IMAGE" sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /license /activation 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license 2>/dev/null || true; chmod 755 /activation 2>/dev/null || true'
+  docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" -v "$root/activation:/activation" "$ODOO_IMAGE" sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /secrets/odoo_master_password /license /activation 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password /secrets/odoo_master_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license 2>/dev/null || true; chmod 755 /activation 2>/dev/null || true'
 }
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
@@ -369,7 +369,7 @@ render_files() {
   local root="$1" master
   load_release_assets_for_root "$root"
   load_runtime_for_root "$root"
-  master="$(cat "$root/secrets/odoo_master_password")"
+  master="$(docker run --rm --user root -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -eu -c 'cat /secrets/odoo_master_password')"
   sed -e "s#__INSTANCE_SLUG__#$INSTANCE_SLUG#g" -e "s#__INSTANCE_ROOT__#$root#g" -e "s#__HTTP_PORT__#$HTTP_PORT#g" -e "s#__ODOO_IMAGE__#$ODOO_IMAGE#g" -e "s#__POSTGRES_IMAGE__#$POSTGRES_IMAGE#g" "$COMPOSE_TEMPLATE" > "$root/runtime/compose.yml"
   sed -e "s#__ODOO_MASTER_PASSWORD__#$master#g" -e "s#__DATABASE_NAME__#$DATABASE_NAME#g" "$ODOO_TEMPLATE" > "$root/config/odoo.conf"
   chmod 600 "$root/config/odoo.conf"
@@ -593,7 +593,13 @@ backup() (
   local source_release_sha="$SOURCE_RELEASE_SHA"
   [[ "$source_release_sha" =~ ^[0-9a-f]{40}$ ]] || die "instance source release identity is invalid"
   local component_args=(--component "db.dump=$tmp/db.dump" --component "filestore.tar.gz=$tmp/filestore.tar.gz" --component "environment_id=$tmp/environment_id" --component "runtime-lock.json=$tmp/runtime-lock.json" --component "deployment-manifest.json=$tmp/deployment-manifest.json")
-  if [[ -f "$root/license/active.pmql" ]]; then cp "$root/license/active.pmql" "$tmp/active.pmql"; component_args+=(--component "active.pmql=$tmp/active.pmql"); fi
+  if docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
+    sh -eu -c 'test -r /license/active.pmql' >/dev/null 2>&1; then
+    docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
+      sh -eu -c 'cat /license/active.pmql' > "$tmp/active.pmql"
+    chmod 600 "$tmp/active.pmql"
+  fi
+  if [[ -f "$tmp/active.pmql" ]]; then component_args+=(--component "active.pmql=$tmp/active.pmql"); fi
   quiesce_end_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   python3 "$BACKUP_TOOL" pack --output "$archive" --recipient-file "$recipient_file" --source-instance "$INSTANCE_SLUG" --source-database "$DATABASE_NAME" --source-environment-id "$(tr -d '\n' < "$root/config/environment_id")" --product-version "$PRODUCT_VERSION" --source-release-sha "$source_release_sha" --recovery-point-class "$recovery_class" --created-utc "$quiesce_end_utc" --quiesce-start-utc "$quiesce_start_utc" --database-snapshot-utc "$database_snapshot_utc" --filestore-snapshot-utc "$filestore_snapshot_utc" --quiesce-end-utc "$quiesce_end_utc" "${component_args[@]}"
   if [[ -n "$off_host_dir" ]]; then python3 "$BACKUP_TOOL" transfer --archive "$archive" --destination "$off_host_dir"; fi
@@ -780,22 +786,28 @@ create_rollback_snapshot() {
     esac
     [[ -f "$source" ]] && cp "$source" "$snapshot/config/$(basename "$source")"
   done
-  [[ -d "$root/runtime/addons" ]] && cp -a "$root/runtime/addons" "$snapshot/addons"
-  [[ -d "$root/runtime/release" ]] && cp -a "$root/runtime/release" "$snapshot/release"
-  [[ -f "$root/runtime/modules.txt" ]] && cp "$root/runtime/modules.txt" "$snapshot/modules.txt"
-  [[ -f "$root/license/active.pmql" ]] && cp "$root/license/active.pmql" "$snapshot/active.pmql"
-  find "$snapshot" -type d -exec chmod go-rwx {} +
-  find "$snapshot" -type f -exec chmod go-rwx {} +
+  [[ -d "$root/runtime/addons" ]] && cp -R --no-preserve=mode,ownership "$root/runtime/addons" "$snapshot/addons"
+  [[ -d "$root/runtime/release" ]] && cp -R --no-preserve=mode,ownership "$root/runtime/release" "$snapshot/release"
+  [[ -f "$root/runtime/modules.txt" ]] && cp --no-preserve=mode,ownership "$root/runtime/modules.txt" "$snapshot/modules.txt"
+  if docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
+    sh -eu -c 'test -r /license/active.pmql' >/dev/null 2>&1; then
+    docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
+      sh -eu -c 'cat /license/active.pmql' > "$snapshot/active.pmql"
+    chmod 600 "$snapshot/active.pmql"
+  fi
+  find "$snapshot" -type d -exec chmod 700 {} +
+  find "$snapshot" -type f -exec chmod 600 {} +
 }
 
 capture_rollback_data() {
-  local root="$1" snapshot="$2"
+  local root="$1" snapshot="$2" host_uid="$(id -u)" host_gid="$(id -g)"
   load_instance "$root"
   compose "$root" up -d postgres >/dev/null
   compose "$root" exec -T postgres pg_dump -U odoo -d "$DATABASE_NAME" --format=custom > "$snapshot/db.dump"
   [[ -s "$snapshot/db.dump" ]] || die "ephemeral database snapshot is empty"
-  docker run --rm -v "pmqms_\${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$snapshot:/rollback" "$ALPINE_IMAGE" sh -c \
-    "cd /odoo-data && if [ -d filestore/\${DATABASE_NAME} ]; then tar -czf /rollback/filestore.tar.gz filestore/\${DATABASE_NAME}; else tar -czf /rollback/filestore.tar.gz --files-from /dev/null; fi"
+  docker run --rm --user root -e HOST_UID="$host_uid" -e HOST_GID="$host_gid" \
+    -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$snapshot:/rollback" "$ALPINE_IMAGE" sh -c \
+    "cd /odoo-data && if [ -d filestore/\${DATABASE_NAME} ]; then tar -czf /rollback/filestore.tar.gz filestore/\${DATABASE_NAME}; else tar -czf /rollback/filestore.tar.gz --files-from /dev/null; fi; chown \${HOST_UID}:\${HOST_GID} /rollback/filestore.tar.gz; chmod 600 /rollback/filestore.tar.gz"
   [[ -s "$snapshot/filestore.tar.gz" ]] || die "ephemeral filestore snapshot is missing"
   chmod 600 "$snapshot/db.dump" "$snapshot/filestore.tar.gz"
 }
@@ -804,18 +816,18 @@ restore_rollback_data() {
   local root="$1" snapshot="$2"
   load_instance "$root"
   [[ -s "$snapshot/db.dump" && -s "$snapshot/filestore.tar.gz" ]] || die "rollback data snapshot is incomplete"
-  compose "$root" up -d postgres >/dev/null
-  compose "$root" exec -T postgres dropdb -U odoo --if-exists "$DATABASE_NAME" >/dev/null
-  compose "$root" exec -T postgres createdb -U odoo "$DATABASE_NAME" >/dev/null
-  compose "$root" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$snapshot/db.dump"
-  docker run --rm --user root -e DATABASE_NAME="$DATABASE_NAME" -v "pmqms_\${INSTANCE_SLUG}_odoo_data:/odoo-data" -v "$snapshot:/rollback:ro" "$ALPINE_IMAGE" sh -eu -c '
+  compose "$root" up -d postgres >/dev/null || return 1
+  compose "$root" exec -T postgres dropdb -U odoo --if-exists "$DATABASE_NAME" >/dev/null || return 1
+  compose "$root" exec -T postgres createdb -U odoo "$DATABASE_NAME" >/dev/null || return 1
+  compose "$root" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$snapshot/db.dump" || return 1
+  docker run --rm --user root -e DATABASE_NAME="$DATABASE_NAME" -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data" -v "$snapshot:/rollback:ro" "$ALPINE_IMAGE" sh -eu -c '
     work=/tmp/filestore-rollback
     mkdir -p "$work"
     tar -tzf /rollback/filestore.tar.gz > "$work/members"
     while IFS= read -r member; do
       case "$member" in
-        "filestore/$DATABASE_NAME"|"filestore/$DATABASE_NAME/"*) ;;
-        *) echo "unexpected rollback filestore member" >&2; exit 1 ;;
+        "filestore/"|"filestore/$DATABASE_NAME"|"filestore/$DATABASE_NAME/"*|"./filestore/"|"./filestore/$DATABASE_NAME"|"./filestore/$DATABASE_NAME/"*) ;;
+        *) echo "unexpected rollback filestore member: $member" >&2; exit 1 ;;
       esac
       case "$member" in /**|*".."*) echo "unsafe rollback filestore member" >&2; exit 1 ;; esac
     done < "$work/members"
@@ -826,32 +838,46 @@ restore_rollback_data() {
       mv "$work/filestore/$DATABASE_NAME" "/odoo-data/filestore/$DATABASE_NAME"
     fi
     chown -R 100:101 /odoo-data
-  '
+  ' || return 1
+}
+
+restore_rollback_files() {
+  local root="$1" snapshot="$2" host_uid="$(id -u)" host_gid="$(id -g)"
+  docker run --rm --user root -e HOST_UID="$host_uid" -e HOST_GID="$host_gid" \
+    -v "$root:/instance" -v "$snapshot:/snapshot:ro" "$ALPINE_IMAGE" sh -eu -c '
+      rm -rf /instance/runtime/addons /instance/runtime/release /instance/runtime/.m30-8-previous
+      mkdir -p /instance/runtime
+      cp -R /snapshot/addons /instance/runtime/addons
+      cp -R /snapshot/release /instance/runtime/release
+      cp /snapshot/config/instance.env /instance/config/instance.env
+      cp /snapshot/config/deployment-manifest.json /instance/config/deployment-manifest.json
+      cp /snapshot/config/product-manifest.json /instance/config/product-manifest.json
+      cp /snapshot/config/runtime-lock.json /instance/config/runtime-lock.json
+      cp /snapshot/config/environment_id /instance/config/environment_id
+      if [ -f /snapshot/modules.txt ]; then cp /snapshot/modules.txt /instance/runtime/modules.txt; else rm -f /instance/runtime/modules.txt; fi
+      chown -R "$HOST_UID:$HOST_GID" /instance/config /instance/runtime
+      find /instance/runtime/addons -type d -exec chmod 755 {} +
+      find /instance/runtime/addons -type f -exec chmod 644 {} +
+      find /instance/runtime/release -type d -exec chmod 700 {} +
+      find /instance/runtime/release -type f -exec chmod 600 {} +
+      chmod 600 /instance/runtime/modules.txt 2>/dev/null || true
+      chmod 600 /instance/config/instance.env /instance/config/deployment-manifest.json /instance/config/product-manifest.json /instance/config/runtime-lock.json /instance/config/environment_id
+    ' || return 1
+  if [[ -f "$snapshot/active.pmql" ]]; then
+    cat "$snapshot/active.pmql" | docker run --rm -i --user 100:101 -v "$root/license:/license" "$ALPINE_IMAGE" \
+      sh -eu -c 'cat > /license/active.pmql && chmod 600 /license/active.pmql' || return 1
+  fi
 }
 
 restore_rollback_snapshot() {
   local root="$1" snapshot="$2" slug="$3"
   compose "$root" down >/dev/null 2>&1 || true
-  rm -rf -- "$root/runtime/addons" "$root/runtime/release"
-  cp -a "$snapshot/addons" "$root/runtime/addons"
-  cp -a "$snapshot/release" "$root/runtime/release"
-  cp "$snapshot/config/instance.env" "$root/config/instance.env"
-  cp "$snapshot/config/deployment-manifest.json" "$root/config/deployment-manifest.json"
-  cp "$snapshot/config/product-manifest.json" "$root/config/product-manifest.json"
-  cp "$snapshot/config/runtime-lock.json" "$root/config/runtime-lock.json"
-  cp "$snapshot/config/environment_id" "$root/config/environment_id"
-  [[ -f "$snapshot/modules.txt" ]] && cp "$snapshot/modules.txt" "$root/runtime/modules.txt"
-  if [[ -f "$snapshot/active.pmql" ]]; then
-    cp "$snapshot/active.pmql" "$root/license/active.pmql"
-    chmod 600 "$root/license/active.pmql"
-  fi
-  chmod 600 "$root/config/instance.env" "$root/config/deployment-manifest.json" "$root/config/product-manifest.json" "$root/config/runtime-lock.json" "$root/config/environment_id"
-  load_instance "$root"
-  render_files "$root"
-  restore_rollback_data "$root" "$snapshot"
-  compose "$root" up -d >/dev/null
-  health_root "$root" >/dev/null
-  customer_ready "$slug" >/dev/null
+  restore_rollback_files "$root" "$snapshot" || { echo "ROLLBACK_RESTORE_STAGE=files" >&2; return 1; }
+  load_instance "$root" || { echo "ROLLBACK_RESTORE_STAGE=instance-load" >&2; return 1; }
+  render_files "$root" || { echo "ROLLBACK_RESTORE_STAGE=render" >&2; return 1; }
+  restore_rollback_data "$root" "$snapshot" || { echo "ROLLBACK_RESTORE_STAGE=data" >&2; return 1; }
+  compose "$root" up -d >/dev/null || { echo "ROLLBACK_RESTORE_STAGE=runtime-start" >&2; return 1; }
+  customer_ready "$slug" || { echo "ROLLBACK_RESTORE_STAGE=customer-ready" >&2; return 1; }
 }
 
 activate_target_release() {
@@ -1006,7 +1032,7 @@ customer_ready() {
   local root; root="$(require_instance "$1")"; load_instance "$root"
   local ok=1 release_ok=0 runtime_ok=0 application_ok=0 license_ok=0 first_user_ok=0
   if runtime_manifest_gate "$root"; then release_ok=1; runtime_ok=1; else ok=0; fi
-  if health "$1" >/dev/null; then
+  if health "$1"; then
     local odoo_id postgres_id image_ok=1
     odoo_id="$(compose "$root" ps -q odoo)"
     postgres_id="$(compose "$root" ps -q postgres)"
@@ -1016,7 +1042,9 @@ customer_ready() {
   else
     ok=0
   fi
-  if docker run --rm --user 100:101 -v "$root/license:/license:ro" -v "$root/config:/config:ro" -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -c 'test -f /license/active.pmql && test -f /config/environment_id && test -f /secrets/postgres_password && test -f /secrets/odoo_master_password'; then :; else ok=0; fi
+  if docker run --rm --user 100:101 -v "$root/license:/license:ro" -v "$root/config:/config:ro" -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -c 'test -r /license/active.pmql && test -r /config/environment_id && test -r /secrets/postgres_password && test -r /secrets/odoo_master_password'; then :; else
+    ok=0
+  fi
   if compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
 organization = env["pm.qms.organization"].sudo().search([("organization_kind", "=", "operational")], limit=1)
 if not organization: raise RuntimeError("No operational organization")
