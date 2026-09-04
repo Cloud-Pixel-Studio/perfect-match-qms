@@ -370,9 +370,11 @@ class PmQmsImplementationProject(models.Model):
             "inputs": source_process.inputs,
             "outputs": source_process.outputs,
         }
+        process_created = False
         try:
             with self.env.cr.savepoint():
                 process = Process.create(values)
+            process_created = True
         except IntegrityError:
             processes = Process.search(identity_domain, limit=2)
             if len(processes) > 1:
@@ -383,7 +385,13 @@ class PmQmsImplementationProject(models.Model):
             if not processes:
                 raise
             process = processes[0]
-        self.env.user.invalidate_recordset(["qms_effective_process_ids"])
+        if process_created:
+            self.env.user.invalidate_recordset(["qms_effective_process_ids"])
+            # ir.rule._compute_domain is an Odoo 19 ormcache in the default
+            # registry cache. User-field invalidation does not evict its
+            # process-dependent domain, so refresh it only after a new
+            # operational process changes the authorization input.
+            self.env.registry.clear_cache("default")
         return process
 
     def _task_deadline(self):
