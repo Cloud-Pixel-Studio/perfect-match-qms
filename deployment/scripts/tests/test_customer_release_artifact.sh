@@ -29,7 +29,7 @@ trap cleanup EXIT
 
 repack_variant() {
   local name="$1" dir="$TEST_ROOT/$1" output="$TEST_ROOT/$1.tar.gz"
-  (cd "$dir" && find addons deployment -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
+  (cd "$dir" && { find addons deployment -type f -print0; printf 'manifest.json\0'; } | sort -z | xargs -0 sha256sum > checksums.sha256)
   tar -C "$dir" -czf "$output" .
   sha256sum "$output" > "$output.sha256"
   printf '%s\n' "$output"
@@ -57,6 +57,12 @@ provision_variant_should_fail() {
   [[ ! -e "$PMQMS_CUSTOMER_INSTANCE_ROOT/$slug" ]] || fail "$label left a persistent instance"
 }
 
+provision_variant_should_fail_with_reason() {
+  local label="$1" variant="$2" slug="$3" reason="$4"
+  provision_variant_should_fail "$label" "$variant" "$slug"
+  grep -Fq "$reason" "$TEST_ROOT/$label.out" || fail "$label did not report $reason"
+}
+
 expect_fail bundle-no-release "$SCRIPT" bundle --output "$TEST_ROOT/missing-release.tar.gz"
 expect_fail init-no-release "$SCRIPT" init m30-7-no-release --type test --port 19109
 expect_fail unknown-release-tag "$SCRIPT" bundle --release v99.98.97-rc0 --output "$TEST_ROOT/unknown.tar.gz"
@@ -81,6 +87,11 @@ set_manifest source-missing 'del(.source_sha)'
 repack_variant source-missing >/dev/null
 provision_variant_should_fail source-sha-missing source-missing m30-7-source-missing
 
+variant_from_valid source-tag-mismatch
+set_manifest source-tag-mismatch '.source_sha = ("a" * 40)'
+repack_variant source-tag-mismatch >/dev/null
+provision_variant_should_fail_with_reason source-sha-release-mismatch source-tag-mismatch m30-7-source-tag-mismatch SOURCE_SHA_DOES_NOT_MATCH_RELEASE_TAG
+
 variant_from_valid runtime-mismatch
 set_manifest runtime-mismatch '.runtime_lock_sha256 = ("0" * 64)'
 repack_variant runtime-mismatch >/dev/null
@@ -90,6 +101,11 @@ variant_from_valid internal-tamper
 printf 'tampered fixture content\n' >> "$(find "$TEST_ROOT/internal-tamper/addons" -type f -print -quit)"
 repack_without_checksum_update internal-tamper >/dev/null
 provision_variant_should_fail internal-checksum-tamper internal-tamper m30-7-internal-tamper
+
+variant_from_valid manifest-internal-tamper
+set_manifest manifest-internal-tamper '.product_version = "v99.99.99-rc1"'
+repack_without_checksum_update manifest-internal-tamper >/dev/null
+provision_variant_should_fail_with_reason manifest-checksum-tamper manifest-internal-tamper m30-7-manifest-tamper 'bundle internal checksum mismatch'
 
 variant_from_valid demo-contamination
 set_manifest demo-contamination '.contains_demo_data = true'
@@ -149,4 +165,4 @@ fi
 grep -Fxq 'CUSTOMER_READY=NO' "$TEST_ROOT/release-mismatch.out" || fail "customer-ready mismatch did not report NO"
 mv "$TEST_ROOT/instance.env.backup" "$ROOT/config/instance.env"
 
-echo "customer release artifact tests: 17 PASS (A-O plus source provenance)"
+echo "customer release artifact tests: 19 PASS (A-O plus source provenance and checksum binding)"

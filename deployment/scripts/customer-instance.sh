@@ -165,6 +165,9 @@ validate_bundle_archive() {
   fi
   BUNDLE_PRODUCT_VERSION="$(jq -er '.product_version' "$manifest")"
   BUNDLE_SOURCE_SHA="$(jq -er '.source_sha' "$manifest")"
+  local expected_release_sha
+  expected_release_sha="$(release_tag_sha "$BUNDLE_PRODUCT_VERSION")" || die "approved release tag cannot be resolved locally"
+  [[ "$BUNDLE_SOURCE_SHA" == "$expected_release_sha" ]] || die "SOURCE_SHA_DOES_NOT_MATCH_RELEASE_TAG"
 }
 usage() {
   cat <<'EOF'
@@ -569,7 +572,7 @@ bundle() (
   odoo_image="$(jq -r '.odoo.image' "$tmp/deployment/runtime/runtime-lock.json")"
   postgres_image="$(jq -r '.postgres.image' "$tmp/deployment/runtime/runtime-lock.json")"
   jq -n --arg product "$release" --arg source "$sha" --arg built "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg lock "$lock_sha" --arg odoo "$odoo_image" --arg postgres "$postgres_image" '{product_version:$product,release_tag:$product,source_sha:$source,built_at:$built,environment_types:["customer","test"],runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres,contains_demo_data:false,contains_private_signing_key:false}' > "$tmp/manifest.json"
-  (cd "$tmp" && find addons deployment -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
+  (cd "$tmp" && { find addons deployment -type f -print0; printf 'manifest.json\0'; } | sort -z | xargs -0 sha256sum > checksums.sha256)
   if find "$tmp" -type f \( -name '.env' -o -name 'id_rsa' -o -name '*.pem' -o -name '*.key' \) -print -quit | grep -q .; then die "private key or secret path detected"; fi
   mkdir -p "$(dirname "$output")"; tar -C "$tmp" -czf "$output" .; sha256sum "$output" > "$output.sha256"
   if tar -xOzf "$output" ./manifest.json 2>/dev/null | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
