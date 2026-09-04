@@ -13,8 +13,6 @@ export TMPDIR="$WORK/tmp"
 mkdir -p "$PMQMS_CUSTOMER_INSTANCE_ROOT" "$TMPDIR" "$WORK/bundle/deployment/customer" \
   "$WORK/bundle/deployment/docker/customer" "$WORK/bundle/deployment/runtime" "$WORK/bundle/addons/example"
 
-CURRENT_SOURCE="41bef38bbb2287ca18a8dbefab30784f17011cb4"
-TARGET_SOURCE="c0e263e06261fb3f1aaf2a51561e6510be31b84b"
 CURRENT_PRODUCT="v1.0.0-rc11"
 TARGET_PRODUCT="v99.99.99-rc0"
 TARGET_BUNDLE="$WORK/target.tar.gz"
@@ -31,6 +29,20 @@ cleanup() {
 trap cleanup EXIT
 
 cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$WORK/bundle/deployment/runtime/runtime-lock.json"
+TEST_REPO_ROOT="$WORK/source-history"
+mkdir -p "$TEST_REPO_ROOT/deployment/runtime"
+cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$TEST_REPO_ROOT/deployment/runtime/runtime-lock.json"
+git -C "$TEST_REPO_ROOT" init -q
+git -C "$TEST_REPO_ROOT" config user.name "M30.8 test fixture"
+git -C "$TEST_REPO_ROOT" config user.email "m30.8-fixture@example.invalid"
+printf 'initial release fixture\n' > "$TEST_REPO_ROOT/release.txt"
+git -C "$TEST_REPO_ROOT" add deployment/runtime/runtime-lock.json release.txt
+git -C "$TEST_REPO_ROOT" commit -qm "initial release fixture"
+CURRENT_SOURCE="$(git -C "$TEST_REPO_ROOT" rev-parse HEAD)"
+printf 'target release fixture\n' >> "$TEST_REPO_ROOT/release.txt"
+git -C "$TEST_REPO_ROOT" add release.txt
+git -C "$TEST_REPO_ROOT" commit -qm "target release fixture"
+TARGET_SOURCE="$(git -C "$TEST_REPO_ROOT" rev-parse HEAD)"
 printf 'bundle_pm_qms_core\n' > "$WORK/bundle/deployment/customer/modules.txt"
 cat > "$WORK/bundle/deployment/docker/customer/compose.yml.template" <<'EOF'
 services:
@@ -56,6 +68,8 @@ jq -n --arg product "$TARGET_PRODUCT" --arg source "$TARGET_SOURCE" \
   > "$WORK/bundle/manifest.json"
 
 source "$SCRIPT"
+REPO_ROOT="$TEST_REPO_ROOT"
+RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
 
 make_instance() {
   local slug="$1" product="${2:-$CURRENT_PRODUCT}" source="${3:-$CURRENT_SOURCE}" root
