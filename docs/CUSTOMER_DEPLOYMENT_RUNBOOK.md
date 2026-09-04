@@ -5,16 +5,21 @@ replace DNS, certificate, customer identity, or licensing approval procedures.
 
 ## 1. Build the approved bundle
 
-Run from a clean checkout at an approved tag:
+Run from a clean checkout at the approved release tag. The release tag and
+customer bundle are explicit inputs; do not rely on a deployment default.
 
 ```bash
+RELEASE_TAG=<APPROVED_RELEASE_TAG>
+BUNDLE_PATH=<APPROVED_CUSTOMER_BUNDLE>
 ./deployment/scripts/customer-instance.sh bundle \
-  --release v1.0.0-rc7 \
-  --output /opt/perfect-match/bundles/perfect-match-qms-v1.0.0-rc7-customer.tar.gz
+  --release "$RELEASE_TAG" \
+  --output "$BUNDLE_PATH"
 ```
 
-The command writes a manifest and SHA-256 file and rejects Demo identifiers,
-private key paths, and forbidden bundle paths.
+The command writes a self-identifying manifest and SHA-256 sidecar. The
+manifest's product version, source commit, runtime lock, and safety flags are
+authoritative for the customer artifact. The bundle is rejected if its tag,
+checksums, runtime lock, or safety metadata do not agree.
 
 ## 2. Initialize an instance
 
@@ -23,14 +28,18 @@ Choose a unique slug and loopback port. Do not use `admin/admin`.
 ```bash
 ./deployment/scripts/customer-instance.sh provision northstar-precision \
   --type customer \
-  --bundle /opt/perfect-match/bundles/perfect-match-qms-v1.0.0-rc7-customer.tar.gz
+  --bundle "$BUNDLE_PATH"
 ./deployment/scripts/customer-instance.sh config northstar-precision
 ./deployment/scripts/customer-instance.sh bootstrap northstar-precision
 ```
 
-The command creates fresh PostgreSQL, Odoo master, and initial technical admin
-secrets. Secrets remain outside Git and are not printed by deployment commands.
-Use `credentials <slug>` only when local operator access is required.
+Provision validates the complete bundle before creating the instance, then
+derives and persists `product_version` and `source_release_sha` from the
+validated product manifest. A supplied bundle cannot be silently overridden by
+an environment release default. The command creates fresh PostgreSQL, Odoo
+master, and initial technical admin secrets. Secrets remain outside Git and
+are not printed by deployment commands. Use `credentials <slug>` only when
+local operator access is required.
 
 ## 3. Offline activation
 

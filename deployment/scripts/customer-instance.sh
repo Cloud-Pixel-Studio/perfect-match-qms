@@ -5,7 +5,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 INSTANCE_ROOT_BASE="${PMQMS_CUSTOMER_INSTANCE_ROOT:-/opt/perfect-match/instances}"
-DEFAULT_RELEASE="${PMQMS_CUSTOMER_RELEASE:-v1.0.0-rc7}"
 MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
 COMPOSE_TEMPLATE="$REPO_ROOT/deployment/docker/customer/compose.yml.template"
 ODOO_TEMPLATE="$REPO_ROOT/deployment/docker/customer/odoo.conf.template"
@@ -93,12 +92,11 @@ runtime_manifest_gate() {
   local lock="$root/config/runtime-lock.json" manifest="$root/config/deployment-manifest.json" product="$root/config/product-manifest.json"
   load_runtime_for_root "$root"
   runtime_verify_lock "$lock"
-  [[ -s "$manifest" && -s "$product" ]] || die "deployment/product manifests are missing"
+  [[ -s "$manifest" && -s "$product" ]] || return 1
   local lock_sha; lock_sha="$(sha256sum "$lock" | awk '{print $1}')"
-  jq -e --arg sha "$lock_sha" --arg odoo "$ODOO_IMAGE" --arg postgres "$POSTGRES_IMAGE" \
-    '(.runtime_lock_schema == 1) and (.runtime_lock_sha256 == $sha) and (.odoo_image == $odoo) and (.postgres_image == $postgres)' "$manifest" >/dev/null || die "deployment manifest runtime identity mismatch"
-  jq -e --arg sha "$lock_sha" --arg odoo "$ODOO_IMAGE" --arg postgres "$POSTGRES_IMAGE" \
-    '(.runtime_lock_sha256 == $sha) and (.odoo_image == $odoo) and (.postgres_image == $postgres)' "$product" >/dev/null || die "product bundle runtime identity mismatch"
+  jq -e --arg sha "$lock_sha" --arg odoo "$ODOO_IMAGE" --arg postgres "$POSTGRES_IMAGE" --arg instance_product "${PRODUCT_VERSION:-}" --arg instance_source "${SOURCE_RELEASE_SHA:-}" '(.runtime_lock_schema == 1) and (.runtime_lock_sha256 == $sha) and (.odoo_image == $odoo) and (.postgres_image == $postgres) and (.product_version == $instance_product) and (.source_release_sha == $instance_source) and (.source_release_sha | type == "string") and (.source_release_sha | test("^[0-9a-f]{40}$"))' "$manifest" >/dev/null || return 1
+  jq -e --arg sha "$lock_sha" --arg odoo "$ODOO_IMAGE" --arg postgres "$POSTGRES_IMAGE" --arg expected_product "$(jq -er '.product_version' "$manifest")" --arg expected_source "$(jq -er '.source_release_sha' "$manifest")" '(.runtime_lock_sha256 == $sha) and (.odoo_image == $odoo) and (.postgres_image == $postgres) and (.product_version == $expected_product) and (.source_sha == $expected_source) and (.product_version | type == "string") and (.product_version | test("^v[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?$")) and (.source_sha | type == "string") and (.source_sha | test("^[0-9a-f]{40}$"))' "$product" >/dev/null || return 1
+  return 0
 }
 protected_slug() {
   case "$1" in pmqms_demo|pmqms_dev|pmqms_test|pmqms_oliva_pilot|demo|dev|oliva*) return 0;; esac
@@ -132,7 +130,42 @@ prepare_permissions() {
 }
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
+release_version_ok() { [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; }
+release_tag_sha() { local release="$1"; release_version_ok "$release" || return 1; git -C "$REPO_ROOT" show-ref --verify --quiet "refs/tags/$release" || return 1; git -C "$REPO_ROOT" rev-parse --verify "refs/tags/$release^{commit}"; }
 
+validate_bundle_archive() {
+  local bundle="$1" requested_type="$2" tmp="$3"
+  [[ -s "$bundle.sha256" ]] || die "bundle checksum sidecar missing"
+  sha256sum -c "$bundle.sha256" >/dev/null 2>&1 || die "bundle outer checksum mismatch"
+  if tar -tzf "$bundle" | grep -Eq '(^/|(^|/)\.\.(\/|$))'; then
+    die "bundle contains unsafe archive paths"
+  fi
+  tar -xzf "$bundle" -C "$tmp"
+  [[ -d "$tmp/addons" ]] || die "bundle has no addons"
+  local manifest="$tmp/manifest.json" lock="$tmp/deployment/runtime/runtime-lock.json"
+  [[ -s "$manifest" && -s "$lock" && -s "$tmp/checksums.sha256" ]] || die "bundle is missing manifest, checksums, or runtime lock"
+  (cd "$tmp" && sha256sum -c checksums.sha256 >/dev/null) || die "bundle internal checksum mismatch"
+  validate_runtime_lock "$lock"
+  BUNDLE_LOCK_SHA="$(sha256sum "$lock" | awk '{print $1}')"
+  BUNDLE_ODOO_IMAGE="$(jq -er '.odoo.image' "$lock")"
+  BUNDLE_POSTGRES_IMAGE="$(jq -er '.postgres.image' "$lock")"
+  jq -e '(.product_version | type == "string") and (.product_version | test("^v[0-9]+\\.[0-9]+\\.[0-9]+(-rc[0-9]+)?$"))' "$manifest" >/dev/null || die "bundle manifest product_version is invalid"
+  jq -e '(.source_sha | type == "string") and (.source_sha | test("^[0-9a-f]{40}$"))' "$manifest" >/dev/null || die "bundle manifest source_sha is invalid"
+  jq -e --arg type "$requested_type" '(.environment_types | type == "array") and (.environment_types | index($type) != null)' "$manifest" >/dev/null || die "bundle does not authorize the requested environment type"
+  jq -e '(.release_tag | type == "string") and (.release_tag == .product_version)' "$manifest" >/dev/null || die "bundle manifest release tag identity is invalid"
+  jq -e --arg sha "$BUNDLE_LOCK_SHA" --arg odoo "$BUNDLE_ODOO_IMAGE" --arg postgres "$BUNDLE_POSTGRES_IMAGE" \
+    '(.runtime_lock_sha256 == $sha) and (.odoo_image == $odoo) and (.postgres_image == $postgres)' "$manifest" >/dev/null || die "bundle manifest does not match runtime lock"
+  jq -e '(.contains_demo_data | type == "boolean") and (.contains_demo_data == false)' "$manifest" >/dev/null || die "bundle Demo safety flag is invalid"
+  jq -e '(.contains_private_signing_key | type == "boolean") and (.contains_private_signing_key == false)' "$manifest" >/dev/null || die "bundle private-key safety flag is invalid"
+  if tar -tzf "$bundle" | grep -Eiq '(^|/)(\.env|id_rsa|.*private.*key.*|.*\.pem|.*\.key|.*secret.*|.*credentials.*)($|/)'; then
+    die "bundle contains a secret or private-key path"
+  fi
+  if grep -RInaE 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" >/dev/null 2>&1; then
+    die "Demo content detected in bundle"
+  fi
+  BUNDLE_PRODUCT_VERSION="$(jq -er '.product_version' "$manifest")"
+  BUNDLE_SOURCE_SHA="$(jq -er '.source_sha' "$manifest")"
+}
 usage() {
   cat <<'EOF'
 Usage: customer-instance.sh <command> [arguments]
@@ -153,7 +186,7 @@ Usage: customer-instance.sh <command> [arguments]
   retention <slug> [--now utc] [--apply]
   upgrade <slug> --to <release-tag> [--approve-runtime-change]
   customer-ready <slug>
-  bundle --output file.tar.gz [--release tag]
+  bundle --output file.tar.gz --release tag
   destroy <slug> --confirm-ephemeral
 
 All state is kept outside Git. Customer and test lifecycles are guarded by
@@ -168,6 +201,7 @@ write_manifest() {
 INSTANCE_SLUG=$INSTANCE_SLUG
 ENVIRONMENT_TYPE=$ENVIRONMENT_TYPE
 PRODUCT_VERSION=$PRODUCT_VERSION
+SOURCE_RELEASE_SHA=${SOURCE_RELEASE_SHA:-}
 DOMAIN=$DOMAIN
 DATABASE_NAME=$DATABASE_NAME
 HTTP_PORT=$HTTP_PORT
@@ -180,6 +214,7 @@ EOF
   "instance_slug": "${INSTANCE_SLUG}",
   "environment_type": "${ENVIRONMENT_TYPE}",
   "product_version": "${PRODUCT_VERSION}",
+  "source_release_sha": "${SOURCE_RELEASE_SHA}",
   "deployed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "domain": "${DOMAIN}",
   "database_name": "${DATABASE_NAME}",
@@ -210,7 +245,7 @@ init_instance() {
   local slug="$1"; shift
   slug_ok "$slug" || die "slug must be lowercase, filesystem-safe, and Docker-safe"
   protected_slug "$slug" && die "protected environment slug"
-  local type="customer" domain="customer.example.invalid" release="$DEFAULT_RELEASE" port="8180"
+  local type="customer" domain="customer.example.invalid" release="" port="8180"
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --type) type="${2:-}"; shift 2;;
@@ -223,10 +258,12 @@ init_instance() {
   [[ "$type" == customer || "$type" == test ]] || die "type must be customer or test"
   [[ "$port" =~ ^[0-9]+$ && "$port" -ge 1024 && "$port" -le 65535 ]] || die "port must be 1024-65535"
   local root; root="$(instance_dir "$slug")"; [[ ! -e "$root" ]] || die "instance already exists: $slug"
+  [[ -n "$release" ]] || die "--release is required"
+  release_version_ok "$release" || die "release must be an approved release version"
   umask 077; mkdir -p "$root"/{config,secrets,identity,license,activation,backups,runtime/addons}
   cp "$RUNTIME_LOCK_FILE" "$root/config/runtime-lock.json"
   chmod 600 "$root/config/runtime-lock.json"
-  INSTANCE_SLUG="$slug" ENVIRONMENT_TYPE="$type" PRODUCT_VERSION="$release" DOMAIN="$domain" DATABASE_NAME="pmqms_${slug//-/_}" HTTP_PORT="$port"
+  INSTANCE_SLUG="$slug" ENVIRONMENT_TYPE="$type" PRODUCT_VERSION="$release" SOURCE_RELEASE_SHA="${SOURCE_RELEASE_SHA:-}" DOMAIN="$domain" DATABASE_NAME="pmqms_${slug//-/_}" HTTP_PORT="$port"
   random_secret > "$root/secrets/postgres_password"
   random_secret > "$root/secrets/odoo_master_password"
   random_secret > "$root/secrets/initial_admin_password"
@@ -243,23 +280,33 @@ credentials() {
 }
 
 provision() (
-  local slug="$1"; shift; local bundle="" type="test" port="8180"
+  local slug="$1"; shift; local bundle="" type="test" port="8180" tmp="" root=""
   while [[ $# -gt 0 ]]; do case "$1" in --bundle) bundle="${2:-}"; shift 2;; --type) type="${2:-}"; shift 2;; --port) port="${2:-}"; shift 2;; *) die "unknown provision option: $1";; esac; done
-  [[ -f "$bundle" ]] || die "bundle not found"; [[ "$type" == test || "$type" == customer ]] || die "invalid type"
-  init_instance "$slug" --type "$type" --port "$port"
-  local root; root="$(require_instance "$slug")"; load_instance "$root"; local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
-  tar -xzf "$bundle" -C "$tmp"; [[ -d "$tmp/addons" ]] || die "bundle has no addons"
-  [[ -s "$tmp/deployment/runtime/runtime-lock.json" && -s "$tmp/manifest.json" ]] || die "bundle has no runtime lock or manifest"
-  validate_runtime_lock "$tmp/deployment/runtime/runtime-lock.json"
-  local bundle_lock_sha; bundle_lock_sha="$(sha256sum "$tmp/deployment/runtime/runtime-lock.json" | awk '{print $1}')"
-  jq -e --arg sha "$bundle_lock_sha" --arg odoo "$(jq -r '.odoo.image' "$tmp/deployment/runtime/runtime-lock.json")" --arg postgres "$(jq -r '.postgres.image' "$tmp/deployment/runtime/runtime-lock.json")" '(.runtime_lock_sha256 == $sha) and (.odoo_image == $odoo) and (.postgres_image == $postgres)' "$tmp/manifest.json" >/dev/null || die "bundle manifest does not match runtime lock"
+  [[ -n "$bundle" && -f "$bundle" ]] || die "bundle not found"
+  [[ "$type" == test || "$type" == customer ]] || die "invalid type"
+  trap 'provision_cleanup "${root:-}" "${tmp:-}"' EXIT
+  tmp="$(new_temp_dir)"
+  validate_bundle_archive "$bundle" "$type" "$tmp"
+  SOURCE_RELEASE_SHA="$BUNDLE_SOURCE_SHA"
+  init_instance "$slug" --type "$type" --port "$port" --release "$BUNDLE_PRODUCT_VERSION"
+  root="$(require_instance "$slug")"; load_instance "$root"
   cp "$tmp/deployment/runtime/runtime-lock.json" "$root/config/runtime-lock.json"; chmod 600 "$root/config/runtime-lock.json"
   rm -rf "$root/runtime/addons"; mkdir -p "$root/runtime/addons"; cp -a "$tmp/addons/." "$root/runtime/addons/"; cp "$tmp/manifest.json" "$root/config/product-manifest.json"
+  jq --arg product "$BUNDLE_PRODUCT_VERSION" --arg source "$BUNDLE_SOURCE_SHA" '.product_version=$product | .source_release_sha=$source' "$root/config/deployment-manifest.json" > "$root/config/deployment-manifest.json.tmp"
+  mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"
   update_manifest_runtime "$root" "$root/config/runtime-lock.json"
   render_files "$root"
   find "$root/runtime/addons" -type d -exec chmod 755 {} +; find "$root/runtime/addons" -type f -exec chmod 644 {} +; chmod -R a-w "$root/runtime/addons"
   log "provisioned runtime assets for $slug"
 )
+
+provision_cleanup() {
+  local rc="$?" root="${1:-}" tmp="${2:-}"
+  trap - EXIT
+  cleanup_temp_dir "$tmp" || rc=1
+  if [[ "$rc" != 0 && -n "$root" && -d "$root" ]]; then rm -rf -- "$root"; fi
+  exit "$rc"
+}
 
 up() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" up -d; }
 down() { local root; root="$(require_instance "$1")"; load_instance "$root"; compose "$root" down; }
@@ -508,24 +555,26 @@ retention() (
 )
 
 bundle() (
-  local output="" release="$DEFAULT_RELEASE"
+  local output="" release=""
   while [[ $# -gt 0 ]]; do case "$1" in --output) output="${2:-}"; shift 2;; --release) release="${2:-}"; shift 2;; *) die "unknown bundle option: $1";; esac; done
-  [[ -n "$output" ]] || die "--output is required"; git -C "$REPO_ROOT" rev-parse "$release^{commit}" >/dev/null 2>&1 || die "release tag not found"
+  [[ -n "$output" ]] || die "--output is required"
+  [[ -n "$release" ]] || die "--release is required"
+  local sha; sha="$(release_tag_sha "$release")" || die "approved release tag not found"
   local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
   git -C "$REPO_ROOT" archive "$release" addons deployment/customer deployment/runtime/runtime-lock.json deployment/docker/customer deployment/nginx/customer.conf.example deployment/scripts/customer-instance.sh | tar -x -C "$tmp"
   [[ -s "$tmp/deployment/runtime/runtime-lock.json" ]] || die "release has no runtime lock"
   rm -rf "$tmp/deployment/demo" "$tmp/deployment/docker/demo"; find "$tmp/addons" -type d -name __pycache__ -prune -exec rm -rf {} +; find "$tmp/addons" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
-  local sha; sha="$(git -C "$REPO_ROOT" rev-parse "$release^{commit}")"
   local lock_sha odoo_image postgres_image
   lock_sha="$(sha256sum "$tmp/deployment/runtime/runtime-lock.json" | awk '{print $1}')"
   odoo_image="$(jq -r '.odoo.image' "$tmp/deployment/runtime/runtime-lock.json")"
   postgres_image="$(jq -r '.postgres.image' "$tmp/deployment/runtime/runtime-lock.json")"
-  jq -n --arg product "$release" --arg source "$sha" --arg built "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg lock "$lock_sha" --arg odoo "$odoo_image" --arg postgres "$postgres_image" '{product_version:$product,source_sha:$source,built_at:$built,environment_types:["customer","test"],runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres,contains_demo_data:false,contains_private_signing_key:false}' > "$tmp/manifest.json"
+  jq -n --arg product "$release" --arg source "$sha" --arg built "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg lock "$lock_sha" --arg odoo "$odoo_image" --arg postgres "$postgres_image" '{product_version:$product,release_tag:$product,source_sha:$source,built_at:$built,environment_types:["customer","test"],runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres,contains_demo_data:false,contains_private_signing_key:false}' > "$tmp/manifest.json"
   (cd "$tmp" && find addons deployment -type f -print0 | sort -z | xargs -0 sha256sum > checksums.sha256)
+  if find "$tmp" -type f \( -name '.env' -o -name 'id_rsa' -o -name '*.pem' -o -name '*.key' \) -print -quit | grep -q .; then die "private key or secret path detected"; fi
   mkdir -p "$(dirname "$output")"; tar -C "$tmp" -czf "$output" .; sha256sum "$output" > "$output.sha256"
   if tar -xOzf "$output" ./manifest.json 2>/dev/null | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
-  if grep -RInaE --exclude='customer-instance.sh' 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" "$tmp/deployment" >/dev/null 2>&1; then die "Demo content detected in bundle"; fi
-  echo "bundle=$output"; echo "checksum=$output.sha256"; echo "source_sha=$sha"
+  if grep -RInaE 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" >/dev/null 2>&1; then die "Demo content detected in bundle"; fi
+  echo "bundle=$output"; echo "checksum=$output.sha256"; echo "product_version=$release"; echo "source_sha=$sha"
 )
 
 upgrade() {
@@ -571,16 +620,21 @@ upgrade() {
 }
 
 customer_ready() {
-  local root; root="$(require_instance "$1")"; load_instance "$root"; local ok=1
-  runtime_manifest_gate "$root" || ok=0
-  health "$1" >/dev/null || ok=0
-  local odoo_id postgres_id
-  odoo_id="$(compose "$root" ps -q odoo)"
-  postgres_id="$(compose "$root" ps -q postgres)"
-  [[ -n "$odoo_id" && "$(docker inspect -f '{{.Image}}' "$odoo_id")" == "$(docker image inspect -f '{{.Id}}' "$ODOO_IMAGE")" ]] || ok=0
-  [[ -n "$postgres_id" && "$(docker inspect -f '{{.Image}}' "$postgres_id")" == "$(docker image inspect -f '{{.Id}}' "$POSTGRES_IMAGE")" ]] || ok=0
-  docker run --rm --user 100:101 -v "$root/license:/license:ro" -v "$root/config:/config:ro" -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -c 'test -f /license/active.pmql && test -f /config/environment_id && test -f /secrets/postgres_password && test -f /secrets/odoo_master_password' || ok=0
-  compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY' || ok=0
+  local root; root="$(require_instance "$1")"; load_instance "$root"
+  local ok=1 release_ok=0 runtime_ok=0 application_ok=0 license_ok=0 first_user_ok=0
+  if runtime_manifest_gate "$root"; then release_ok=1; runtime_ok=1; else ok=0; fi
+  if health "$1" >/dev/null; then
+    local odoo_id postgres_id image_ok=1
+    odoo_id="$(compose "$root" ps -q odoo)"
+    postgres_id="$(compose "$root" ps -q postgres)"
+    [[ -n "$odoo_id" && "$(docker inspect -f '{{.Image}}' "$odoo_id")" == "$(docker image inspect -f '{{.Id}}' "$ODOO_IMAGE")" ]] || image_ok=0
+    [[ -n "$postgres_id" && "$(docker inspect -f '{{.Image}}' "$postgres_id")" == "$(docker image inspect -f '{{.Id}}' "$POSTGRES_IMAGE")" ]] || image_ok=0
+    if [[ "$image_ok" == 1 ]]; then application_ok=1; else ok=0; fi
+  else
+    ok=0
+  fi
+  if docker run --rm --user 100:101 -v "$root/license:/license:ro" -v "$root/config:/config:ro" -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -c 'test -f /license/active.pmql && test -f /config/environment_id && test -f /secrets/postgres_password && test -f /secrets/odoo_master_password'; then :; else ok=0; fi
+  if compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
 organization = env["pm.qms.organization"].sudo().search([("organization_kind", "=", "operational")], limit=1)
 if not organization: raise RuntimeError("No operational organization")
 if not env["pm.qms.person"].sudo().search_count([("organization_id", "=", organization.id), ("user_id", "!=", False)]): raise RuntimeError("No licensed first user")
@@ -589,7 +643,18 @@ status = env["pm.qms.license"].sudo().current_status()["status"]
 if not license or status not in ("valid", "expiring"): raise RuntimeError("License is not usable")
 print("customer_ready_application=pass")
 PY
-  if [[ "$ok" == 1 ]]; then echo "CUSTOMER_READY=YES"; else echo "CUSTOMER_READY=NO"; return 1; fi
+  then
+    first_user_ok=1
+    license_ok=1
+  else
+    ok=0
+  fi
+  [[ "$release_ok" == 1 ]] && echo "CUSTOMER_READY_RELEASE_IDENTITY=pass" || echo "CUSTOMER_READY_RELEASE_IDENTITY=fail"
+  [[ "$runtime_ok" == 1 ]] && echo "CUSTOMER_READY_RUNTIME_IDENTITY=pass" || echo "CUSTOMER_READY_RUNTIME_IDENTITY=fail"
+  [[ "$application_ok" == 1 ]] && echo "CUSTOMER_READY_APPLICATION=pass" || echo "CUSTOMER_READY_APPLICATION=fail"
+  [[ "$license_ok" == 1 ]] && echo "CUSTOMER_READY_LICENSE=pass" || echo "CUSTOMER_READY_LICENSE=fail"
+  [[ "$first_user_ok" == 1 ]] && echo "CUSTOMER_READY_FIRST_USER=pass" || echo "CUSTOMER_READY_FIRST_USER=fail"
+  if [[ "$ok" == 1 && "$release_ok" == 1 && "$runtime_ok" == 1 && "$application_ok" == 1 && "$license_ok" == 1 && "$first_user_ok" == 1 ]]; then echo "CUSTOMER_READY=YES"; else echo "CUSTOMER_READY=NO"; return 1; fi
 }
 
 destroy() {
