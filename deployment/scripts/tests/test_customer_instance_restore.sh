@@ -133,6 +133,17 @@ SOURCE_ATTACHMENT_SHA="$(jq -r .attachment_sha256 "$WORK/source.json")"
 SOURCE_COUNTS="$(jq -c .counts "$WORK/source.json")"
 SOURCE_RECORD="$(jq -r .implementation_id "$WORK/source.json")"
 
+# Exercise the exact M30.7 legacy layout: runtime/release did not exist, and
+# the legacy runtime files are deliberately different from the approved tag.
+TEST_RELEASE_SHA="$(git -C "$REPO_ROOT" rev-parse "$TEST_RELEASE^{commit}")"
+SOURCE_TAG_MODULES_SHA="$(git -C "$REPO_ROOT" show "$TEST_RELEASE:deployment/customer/modules.txt" | sha256sum | awk '{print $1}')"
+SOURCE_TAG_COMPOSE_SHA="$(git -C "$REPO_ROOT" show "$TEST_RELEASE:deployment/docker/customer/compose.yml.template" | sha256sum | awk '{print $1}')"
+SOURCE_TAG_ODOO_SHA="$(git -C "$REPO_ROOT" show "$TEST_RELEASE:deployment/docker/customer/odoo.conf.template" | sha256sum | awk '{print $1}')"
+printf '%s\n' '# legacy runtime module list is not release authority' > "$SOURCE_ROOT/runtime/modules.txt"
+printf '%s\n' '# legacy runtime compose is not release authority' >> "$SOURCE_ROOT/runtime/compose.yml"
+rm -rf -- "$SOURCE_ROOT/runtime/release"
+[[ ! -e "$SOURCE_ROOT/runtime/release" ]]
+
 SOURCE_HEALTH="$(bash "$CUSTOMER_SCRIPT" health "$SLUG")"
 grep -Eq 'customer_http=(200|302|303)' <<<"$SOURCE_HEALTH"
 TRANSACTION_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -168,10 +179,23 @@ cp "$WORK/source.json" "$WORK/evidence/verification.json"
 chmod 644 "$WORK/evidence/verification.json"
 RTO_START_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 RTO_START_EPOCH="$(date +%s)"
-M29_ORG_CODE="$M29_ORG_CODE" M29_PROJECT_NAME="$M29_PROJECT_NAME" M29_ATTACHMENT_NAME="$M29_ATTACHMENT_NAME" \
+RESTORE_OUTPUT="$(M29_ORG_CODE="$M29_ORG_CODE" M29_PROJECT_NAME="$M29_PROJECT_NAME" M29_ATTACHMENT_NAME="$M29_ATTACHMENT_NAME" \
   PMQMS_AGE_BIN="$AGE_BIN" PMQMS_AGE_VERSION="$AGE_VERSION" \
   bash "$CUSTOMER_SCRIPT" restore-validate "$SLUG" "$ARCHIVE" --identity-file "$WORK/identity.age" \
-  --verification-file "$WORK/evidence/verification.json" >/dev/null
+  --verification-file "$WORK/evidence/verification.json" 2>&1)"
+printf '%s\n' "$RESTORE_OUTPUT" > "$WORK/restore-output.txt"
+grep -Fxq "restore_source_release_tag=$TEST_RELEASE" <<<"$RESTORE_OUTPUT"
+grep -Fxq "restore_source_release_sha=$TEST_RELEASE_SHA" <<<"$RESTORE_OUTPUT"
+grep -Fxq 'restore_release_assets_origin=approved-tag' <<<"$RESTORE_OUTPUT"
+grep -Fxq "restore_modules_sha256=$SOURCE_TAG_MODULES_SHA" <<<"$RESTORE_OUTPUT"
+grep -Fxq "restore_compose_template_sha256=$SOURCE_TAG_COMPOSE_SHA" <<<"$RESTORE_OUTPUT"
+grep -Fxq "restore_odoo_template_sha256=$SOURCE_TAG_ODOO_SHA" <<<"$RESTORE_OUTPUT"
+grep -Fxq 'restore_release_identity=PASS' <<<"$RESTORE_OUTPUT"
+grep -Fxq 'restore_runtime_identity=PASS' <<<"$RESTORE_OUTPUT"
+grep -Fxq 'restore_license=PASS' <<<"$RESTORE_OUTPUT"
+grep -Fxq 'restore_customer_ready=PASS' <<<"$RESTORE_OUTPUT"
+grep -Fxq 'restore_validation=pass' <<<"$RESTORE_OUTPUT"
+[[ ! -e "$SOURCE_ROOT/runtime/release" ]]
 cp "$WORK/evidence/restored.json" "$WORK/restored.json"
 RTO_END_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 RTO_END_EPOCH="$(date +%s)"

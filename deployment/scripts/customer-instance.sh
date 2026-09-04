@@ -169,7 +169,38 @@ read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$fl
 release_version_ok() { [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; }
 release_version_not_older() {
   local current="$1" target="$2"
-  [[ "$(printf '%s\n' "$current" "$target" | sort -V | tail -1)" == "$target" ]]
+  local current_major current_minor current_patch current_rc
+  local target_major target_minor target_patch target_rc
+  [[ "$current" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-rc([0-9]+))?$ ]] || return 1
+  current_major="${BASH_REMATCH[1]}"
+  current_minor="${BASH_REMATCH[2]}"
+  current_patch="${BASH_REMATCH[3]}"
+  current_rc="${BASH_REMATCH[5]:-}"
+  [[ "$target" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(-rc([0-9]+))?$ ]] || return 1
+  target_major="${BASH_REMATCH[1]}"
+  target_minor="${BASH_REMATCH[2]}"
+  target_patch="${BASH_REMATCH[3]}"
+  target_rc="${BASH_REMATCH[5]:-}"
+  if ((10#$target_major != 10#$current_major)); then
+    ((10#$target_major > 10#$current_major))
+    return
+  fi
+  if ((10#$target_minor != 10#$current_minor)); then
+    ((10#$target_minor > 10#$current_minor))
+    return
+  fi
+  if ((10#$target_patch != 10#$current_patch)); then
+    ((10#$target_patch > 10#$current_patch))
+    return
+  fi
+  if [[ -z "$current_rc" && -n "$target_rc" ]]; then
+    return 1
+  fi
+  if [[ -n "$current_rc" && -z "$target_rc" ]]; then
+    return 0
+  fi
+  [[ -z "$current_rc" ]] && return 0
+  ((10#$target_rc >= 10#$current_rc))
 }
 release_tag_sha() { local release="$1"; release_version_ok "$release" || return 1; git -C "$REPO_ROOT" show-ref --verify --quiet "refs/tags/$release" || return 1; git -C "$REPO_ROOT" rev-parse --verify "refs/tags/$release^{commit}"; }
 release_execution_assets_from_tag() {
@@ -627,8 +658,9 @@ restore_validate() (
   [[ -z "$verification_file" || -f "$verification_file" ]] || die "restore verification file is missing"
   [[ -f "$archive" && -f "$archive.sha256" && -f "$archive.manifest.json" ]] || die "backup archive, manifest, or checksum is missing"
   local recovery="${source_slug}-recovery"; [[ ! -e "$(instance_dir "$recovery")" ]] || die "recovery instance already exists"
-  init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$source_product_version"
-  local target; target="$(require_instance "$recovery")"; load_instance "$target"; local target_database="$DATABASE_NAME" tmp="" payload=""
+  local source_release_sha="${SOURCE_RELEASE_SHA:-}" source_release_bundle="" source_release_origin="instance"
+  [[ "$source_release_sha" =~ ^[0-9a-f]{40}$ ]] || die "source release identity is invalid"
+  local target target_database="$DATABASE_NAME" tmp="" payload=""
   restore_cleanup() {
     local rc=$?
     trap - EXIT
@@ -637,7 +669,21 @@ restore_validate() (
     exit "$rc"
   }
   trap restore_cleanup EXIT
-  tmp="$(new_temp_dir)"; payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --expected-instance "$source_slug" --expected-database "$source_database" --output "$payload"
+  tmp="$(new_temp_dir)"
+  source_release_bundle="$tmp/source-release"
+  if [[ -e "$source_root/runtime/release" ]]; then
+    release_assets_complete "$source_root/runtime/release" || die "source release execution assets are incomplete"
+    mkdir -p "$source_release_bundle"
+    cp -R --no-preserve=mode,ownership "$source_root/runtime/release/." "$source_release_bundle/"
+  else
+    release_execution_assets_from_tag "$source_product_version" "$source_release_bundle" "$source_release_sha"
+    source_release_origin="approved-tag"
+  fi
+  mkdir -p "$source_release_bundle/deployment/runtime"
+  cp "$source_root/config/runtime-lock.json" "$source_release_bundle/deployment/runtime/runtime-lock.json"
+  SOURCE_RELEASE_SHA="$source_release_sha" init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$source_product_version" --release-assets-dir "$source_release_bundle"
+  target="$(require_instance "$recovery")"; load_instance "$target"; target_database="$DATABASE_NAME"
+  payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --expected-instance "$source_slug" --expected-database "$source_database" --output "$payload"
   cp "$payload/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$payload/active.pmql" ]] && cp "$payload/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
   cp "$payload/runtime-lock.json" "$target/config/runtime-lock.json"; chmod 600 "$target/config/runtime-lock.json"
   cp "$payload/deployment-manifest.json" "$target/config/deployment-manifest.json"
@@ -646,12 +692,29 @@ restore_validate() (
     "$target/config/deployment-manifest.json" > "$target/config/deployment-manifest.json.tmp"
   mv "$target/config/deployment-manifest.json.tmp" "$target/config/deployment-manifest.json"
   chmod 600 "$target/config/deployment-manifest.json"
+  [[ -s "$source_root/config/product-manifest.json" ]] || die "source product manifest is missing"
+  jq -e --arg product "$source_product_version" --arg source "$source_release_sha" \
+    '(.product_version == $product) and (.source_sha == $source)' \
+    "$source_root/config/product-manifest.json" >/dev/null ||
+    die "source product manifest identity does not match approved release tag"
+  cp "$source_root/config/product-manifest.json" "$target/config/product-manifest.json"
+  chmod 600 "$target/config/product-manifest.json"
   update_manifest_runtime "$target" "$target/config/runtime-lock.json"
+  runtime_manifest_gate "$target" || die "recovery runtime identity is invalid"
   render_files "$target"
-  rm -rf -- "$target/runtime/addons" "$target/runtime/release"
+  rm -rf -- "$target/runtime/addons"
   mkdir -p "$target/runtime/addons"
   cp -a "$source_root/runtime/addons/." "$target/runtime/addons/"
-  cp -a "$source_root/runtime/release" "$target/runtime/release"
+  local restored_modules_sha restored_compose_sha restored_odoo_sha
+  restored_modules_sha="$(sha256sum "$target/runtime/release/deployment/customer/modules.txt" | awk '{print $1}')"
+  restored_compose_sha="$(sha256sum "$target/runtime/release/deployment/docker/customer/compose.yml.template" | awk '{print $1}')"
+  restored_odoo_sha="$(sha256sum "$target/runtime/release/deployment/docker/customer/odoo.conf.template" | awk '{print $1}')"
+  echo "restore_source_release_tag=$source_product_version"
+  echo "restore_source_release_sha=$source_release_sha"
+  echo "restore_release_assets_origin=$source_release_origin"
+  echo "restore_modules_sha256=$restored_modules_sha"
+  echo "restore_compose_template_sha256=$restored_compose_sha"
+  echo "restore_odoo_template_sha256=$restored_odoo_sha"
   compose "$target" up -d postgres >/dev/null
   local postgres_ready=0; for _ in {1..30}; do if compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1; then postgres_ready=1; break; fi; sleep 1; done
   [[ "$postgres_ready" == 1 ]] || die "recovery PostgreSQL did not become ready"
@@ -681,6 +744,9 @@ restore_validate() (
     die "recovery Odoo did not become healthy"
   fi
   local license_output; license_output="$(license_status_root "$target")"; [[ "$license_output" == *"license_status=valid"* || "$license_output" == *"license_status=expiring"* ]] || die "recovery license is not valid"
+  echo "restore_release_identity=PASS"
+  echo "restore_runtime_identity=PASS"
+  echo "restore_license=PASS"
   if [[ -n "$verification_file" ]]; then
     local verification_dir; verification_dir="$(dirname "$verification_file")"
     compose "$target" run --rm -v "$verification_file:/tmp/recovery-verification.json:ro" -v "$verification_dir:/tmp/recovery-evidence" odoo odoo shell -d "$target_database" --log-level=error <<'PY'
@@ -712,6 +778,8 @@ Path("/tmp/recovery-evidence/restored.json").write_text(json.dumps(result, sort_
 print("recovery_record_validation=pass")
 PY
   fi
+  customer_ready "$recovery" >/dev/null || die "recovery customer-ready gate failed"
+  echo "restore_customer_ready=PASS"
   echo "restore_validation=pass"
 )
 

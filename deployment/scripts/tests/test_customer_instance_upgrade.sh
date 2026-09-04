@@ -77,6 +77,28 @@ RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
 ALPINE_IMAGE="alpine:fixture"
 docker() { :; }
 
+assert_version_forward() {
+  release_version_not_older "$1" "$2" || fail "release ordering rejected forward transition $1 -> $2"
+}
+assert_version_rejected() {
+  if release_version_not_older "$1" "$2"; then
+    fail "release ordering accepted downgrade $1 -> $2"
+  fi
+}
+! grep -Fq 'sort -V' "$SCRIPT" || fail "release ordering still depends on sort -V"
+assert_version_forward v1.0.0-rc11 v1.0.0-rc12
+assert_version_forward v1.0.0-rc12 v1.0.0
+assert_version_forward v1.0.0 v1.0.1-rc1
+assert_version_forward v1.0.1-rc1 v1.0.1-rc2
+assert_version_forward v1.0.1-rc2 v1.0.1
+assert_version_forward v1.0.1 v1.1.0-rc1
+assert_version_forward v1.9.9 v2.0.0-rc1
+assert_version_rejected v1.0.0-rc12 v1.0.0-rc11
+assert_version_rejected v1.0.0 v1.0.0-rc12
+assert_version_rejected v1.0.1 v1.0.1-rc99
+assert_version_rejected v1.1.0 v1.0.99
+assert_version_rejected v2.0.0-rc1 v1.99.99
+
 make_instance() {
   local slug="$1" product="${2:-$CURRENT_PRODUCT}" source="${3:-$CURRENT_SOURCE}" root
   root="$PMQMS_CUSTOMER_INSTANCE_ROOT/$slug"
