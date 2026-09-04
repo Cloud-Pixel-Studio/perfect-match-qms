@@ -1,19 +1,78 @@
 # Customer Upgrade Runbook
 
-Customer environments run an explicit approved Perfect Match release. They do
-not pull `main`, feature branches, or arbitrary dirty worktrees.
+Customer environments run an explicit approved Perfect Match release bundle.
+They do not pull main, feature branches, dirty worktrees, or arbitrary source
+hashes.
 
-1. Confirm the target release tag and compatibility notes.
-2. Confirm customer maintenance approval and available recovery storage.
-3. Run `customer-instance.sh backup <slug>` and verify its SHA-256 file.
-4. Build or obtain the target customer bundle and verify its manifest/checksum.
-5. Run `customer-instance.sh upgrade <slug> --to <release-tag>`.
-6. Deploy the approved bundle into the instance runtime.
-7. Run the controlled module update/bootstrap command and `health <slug>`.
-8. Run `license-status`, `customer-ready`, and the customer smoke checklist.
-9. Record previous/current versions and deployment date in the manifest.
+## Preflight
 
-If backup, release verification, module update, or health validation fails,
-stop. Restore the verified pre-upgrade backup using the recovery runbook. A
-database migration may require restore-based rollback; application image
-replacement alone is not a rollback guarantee.
+Confirm the instance is a customer or disposable test environment, is
+currently customer-ready, and has a consistent release/source/runtime
+identity. The target must be a validated bundle whose product_version,
+release tag, source commit, governed payload, checksums, and runtime lock
+agree. A target must be a forward Git descendant of the current source and
+must differ from the installed release.
+
+Use:
+
+~~~
+customer-instance.sh upgrade <slug> \
+  --bundle /secure/path/approved-target-bundle.tar.gz \
+  [--to <bundle-product-version>] \
+  [--approve-runtime-change]
+~~~
+
+The bundle is authoritative. Its modules.txt, customer Compose template, and
+Odoo configuration template are copied into the instance at provisioning and
+used for later upgrades. The operator checkout does not silently supply
+release-specific execution assets.
+
+## Controlled Upgrade
+
+The command validates target images before mutation, rejects PostgreSQL major
+changes, and requires --approve-runtime-change for an approved runtime-lock
+change. It opens a maintenance window, creates the normal encrypted durable
+backup with archive, checksum, and manifest, then creates a short-lived
+permission-restricted local rollback snapshot. The snapshot contains the
+database-independent runtime/addon and release-identity state needed for
+immediate recovery and excludes instance secrets.
+
+Target assets are staged before the current runtime is replaced. The command
+stops Odoo, activates the staged release assets, renders configuration from
+the target instance assets, and updates only the target release module list
+with --without-demo=all --stop-after-init. It then starts the runtime and
+checks HTTP health, license usability, first-user presence, release identity,
+runtime identity, and customer-ready status.
+
+Only after every gate passes is the deployment manifest marked deployed. The
+durable encrypted backup remains subject to retention policy; the ephemeral
+snapshot is removed after success.
+
+## Automatic Rollback
+
+Activation, module update, startup, health, license, identity, and
+customer-ready failures trigger automatic rollback. The old database and
+filestore are restored through the durable backup contract where needed, and
+the local snapshot restores the old addons, release assets, runtime lock,
+product/deployment manifests, and release identity. The old runtime is then
+started and checked for customer readiness.
+
+An upgrade failure always returns non-zero even when rollback succeeds:
+
+~~~
+UPGRADE_RESULT=FAILED
+ROLLBACK_RESULT=PASS
+~~~
+
+If rollback fails, the runtime is left stopped where possible and the durable
+backup reference plus the restricted rollback workspace are preserved for
+operator recovery. The result is:
+
+~~~
+UPGRADE_RESULT=FAILED
+ROLLBACK_RESULT=FAILED
+~~~
+
+Do not retry an interrupted upgrade state blindly. Resolve the preserved
+recovery evidence first. Do not use the upgrade command to perform a
+downgrade or to bypass authorization.

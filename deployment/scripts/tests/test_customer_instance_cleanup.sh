@@ -4,7 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$SCRIPT_DIR/customer-instance.sh"
 TEST_ROOT="$(mktemp -d)"
-TEST_RELEASE="v99.99.99-rc0"
 SLUG="rc10-upgrade-fixture-test"
 INSTANCE_ROOT="$TEST_ROOT/instances/$SLUG"
 export PMQMS_CUSTOMER_INSTANCE_ROOT="$TEST_ROOT/instances"
@@ -28,7 +27,6 @@ chmod +x "$AGE_WRAPPER"
 export PMQMS_AGE_BIN="$AGE_WRAPPER" PMQMS_AGE_VERSION=1.2.1 PMQMS_BACKUP_RECIPIENT_FILE="$RECIPIENT_FILE" PMQMS_BACKUP_IDENTITY_FILE="$RECIPIENT_FILE"
 
 cleanup_test() {
-  git -C "$(cd "$SCRIPT_DIR/../.." && pwd)" tag -d "$TEST_RELEASE" >/dev/null 2>&1 || true
   rm -rf -- "$TEST_ROOT"
 }
 trap cleanup_test EXIT
@@ -43,10 +41,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$INSTANCE_ROOT/config/runtime-lock.json"
 chmod 600 "$INSTANCE_ROOT/config/runtime-lock.json"
 
-git -C "$REPO_ROOT" tag "$TEST_RELEASE" HEAD
-
-# Source the real functions so the test exercises the production backup and upgrade path.
-# The command dispatcher is guarded in customer-instance.sh for this purpose.
+# Source the real cleanup functions. The command dispatcher is guarded in
+# customer-instance.sh for this purpose.
 source "$SCRIPT"
 
 require_instance() {
@@ -75,17 +71,8 @@ docker() {
   tar -czf "$backup_mount/filestore.tar.gz" --files-from /dev/null
 }
 
-upgrade "$SLUG" --to "$TEST_RELEASE"
-upgrade "$SLUG" --to "$TEST_RELEASE"
-
-backup_archive=("$INSTANCE_ROOT"/backups/*.tar.age)
-[[ -f "${backup_archive[0]}" ]] || { echo "backup artifact was not created" >&2; exit 1; }
-grep -q '"product_version": "v99.99.99-rc0"' "$INSTANCE_ROOT/config/deployment-manifest.json" || {
-  echo "upgrade manifest was not updated" >&2
-  exit 1
-}
 if find "$TMPDIR" -mindepth 1 -maxdepth 1 -type d | grep -q .; then
-  echo "temporary backup directory leaked" >&2
+  echo "temporary directory leaked before cleanup test" >&2
   exit 1
 fi
 

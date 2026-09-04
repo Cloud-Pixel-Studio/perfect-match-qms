@@ -5,9 +5,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 INSTANCE_ROOT_BASE="${PMQMS_CUSTOMER_INSTANCE_ROOT:-/opt/perfect-match/instances}"
-MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
-COMPOSE_TEMPLATE="$REPO_ROOT/deployment/docker/customer/compose.yml.template"
-ODOO_TEMPLATE="$REPO_ROOT/deployment/docker/customer/odoo.conf.template"
+OPERATOR_MODULES_FILE="$REPO_ROOT/deployment/customer/modules.txt"
+OPERATOR_COMPOSE_TEMPLATE="$REPO_ROOT/deployment/docker/customer/compose.yml.template"
+OPERATOR_ODOO_TEMPLATE="$REPO_ROOT/deployment/docker/customer/odoo.conf.template"
+MODULES_FILE="$OPERATOR_MODULES_FILE"
+COMPOSE_TEMPLATE="$OPERATOR_COMPOSE_TEMPLATE"
+ODOO_TEMPLATE="$OPERATOR_ODOO_TEMPLATE"
 RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
 BACKUP_TOOL="$REPO_ROOT/tools/backup/m29_backup.py"
 
@@ -43,6 +46,39 @@ load_runtime_for_root() {
   ODOO_IMAGE="$(jq -er '.odoo.image' "$RUNTIME_LOCK_PATH")"
   POSTGRES_IMAGE="$(jq -er '.postgres.image' "$RUNTIME_LOCK_PATH")"
   ALPINE_IMAGE="$(jq -er '.alpine.image' "$RUNTIME_LOCK_PATH")"
+}
+release_assets_complete() {
+  local release_root="$1"
+  [[ -s "$release_root/deployment/customer/modules.txt" ]] &&
+    [[ -s "$release_root/deployment/docker/customer/compose.yml.template" ]] &&
+    [[ -s "$release_root/deployment/docker/customer/odoo.conf.template" ]]
+}
+load_release_assets_for_root() {
+  local root="$1" release_root="$root/runtime/release"
+  release_assets_complete "$release_root" ||
+    die "instance release execution assets are missing: $release_root"
+  INSTANCE_RELEASE_ROOT="$release_root"
+  MODULES_FILE="$release_root/deployment/customer/modules.txt"
+  COMPOSE_TEMPLATE="$release_root/deployment/docker/customer/compose.yml.template"
+  ODOO_TEMPLATE="$release_root/deployment/docker/customer/odoo.conf.template"
+}
+install_release_assets() {
+  local root="$1" source="$2" release_root="$root/runtime/release"
+  [[ -d "$source" ]] || die "release asset source is missing"
+  [[ -s "$source/deployment/customer/modules.txt" ]] ||
+    die "release bundle has no modules.txt"
+  [[ -s "$source/deployment/docker/customer/compose.yml.template" ]] ||
+    die "release bundle has no customer compose template"
+  [[ -s "$source/deployment/docker/customer/odoo.conf.template" ]] ||
+    die "release bundle has no customer Odoo template"
+  rm -rf -- "$release_root"
+  mkdir -p "$release_root/deployment/customer" "$release_root/deployment/docker/customer"
+  cp "$source/deployment/customer/modules.txt" "$release_root/deployment/customer/modules.txt"
+  cp "$source/deployment/docker/customer/compose.yml.template" "$release_root/deployment/docker/customer/compose.yml.template"
+  cp "$source/deployment/docker/customer/odoo.conf.template" "$release_root/deployment/docker/customer/odoo.conf.template"
+  chmod 700 "$release_root" "$release_root/deployment" "$release_root/deployment/customer" "$release_root/deployment/docker" "$release_root/deployment/docker/customer"
+  chmod 600 "$release_root/deployment/customer/modules.txt" "$release_root/deployment/docker/customer/compose.yml.template" "$release_root/deployment/docker/customer/odoo.conf.template"
+  load_release_assets_for_root "$root"
 }
 runtime_verify_lock() {
   local lock="$1" image
@@ -115,6 +151,7 @@ load_instance() {
   . "$root/config/instance.env"
   [[ "${INSTANCE_SLUG:-}" == "$(basename "$root")" ]] || die "instance manifest mismatch"
   [[ "${ENVIRONMENT_TYPE:-}" == customer || "${ENVIRONMENT_TYPE:-}" == test ]] || die "unsupported environment type"
+  load_release_assets_for_root "$root"
 }
 compose() {
   local root="$1"; shift
@@ -131,6 +168,10 @@ prepare_permissions() {
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
 release_version_ok() { [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; }
+release_version_not_older() {
+  local current="$1" target="$2"
+  [[ "$(printf '%s\n' "$current" "$target" | sort -V | tail -1)" == "$target" ]]
+}
 release_tag_sha() { local release="$1"; release_version_ok "$release" || return 1; git -C "$REPO_ROOT" show-ref --verify --quiet "refs/tags/$release" || return 1; git -C "$REPO_ROOT" rev-parse --verify "refs/tags/$release^{commit}"; }
 
 CUSTOMER_PAYLOAD_PATHS=(
@@ -276,7 +317,7 @@ Usage: customer-instance.sh <command> [arguments]
   backup <slug> [--recipient-file file] [--off-host-dir dir] [--class intraday|daily|monthly]
   restore-validate <slug> <backup.tar.age> [--identity-file file] [--verification-file file]
   retention <slug> [--now utc] [--apply]
-  upgrade <slug> --to <release-tag> [--approve-runtime-change]
+  upgrade <slug> --bundle <approved-target-bundle.tar.gz> [--to <release-tag>] [--approve-runtime-change]
   customer-ready <slug>
   bundle --output file.tar.gz --release tag
   destroy <slug> --confirm-ephemeral
@@ -326,6 +367,7 @@ EOF
 
 render_files() {
   local root="$1" master
+  load_release_assets_for_root "$root"
   load_runtime_for_root "$root"
   master="$(cat "$root/secrets/odoo_master_password")"
   sed -e "s#__INSTANCE_SLUG__#$INSTANCE_SLUG#g" -e "s#__INSTANCE_ROOT__#$root#g" -e "s#__HTTP_PORT__#$HTTP_PORT#g" -e "s#__ODOO_IMAGE__#$ODOO_IMAGE#g" -e "s#__POSTGRES_IMAGE__#$POSTGRES_IMAGE#g" "$COMPOSE_TEMPLATE" > "$root/runtime/compose.yml"
@@ -337,12 +379,13 @@ init_instance() {
   local slug="$1"; shift
   slug_ok "$slug" || die "slug must be lowercase, filesystem-safe, and Docker-safe"
   protected_slug "$slug" && die "protected environment slug"
-  local type="customer" domain="customer.example.invalid" release="" port="8180"
+  local type="customer" domain="customer.example.invalid" release="" port="8180" release_assets_source=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --type) type="${2:-}"; shift 2;;
       --domain) domain="${2:-}"; shift 2;;
       --release) release="${2:-}"; shift 2;;
+      --release-assets-dir) release_assets_source="${2:-}"; shift 2;;
       --port) port="${2:-}"; shift 2;;
       *) die "unknown init option: $1";;
     esac
@@ -352,8 +395,15 @@ init_instance() {
   local root; root="$(instance_dir "$slug")"; [[ ! -e "$root" ]] || die "instance already exists: $slug"
   [[ -n "$release" ]] || die "--release is required"
   release_version_ok "$release" || die "release must be an approved release version"
-  umask 077; mkdir -p "$root"/{config,secrets,identity,license,activation,backups,runtime/addons}
-  cp "$RUNTIME_LOCK_FILE" "$root/config/runtime-lock.json"
+  umask 077; mkdir -p "$root"/{config,secrets,identity,license,activation,backups,runtime/addons,runtime/release}
+  if [[ -n "$release_assets_source" ]]; then
+    [[ -s "$release_assets_source/deployment/runtime/runtime-lock.json" ]] ||
+      die "release bundle has no runtime lock"
+    cp "$release_assets_source/deployment/runtime/runtime-lock.json" "$root/config/runtime-lock.json"
+  else
+    cp "$RUNTIME_LOCK_FILE" "$root/config/runtime-lock.json"
+    release_assets_source="$REPO_ROOT"
+  fi
   chmod 600 "$root/config/runtime-lock.json"
   INSTANCE_SLUG="$slug" ENVIRONMENT_TYPE="$type" PRODUCT_VERSION="$release" SOURCE_RELEASE_SHA="${SOURCE_RELEASE_SHA:-}" DOMAIN="$domain" DATABASE_NAME="pmqms_${slug//-/_}" HTTP_PORT="$port"
   random_secret > "$root/secrets/postgres_password"
@@ -362,6 +412,7 @@ init_instance() {
   if command -v uuidgen >/dev/null 2>&1; then uuidgen > "$root/config/environment_id"; else cat /proc/sys/kernel/random/uuid > "$root/config/environment_id"; fi
   chmod 755 "$root/config" "$root/secrets" "$root/license" "$root/activation"
   chmod 600 "$root/secrets"/* "$root/config/environment_id"
+  install_release_assets "$root" "$release_assets_source"
   write_manifest "$root"; render_files "$root"; cp "$MODULES_FILE" "$root/runtime/modules.txt"; chmod 600 "$root/runtime/modules.txt"
   log "initialized $slug ($type) at $root"
 }
@@ -380,7 +431,7 @@ provision() (
   tmp="$(new_temp_dir)"
   validate_bundle_archive "$bundle" "$type" "$tmp"
   SOURCE_RELEASE_SHA="$BUNDLE_SOURCE_SHA"
-  init_instance "$slug" --type "$type" --port "$port" --release "$BUNDLE_PRODUCT_VERSION"
+  init_instance "$slug" --type "$type" --port "$port" --release "$BUNDLE_PRODUCT_VERSION" --release-assets-dir "$tmp"
   root="$(require_instance "$slug")"; load_instance "$root"
   cp "$tmp/deployment/runtime/runtime-lock.json" "$root/config/runtime-lock.json"; chmod 600 "$root/config/runtime-lock.json"
   rm -rf "$root/runtime/addons"; mkdir -p "$root/runtime/addons"; cp -a "$tmp/addons/." "$root/runtime/addons/"; cp "$tmp/manifest.json" "$root/config/product-manifest.json"
@@ -539,7 +590,8 @@ backup() (
   cp "$root/config/environment_id" "$tmp/environment_id"
   cp "$root/config/runtime-lock.json" "$tmp/runtime-lock.json"
   cp "$root/config/deployment-manifest.json" "$tmp/deployment-manifest.json"
-  local source_release_sha; source_release_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+  local source_release_sha="$SOURCE_RELEASE_SHA"
+  [[ "$source_release_sha" =~ ^[0-9a-f]{40}$ ]] || die "instance source release identity is invalid"
   local component_args=(--component "db.dump=$tmp/db.dump" --component "filestore.tar.gz=$tmp/filestore.tar.gz" --component "environment_id=$tmp/environment_id" --component "runtime-lock.json=$tmp/runtime-lock.json" --component "deployment-manifest.json=$tmp/deployment-manifest.json")
   if [[ -f "$root/license/active.pmql" ]]; then cp "$root/license/active.pmql" "$tmp/active.pmql"; component_args+=(--component "active.pmql=$tmp/active.pmql"); fi
   quiesce_end_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -577,7 +629,11 @@ restore_validate() (
   chmod 600 "$target/config/deployment-manifest.json"
   update_manifest_runtime "$target" "$target/config/runtime-lock.json"
   render_files "$target"
-  cp -a "$source_root/runtime/addons/." "$target/runtime/addons/"; compose "$target" up -d postgres >/dev/null
+  rm -rf -- "$target/runtime/addons" "$target/runtime/release"
+  mkdir -p "$target/runtime/addons"
+  cp -a "$source_root/runtime/addons/." "$target/runtime/addons/"
+  cp -a "$source_root/runtime/release" "$target/runtime/release"
+  compose "$target" up -d postgres >/dev/null
   local postgres_ready=0; for _ in {1..30}; do if compose "$target" exec -T postgres pg_isready -U odoo -d postgres >/dev/null 2>&1; then postgres_ready=1; break; fi; sleep 1; done
   [[ "$postgres_ready" == 1 ]] || die "recovery PostgreSQL did not become ready"
   compose "$target" exec -T postgres createdb -U odoo "$target_database" >/dev/null
@@ -669,47 +725,282 @@ bundle() (
   echo "bundle=$output"; echo "checksum=$output.sha256"; echo "product_version=$release"; echo "source_sha=$sha"
 )
 
-upgrade() {
-  local slug="$1"; shift; local target_release="" approve_runtime_change=0
+set_instance_identity() {
+  local root="$1" product="$2" source="$3" env_file="$root/config/instance.env"
+  local temp="$env_file.tmp"
+  sed -e "s/^PRODUCT_VERSION=.*/PRODUCT_VERSION=$product/" \
+    -e "s/^SOURCE_RELEASE_SHA=.*/SOURCE_RELEASE_SHA=$source/" \
+    "$env_file" > "$temp"
+  mv "$temp" "$env_file"
+  chmod 600 "$env_file"
+}
+
+set_upgrade_manifest_state() {
+  local root="$1" state="$2" target_product="$3" target_source="$4" \
+    previous_product="$5" previous_source="$6" failure_stage="${7:-}"
+  local manifest="$root/config/deployment-manifest.json"
+  local temp="$manifest.tmp"
+  jq --arg state "$state" --arg target "$target_product" --arg target_source "$target_source" \
+    --arg previous "$previous_product" --arg previous_source "$previous_source" --arg stage "$failure_stage" \
+    '.deployment_state=$state | .previous_product_version=$previous | .previous_source_release_sha=$previous_source | .product_version=$target | .source_release_sha=$target_source' \
+    "$manifest" > "$temp"
+  if [[ -n "$failure_stage" ]]; then
+    jq --arg target "$target_product" --arg stage "$failure_stage" \
+      '.last_upgrade_target=$target | .last_upgrade_result="rolled_back" | .last_upgrade_failure_stage=$stage | .deployment_state="deployed"' \
+      "$temp" > "$temp.next"
+    mv "$temp.next" "$temp"
+  fi
+  mv "$temp" "$manifest"
+  chmod 600 "$manifest"
+}
+
+stage_target_bundle() {
+  local bundle_root="$1" stage="$2"
+  mkdir -p "$stage/release/deployment/customer" "$stage/release/deployment/docker/customer"
+  cp -a "$bundle_root/addons" "$stage/addons"
+  cp "$bundle_root/deployment/customer/modules.txt" "$stage/release/deployment/customer/modules.txt"
+  cp "$bundle_root/deployment/docker/customer/compose.yml.template" "$stage/release/deployment/docker/customer/compose.yml.template"
+  cp "$bundle_root/deployment/docker/customer/odoo.conf.template" "$stage/release/deployment/docker/customer/odoo.conf.template"
+  cp "$bundle_root/deployment/runtime/runtime-lock.json" "$stage/runtime-lock.json"
+  cp "$bundle_root/manifest.json" "$stage/product-manifest.json"
+  chmod 700 "$stage/release" "$stage/release/deployment" "$stage/release/deployment/customer" "$stage/release/deployment/docker" "$stage/release/deployment/docker/customer"
+  chmod 600 "$stage/release/deployment/customer/modules.txt" "$stage/release/deployment/docker/customer/compose.yml.template" "$stage/release/deployment/docker/customer/odoo.conf.template"
+  chmod 600 "$stage/runtime-lock.json" "$stage/product-manifest.json"
+}
+
+create_rollback_snapshot() {
+  local root="$1" snapshot="$2"
+  umask 077
+  mkdir -m 700 -p "$snapshot/config" "$snapshot/runtime"
+  for file in instance.env deployment-manifest.json product-manifest.json runtime-lock.json environment_id; do
+    local source=""
+    case "$file" in
+      instance.env|deployment-manifest.json|product-manifest.json|runtime-lock.json) source="$root/config/$file";;
+      environment_id) source="$root/config/environment_id";;
+    esac
+    [[ -f "$source" ]] && cp "$source" "$snapshot/config/$(basename "$source")"
+  done
+  [[ -d "$root/runtime/addons" ]] && cp -a "$root/runtime/addons" "$snapshot/addons"
+  [[ -d "$root/runtime/release" ]] && cp -a "$root/runtime/release" "$snapshot/release"
+  [[ -f "$root/runtime/modules.txt" ]] && cp "$root/runtime/modules.txt" "$snapshot/modules.txt"
+  [[ -f "$root/license/active.pmql" ]] && cp "$root/license/active.pmql" "$snapshot/active.pmql"
+  find "$snapshot" -type d -exec chmod go-rwx {} +
+  find "$snapshot" -type f -exec chmod go-rwx {} +
+}
+
+capture_rollback_data() {
+  local root="$1" snapshot="$2"
+  load_instance "$root"
+  compose "$root" up -d postgres >/dev/null
+  compose "$root" exec -T postgres pg_dump -U odoo -d "$DATABASE_NAME" --format=custom > "$snapshot/db.dump"
+  [[ -s "$snapshot/db.dump" ]] || die "ephemeral database snapshot is empty"
+  docker run --rm -v "pmqms_\${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$snapshot:/rollback" "$ALPINE_IMAGE" sh -c \
+    "cd /odoo-data && if [ -d filestore/\${DATABASE_NAME} ]; then tar -czf /rollback/filestore.tar.gz filestore/\${DATABASE_NAME}; else tar -czf /rollback/filestore.tar.gz --files-from /dev/null; fi"
+  [[ -s "$snapshot/filestore.tar.gz" ]] || die "ephemeral filestore snapshot is missing"
+  chmod 600 "$snapshot/db.dump" "$snapshot/filestore.tar.gz"
+}
+
+restore_rollback_data() {
+  local root="$1" snapshot="$2"
+  load_instance "$root"
+  [[ -s "$snapshot/db.dump" && -s "$snapshot/filestore.tar.gz" ]] || die "rollback data snapshot is incomplete"
+  compose "$root" up -d postgres >/dev/null
+  compose "$root" exec -T postgres dropdb -U odoo --if-exists "$DATABASE_NAME" >/dev/null
+  compose "$root" exec -T postgres createdb -U odoo "$DATABASE_NAME" >/dev/null
+  compose "$root" exec -T postgres pg_restore -U odoo -d "$DATABASE_NAME" --no-owner --role=odoo < "$snapshot/db.dump"
+  docker run --rm --user root -e DATABASE_NAME="$DATABASE_NAME" -v "pmqms_\${INSTANCE_SLUG}_odoo_data:/odoo-data" -v "$snapshot:/rollback:ro" "$ALPINE_IMAGE" sh -eu -c '
+    work=/tmp/filestore-rollback
+    mkdir -p "$work"
+    tar -tzf /rollback/filestore.tar.gz > "$work/members"
+    while IFS= read -r member; do
+      case "$member" in
+        "filestore/$DATABASE_NAME"|"filestore/$DATABASE_NAME/"*) ;;
+        *) echo "unexpected rollback filestore member" >&2; exit 1 ;;
+      esac
+      case "$member" in /**|*".."*) echo "unsafe rollback filestore member" >&2; exit 1 ;; esac
+    done < "$work/members"
+    tar -xzf /rollback/filestore.tar.gz -C "$work"
+    mkdir -p /odoo-data/filestore
+    rm -rf "/odoo-data/filestore/$DATABASE_NAME"
+    if [ -d "$work/filestore/$DATABASE_NAME" ]; then
+      mv "$work/filestore/$DATABASE_NAME" "/odoo-data/filestore/$DATABASE_NAME"
+    fi
+    chown -R 100:101 /odoo-data
+  '
+}
+
+restore_rollback_snapshot() {
+  local root="$1" snapshot="$2" slug="$3"
+  compose "$root" down >/dev/null 2>&1 || true
+  rm -rf -- "$root/runtime/addons" "$root/runtime/release"
+  cp -a "$snapshot/addons" "$root/runtime/addons"
+  cp -a "$snapshot/release" "$root/runtime/release"
+  cp "$snapshot/config/instance.env" "$root/config/instance.env"
+  cp "$snapshot/config/deployment-manifest.json" "$root/config/deployment-manifest.json"
+  cp "$snapshot/config/product-manifest.json" "$root/config/product-manifest.json"
+  cp "$snapshot/config/runtime-lock.json" "$root/config/runtime-lock.json"
+  cp "$snapshot/config/environment_id" "$root/config/environment_id"
+  [[ -f "$snapshot/modules.txt" ]] && cp "$snapshot/modules.txt" "$root/runtime/modules.txt"
+  if [[ -f "$snapshot/active.pmql" ]]; then
+    cp "$snapshot/active.pmql" "$root/license/active.pmql"
+    chmod 600 "$root/license/active.pmql"
+  fi
+  chmod 600 "$root/config/instance.env" "$root/config/deployment-manifest.json" "$root/config/product-manifest.json" "$root/config/runtime-lock.json" "$root/config/environment_id"
+  load_instance "$root"
+  render_files "$root"
+  restore_rollback_data "$root" "$snapshot"
+  compose "$root" up -d >/dev/null
+  health_root "$root" >/dev/null
+  customer_ready "$slug" >/dev/null
+}
+
+activate_target_release() {
+  local root="$1" stage="$2" target_product="$3" target_source="$4" previous="$root/runtime/.m30-8-previous"
+  [[ ! -e "$previous" ]] || die "stale upgrade replacement directory exists"
+  mkdir -m 700 "$previous"
+  mv "$root/runtime/addons" "$previous/addons"
+  mv "$root/runtime/release" "$previous/release"
+  mv "$stage/addons" "$root/runtime/addons"
+  mv "$stage/release" "$root/runtime/release"
+  cp "$stage/runtime-lock.json" "$root/config/runtime-lock.json"
+  cp "$stage/product-manifest.json" "$root/config/product-manifest.json"
+  set_instance_identity "$root" "$target_product" "$target_source"
+  set_upgrade_manifest_state "$root" upgrade-applying "$target_product" "$target_source" "$PRODUCT_VERSION" "$SOURCE_RELEASE_SHA"
+  chmod 600 "$root/config/runtime-lock.json" "$root/config/product-manifest.json"
+  load_instance "$root"
+  render_files "$root"
+  cp "$MODULES_FILE" "$root/runtime/modules.txt"
+  chmod 600 "$root/runtime/modules.txt"
+}
+
+runtime_major() {
+  sed -nE 's/^[^:]+:([0-9]+)(@.*)?$/\1/p' <<<"$1"
+}
+
+update_modules_from_instance() {
+  local root="$1" modules
+  load_instance "$root"
+  modules="$(module_list)"
+  [[ -n "$modules" ]] || die "target release module list is empty"
+  compose "$root" up -d postgres >/dev/null
+  compose "$root" run --rm odoo odoo -d "$DATABASE_NAME" -u "$modules" --without-demo=all --stop-after-init
+}
+
+upgrade_rollback() {
+  local root="$1" snapshot="$2" slug="$3" target_product="$4" failure_stage="$5"
+  if restore_rollback_snapshot "$root" "$snapshot" "$slug"; then
+    set_upgrade_manifest_state "$root" deployed "$PRODUCT_VERSION" "$SOURCE_RELEASE_SHA" "$PRODUCT_VERSION" "$SOURCE_RELEASE_SHA" "$failure_stage"
+    echo "UPGRADE_RESULT=FAILED"
+    echo "ROLLBACK_RESULT=PASS"
+    echo "ROLLBACK_FAILURE_STAGE=$failure_stage"
+    return 0
+  fi
+  compose "$root" down >/dev/null 2>&1 || true
+  echo "UPGRADE_RESULT=FAILED"
+  echo "ROLLBACK_RESULT=FAILED"
+  echo "ROLLBACK_FAILURE_STAGE=$failure_stage"
+  echo "ROLLBACK_EVIDENCE_PRESERVED=$snapshot"
+  return 1
+}
+
+upgrade_failure() {
+  local root="$1" snapshot="$2" slug="$3" target_product="$4" failure_stage="$5"
+  log "upgrade failed at $failure_stage; starting automatic rollback"
+  if upgrade_rollback "$root" "$snapshot" "$slug" "$target_product" "$failure_stage"; then
+    return 1
+  fi
+  preserve_recovery=1
+  return 2
+}
+
+upgrade() (
+  local slug="$1"; shift
+  local target_bundle="" asserted_release="" approve_runtime_change=0
+  local root target_work target_extract target_stage snapshot backup_output archive
+  local current_product current_source target_product target_source current_lock_sha target_lock_sha
+  local current_postgres target_postgres current_postgres_major target_postgres_major
+  local previous_dir="" preserve_recovery=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --to) target_release="${2:-}"; shift 2;;
+      --bundle) target_bundle="${2:-}"; shift 2;;
+      --to) asserted_release="${2:-}"; shift 2;;
       --approve-runtime-change) approve_runtime_change=1; shift;;
       *) die "unknown upgrade option: $1";;
     esac
   done
-  [[ -n "$target_release" ]] || die "--to release tag is required"
-  [[ "$target_release" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]] || die "upgrade target must be an approved release tag"
-  git -C "$REPO_ROOT" rev-parse "$target_release^{commit}" >/dev/null 2>&1 || die "release tag not found locally"
-  local root target_lock current_lock_sha target_lock_sha target_tmp
-  root="$(require_instance "$slug")"; load_instance "$root"; load_runtime_for_root "$root"
-  target_tmp="$(mktemp)"
-  if ! git -C "$REPO_ROOT" show "$target_release:deployment/runtime/runtime-lock.json" > "$target_tmp" 2>/dev/null; then
-    rm -f "$target_tmp"; die "target release has no runtime lock: $target_release"
-  fi
-  target_lock="$target_tmp"
-  validate_runtime_lock "$target_lock"
-  current_lock_sha="$(sha256sum "$RUNTIME_LOCK_PATH" | awk '{print $1}')"
-  target_lock_sha="$(sha256sum "$target_lock" | awk '{print $1}')"
-  log "OLD ODOO=$ODOO_IMAGE"
-  log "NEW ODOO=$(jq -r '.odoo.image' "$target_lock")"
-  log "OLD POSTGRES=$POSTGRES_IMAGE"
-  log "NEW POSTGRES=$(jq -r '.postgres.image' "$target_lock")"
+  [[ -n "$target_bundle" && -f "$target_bundle" ]] || die "--bundle approved target bundle is required"
+  root="$(require_instance "$slug")"
+  load_instance "$root"
+  current_product="$PRODUCT_VERSION"
+  current_source="$SOURCE_RELEASE_SHA"
+  local current_state
+  current_state="$(jq -r '.deployment_state // ""' "$root/config/deployment-manifest.json")"
+  [[ "$current_state" != upgrade-applying && "$current_state" != rollback-failed ]] || die "instance has an interrupted upgrade state; recover it before retrying"
+  target_work="$(new_temp_dir)"; target_extract="$target_work/target"; target_stage="$target_work/stage"; snapshot="$target_work/rollback-snapshot"
+  mkdir -p "$target_extract" "$target_stage"
+  trap 'rc=$?; trap - EXIT; if [[ "${preserve_recovery:-0}" != 1 ]]; then cleanup_temp_dir "${target_work:-}"; fi; exit "$rc"' EXIT
+
+  validate_bundle_archive "$target_bundle" "$ENVIRONMENT_TYPE" "$target_extract"
+  target_product="$BUNDLE_PRODUCT_VERSION"
+  target_source="$BUNDLE_SOURCE_SHA"
+  [[ -z "$asserted_release" || "$asserted_release" == "$target_product" ]] || die "--to does not match bundle.product_version"
+  [[ "$target_product" != "$current_product" ]] || die "REJECT_SAME_RELEASE"
+  [[ "$target_source" != "$current_source" ]] || die "REJECT_SAME_SOURCE"
+  release_version_not_older "$current_product" "$target_product" || die "REJECT_DOWNGRADE"
+  git -C "$REPO_ROOT" merge-base --is-ancestor "$current_source" "$target_source" || die "REJECT_UNRELATED_OR_DOWNGRADE_LINEAGE"
+  runtime_verify_lock "$target_extract/deployment/runtime/runtime-lock.json"
+  current_lock_sha="$(sha256sum "$root/config/runtime-lock.json" | awk '{print $1}')"
+  target_lock_sha="$(sha256sum "$target_extract/deployment/runtime/runtime-lock.json" | awk '{print $1}')"
+  current_postgres="$(jq -er '.postgres.image' "$root/config/runtime-lock.json")"
+  target_postgres="$(jq -er '.postgres.image' "$target_extract/deployment/runtime/runtime-lock.json")"
+  current_postgres_major="$(runtime_major "$current_postgres")"
+  target_postgres_major="$(runtime_major "$target_postgres")"
+  [[ "$current_postgres_major" == "$target_postgres_major" ]] || die "REJECT_POSTGRES_MAJOR_CHANGE"
   if [[ "$current_lock_sha" != "$target_lock_sha" && "$approve_runtime_change" != 1 ]]; then
-    rm -f "$target_tmp"
     die "runtime lock changes require --approve-runtime-change"
   fi
-  backup "$slug" >/dev/null
-  jq --arg v "$target_release" --arg schema "$(jq -r '.schema_version' "$target_lock")" \
-    --arg lock_sha "$target_lock_sha" --arg odoo "$(jq -r '.odoo.image' "$target_lock")" \
-    --arg odoo_digest "$(jq -r '.odoo.digest' "$target_lock")" --arg postgres "$(jq -r '.postgres.image' "$target_lock")" \
-    --arg postgres_digest "$(jq -r '.postgres.digest' "$target_lock")" \
-    '.previous_product_version=.product_version | .product_version=$v | .deployment_state="upgrade-ready" | .runtime_lock_schema=($schema|tonumber) | .runtime_lock_sha256=$lock_sha | .odoo_image=$odoo | .odoo_digest=$odoo_digest | .postgres_image=$postgres | .postgres_digest=$postgres_digest' \
+  if ! customer_ready "$slug" >/dev/null; then
+    die "CURRENT_READY_PREFLIGHT_FAILED"
+  fi
+  stage_target_bundle "$target_extract" "$target_stage"
+  backup_output="$(backup "$slug")" || die "DURABLE_BACKUP_FAILED"
+  archive="$(sed -n 's/^backup=//p' <<<"$backup_output")"
+  [[ -s "$archive" && -s "$archive.sha256" && -s "$archive.manifest.json" ]] || die "durable backup integrity metadata is missing"
+  compose "$root" stop odoo >/dev/null
+  [[ "$(compose "$root" ps -q odoo 2>/dev/null | head -1)" == "" ]] || true
+  create_rollback_snapshot "$root" "$snapshot"
+  capture_rollback_data "$root" "$snapshot" || die "EPHEMERAL_ROLLBACK_SNAPSHOT_FAILED"
+  activate_target_release "$root" "$target_stage" "$target_product" "$target_source" || upgrade_failure "$root" "$snapshot" "$slug" "$target_product" target-activation
+  if ! update_modules_from_instance "$root"; then
+    upgrade_failure "$root" "$snapshot" "$slug" "$target_product" module-update
+    return $?
+  fi
+  if ! compose "$root" up -d >/dev/null; then
+    upgrade_failure "$root" "$snapshot" "$slug" "$target_product" runtime-start
+    return $?
+  fi
+  if ! health_root "$root" >/dev/null; then
+    upgrade_failure "$root" "$snapshot" "$slug" "$target_product" health
+    return $?
+  fi
+  if ! customer_ready "$slug" >/dev/null; then
+    upgrade_failure "$root" "$snapshot" "$slug" "$target_product" customer-ready
+    return $?
+  fi
+  set_upgrade_manifest_state "$root" deployed "$target_product" "$target_source" "$current_product" "$current_source"
+  jq --arg target "$target_product" --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '.last_upgrade_target=$target | .last_upgrade_result="success" | .upgraded_at=$now' \
     "$root/config/deployment-manifest.json" > "$root/config/deployment-manifest.json.tmp"
-  mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"; chmod 600 "$root/config/deployment-manifest.json"
-  rm -f "$target_tmp"
-  log "preflight and backup passed; deploy the approved bundle for $target_release, then run bootstrap/health"
-}
+  mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"
+  chmod 600 "$root/config/deployment-manifest.json"
+  previous_dir="$root/runtime/.m30-8-previous"
+  rm -rf -- "$previous_dir"
+  echo "UPGRADE_RESULT=PASS"
+  echo "TARGET_PRODUCT_VERSION=$target_product"
+  echo "TARGET_SOURCE_RELEASE_SHA=$target_source"
+  echo "MODULE_UPDATE=PASS"
+  echo "POST_UPGRADE_CUSTOMER_READY=PASS"
+)
 
 customer_ready() {
   local root; root="$(require_instance "$1")"; load_instance "$root"
