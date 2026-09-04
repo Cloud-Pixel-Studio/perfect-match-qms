@@ -31,14 +31,18 @@ repack_variant() {
   local name="$1" dir="$TEST_ROOT/$1" output="$TEST_ROOT/$1.tar.gz"
   (cd "$dir" && { find addons deployment -type f -print0; printf 'manifest.json\0'; } | sort -z | xargs -0 sha256sum > checksums.sha256)
   tar -C "$dir" -czf "$output" .
-  sha256sum "$output" > "$output.sha256"
+  write_outer_checksum "$output"
   printf '%s\n' "$output"
 }
 repack_without_checksum_update() {
   local name="$1" dir="$TEST_ROOT/$1" output="$TEST_ROOT/$1.tar.gz"
   tar -C "$dir" -czf "$output" .
-  sha256sum "$output" > "$output.sha256"
+  write_outer_checksum "$output"
   printf '%s\n' "$output"
+}
+write_outer_checksum() {
+  local output="$1"
+  printf '%s  %s\n' "$(sha256sum "$output" | awk '{print $1}')" "$(basename "$output")" > "$output.sha256"
 }
 variant_from_valid() {
   local name="$1" dir="$TEST_ROOT/$1"
@@ -60,6 +64,13 @@ provision_variant_should_fail() {
 provision_variant_should_fail_with_reason() {
   local label="$1" variant="$2" slug="$3" reason="$4"
   provision_variant_should_fail "$label" "$variant" "$slug"
+  grep -Fq "$reason" "$TEST_ROOT/$label.out" || fail "$label did not report $reason"
+}
+
+provision_path_should_fail_with_reason() {
+  local label="$1" bundle="$2" slug="$3" reason="$4"
+  expect_fail "$label" "$SCRIPT" provision "$slug" --bundle "$bundle" --type test --port 19112
+  [[ ! -e "$PMQMS_CUSTOMER_INSTANCE_ROOT/$slug" ]] || fail "$label left a persistent instance"
   grep -Fq "$reason" "$TEST_ROOT/$label.out" || fail "$label did not report $reason"
 }
 
@@ -107,6 +118,19 @@ set_manifest manifest-internal-tamper '.product_version = "v99.99.99-rc1"'
 repack_without_checksum_update manifest-internal-tamper >/dev/null
 provision_variant_should_fail_with_reason manifest-checksum-tamper manifest-internal-tamper m30-7-manifest-tamper 'bundle internal checksum mismatch'
 
+variant_from_valid payload-tamper
+PAYLOAD_FILE="$(find "$TEST_ROOT/payload-tamper/addons" -type f -name '*.py' -print -quit)"
+[[ -n "$PAYLOAD_FILE" ]] || fail "payload-tamper fixture has no Python source file"
+printf '\n# M30.7 payload tamper fixture\n' >> "$PAYLOAD_FILE"
+repack_variant payload-tamper >/dev/null
+provision_variant_should_fail_with_reason payload-release-mismatch payload-tamper m30-7-payload-tamper PAYLOAD_DOES_NOT_MATCH_RELEASE_TAG
+
+variant_from_valid extra-governed-file
+mkdir -p "$TEST_ROOT/extra-governed-file/addons/m30_7_extra"
+printf 'fixture_extra = True\n' > "$TEST_ROOT/extra-governed-file/addons/m30_7_extra/extra.py"
+repack_variant extra-governed-file >/dev/null
+provision_variant_should_fail_with_reason extra-governed-file extra-governed-file m30-7-extra-governed-file PAYLOAD_DOES_NOT_MATCH_RELEASE_TAG
+
 variant_from_valid demo-contamination
 set_manifest demo-contamination '.contains_demo_data = true'
 repack_variant demo-contamination >/dev/null
@@ -131,8 +155,28 @@ jq -e --arg source "$TAG_SHA" '.source_sha == $source' "$ROOT/config/product-man
 jq -e --arg release "$TEST_RELEASE" --arg source "$TAG_SHA" '.product_version == $release and .source_release_sha == $source' "$ROOT/config/deployment-manifest.json" >/dev/null || fail "deployment identity was not persisted"
 jq -e --arg release "$TEST_RELEASE" --arg source "$TAG_SHA" '.product_version == $release and .source_sha == $source' "$ROOT/config/product-manifest.json" >/dev/null || fail "product identity was not persisted"
 
+PORTABLE_A="$TEST_ROOT/portable-a"
+PORTABLE_B="$TEST_ROOT/portable-b"
+mkdir -p "$PORTABLE_A" "$PORTABLE_B"
+"$SCRIPT" bundle --release "$TEST_RELEASE" --output "$PORTABLE_A/portable.tar.gz" >"$TEST_ROOT/portable-build.out"
+cp "$PORTABLE_A/portable.tar.gz" "$PORTABLE_A/portable.tar.gz.sha256" "$PORTABLE_B/"
+"$SCRIPT" provision m30-7-portable --bundle "$PORTABLE_B/portable.tar.gz" --type test --port 19113 >"$TEST_ROOT/portable-provision.out"
+[[ -f "$PMQMS_CUSTOMER_INSTANCE_ROOT/m30-7-portable/config/instance.env" ]] || fail "moved bundle did not provision"
+printf 'tampered moved bundle\n' >> "$PORTABLE_B/portable.tar.gz"
+provision_path_should_fail_with_reason altered-moved-bundle "$PORTABLE_B/portable.tar.gz" m30-7-portable-tampered "bundle outer checksum mismatch"
+
+cp "$VALID" "$TEST_ROOT/multiple-sidecar.tar.gz"
+VALID_SIDE_LINE="$(< "$VALID.sha256")"
+printf '%s\n%s\n' "$VALID_SIDE_LINE" "$VALID_SIDE_LINE" > "$TEST_ROOT/multiple-sidecar.tar.gz.sha256"
+provision_path_should_fail_with_reason multiple-sidecar "$TEST_ROOT/multiple-sidecar.tar.gz" m30-7-multiple-sidecar "bundle checksum sidecar is invalid"
+
+cp "$VALID" "$TEST_ROOT/redirected-sidecar.tar.gz"
+VALID_DIGEST="$(sha256sum "$VALID" | awk '{print $1}')"
+printf '%s  /tmp/not-the-bundle.tar.gz\n' "$VALID_DIGEST" > "$TEST_ROOT/redirected-sidecar.tar.gz.sha256"
+provision_path_should_fail_with_reason redirected-sidecar "$TEST_ROOT/redirected-sidecar.tar.gz" m30-7-redirected-sidecar "bundle checksum sidecar filename is invalid"
+
 printf 'malformed bundle\n' > "$TEST_ROOT/malformed.tar.gz"
-sha256sum "$TEST_ROOT/malformed.tar.gz" > "$TEST_ROOT/malformed.tar.gz.sha256"
+write_outer_checksum "$TEST_ROOT/malformed.tar.gz"
 expect_fail malformed-bundle "$SCRIPT" provision m30-7-malformed --bundle "$TEST_ROOT/malformed.tar.gz" --type test --port 19110
 [[ ! -e "$PMQMS_CUSTOMER_INSTANCE_ROOT/m30-7-malformed" ]] || fail "malformed bundle left a persistent instance"
 
@@ -165,4 +209,4 @@ fi
 grep -Fxq 'CUSTOMER_READY=NO' "$TEST_ROOT/release-mismatch.out" || fail "customer-ready mismatch did not report NO"
 mv "$TEST_ROOT/instance.env.backup" "$ROOT/config/instance.env"
 
-echo "customer release artifact tests: 19 PASS (A-O plus source provenance and checksum binding)"
+echo "customer release artifact tests: 25 PASS (A-O plus payload provenance and portable checksum binding)"

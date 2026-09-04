@@ -133,10 +133,97 @@ read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$fl
 release_version_ok() { [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; }
 release_tag_sha() { local release="$1"; release_version_ok "$release" || return 1; git -C "$REPO_ROOT" show-ref --verify --quiet "refs/tags/$release" || return 1; git -C "$REPO_ROOT" rev-parse --verify "refs/tags/$release^{commit}"; }
 
+CUSTOMER_PAYLOAD_PATHS=(
+  addons
+  deployment/customer
+  deployment/runtime/runtime-lock.json
+  deployment/docker/customer
+  deployment/nginx/customer.conf.example
+  deployment/scripts/customer-instance.sh
+)
+
+validate_outer_checksum() {
+  local bundle="$1" sidecar="$1.sha256" line actual expected
+  local -a lines=()
+  [[ -s "$sidecar" ]] || die "bundle checksum sidecar missing"
+  mapfile -t lines < "$sidecar"
+  [[ "${#lines[@]}" -eq 1 ]] || die "bundle checksum sidecar is invalid"
+  line="${lines[0]}"
+  if [[ "$line" =~ ^([0-9a-f]{64})[[:space:]][[:space:]]([^[:space:]]+)$ ]]; then
+    expected="${BASH_REMATCH[1]}"
+    [[ "${BASH_REMATCH[2]}" == "$(basename "$bundle")" ]] || die "bundle checksum sidecar filename is invalid"
+  elif [[ "$line" =~ ^[0-9a-f]{64}$ ]]; then
+    expected="$line"
+  else
+    die "bundle checksum sidecar is invalid"
+  fi
+  actual="$(sha256sum "$bundle" | awk '{print $1}')"
+  [[ "$actual" == "$expected" ]] || die "bundle outer checksum mismatch"
+}
+
+checksum_file_list_from_root() {
+  local root="$1" output="$2"
+  (
+    cd "$root"
+    {
+      [[ -d addons ]] && find addons -type f -print
+      [[ -d deployment ]] && find deployment -type f -print
+      printf '%s\n' manifest.json
+    } | sort
+  ) > "$output"
+}
+
+validate_internal_checksum_coverage() {
+  local root="$1" checksums="$1/checksums.sha256"
+  local expected="$root/.expected-checksum-files" actual="$root/.actual-checksum-files"
+  checksum_file_list_from_root "$root" "$expected"
+  if ! awk '{
+    if (NF != 2 || length($1) != 64 || $1 !~ /^[0-9a-f]+$/ || $2 ~ /^\// || $2 ~ /(^|\/)\.\.(\/|$)/) exit 1
+    print $2
+  }' "$checksums" | sort > "$actual"; then
+    rm -f "$expected" "$actual"
+    return 1
+  fi
+  if ! cmp -s "$expected" "$actual"; then
+    rm -f "$expected" "$actual"
+    return 1
+  fi
+  rm -f "$expected" "$actual"
+  return 0
+}
+
+customer_payload_matches_release() {
+  local release="$1" root="$2" path
+  local expected="$root/.expected-release-payload" actual="$root/.actual-release-payload"
+  git -C "$REPO_ROOT" ls-tree -r --name-only "refs/tags/$release" -- "${CUSTOMER_PAYLOAD_PATHS[@]}" | sort > "$expected" || return 1
+  (
+    cd "$root"
+    {
+      [[ -d addons ]] && find addons -type f -print
+      [[ -d deployment/customer ]] && find deployment/customer -type f -print
+      [[ -f deployment/runtime/runtime-lock.json ]] && printf '%s\n' deployment/runtime/runtime-lock.json
+      [[ -d deployment/docker/customer ]] && find deployment/docker/customer -type f -print
+      [[ -f deployment/nginx/customer.conf.example ]] && printf '%s\n' deployment/nginx/customer.conf.example
+      [[ -f deployment/scripts/customer-instance.sh ]] && printf '%s\n' deployment/scripts/customer-instance.sh
+    } | sort
+  ) > "$actual"
+  if ! cmp -s "$expected" "$actual"; then
+    rm -f "$expected" "$actual"
+    return 1
+  fi
+  while IFS= read -r path; do
+    if ! git -C "$REPO_ROOT" show "refs/tags/$release:$path" | cmp -s - "$root/$path"; then
+      rm -f "$expected" "$actual"
+      return 1
+    fi
+  done < "$expected"
+  rm -f "$expected" "$actual"
+  return 0
+}
+
 validate_bundle_archive() {
   local bundle="$1" requested_type="$2" tmp="$3"
-  [[ -s "$bundle.sha256" ]] || die "bundle checksum sidecar missing"
-  sha256sum -c "$bundle.sha256" >/dev/null 2>&1 || die "bundle outer checksum mismatch"
+  validate_outer_checksum "$bundle"
   if tar -tzf "$bundle" | grep -Eq '(^/|(^|/)\.\.(\/|$))'; then
     die "bundle contains unsafe archive paths"
   fi
@@ -144,6 +231,7 @@ validate_bundle_archive() {
   [[ -d "$tmp/addons" ]] || die "bundle has no addons"
   local manifest="$tmp/manifest.json" lock="$tmp/deployment/runtime/runtime-lock.json"
   [[ -s "$manifest" && -s "$lock" && -s "$tmp/checksums.sha256" ]] || die "bundle is missing manifest, checksums, or runtime lock"
+  validate_internal_checksum_coverage "$tmp" || die "bundle internal checksum coverage mismatch"
   (cd "$tmp" && sha256sum -c checksums.sha256 >/dev/null) || die "bundle internal checksum mismatch"
   validate_runtime_lock "$lock"
   BUNDLE_LOCK_SHA="$(sha256sum "$lock" | awk '{print $1}')"
@@ -168,6 +256,7 @@ validate_bundle_archive() {
   local expected_release_sha
   expected_release_sha="$(release_tag_sha "$BUNDLE_PRODUCT_VERSION")" || die "approved release tag cannot be resolved locally"
   [[ "$BUNDLE_SOURCE_SHA" == "$expected_release_sha" ]] || die "SOURCE_SHA_DOES_NOT_MATCH_RELEASE_TAG"
+  customer_payload_matches_release "$BUNDLE_PRODUCT_VERSION" "$tmp" || die "PAYLOAD_DOES_NOT_MATCH_RELEASE_TAG"
 }
 usage() {
   cat <<'EOF'
@@ -564,7 +653,7 @@ bundle() (
   [[ -n "$release" ]] || die "--release is required"
   local sha; sha="$(release_tag_sha "$release")" || die "approved release tag not found"
   local tmp=""; trap 'cleanup_temp_dir "$tmp"' EXIT; tmp="$(new_temp_dir)"
-  git -C "$REPO_ROOT" archive "$release" addons deployment/customer deployment/runtime/runtime-lock.json deployment/docker/customer deployment/nginx/customer.conf.example deployment/scripts/customer-instance.sh | tar -x -C "$tmp"
+  git -C "$REPO_ROOT" archive "$release" "${CUSTOMER_PAYLOAD_PATHS[@]}" | tar -x -C "$tmp"
   [[ -s "$tmp/deployment/runtime/runtime-lock.json" ]] || die "release has no runtime lock"
   rm -rf "$tmp/deployment/demo" "$tmp/deployment/docker/demo"; find "$tmp/addons" -type d -name __pycache__ -prune -exec rm -rf {} +; find "$tmp/addons" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
   local lock_sha odoo_image postgres_image
@@ -574,7 +663,7 @@ bundle() (
   jq -n --arg product "$release" --arg source "$sha" --arg built "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg lock "$lock_sha" --arg odoo "$odoo_image" --arg postgres "$postgres_image" '{product_version:$product,release_tag:$product,source_sha:$source,built_at:$built,environment_types:["customer","test"],runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres,contains_demo_data:false,contains_private_signing_key:false}' > "$tmp/manifest.json"
   (cd "$tmp" && { find addons deployment -type f -print0; printf 'manifest.json\0'; } | sort -z | xargs -0 sha256sum > checksums.sha256)
   if find "$tmp" -type f \( -name '.env' -o -name 'id_rsa' -o -name '*.pem' -o -name '*.key' \) -print -quit | grep -q .; then die "private key or secret path detected"; fi
-  mkdir -p "$(dirname "$output")"; tar -C "$tmp" -czf "$output" .; sha256sum "$output" > "$output.sha256"
+  mkdir -p "$(dirname "$output")"; tar -C "$tmp" -czf "$output" .; printf '%s  %s\n' "$(sha256sum "$output" | awk '{print $1}')" "$(basename "$output")" > "$output.sha256"
   if tar -xOzf "$output" ./manifest.json 2>/dev/null | grep -Eqi 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026'; then die "Demo content detected in bundle"; fi
   if grep -RInaE 'Apex Precision|APEX-HQ|APEX-MFG|APEX-INS|PMQMS-DEMO-2026|odoo-demo|pmqms_demo' "$tmp/addons" >/dev/null 2>&1; then die "Demo content detected in bundle"; fi
   echo "bundle=$output"; echo "checksum=$output.sha256"; echo "product_version=$release"; echo "source_sha=$sha"
