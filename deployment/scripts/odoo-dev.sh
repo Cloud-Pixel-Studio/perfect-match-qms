@@ -126,7 +126,9 @@ prepare_runtime_permissions() {
 
 compose() {
   load_runtime_lock
-  docker compose -f "$COMPOSE_FILE" "$@"
+  ODOO_DEV_CONFIG_DIR="$CONFIG_DIR" \
+  ODOO_DEV_PG_PASSWORD_FILE="$PG_PASSWORD_FILE" \
+    docker compose -f "$COMPOSE_FILE" "$@"
 }
 
 postgres_exec() {
