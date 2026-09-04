@@ -68,6 +68,7 @@ cat > "$INSTANCE/config/instance.env" <<EOF
 INSTANCE_SLUG=${SLUG}
 ENVIRONMENT_TYPE=test
 PRODUCT_VERSION=v1.0.0-test
+SOURCE_RELEASE_SHA=$(git -C "$ROOT" rev-parse HEAD)
 DOMAIN=systemd-runtime.invalid
 DATABASE_NAME=pmqms_runtime_proof
 HTTP_PORT=8199

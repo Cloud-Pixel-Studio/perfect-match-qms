@@ -151,7 +151,6 @@ load_instance() {
   . "$root/config/instance.env"
   [[ "${INSTANCE_SLUG:-}" == "$(basename "$root")" ]] || die "instance manifest mismatch"
   [[ "${ENVIRONMENT_TYPE:-}" == customer || "${ENVIRONMENT_TYPE:-}" == test ]] || die "unsupported environment type"
-  load_release_assets_for_root "$root"
 }
 compose() {
   local root="$1"; shift
@@ -173,6 +172,20 @@ release_version_not_older() {
   [[ "$(printf '%s\n' "$current" "$target" | sort -V | tail -1)" == "$target" ]]
 }
 release_tag_sha() { local release="$1"; release_version_ok "$release" || return 1; git -C "$REPO_ROOT" show-ref --verify --quiet "refs/tags/$release" || return 1; git -C "$REPO_ROOT" rev-parse --verify "refs/tags/$release^{commit}"; }
+release_execution_assets_from_tag() {
+  local release="$1" destination="$2" expected_sha="${3:-}" tag_sha
+  tag_sha="$(release_tag_sha "$release")" || die "approved release tag not found: $release"
+  [[ -z "$expected_sha" || "$tag_sha" == "$expected_sha" ]] ||
+    die "release tag/source identity mismatch: $release"
+  rm -rf -- "$destination"
+  mkdir -p "$destination"
+  git -C "$REPO_ROOT" archive "$release" \
+    deployment/customer/modules.txt \
+    deployment/docker/customer/compose.yml.template \
+    deployment/docker/customer/odoo.conf.template | tar -x -C "$destination"
+  release_assets_complete "$destination" ||
+    die "approved release tag has incomplete execution assets: $release"
+}
 
 CUSTOMER_PAYLOAD_PATHS=(
   addons
@@ -775,7 +788,7 @@ stage_target_bundle() {
 }
 
 create_rollback_snapshot() {
-  local root="$1" snapshot="$2"
+  local root="$1" snapshot="$2" current_release_root="${3:-}"
   umask 077
   mkdir -m 700 -p "$snapshot/config" "$snapshot/runtime"
   for file in instance.env deployment-manifest.json product-manifest.json runtime-lock.json environment_id; do
@@ -787,8 +800,21 @@ create_rollback_snapshot() {
     [[ -f "$source" ]] && cp "$source" "$snapshot/config/$(basename "$source")"
   done
   [[ -d "$root/runtime/addons" ]] && cp -R --no-preserve=mode,ownership "$root/runtime/addons" "$snapshot/addons"
-  [[ -d "$root/runtime/release" ]] && cp -R --no-preserve=mode,ownership "$root/runtime/release" "$snapshot/release"
-  [[ -f "$root/runtime/modules.txt" ]] && cp --no-preserve=mode,ownership "$root/runtime/modules.txt" "$snapshot/modules.txt"
+  if [[ -d "$root/runtime/release" ]]; then
+    release_assets_complete "$root/runtime/release" || die "instance release execution assets are incomplete"
+    cp -R --no-preserve=mode,ownership "$root/runtime/release" "$snapshot/release"
+  else
+    [[ -n "$current_release_root" ]] || die "current release execution assets are unavailable"
+    release_assets_complete "$current_release_root" || die "current release execution assets are incomplete"
+    mkdir -p "$snapshot/release"
+    cp -R --no-preserve=mode,ownership "$current_release_root/." "$snapshot/release/"
+  fi
+  if [[ -d "$root/runtime/release" ]]; then
+    [[ -f "$root/runtime/modules.txt" ]] && cp --no-preserve=mode,ownership "$root/runtime/modules.txt" "$snapshot/modules.txt"
+  else
+    [[ -f "$current_release_root/deployment/customer/modules.txt" ]] || die "current release module list is unavailable"
+    cp --no-preserve=mode,ownership "$current_release_root/deployment/customer/modules.txt" "$snapshot/modules.txt"
+  fi
   if docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
     sh -eu -c 'test -r /license/active.pmql' >/dev/null 2>&1; then
     docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
@@ -881,11 +907,18 @@ restore_rollback_snapshot() {
 }
 
 activate_target_release() {
-  local root="$1" stage="$2" target_product="$3" target_source="$4" previous="$root/runtime/.m30-8-previous"
+  local root="$1" stage="$2" target_product="$3" target_source="$4" current_release_root="${5:-}" previous="$root/runtime/.m30-8-previous"
   [[ ! -e "$previous" ]] || die "stale upgrade replacement directory exists"
   mkdir -m 700 "$previous"
   mv "$root/runtime/addons" "$previous/addons"
-  mv "$root/runtime/release" "$previous/release"
+  if [[ -d "$root/runtime/release" ]]; then
+    mv "$root/runtime/release" "$previous/release"
+  else
+    [[ -n "$current_release_root" ]] || die "current release execution assets are unavailable"
+    release_assets_complete "$current_release_root" || die "current release execution assets are incomplete"
+    mkdir -p "$previous/release"
+    cp -R --no-preserve=mode,ownership "$current_release_root/." "$previous/release/"
+  fi
   mv "$stage/addons" "$root/runtime/addons"
   mv "$stage/release" "$root/runtime/release"
   cp "$stage/runtime-lock.json" "$root/config/runtime-lock.json"
@@ -943,7 +976,7 @@ upgrade() (
   local slug="$1"; shift
   local target_bundle="" asserted_release="" approve_runtime_change=0
   local root target_work target_extract target_stage snapshot backup_output archive
-  local current_product current_source target_product target_source current_lock_sha target_lock_sha
+  local current_product current_source current_tag_sha current_release_root target_product target_source current_lock_sha target_lock_sha
   local current_postgres target_postgres current_postgres_major target_postgres_major
   local previous_dir="" preserve_recovery=0
   while [[ $# -gt 0 ]]; do
@@ -959,6 +992,7 @@ upgrade() (
   load_instance "$root"
   current_product="$PRODUCT_VERSION"
   current_source="$SOURCE_RELEASE_SHA"
+  [[ "$current_source" =~ ^[0-9a-f]{40}$ ]] || die "instance source release identity is invalid"
   local current_state
   current_state="$(jq -r '.deployment_state // ""' "$root/config/deployment-manifest.json")"
   [[ "$current_state" != upgrade-applying && "$current_state" != rollback-failed ]] || die "instance has an interrupted upgrade state; recover it before retrying"
@@ -973,6 +1007,8 @@ upgrade() (
   [[ "$target_product" != "$current_product" ]] || die "REJECT_SAME_RELEASE"
   [[ "$target_source" != "$current_source" ]] || die "REJECT_SAME_SOURCE"
   release_version_not_older "$current_product" "$target_product" || die "REJECT_DOWNGRADE"
+  current_tag_sha="$(release_tag_sha "$current_product")" || die "approved current release tag not found: $current_product"
+  [[ "$current_tag_sha" == "$current_source" ]] || die "current release tag/source identity mismatch"
   git -C "$REPO_ROOT" merge-base --is-ancestor "$current_source" "$target_source" || die "REJECT_UNRELATED_OR_DOWNGRADE_LINEAGE"
   runtime_verify_lock "$target_extract/deployment/runtime/runtime-lock.json"
   current_lock_sha="$(sha256sum "$root/config/runtime-lock.json" | awk '{print $1}')"
@@ -988,15 +1024,23 @@ upgrade() (
   if ! customer_ready "$slug" >/dev/null; then
     die "CURRENT_READY_PREFLIGHT_FAILED"
   fi
+  current_release_root="$target_work/current-release"
+  if [[ -e "$root/runtime/release" ]]; then
+    release_assets_complete "$root/runtime/release" || die "instance release execution assets are incomplete"
+    mkdir -p "$current_release_root"
+    cp -R --no-preserve=mode,ownership "$root/runtime/release/." "$current_release_root/"
+  else
+    release_execution_assets_from_tag "$current_product" "$current_release_root" "$current_source"
+  fi
   stage_target_bundle "$target_extract" "$target_stage"
   backup_output="$(backup "$slug")" || die "DURABLE_BACKUP_FAILED"
   archive="$(sed -n 's/^backup=//p' <<<"$backup_output")"
   [[ -s "$archive" && -s "$archive.sha256" && -s "$archive.manifest.json" ]] || die "durable backup integrity metadata is missing"
   compose "$root" stop odoo >/dev/null
   [[ "$(compose "$root" ps -q odoo 2>/dev/null | head -1)" == "" ]] || true
-  create_rollback_snapshot "$root" "$snapshot"
+  create_rollback_snapshot "$root" "$snapshot" "$current_release_root"
   capture_rollback_data "$root" "$snapshot" || die "EPHEMERAL_ROLLBACK_SNAPSHOT_FAILED"
-  activate_target_release "$root" "$target_stage" "$target_product" "$target_source" || upgrade_failure "$root" "$snapshot" "$slug" "$target_product" target-activation
+  activate_target_release "$root" "$target_stage" "$target_product" "$target_source" "$current_release_root" || upgrade_failure "$root" "$snapshot" "$slug" "$target_product" target-activation
   if ! update_modules_from_instance "$root"; then
     upgrade_failure "$root" "$snapshot" "$slug" "$target_product" module-update
     return $?

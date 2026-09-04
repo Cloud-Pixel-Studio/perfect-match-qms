@@ -30,15 +30,19 @@ trap cleanup EXIT
 
 cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$WORK/bundle/deployment/runtime/runtime-lock.json"
 TEST_REPO_ROOT="$WORK/source-history"
-mkdir -p "$TEST_REPO_ROOT/deployment/runtime"
+mkdir -p "$TEST_REPO_ROOT/deployment/runtime" "$TEST_REPO_ROOT/deployment/customer" "$TEST_REPO_ROOT/deployment/docker/customer"
 cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$TEST_REPO_ROOT/deployment/runtime/runtime-lock.json"
 git -C "$TEST_REPO_ROOT" init -q
 git -C "$TEST_REPO_ROOT" config user.name "M30.8 test fixture"
 git -C "$TEST_REPO_ROOT" config user.email "m30.8-fixture@example.invalid"
 printf 'initial release fixture\n' > "$TEST_REPO_ROOT/release.txt"
-git -C "$TEST_REPO_ROOT" add deployment/runtime/runtime-lock.json release.txt
+printf 'tag_old_module\n' > "$TEST_REPO_ROOT/deployment/customer/modules.txt"
+printf 'tag-old-compose __ODOO_IMAGE__ __POSTGRES_IMAGE__ __INSTANCE_SLUG__ __INSTANCE_ROOT__ __HTTP_PORT__\n' > "$TEST_REPO_ROOT/deployment/docker/customer/compose.yml.template"
+printf 'tag-old-odoo __ODOO_MASTER_PASSWORD__ __DATABASE_NAME__\n' > "$TEST_REPO_ROOT/deployment/docker/customer/odoo.conf.template"
+git -C "$TEST_REPO_ROOT" add deployment/runtime/runtime-lock.json deployment/customer/modules.txt deployment/docker/customer/compose.yml.template deployment/docker/customer/odoo.conf.template release.txt
 git -C "$TEST_REPO_ROOT" commit -qm "initial release fixture"
 CURRENT_SOURCE="$(git -C "$TEST_REPO_ROOT" rev-parse HEAD)"
+git -C "$TEST_REPO_ROOT" tag "$CURRENT_PRODUCT" "$CURRENT_SOURCE"
 printf 'target release fixture\n' >> "$TEST_REPO_ROOT/release.txt"
 git -C "$TEST_REPO_ROOT" add release.txt
 git -C "$TEST_REPO_ROOT" commit -qm "target release fixture"
@@ -70,6 +74,8 @@ jq -n --arg product "$TARGET_PRODUCT" --arg source "$TARGET_SOURCE" \
 source "$SCRIPT"
 REPO_ROOT="$TEST_REPO_ROOT"
 RUNTIME_LOCK_FILE="$REPO_ROOT/deployment/runtime/runtime-lock.json"
+ALPINE_IMAGE="alpine:fixture"
+docker() { :; }
 
 make_instance() {
   local slug="$1" product="${2:-$CURRENT_PRODUCT}" source="${3:-$CURRENT_SOURCE}" root
@@ -92,6 +98,15 @@ make_instance() {
     '{product_version:$product,source_sha:$source,source_release_sha:$source,deployment_state:"deployed"}' > "$root/config/product-manifest.json"
   jq -n --arg product "$product" --arg source "$source" \
     '{product_version:$product,source_release_sha:$source,deployment_state:"deployed"}' > "$root/config/deployment-manifest.json"
+}
+
+make_legacy_instance() {
+  local slug="$1" root
+  make_instance "$slug"
+  root="$PMQMS_CUSTOMER_INSTANCE_ROOT/$slug"
+  rm -rf -- "$root/runtime/release"
+  printf 'legacy_module_from_m30_7\n' > "$root/runtime/modules.txt"
+  printf 'legacy-compose __ODOO_IMAGE__ __POSTGRES_IMAGE__ __INSTANCE_SLUG__ __INSTANCE_ROOT__ __HTTP_PORT__\n' > "$root/runtime/compose.yml"
 }
 
 # These overrides isolate the shell contract from Docker and the durable
@@ -119,7 +134,8 @@ validate_bundle_archive() {
 runtime_major() { sed -nE 's/^[^:]+:([0-9]+)(@.*)?$/\1/p' <<<"$1"; }
 backup() {
   [[ "${FAIL_BACKUP:-0}" == 1 ]] && return 17
-  local slug="$1" root="$PMQMS_CUSTOMER_INSTANCE_ROOT/$1" archive="$root/backups/m30-8-test.tar.age"
+  local slug="$1" root="$PMQMS_CUSTOMER_INSTANCE_ROOT/$1"
+  local archive="$root/backups/m30-8-test.tar.age"
   mkdir -p "$root/backups"
   printf 'encrypted fictional backup\n' > "$archive"
   printf 'checksum\n' > "$archive.sha256"
@@ -172,6 +188,60 @@ expect_fail() {
   if output="$("$@" 2>&1)"; then fail "$label unexpectedly succeeded"; fi
   printf '%s\n' "$output" > "$WORK/$label.out"
 }
+
+# A M30.7-provisioned instance has valid identity and runtime assets but no
+# self-contained release directory. Generic identity and backup operations
+# must remain usable before the upgrade reconstructs release assets.
+reset_legacy_case() {
+  make_legacy_instance m30-8-legacy-upgrade-test
+  TARGET_PRODUCT="v99.99.99-rc0"
+  TARGET_MODE=""
+  TARGET_SOURCE_OVERRIDE=""
+  FAIL_BACKUP=0
+  FAIL_MODULE_UPDATE=0
+  FAIL_HEALTH=0
+  FAIL_TARGET_READY_CALL=0
+  HEALTH_CALLS=0
+  CUSTOMER_READY_CALLS=0
+}
+
+reset_legacy_case
+LEGACY_ROOT="$PMQMS_CUSTOMER_INSTANCE_ROOT/m30-8-legacy-upgrade-test"
+[[ ! -e "$LEGACY_ROOT/runtime/release" ]] || fail "legacy fixture unexpectedly has release assets"
+load_instance "$LEGACY_ROOT" || fail "legacy instance could not be loaded"
+health_root() { return 0; }
+health_root "$LEGACY_ROOT" || fail "legacy health path failed"
+customer_ready m30-8-legacy-upgrade-test >/dev/null || fail "legacy customer-ready path failed"
+backup m30-8-legacy-upgrade-test >/dev/null || fail "legacy backup path failed"
+health_root() {
+  HEALTH_CALLS=$((HEALTH_CALLS + 1))
+  [[ "${FAIL_HEALTH:-0}" != 1 || "$HEALTH_CALLS" -gt 1 ]]
+}
+
+# The exact current release tag, not the operator checkout, supplies old
+# rollback assets when a M30.7 instance has no runtime/release tree.
+reset_legacy_case
+upgrade_output="$(upgrade m30-8-legacy-upgrade-test --bundle "$TARGET_BUNDLE" --to "$TARGET_PRODUCT" 2>&1)" || fail "legacy successful upgrade failed: $upgrade_output"
+LEGACY_ROOT="$PMQMS_CUSTOMER_INSTANCE_ROOT/m30-8-legacy-upgrade-test"
+[[ -d "$LEGACY_ROOT/runtime/release" ]] || fail "legacy upgrade did not create release assets"
+assert_file_contains "$LEGACY_ROOT/runtime/release/deployment/customer/modules.txt" bundle_pm_qms_core "legacy upgrade did not activate target bundle assets"
+grep -Fq 'UPGRADE_RESULT=PASS' <<<"$upgrade_output" || fail "legacy upgrade result was not reported"
+
+run_legacy_failed_upgrade() {
+  reset_legacy_case
+  eval "$2=1"
+  local output
+  if output="$(upgrade m30-8-legacy-upgrade-test --bundle "$TARGET_BUNDLE" 2>&1)"; then fail "legacy $1 unexpectedly succeeded"; fi
+  grep -Fq 'UPGRADE_RESULT=FAILED' <<<"$output" || fail "legacy $1 did not report failed upgrade"
+  grep -Fq 'ROLLBACK_RESULT=PASS' <<<"$output" || fail "legacy $1 did not report rollback pass"
+  LEGACY_ROOT="$PMQMS_CUSTOMER_INSTANCE_ROOT/m30-8-legacy-upgrade-test"
+  assert_file_contains "$LEGACY_ROOT/runtime/release/deployment/customer/modules.txt" tag_old_module "legacy $1 did not restore tag-derived release assets"
+  assert_file_contains "$LEGACY_ROOT/runtime/modules.txt" tag_old_module "legacy $1 did not restore the tag-authoritative module list"
+  ! grep -Fq legacy_module_from_m30_7 "$LEGACY_ROOT/runtime/modules.txt" || fail "legacy $1 trusted the historical module list"
+  jq -e --arg product "$CURRENT_PRODUCT" --arg source "$CURRENT_SOURCE" '.deployment_state == "deployed" and .product_version == $product and .source_release_sha == $source and .last_upgrade_result == "rolled_back"' \
+    "$LEGACY_ROOT/config/deployment-manifest.json" >/dev/null || fail "legacy $1 did not restore release identity"
+}
+run_legacy_failed_upgrade module-update FAIL_MODULE_UPDATE
 
 # Initial provisioning must persist bundle assets even when a deliberately
 # different operator fixture exists.
