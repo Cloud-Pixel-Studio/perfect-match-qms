@@ -684,7 +684,11 @@ restore_validate() (
   SOURCE_RELEASE_SHA="$source_release_sha" init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$source_product_version" --release-assets-dir "$source_release_bundle"
   target="$(require_instance "$recovery")"; load_instance "$target"; target_database="$DATABASE_NAME"
   payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --expected-instance "$source_slug" --expected-database "$source_database" --output "$payload"
-  cp "$payload/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"; [[ -f "$payload/active.pmql" ]] && cp "$payload/active.pmql" "$target/license/active.pmql" && chmod 600 "$target/license/active.pmql"
+  cp "$payload/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"
+  if [[ -f "$payload/active.pmql" ]]; then
+    cp "$payload/active.pmql" "$target/license/active.pmql"
+    docker run --rm --user root -v "$target/license:/license" "$ALPINE_IMAGE" sh -eu -c 'chown 100:101 /license/active.pmql && chmod 600 /license/active.pmql'
+  fi
   cp "$payload/runtime-lock.json" "$target/config/runtime-lock.json"; chmod 600 "$target/config/runtime-lock.json"
   cp "$payload/deployment-manifest.json" "$target/config/deployment-manifest.json"
   jq --arg slug "$recovery" --arg type "test" --arg product "$source_product_version" \
