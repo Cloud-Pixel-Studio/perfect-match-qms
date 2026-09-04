@@ -61,6 +61,24 @@ runtime. Restore the database and filestore using the target instance's
 operator procedure, then verify license status, health, organization, users,
 sites, and application logs. This preserves the customer's identity.
 
+## Historical restore provenance
+
+`restore-validate` derives the recovery product version and source release SHA
+from the verified backup payload manifest, before initializing the recovery
+instance. The backup values remain authoritative even when the source instance
+has since moved to a newer release. The release version is resolved only to an
+approved tag whose commit SHA matches the backup SHA; the tag reconstructs the
+historical addons and the customer execution assets (`modules.txt`, the
+customer Compose template, and the customer Odoo configuration template).
+The backed-up runtime lock, deployment manifest, product manifest, database,
+filestore, environment identity, and license are retained as recovery inputs.
+
+Archives created before `product-manifest.json` was introduced remain valid.
+For those archives the restore operation creates a deterministic product
+identity from the backup release and runtime lock. It never substitutes the
+current source checkout or current source manifest. A release tag whose SHA
+does not match the backup is rejected before recovery initialization.
+
 ## Validation
 
 Mission 21's ephemeral test uses:

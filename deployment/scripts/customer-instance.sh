@@ -164,6 +164,19 @@ prepare_permissions() {
   runtime_verify_lock "$RUNTIME_LOCK_PATH"
   docker run --rm --user root -v "$root/config:/config" -v "$root/secrets:/secrets" -v "$root/license:/license" -v "$root/activation:/activation" "$ODOO_IMAGE" sh -lc 'chown 100:101 /config/odoo.conf /config/environment_id /secrets/postgres_password /secrets/odoo_master_password /license /activation 2>/dev/null || true; chmod 600 /config/odoo.conf /secrets/postgres_password /secrets/odoo_master_password; chmod 644 /config/environment_id 2>/dev/null || true; chmod 700 /license 2>/dev/null || true; chmod 755 /activation 2>/dev/null || true'
 }
+prepare_operator_write_access() {
+  local root="$1" host_uid="$(id -u)" host_gid="$(id -g)"
+  load_runtime_for_root "$root"
+  docker run --rm --user root -e HOST_UID="$host_uid" -e HOST_GID="$host_gid" \
+    -v "$root/config:/config" -v "$root/runtime:/runtime" "$ALPINE_IMAGE" sh -eu -c '
+      chown "$HOST_UID:$HOST_GID" /config /runtime
+      chmod u+rwx /config /runtime
+      find /config -maxdepth 1 -type f -exec chown "$HOST_UID:$HOST_GID" {} +
+      find /runtime -maxdepth 1 -type f -exec chown "$HOST_UID:$HOST_GID" {} +
+      find /runtime -mindepth 1 -maxdepth 1 -type d -exec chown "$HOST_UID:$HOST_GID" {} +
+      find /runtime -mindepth 1 -maxdepth 1 -type d -exec chmod u+rwx {} +
+    '
+}
 module_list() { paste -sd, <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$MODULES_FILE"); }
 read_option() { local flag="$1"; shift; while [[ $# -gt 0 ]]; do [[ "$1" == "$flag" ]] && { echo "${2:-}"; return 0; }; shift; done; return 1; }
 release_version_ok() { [[ "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; }
@@ -216,6 +229,16 @@ release_execution_assets_from_tag() {
     deployment/docker/customer/odoo.conf.template | tar -x -C "$destination"
   release_assets_complete "$destination" ||
     die "approved release tag has incomplete execution assets: $release"
+}
+release_addons_from_tag() {
+  local release="$1" destination="$2" expected_sha="${3:-}" tag_sha
+  tag_sha="$(release_tag_sha "$release")" || die "approved release tag not found: $release"
+  [[ -z "$expected_sha" || "$tag_sha" == "$expected_sha" ]] ||
+    die "release tag/source identity mismatch: $release"
+  rm -rf -- "$destination"
+  mkdir -p "$destination"
+  git -C "$REPO_ROOT" archive "$release" addons | tar -x -C "$destination"
+  [[ -d "$destination/addons" ]] || die "approved release tag has no addons: $release"
 }
 
 CUSTOMER_PAYLOAD_PATHS=(
@@ -413,6 +436,7 @@ render_files() {
   local root="$1" master
   load_release_assets_for_root "$root"
   load_runtime_for_root "$root"
+  prepare_operator_write_access "$root"
   master="$(docker run --rm --user root -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -eu -c 'cat /secrets/odoo_master_password')"
   sed -e "s#__INSTANCE_SLUG__#$INSTANCE_SLUG#g" -e "s#__INSTANCE_ROOT__#$root#g" -e "s#__HTTP_PORT__#$HTTP_PORT#g" -e "s#__ODOO_IMAGE__#$ODOO_IMAGE#g" -e "s#__POSTGRES_IMAGE__#$POSTGRES_IMAGE#g" "$COMPOSE_TEMPLATE" > "$root/runtime/compose.yml"
   sed -e "s#__ODOO_MASTER_PASSWORD__#$master#g" -e "s#__DATABASE_NAME__#$DATABASE_NAME#g" "$ODOO_TEMPLATE" > "$root/config/odoo.conf"
@@ -631,12 +655,17 @@ backup() (
   database_snapshot_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   docker run --rm -v "pmqms_${INSTANCE_SLUG}_odoo_data:/odoo-data:ro" -v "$tmp:/backup" "$ALPINE_IMAGE" sh -c "cd /odoo-data && if [ -d filestore/$DATABASE_NAME ]; then tar -czf /backup/filestore.tar.gz filestore/$DATABASE_NAME; else tar -czf /backup/filestore.tar.gz --files-from /dev/null; fi"
   filestore_snapshot_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  local source_release_sha="$SOURCE_RELEASE_SHA"
+  [[ "$source_release_sha" =~ ^[0-9a-f]{40}$ ]] || die "instance source release identity is invalid"
+  [[ -s "$root/config/product-manifest.json" ]] || die "source product manifest is missing"
+  jq -e --arg product "$PRODUCT_VERSION" --arg source "$source_release_sha" \
+    '(.product_version == $product) and (.source_sha == $source)' \
+    "$root/config/product-manifest.json" >/dev/null || die "source product manifest identity does not match instance release"
   cp "$root/config/environment_id" "$tmp/environment_id"
   cp "$root/config/runtime-lock.json" "$tmp/runtime-lock.json"
   cp "$root/config/deployment-manifest.json" "$tmp/deployment-manifest.json"
-  local source_release_sha="$SOURCE_RELEASE_SHA"
-  [[ "$source_release_sha" =~ ^[0-9a-f]{40}$ ]] || die "instance source release identity is invalid"
-  local component_args=(--component "db.dump=$tmp/db.dump" --component "filestore.tar.gz=$tmp/filestore.tar.gz" --component "environment_id=$tmp/environment_id" --component "runtime-lock.json=$tmp/runtime-lock.json" --component "deployment-manifest.json=$tmp/deployment-manifest.json")
+  cp "$root/config/product-manifest.json" "$tmp/product-manifest.json"
+  local component_args=(--component "db.dump=$tmp/db.dump" --component "filestore.tar.gz=$tmp/filestore.tar.gz" --component "environment_id=$tmp/environment_id" --component "runtime-lock.json=$tmp/runtime-lock.json" --component "deployment-manifest.json=$tmp/deployment-manifest.json" --component "product-manifest.json=$tmp/product-manifest.json")
   if docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
     sh -eu -c 'test -r /license/active.pmql' >/dev/null 2>&1; then
     docker run --rm --user 100:101 -v "$root/license:/license:ro" "$ALPINE_IMAGE" \
@@ -653,14 +682,15 @@ backup() (
 restore_validate() (
   local source_slug="$1" archive="$2"; shift 2; local identity_file="${PMQMS_BACKUP_IDENTITY_FILE:-}" verification_file=""; while [[ $# -gt 0 ]]; do case "$1" in --identity-file) identity_file="${2:-}"; shift 2;; --verification-file) verification_file="${2:-}"; shift 2;; *) die "unknown restore-validate option: $1";; esac; done
   local source_root; source_root="$(require_instance "$source_slug")"; load_instance "$source_root"; [[ "$ENVIRONMENT_TYPE" == test ]] || die "restore validation source must be test type"
-  local source_database="$DATABASE_NAME" source_environment_id="$ENVIRONMENT_ID_FILE" source_product_version="$PRODUCT_VERSION" source_port="$HTTP_PORT"
+  local source_database="$DATABASE_NAME" source_environment_id="" source_product_version="$PRODUCT_VERSION" source_port="$HTTP_PORT"
+  source_environment_id="$(tr -d '\n' < "$ENVIRONMENT_ID_FILE")"
   [[ -n "$identity_file" ]] || die "restore identity is required via --identity-file or PMQMS_BACKUP_IDENTITY_FILE"
   [[ -z "$verification_file" || -f "$verification_file" ]] || die "restore verification file is missing"
   [[ -f "$archive" && -f "$archive.sha256" && -f "$archive.manifest.json" ]] || die "backup archive, manifest, or checksum is missing"
   local recovery="${source_slug}-recovery"; [[ ! -e "$(instance_dir "$recovery")" ]] || die "recovery instance already exists"
-  local source_release_sha="${SOURCE_RELEASE_SHA:-}" source_release_bundle="" source_release_origin="instance"
-  [[ "$source_release_sha" =~ ^[0-9a-f]{40}$ ]] || die "source release identity is invalid"
-  local target target_database="$DATABASE_NAME" tmp="" payload=""
+  local target target_database="$DATABASE_NAME" tmp="" payload="" source_release_bundle="" historical_addons=""
+  local backup_product_version="" backup_release_sha="" backup_environment_id="" backup_runtime_lock_sha=""
+  local product_manifest_origin="backup"
   restore_cleanup() {
     local rc=$?
     trap - EXIT
@@ -670,20 +700,40 @@ restore_validate() (
   }
   trap restore_cleanup EXIT
   tmp="$(new_temp_dir)"
-  source_release_bundle="$tmp/source-release"
-  if [[ -e "$source_root/runtime/release" ]]; then
-    release_assets_complete "$source_root/runtime/release" || die "source release execution assets are incomplete"
-    mkdir -p "$source_release_bundle"
-    cp -R --no-preserve=mode,ownership "$source_root/runtime/release/." "$source_release_bundle/"
+  payload="$tmp/payload"
+  python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --expected-instance "$source_slug" --expected-database "$source_database" --output "$payload"
+  backup_product_version="$(jq -er '.source.product_version' "$payload/manifest.json")"
+  backup_release_sha="$(jq -er '.source.release_sha' "$payload/manifest.json")"
+  backup_environment_id="$(jq -er '.source.environment_id' "$payload/manifest.json")"
+  [[ "$(jq -er '.source.instance_slug' "$payload/manifest.json")" == "$source_slug" ]] || die "backup source instance identity mismatch"
+  [[ "$(jq -er '.source.database_name' "$payload/manifest.json")" == "$source_database" ]] || die "backup source database identity mismatch"
+  [[ "$backup_environment_id" == "$source_environment_id" ]] || die "backup source environment identity mismatch"
+  [[ "$(tr -d '\n' < "$payload/environment_id")" == "$backup_environment_id" ]] || die "backup environment identity payload mismatch"
+  validate_runtime_lock "$payload/runtime-lock.json"
+  backup_runtime_lock_sha="$(sha256sum "$payload/runtime-lock.json" | awk '{print $1}')"
+  jq -e --arg instance "$source_slug" --arg database "$source_database" --arg product "$backup_product_version" --arg source "$backup_release_sha" \
+    '(.instance_slug == $instance) and (.database_name == $database) and (.product_version == $product) and (.source_release_sha == $source)' \
+    "$payload/deployment-manifest.json" >/dev/null || die "backup deployment manifest identity mismatch"
+  if [[ -s "$payload/product-manifest.json" ]]; then
+    cp "$payload/product-manifest.json" "$tmp/product-manifest.json"
   else
-    release_execution_assets_from_tag "$source_product_version" "$source_release_bundle" "$source_release_sha"
-    source_release_origin="approved-tag"
+    product_manifest_origin="deterministic-backup-identity"
+    jq -n --arg product "$backup_product_version" --arg source "$backup_release_sha" --arg lock "$backup_runtime_lock_sha" \
+      --arg odoo "$(jq -er '.odoo.image' "$payload/runtime-lock.json")" \
+      --arg postgres "$(jq -er '.postgres.image' "$payload/runtime-lock.json")" \
+      '{product_version:$product,source_sha:$source,source_release_sha:$source,runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres}' > "$tmp/product-manifest.json"
   fi
+  jq -e --arg product "$backup_product_version" --arg source "$backup_release_sha" --arg lock "$backup_runtime_lock_sha" \
+    '(.product_version == $product) and (.source_sha == $source) and (.runtime_lock_sha256 == $lock)' \
+    "$tmp/product-manifest.json" >/dev/null || die "backup product manifest identity mismatch"
+  source_release_bundle="$tmp/source-release"
+  release_execution_assets_from_tag "$backup_product_version" "$source_release_bundle" "$backup_release_sha"
+  historical_addons="$tmp/historical-addons"
+  release_addons_from_tag "$backup_product_version" "$historical_addons" "$backup_release_sha"
   mkdir -p "$source_release_bundle/deployment/runtime"
-  cp "$source_root/config/runtime-lock.json" "$source_release_bundle/deployment/runtime/runtime-lock.json"
-  SOURCE_RELEASE_SHA="$source_release_sha" init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$source_product_version" --release-assets-dir "$source_release_bundle"
+  cp "$payload/runtime-lock.json" "$source_release_bundle/deployment/runtime/runtime-lock.json"
+  SOURCE_RELEASE_SHA="$backup_release_sha" init_instance "$recovery" --type test --port "$((source_port + 1))" --release "$backup_product_version" --release-assets-dir "$source_release_bundle"
   target="$(require_instance "$recovery")"; load_instance "$target"; target_database="$DATABASE_NAME"
-  payload="$tmp/payload"; python3 "$BACKUP_TOOL" unpack --archive "$archive" --identity-file "$identity_file" --expected-instance "$source_slug" --expected-database "$source_database" --output "$payload"
   cp "$payload/environment_id" "$target/config/environment_id"; chmod 600 "$target/config/environment_id"
   if [[ -f "$payload/active.pmql" ]]; then
     cp "$payload/active.pmql" "$target/license/active.pmql"
@@ -691,31 +741,37 @@ restore_validate() (
   fi
   cp "$payload/runtime-lock.json" "$target/config/runtime-lock.json"; chmod 600 "$target/config/runtime-lock.json"
   cp "$payload/deployment-manifest.json" "$target/config/deployment-manifest.json"
-  jq --arg slug "$recovery" --arg type "test" --arg product "$source_product_version" \
+  jq --arg slug "$recovery" --arg type "test" --arg product "$backup_product_version" \
     '.instance_slug=$slug | .environment_type=$type | .product_version=$product | .deployment_state="restored"' \
     "$target/config/deployment-manifest.json" > "$target/config/deployment-manifest.json.tmp"
   mv "$target/config/deployment-manifest.json.tmp" "$target/config/deployment-manifest.json"
   chmod 600 "$target/config/deployment-manifest.json"
-  [[ -s "$source_root/config/product-manifest.json" ]] || die "source product manifest is missing"
-  jq -e --arg product "$source_product_version" --arg source "$source_release_sha" \
-    '(.product_version == $product) and (.source_sha == $source)' \
-    "$source_root/config/product-manifest.json" >/dev/null ||
-    die "source product manifest identity does not match approved release tag"
-  cp "$source_root/config/product-manifest.json" "$target/config/product-manifest.json"
+  cp "$tmp/product-manifest.json" "$target/config/product-manifest.json"
   chmod 600 "$target/config/product-manifest.json"
+  PRODUCT_VERSION="$backup_product_version"
+  SOURCE_RELEASE_SHA="$backup_release_sha"
   update_manifest_runtime "$target" "$target/config/runtime-lock.json"
   runtime_manifest_gate "$target" || die "recovery runtime identity is invalid"
   render_files "$target"
   rm -rf -- "$target/runtime/addons"
   mkdir -p "$target/runtime/addons"
-  cp -a "$source_root/runtime/addons/." "$target/runtime/addons/"
-  local restored_modules_sha restored_compose_sha restored_odoo_sha
+  cp -a "$historical_addons/addons/." "$target/runtime/addons/"
+  find "$target/runtime/addons" -type d -exec chmod 755 {} +
+  find "$target/runtime/addons" -type f -exec chmod 644 {} +
+  chmod -R a-w "$target/runtime/addons"
+  local restored_modules_sha restored_compose_sha restored_odoo_sha restored_addons_sha
   restored_modules_sha="$(sha256sum "$target/runtime/release/deployment/customer/modules.txt" | awk '{print $1}')"
   restored_compose_sha="$(sha256sum "$target/runtime/release/deployment/docker/customer/compose.yml.template" | awk '{print $1}')"
   restored_odoo_sha="$(sha256sum "$target/runtime/release/deployment/docker/customer/odoo.conf.template" | awk '{print $1}')"
-  echo "restore_source_release_tag=$source_product_version"
-  echo "restore_source_release_sha=$source_release_sha"
-  echo "restore_release_assets_origin=$source_release_origin"
+  restored_addons_sha="$(cd "$target/runtime" && find addons -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | awk '{print $1}')"
+  echo "restore_source_release_tag=$backup_product_version"
+  echo "restore_source_release_sha=$backup_release_sha"
+  echo "restore_release_assets_origin=approved-tag"
+  echo "restore_addons_origin=approved-tag"
+  echo "restore_addons_sha256=$restored_addons_sha"
+  echo "restore_backup_product_manifest_origin=$product_manifest_origin"
+  echo "restore_runtime_lock_sha256=$backup_runtime_lock_sha"
+  echo "restore_deployment_manifest_origin=backup"
   echo "restore_modules_sha256=$restored_modules_sha"
   echo "restore_compose_template_sha256=$restored_compose_sha"
   echo "restore_odoo_template_sha256=$restored_odoo_sha"
@@ -829,6 +885,7 @@ set_instance_identity() {
 set_upgrade_manifest_state() {
   local root="$1" state="$2" target_product="$3" target_source="$4" \
     previous_product="$5" previous_source="$6" failure_stage="${7:-}"
+  prepare_operator_write_access "$root"
   local manifest="$root/config/deployment-manifest.json"
   local temp="$manifest.tmp"
   jq --arg state "$state" --arg target "$target_product" --arg target_source "$target_source" \
@@ -848,7 +905,10 @@ set_upgrade_manifest_state() {
 stage_target_bundle() {
   local bundle_root="$1" stage="$2"
   mkdir -p "$stage/release/deployment/customer" "$stage/release/deployment/docker/customer"
-  cp -a "$bundle_root/addons" "$stage/addons"
+  mkdir -p "$stage/addons"
+  cp -a "$bundle_root/addons/." "$stage/addons/"
+  find "$stage/addons" -type d -exec chmod 755 {} +
+  find "$stage/addons" -type f -exec chmod 644 {} +
   cp "$bundle_root/deployment/customer/modules.txt" "$stage/release/deployment/customer/modules.txt"
   cp "$bundle_root/deployment/docker/customer/compose.yml.template" "$stage/release/deployment/docker/customer/compose.yml.template"
   cp "$bundle_root/deployment/docker/customer/odoo.conf.template" "$stage/release/deployment/docker/customer/odoo.conf.template"
@@ -980,6 +1040,7 @@ restore_rollback_snapshot() {
 
 activate_target_release() {
   local root="$1" stage="$2" target_product="$3" target_source="$4" current_release_root="${5:-}" previous="$root/runtime/.m30-8-previous"
+  prepare_operator_write_access "$root"
   [[ ! -e "$previous" ]] || die "stale upgrade replacement directory exists"
   mkdir -m 700 "$previous"
   mv "$root/runtime/addons" "$previous/addons"
@@ -992,6 +1053,9 @@ activate_target_release() {
     cp -R --no-preserve=mode,ownership "$current_release_root/." "$previous/release/"
   fi
   mv "$stage/addons" "$root/runtime/addons"
+  find "$root/runtime/addons" -type d -exec chmod 755 {} +
+  find "$root/runtime/addons" -type f -exec chmod 644 {} +
+  chmod -R a-w "$root/runtime/addons"
   mv "$stage/release" "$root/runtime/release"
   cp "$stage/runtime-lock.json" "$root/config/runtime-lock.json"
   cp "$stage/product-manifest.json" "$root/config/product-manifest.json"
@@ -1136,6 +1200,10 @@ upgrade() (
   mv "$root/config/deployment-manifest.json.tmp" "$root/config/deployment-manifest.json"
   chmod 600 "$root/config/deployment-manifest.json"
   previous_dir="$root/runtime/.m30-8-previous"
+  if [[ -e "$previous_dir" ]]; then
+    docker run --rm --user root -v "$previous_dir:/previous" "$ALPINE_IMAGE" \
+      sh -eu -c 'chmod -R u+rwX /previous'
+  fi
   rm -rf -- "$previous_dir"
   echo "UPGRADE_RESULT=PASS"
   echo "TARGET_PRODUCT_VERSION=$target_product"

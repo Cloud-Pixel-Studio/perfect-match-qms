@@ -22,11 +22,19 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 cleanup() {
   local rc=$?
   trap - EXIT
-  chmod -R u+w "$WORK" 2>/dev/null || true
+  find "$WORK" -depth -type d -exec chmod u+rwx {} + 2>/dev/null || true
+  find "$WORK" -type f -exec chmod u+rw {} + 2>/dev/null || true
   rm -rf -- "$WORK"
   exit "$rc"
 }
 trap cleanup EXIT
+
+unlock_fixture_tree() {
+  local path="$1"
+  [[ -e "$path" ]] || return 0
+  find "$path" -depth -type d -exec chmod u+rwx {} + 2>/dev/null || true
+  find "$path" -type f -exec chmod u+rw {} + 2>/dev/null || true
+}
 
 cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$WORK/bundle/deployment/runtime/runtime-lock.json"
 TEST_REPO_ROOT="$WORK/source-history"
@@ -102,6 +110,7 @@ assert_version_rejected v2.0.0-rc1 v1.99.99
 make_instance() {
   local slug="$1" product="${2:-$CURRENT_PRODUCT}" source="${3:-$CURRENT_SOURCE}" root
   root="$PMQMS_CUSTOMER_INSTANCE_ROOT/$slug"
+  unlock_fixture_tree "$root"
   rm -rf -- "$root"
   mkdir -p "$root/config" "$root/secrets" "$root/license" "$root/activation" "$root/runtime/addons" "$root/runtime/release/deployment/customer" "$root/runtime/release/deployment/docker/customer"
   cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$root/config/runtime-lock.json"
@@ -126,6 +135,7 @@ make_legacy_instance() {
   local slug="$1" root
   make_instance "$slug"
   root="$PMQMS_CUSTOMER_INSTANCE_ROOT/$slug"
+  unlock_fixture_tree "$root/runtime/release"
   rm -rf -- "$root/runtime/release"
   printf 'legacy_module_from_m30_7\n' > "$root/runtime/modules.txt"
   printf 'legacy-compose __ODOO_IMAGE__ __POSTGRES_IMAGE__ __INSTANCE_SLUG__ __INSTANCE_ROOT__ __HTTP_PORT__\n' > "$root/runtime/compose.yml"
@@ -138,6 +148,7 @@ validate_bundle_archive() {
   local bundle="$1" requested_type="$2" destination="$3"
   [[ -f "$bundle" ]] || return 17
   [[ "${TARGET_MODE:-}" != invalid ]] || return 17
+  unlock_fixture_tree "$destination"
   rm -rf -- "$destination"
   mkdir -p "$destination"
   cp -a "$WORK/bundle/." "$destination/"
@@ -172,6 +183,9 @@ capture_rollback_data() {
 restore_rollback_data() { :; }
 restore_rollback_files() {
   local root="$1" snapshot="$2"
+  unlock_fixture_tree "$root/runtime/addons"
+  unlock_fixture_tree "$root/runtime/release"
+  unlock_fixture_tree "$root/runtime/.m30-8-previous"
   rm -rf -- "$root/runtime/addons" "$root/runtime/release" "$root/runtime/.m30-8-previous"
   cp -a "$snapshot/addons" "$root/runtime/addons"
   cp -a "$snapshot/release" "$root/runtime/release"
@@ -272,6 +286,7 @@ SOURCE_RELEASE_SHA="$TARGET_SOURCE" init_instance "$ASSET_SLUG" --type test --re
 ASSET_ROOT="$PMQMS_CUSTOMER_INSTANCE_ROOT/$ASSET_SLUG"
 assert_file_contains "$ASSET_ROOT/runtime/release/deployment/customer/modules.txt" bundle_pm_qms_core "bundle module list was not persisted"
 assert_file_contains "$ASSET_ROOT/runtime/compose.yml" bundle-compose "rendered compose did not use bundle assets"
+unlock_fixture_tree "$ASSET_ROOT"
 rm -rf -- "$ASSET_ROOT"
 
 reset_case() {
@@ -351,6 +366,7 @@ if rollback_failure_output="$(upgrade m30-8-upgrade-test --bundle "$TARGET_BUNDL
 grep -Fq 'ROLLBACK_RESULT=FAILED' <<<"$rollback_failure_output" || fail "rollback failure was not reported"
 PRESERVED_SNAPSHOT="$(sed -n 's/^ROLLBACK_EVIDENCE_PRESERVED=//p' <<<"$rollback_failure_output")"
 [[ -d "$PRESERVED_SNAPSHOT" ]] || fail "rollback evidence was not preserved"
+unlock_fixture_tree "$(dirname "$PRESERVED_SNAPSHOT")"
 rm -rf -- "$(dirname "$PRESERVED_SNAPSHOT")"
 
 echo "m30.8 customer-instance upgrade tests: PASS (asset authority, preflight, runtime gate, backup, success, rollback, re-entry, fail-closed evidence)"
