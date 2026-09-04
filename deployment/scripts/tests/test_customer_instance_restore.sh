@@ -9,6 +9,7 @@ CUSTOMER_SCRIPT="$REPO_ROOT/deployment/scripts/customer-instance.sh"
 RUNTIME_LOCK="$REPO_ROOT/deployment/runtime/runtime-lock.json"
 AGE_VERSION="1.2.1"
 AGE_SHA256="7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50"
+TEST_RELEASE="v99.99.99-rc0"
 AGE_URL="https://github.com/FiloSottile/age/releases/download/v${AGE_VERSION}/age-v${AGE_VERSION}-linux-amd64.tar.gz"
 RUN_NUMBER="${GITHUB_RUN_ID:-$$}"
 RUN_ID="${RUN_NUMBER}-$$"
@@ -34,6 +35,7 @@ cleanup() {
       rm -rf -- "$WORK" || rc=1
     fi
   fi
+  git -C "$REPO_ROOT" tag -d "$TEST_RELEASE" >/dev/null 2>&1 || true
   exit "$rc"
 }
 trap cleanup EXIT
@@ -41,16 +43,11 @@ trap cleanup EXIT
 for command in docker jq openssl curl sha256sum; do command -v "$command" >/dev/null; done
 mkdir -p "$INSTANCE_ROOT" "$WORK/bundle" "$WORK/off-host"
 
-tar -C "$WORK/bundle" -xf <(git -C "$REPO_ROOT" archive HEAD addons deployment/runtime/runtime-lock.json deployment/docker/customer deployment/customer)
-LOCK_SHA="$(sha256sum "$WORK/bundle/deployment/runtime/runtime-lock.json" | awk '{print $1}')"
+git -C "$REPO_ROOT" tag "$TEST_RELEASE" HEAD
+"$CUSTOMER_SCRIPT" bundle --release "$TEST_RELEASE" --output "$WORK/bundle.tar.gz" >/dev/null
 ODOO_IMAGE="$(jq -er '.odoo.image' "$RUNTIME_LOCK")"
-POSTGRES_IMAGE="$(jq -er '.postgres.image' "$RUNTIME_LOCK")"
 ALPINE_IMAGE="$(jq -er '.alpine.image' "$RUNTIME_LOCK")"
 while IFS= read -r image; do docker pull "$image" >/dev/null; done < <(jq -er '.odoo.image, .postgres.image, .alpine.image' "$RUNTIME_LOCK")
-jq -n --arg source "$(git -C "$REPO_ROOT" rev-parse HEAD)" --arg lock "$LOCK_SHA" --arg odoo "$ODOO_IMAGE" --arg postgres "$POSTGRES_IMAGE" \
-  '{product_version:"m29.1-ci-rehearsal",source_sha:$source,runtime_lock_sha256:$lock,odoo_image:$odoo,postgres_image:$postgres,contains_demo_data:false,contains_private_signing_key:false}' \
-  > "$WORK/bundle/manifest.json"
-tar -C "$WORK/bundle" -czf "$WORK/bundle.tar.gz" .
 
 curl --fail --silent --show-error --location "$AGE_URL" -o "$WORK/age.tar.gz"
 printf '%s  %s\n' "$AGE_SHA256" "$WORK/age.tar.gz" | sha256sum --check --status
