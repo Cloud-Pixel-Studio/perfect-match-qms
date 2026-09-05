@@ -52,6 +52,9 @@ jobs:
       - name: Run customer deployment script regressions
         run: bash deployment/scripts/tests/test_customer_instance_cleanup.sh
 
+      - name: Run customer bootstrap scope regressions
+        run: bash deployment/scripts/tests/test_customer_bootstrap_scope.sh
+
       - name: Run controlled customer upgrade and rollback regressions
         run: bash deployment/scripts/tests/test_customer_instance_upgrade.sh
 

@@ -187,6 +187,17 @@ compose() {
   case "$*" in
     *"ps -q odoo"*) echo odoo-id ;;
     *"ps -q postgres"*) echo postgres-id ;;
+    *"odoo shell"*)
+      cat >/dev/null
+      printf '%s\n' \
+        'customer_ready_application=pass' \
+        'CUSTOMER_READY_PROBE_FIRST_USER=pass' \
+        'CUSTOMER_READY_PROBE_LICENSE=pass' \
+        'CUSTOMER_READY_QMS_SCOPE=pass' \
+        'CUSTOMER_READY_QMS_ORGANIZATION=pass' \
+        'CUSTOMER_READY_QMS_SITES=pass' \
+        'CUSTOMER_READY_QMS_PROCESSES=pass'
+      ;;
     *) return 0 ;;
   esac
 }
