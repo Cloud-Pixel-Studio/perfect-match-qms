@@ -227,6 +227,90 @@ class TestPmQmsCommercialLicensing(TransactionCase):
                 {"name": "M20 Second Customer", "code": "M20-SECOND", "company_id": self.company.id}
             )
 
+    def test_unlicensed_non_capacity_mutations_do_not_require_license(self):
+        Organization = self.env["pm.qms.organization"].with_context(
+            pmqms_enforce_license=True,
+            install_mode=True,
+            pmqms_license_seed=True,
+        )
+        framework = Organization.create(
+            {
+                "name": "M31 Framework Without License",
+                "code": "M31-FRAMEWORK",
+                "company_id": self.company.id,
+                "organization_kind": "framework",
+            }
+        )
+        self.assertEqual(framework.organization_kind, "framework")
+
+        with self.assertRaises(UserError):
+            Organization.create(
+                {
+                    "name": "M31 Operational Without License",
+                    "code": "M31-OPERATIONAL",
+                    "company_id": self.company.id,
+                }
+            )
+
+        Site = self.env["pm.qms.site"].with_context(pmqms_enforce_license=True)
+        with self.assertRaises(UserError):
+            Site.create(
+                {
+                    "name": "M31 Operational Site Without License",
+                    "code": "M31-SITE",
+                    "organization_id": self.organization.id,
+                    "site_type": "office",
+                }
+            )
+
+        base_group = self.env.ref("base.group_user")
+        manager_group = self.env.ref("pm_qms_core.group_qms_quality_manager")
+        User = self.env["res.users"].with_context(
+            pmqms_enforce_license=True,
+            no_reset_password=True,
+        )
+        technical = User.create(
+            {
+                "name": "M31 Technical User Without License",
+                "login": "m31.technical",
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set([base_group.id])],
+                "pmqms_license_account_type": "technical",
+            }
+        )
+        self.assertEqual(technical.pmqms_license_account_type, "technical")
+        non_qms = User.create(
+            {
+                "name": "M31 Non QMS User Without License",
+                "login": "m31.non-qms",
+                "company_id": self.company.id,
+                "company_ids": [Command.set([self.company.id])],
+                "group_ids": [Command.set([base_group.id])],
+            }
+        )
+        self.assertNotIn(manager_group, non_qms.group_ids)
+
+        with self.assertRaises(UserError):
+            User.create(
+                {
+                    "name": "M31 QMS User Without License",
+                    "login": "m31.qms",
+                    "company_id": self.company.id,
+                    "company_ids": [Command.set([self.company.id])],
+                    "group_ids": [Command.set([base_group.id, manager_group.id])],
+                }
+            )
+
+        with self.assertRaises(UserError):
+            Organization.create(
+                {
+                    "name": "M31 Forged Install Context",
+                    "code": "M31-FORGED-CONTEXT",
+                    "company_id": self.company.id,
+                }
+            )
+
     def test_named_user_is_counted_once_and_exemption_is_protected(self):
         self._import()
         base_group = self.env.ref("base.group_user")

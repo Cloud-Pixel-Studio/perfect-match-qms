@@ -132,14 +132,17 @@ class PmQmsEntitlementService(models.AbstractModel):
 
     @api.model
     def enforce_organization(self, organizations):
-        if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
+        if not self._enforcement_enabled():
+            return
+        billable = organizations.filtered(
+            lambda organization: organization.active and organization.organization_kind == "operational"
+        )
+        if not billable:
             return
         license_record = self._locked_current_license()
         self._license_or_raise(license_record)
-        for organization in organizations:
-            if organization.organization_kind != "operational" or not organization.active:
-                continue
-            usage = self.usage(organization.company_id)
+        for company in billable.mapped("company_id"):
+            usage = self.usage(company)
             if usage["company"]["used"] > usage["company"]["limit"]:
                 raise UserError(
                     "The commercial license allows "
@@ -148,14 +151,21 @@ class PmQmsEntitlementService(models.AbstractModel):
 
     @api.model
     def enforce_sites(self, sites):
-        if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
+        if not self._enforcement_enabled():
+            return
+        billable = sites.filtered(
+            lambda site: (
+                site.active
+                and site.organization_id.active
+                and site.organization_id.organization_kind == "operational"
+            )
+        )
+        if not billable:
             return
         license_record = self._locked_current_license()
         self._license_or_raise(license_record)
-        for site in sites:
-            if not site.active or site.organization_id.organization_kind != "operational":
-                continue
-            usage = self.usage(site.company_id)
+        for company in billable.mapped("company_id"):
+            usage = self.usage(company)
             if usage["site"]["used"] > usage["site"]["limit"]:
                 raise UserError(
                     f"The commercial license allows {usage['site']['limit']} active site(s). Archive a site or import an expanded license."
@@ -163,11 +173,23 @@ class PmQmsEntitlementService(models.AbstractModel):
 
     @api.model
     def enforce_named_users(self, users):
-        if not self._enforcement_enabled() or self.env.context.get("pmqms_license_seed"):
+        if not self._enforcement_enabled():
+            return
+        role_groups = self._qms_role_groups()
+        billable = users.filtered(
+            lambda user: (
+                user.active
+                and not user.share
+                and user.pmqms_license_account_type == "customer"
+                and not user.pmqms_license_exempt
+                and bool(user.group_ids & role_groups)
+            )
+        )
+        if not billable:
             return
         license_record = self._locked_current_license()
         self._license_or_raise(license_record)
-        companies = users.mapped("company_id")
+        companies = billable.mapped("company_id")
         for company in companies:
             usage = self.usage(company)
             if usage["named_user"]["used"] > usage["named_user"]["limit"]:
