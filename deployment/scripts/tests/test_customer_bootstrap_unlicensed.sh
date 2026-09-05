@@ -29,6 +29,12 @@ cleanup() {
   if [[ -f "$INSTANCE_ROOT/$SLUG/config/instance.env" ]]; then
     bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || rc=1
   fi
+  local -a containers=()
+  mapfile -t containers < <(docker ps -aq --filter "label=com.docker.compose.project=pmqms-customer-${SLUG}")
+  if ((${#containers[@]})); then
+    docker rm -f "${containers[@]}" >/dev/null 2>&1 || rc=1
+  fi
+  docker volume rm "pmqms_${SLUG}_odoo_data" "pmqms_${SLUG}_postgres" >/dev/null 2>&1 || true
   if [[ -n "${ALPINE_IMAGE:-}" && -d "$WORK" ]]; then
     docker run --rm --user root -v "$WORK:/cleanup" "$ALPINE_IMAGE" \
       sh -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || rc=1
