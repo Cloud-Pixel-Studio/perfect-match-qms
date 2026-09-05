@@ -31,7 +31,7 @@ REQUIRED_COMPONENTS = {
     "runtime-lock.json",
     "deployment-manifest.json",
 }
-OPTIONAL_COMPONENTS = {"active.pmql"}
+OPTIONAL_COMPONENTS = {"active.pmql", "product-manifest.json"}
 ALLOWED_COMPONENTS = REQUIRED_COMPONENTS | OPTIONAL_COMPONENTS
 REJECTED_COMPONENT_TERMS = (
     "password",

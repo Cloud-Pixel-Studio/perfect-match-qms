@@ -81,7 +81,10 @@ else: runpy.run_path(sys.argv[0].replace('age-wrapper.py', 'age-fake.py'), run_n
             "--source-release-sha", "f" * 40, "--recovery-point-class", point_class,
             "--created-utc", stamp,
         ]
-        for name in ("db.dump", "filestore.tar.gz", "environment_id", "runtime-lock.json", "deployment-manifest.json"):
+        component_names = ("db.dump", "filestore.tar.gz", "environment_id", "runtime-lock.json", "deployment-manifest.json")
+        if (self.source / "product-manifest.json").exists():
+            component_names += ("product-manifest.json",)
+        for name in component_names:
             args += ["--component", f"{name}={self.source / name}"]
         result = self.run_tool(*args)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -97,6 +100,15 @@ else: runpy.run_path(sys.argv[0].replace('age-wrapper.py', 'age-fake.py'), run_n
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual((output / "db.dump").read_bytes(), b"fictional database\n")
         self.assertFalse(any(path.name.startswith("recipient") for path in output.iterdir()))
+
+    def test_product_manifest_is_allowed_for_new_backups(self):
+        (self.source / "product-manifest.json").write_text(
+            '{"product_version":"v1.0.0-rc1","source_sha":"' + "f" * 40 + '"}\n',
+            encoding="utf-8",
+        )
+        archive = self.pack(name="with-product-manifest.tar.age")
+        manifest = json.loads(Path(f"{archive}.manifest.json").read_text())
+        self.assertIn("product-manifest.json", {item["name"] for item in manifest["components"]})
 
     def test_manifest_is_deterministic_for_same_recovery_point(self):
         first = self.pack("2026-09-01T12:00:00Z", "first.tar.age")

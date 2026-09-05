@@ -64,10 +64,12 @@ trap cleanup EXIT INT TERM
 mkdir -p "$WORK/bin" "$WORK/unit" "$INSTANCE" "$INSTANCE/config" "$INSTANCE/secrets" "$INSTANCE/license" "$INSTANCE/activation" "$INSTANCE/backups" "$INSTANCE/runtime" "$INSTANCE/runtime/addons"
 printf 'fictional-recipient-placeholder\n' > "$WORK/recipient.age"
 cp "$ROOT/deployment/runtime/runtime-lock.json" "$INSTANCE/config/runtime-lock.json"
+FIXTURE_SOURCE_SHA="$(git -C "$ROOT" rev-parse HEAD)"
 cat > "$INSTANCE/config/instance.env" <<EOF
 INSTANCE_SLUG=${SLUG}
 ENVIRONMENT_TYPE=test
 PRODUCT_VERSION=v1.0.0-test
+SOURCE_RELEASE_SHA=${FIXTURE_SOURCE_SHA}
 DOMAIN=systemd-runtime.invalid
 DATABASE_NAME=pmqms_runtime_proof
 HTTP_PORT=8199
@@ -75,6 +77,9 @@ EOF
 printf 'fictional-systemd-runtime-environment\n' > "$INSTANCE/config/environment_id"
 cat > "$INSTANCE/config/deployment-manifest.json" <<'EOF'
 {"instance_slug":"runtime-proof","environment_type":"test","product_version":"v1.0.0-test"}
+EOF
+cat > "$INSTANCE/config/product-manifest.json" <<EOF
+{"product_version":"v1.0.0-test","source_sha":"${FIXTURE_SOURCE_SHA}"}
 EOF
 touch "$INSTANCE/backups/.pmqms-recovery-repository"
 chmod -R 700 "$WORK"
@@ -309,6 +314,27 @@ wait_for_successful_status() {
 }
 wait_for_inactive_service "$RUNTIME_INSTANCE_SERVICE"
 
+initial_service_result="$(as_root "$SYSTEMCTL" show -p Result --value "$RUNTIME_INSTANCE_SERVICE" 2>/dev/null || true)"
+echo "INITIAL_BACKUP_SERVICE_RESULT=${initial_service_result:-unavailable}"
+if [[ "$initial_service_result" != success ]]; then
+  as_root "$SYSTEMCTL" status "$RUNTIME_INSTANCE_SERVICE" --no-pager || true
+  as_root journalctl -u "$RUNTIME_INSTANCE_SERVICE" -n 50 --no-pager || true
+  echo "initial backup service did not complete successfully" >&2
+  exit 1
+fi
+initial_service_restarts="$(as_root "$SYSTEMCTL" show -p NRestarts --value "$RUNTIME_INSTANCE_SERVICE" 2>/dev/null || true)"
+if [[ "$initial_service_restarts" =~ ^[0-9]+$ ]]; then
+  echo "INITIAL_BACKUP_SERVICE_RESTARTS=${initial_service_restarts}"
+  if [[ "$initial_service_restarts" != 0 ]]; then
+    as_root "$SYSTEMCTL" status "$RUNTIME_INSTANCE_SERVICE" --no-pager || true
+    as_root journalctl -u "$RUNTIME_INSTANCE_SERVICE" -n 50 --no-pager || true
+    echo "initial backup service restarted unexpectedly" >&2
+    exit 1
+  fi
+else
+  echo "INITIAL_BACKUP_SERVICE_RESTARTS=unavailable"
+fi
+
 # Multiple missed calendar slots must result in one catch-up, not a burst.
 initial_intraday="$(count_invocations intraday)"
 echo "systemd_runtime_phase=begin_persistent_catchup"
@@ -321,6 +347,8 @@ echo "systemd_runtime_phase=persistent_catchup_observed count=$(count_invocation
 sleep 1
 catchup_count="$(count_invocations intraday)"
 echo "systemd_runtime_phase=persistent_catchup_count count=${catchup_count} expected=$((initial_intraday + 1))"
+echo "PERSISTENT_CATCHUP_EXPECTED=$((initial_intraday + 1))"
+echo "PERSISTENT_CATCHUP_ACTUAL=${catchup_count}"
 (( catchup_count == initial_intraday + 1 ))
 stop_timer "$RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=catchup_timer_stopped"
