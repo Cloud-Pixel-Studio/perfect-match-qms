@@ -600,7 +600,7 @@ quality_group = env.ref("pm_qms_core.group_qms_quality_manager")
 Users = env["res.users"].sudo()
 if Users.search([("login", "=", ${user_login@Q})], limit=1):
     raise RuntimeError("The Quality Manager login already exists.")
-user = Users.create({"name": ${user_name@Q}, "login": ${user_login@Q}, "email": ${email@Q}, "password": Path("$mount/password").read_text().strip(), "company_id": company.id, "company_ids": [(6, 0, [company.id])], "group_ids": [(4, quality_group.id)]})
+user = Users.create({"name": ${user_name@Q}, "login": ${user_login@Q}, "email": ${email@Q}, "password": Path("$mount/password").read_text().strip(), "company_id": company.id, "company_ids": [(6, 0, [company.id])], "group_ids": [(4, quality_group.id)], "qms_organization_ids": [(6, 0, [organization.id])], "qms_site_ids": [(5, 0, 0)], "qms_all_sites": True, "qms_process_ids": [(5, 0, 0)], "qms_all_processes": True})
 env["pm.qms.person"].sudo().create({"name": ${user_name@Q}, "user_id": user.id, "organization_id": organization.id})
 organization.write({"quality_contact_id": user.id})
 env.cr.commit()
@@ -1214,7 +1214,7 @@ upgrade() (
 
 customer_ready() {
   local root; root="$(require_instance "$1")"; load_instance "$root"
-  local ok=1 release_ok=0 runtime_ok=0 application_ok=0 license_ok=0 first_user_ok=0
+  local ok=1 release_ok=0 runtime_ok=0 application_ok=0 license_ok=0 first_user_ok=0 qms_scope_ok=0
   if runtime_manifest_gate "$root"; then release_ok=1; runtime_ok=1; else ok=0; fi
   if health "$1"; then
     local odoo_id postgres_id image_ok=1
@@ -1229,19 +1229,61 @@ customer_ready() {
   if docker run --rm --user 100:101 -v "$root/license:/license:ro" -v "$root/config:/config:ro" -v "$root/secrets:/secrets:ro" "$ALPINE_IMAGE" sh -c 'test -r /license/active.pmql && test -r /config/environment_id && test -r /secrets/postgres_password && test -r /secrets/odoo_master_password'; then :; else
     ok=0
   fi
-  if compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
-organization = env["pm.qms.organization"].sudo().search([("organization_kind", "=", "operational")], limit=1)
-if not organization: raise RuntimeError("No operational organization")
-if not env["pm.qms.person"].sudo().search_count([("organization_id", "=", organization.id), ("user_id", "!=", False)]): raise RuntimeError("No licensed first user")
-license = env["pm.qms.license"].sudo().current()
-status = env["pm.qms.license"].sudo().current_status()["status"]
-if not license or status not in ("valid", "expiring"): raise RuntimeError("License is not usable")
-print("customer_ready_application=pass")
+  local probe_output="" probe_status=0
+  probe_output="$(compose "$root" run --rm odoo odoo shell -d "$DATABASE_NAME" --log-level=error <<'PY'
+Organization = env["pm.qms.organization"].sudo()
+Person = env["pm.qms.person"].sudo()
+organization = Organization.search([("organization_kind", "=", "operational")], order="id", limit=1)
+person = Person.search([("organization_id", "=", organization.id), ("user_id", "!=", False)], order="id", limit=1) if organization else Person.browse()
+user = person.user_id if person else env["res.users"].browse()
+try:
+    license = env["pm.qms.license"].sudo().current()
+    license_status = env["pm.qms.license"].sudo().current_status()["status"]
+except Exception:
+    license = env["pm.qms.license"].browse()
+    license_status = "error"
+
+first_user_ok = bool(person and user and user.active and user.has_group("pm_qms_core.group_qms_quality_manager") and not user.has_group("base.group_system"))
+scope_ok = bool(first_user_ok and user.qms_scope_configured)
+organization_ok = bool(scope_ok and organization in user.qms_organization_ids and organization in user.qms_effective_organization_ids)
+sites = organization.site_ids.filtered(lambda site: site.active) if organization else env["pm.qms.site"].browse()
+sites_ok = bool(scope_ok and user.qms_all_sites and all(site in user.qms_effective_site_ids for site in sites))
+processes_ok = bool(scope_ok and user.qms_all_processes)
+license_ok = bool(license and license_status in ("valid", "expiring"))
+application_ok = bool(organization and person and user and user.active)
+
+print("customer_ready_application=%s" % ("pass" if application_ok else "fail"))
+print("CUSTOMER_READY_PROBE_FIRST_USER=%s" % ("pass" if first_user_ok else "fail"))
+print("CUSTOMER_READY_PROBE_LICENSE=%s" % ("pass" if license_ok else "fail"))
+print("CUSTOMER_READY_QMS_SCOPE=%s" % ("pass" if scope_ok else "fail"))
+print("CUSTOMER_READY_QMS_ORGANIZATION=%s" % ("pass" if organization_ok else "fail"))
+print("CUSTOMER_READY_QMS_SITES=%s" % ("pass" if sites_ok else "fail"))
+print("CUSTOMER_READY_QMS_PROCESSES=%s" % ("pass" if processes_ok else "fail"))
+if not (application_ok and first_user_ok and license_ok and scope_ok and organization_ok and sites_ok and processes_ok):
+    raise RuntimeError("Customer QMS scope is not ready")
 PY
+)" || probe_status=$?
+
+  probe_flag() {
+    local key="$1"
+    grep -Fqx "$key=pass" <<<"$probe_output"
+  }
+  if probe_flag "CUSTOMER_READY_PROBE_FIRST_USER"; then first_user_ok=1; else ok=0; fi
+  if probe_flag "CUSTOMER_READY_PROBE_LICENSE"; then license_ok=1; else ok=0; fi
+  if [[ "$probe_status" == 0 ]] &&
+    probe_flag CUSTOMER_READY_QMS_SCOPE &&
+    probe_flag CUSTOMER_READY_QMS_ORGANIZATION &&
+    probe_flag CUSTOMER_READY_QMS_SITES &&
+    probe_flag CUSTOMER_READY_QMS_PROCESSES
   then
-    first_user_ok=1
-    license_ok=1
+    qms_scope_ok=1
   else
+    ok=0
+  fi
+  if probe_flag "customer_ready_application"; then
+    echo "customer_ready_application=pass"
+  else
+    echo "customer_ready_application=fail"
     ok=0
   fi
   [[ "$release_ok" == 1 ]] && echo "CUSTOMER_READY_RELEASE_IDENTITY=pass" || echo "CUSTOMER_READY_RELEASE_IDENTITY=fail"
@@ -1249,7 +1291,11 @@ PY
   [[ "$application_ok" == 1 ]] && echo "CUSTOMER_READY_APPLICATION=pass" || echo "CUSTOMER_READY_APPLICATION=fail"
   [[ "$license_ok" == 1 ]] && echo "CUSTOMER_READY_LICENSE=pass" || echo "CUSTOMER_READY_LICENSE=fail"
   [[ "$first_user_ok" == 1 ]] && echo "CUSTOMER_READY_FIRST_USER=pass" || echo "CUSTOMER_READY_FIRST_USER=fail"
-  if [[ "$ok" == 1 && "$release_ok" == 1 && "$runtime_ok" == 1 && "$application_ok" == 1 && "$license_ok" == 1 && "$first_user_ok" == 1 ]]; then echo "CUSTOMER_READY=YES"; else echo "CUSTOMER_READY=NO"; return 1; fi
+  probe_flag "CUSTOMER_READY_QMS_SCOPE" && echo "CUSTOMER_READY_QMS_SCOPE=pass" || echo "CUSTOMER_READY_QMS_SCOPE=fail"
+  probe_flag "CUSTOMER_READY_QMS_ORGANIZATION" && echo "CUSTOMER_READY_QMS_ORGANIZATION=pass" || echo "CUSTOMER_READY_QMS_ORGANIZATION=fail"
+  probe_flag "CUSTOMER_READY_QMS_SITES" && echo "CUSTOMER_READY_QMS_SITES=pass" || echo "CUSTOMER_READY_QMS_SITES=fail"
+  probe_flag "CUSTOMER_READY_QMS_PROCESSES" && echo "CUSTOMER_READY_QMS_PROCESSES=pass" || echo "CUSTOMER_READY_QMS_PROCESSES=fail"
+  if [[ "$ok" == 1 && "$qms_scope_ok" == 1 && "$release_ok" == 1 && "$runtime_ok" == 1 && "$application_ok" == 1 && "$license_ok" == 1 && "$first_user_ok" == 1 ]]; then echo "CUSTOMER_READY=YES"; else echo "CUSTOMER_READY=NO"; return 1; fi
 }
 
 destroy() {
