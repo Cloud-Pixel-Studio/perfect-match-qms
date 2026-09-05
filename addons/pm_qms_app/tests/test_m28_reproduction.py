@@ -265,17 +265,15 @@ class TestM28Reproduction(TransactionCase):
             attachment_b.with_user(self.viewer).read(["name"])
 
     def test_expired_license_blocks_all_new_capacity_hooks(self):
-        self._expired_license()
         service = self.env["pm.qms.entitlement.service"]
-        seed_context = {"pmqms_license_seed": True}
-        organization = self.env["pm.qms.organization"].with_context(**seed_context).sudo().create(
+        organization = self.env["pm.qms.organization"].sudo().create(
             {
                 "name": "M28 Reproduction Expired Organization",
                 "code": "M28-REPRO-EXPIRED-ORG",
                 "company_id": self.company.id,
             }
         )
-        site = self.env["pm.qms.site"].with_context(**seed_context).sudo().create(
+        site = self.env["pm.qms.site"].sudo().create(
             {
                 "name": "M28 Reproduction Expired Site",
                 "code": "M28-REPRO-EXPIRED-SITE",
@@ -284,15 +282,16 @@ class TestM28Reproduction(TransactionCase):
                 "site_type": "office",
             }
         )
-        user = self.env["res.users"].sudo().with_context(no_reset_password=True, **seed_context).create(
+        user = self.env["res.users"].sudo().with_context(no_reset_password=True).create(
             {
                 "name": "M28 Reproduction Expired Named User",
                 "login": "m28.reproduction.expired.user",
                 "company_id": self.company.id,
                 "company_ids": [Command.set([self.company.id])],
-                "group_ids": [Command.set([self.env.ref("base.group_user").id])],
+                "group_ids": [Command.set([self.env.ref("base.group_user").id, self.env.ref("pm_qms_core.group_qms_quality_manager").id])],
             }
         )
+        self._expired_license()
         with self.assertRaises(UserError):
             service.enforce_organization(organization)
         with self.assertRaises(UserError):

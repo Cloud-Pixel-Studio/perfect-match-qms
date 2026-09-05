@@ -41,6 +41,14 @@ master, and initial technical admin secrets. Secrets remain outside Git and
 are not printed by deployment commands. Use `credentials <slug>` only when
 local operator access is required.
 
+The `bootstrap` step installs the approved QMS module set in the empty
+instance and must succeed before a commercial license exists. At this point
+`license-status` is expected to report `missing`, and `activation-request`
+may be run to produce the persisted environment identity for licensing. This
+step does not create an operational customer organization, site, or named QMS
+user, so it does not consume commercial capacity. `bootstrap-customer` remains
+blocked until a signed license has been imported.
+
 ## 3. Offline activation
 
 ```bash
