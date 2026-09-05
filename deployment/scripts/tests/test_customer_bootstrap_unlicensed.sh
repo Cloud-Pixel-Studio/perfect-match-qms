@@ -27,7 +27,7 @@ cleanup() {
   local rc=$?
   trap - EXIT
   if [[ -f "$INSTANCE_ROOT/$SLUG/config/instance.env" ]]; then
-    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || rc=1
+    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || true
   fi
   local -a containers=()
   mapfile -t containers < <(docker ps -aq --filter "label=com.docker.compose.project=pmqms-customer-${SLUG}")
