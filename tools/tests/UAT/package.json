@@ -1,0 +1,13 @@
+{
+  "name": "pmqms-m31-1-customer-browser-uat",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Disposable customer-browser UAT harness for Mission 31.1.",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.55.0"
+  }
+}
