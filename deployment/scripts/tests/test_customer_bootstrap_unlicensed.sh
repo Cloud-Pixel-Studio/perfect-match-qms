@@ -118,6 +118,8 @@ bash "$CUSTOMER_SCRIPT" import-license "$SLUG" "$WORK/active.pmql" >/dev/null
 LICENSE_STATUS="$(bash "$CUSTOMER_SCRIPT" license-status "$SLUG")"
 grep -Eq '^license_status=(valid|expiring) ' <<<"$LICENSE_STATUS" || fail "test license is not active"
 
+printf '%s' "$RUN_SUFFIX" > "$WORK/quality-manager-password"
+chmod 600 "$WORK/quality-manager-password"
 bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" \
   --company-name "M31 Disposable Components" --company-code M31-DISPOSABLE \
   --user-login "quality.manager.${RUN_SUFFIX}@example.invalid" \
