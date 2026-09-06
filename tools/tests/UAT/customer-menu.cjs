@@ -12,6 +12,11 @@ function escapedAttribute(text) {
   return text.replace(/["\\]/g, '\\$&');
 }
 
+function exactVisibleOption(page, label) {
+  const exactLabel = new RegExp(`^\\s*${escapedText(label)}\\s*$`);
+  return page.locator('[role="option"]:visible').filter({ hasText: exactLabel }).first();
+}
+
 function visibleNavigationMenu(page) {
   return page.locator('[role="menu"]:visible, .dropdown-menu:visible').last();
 }
@@ -72,6 +77,7 @@ module.exports = {
   ACTION_SELECTOR,
   customerMenuAction,
   customerMenuEntries,
+  exactVisibleOption,
   openCustomerMenuAction,
   openRootMenu,
 };

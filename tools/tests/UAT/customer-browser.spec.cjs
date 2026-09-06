@@ -4,6 +4,7 @@ const AxeBuilder = require('@axe-core/playwright').default;
 const {
   customerMenuAction,
   customerMenuEntries,
+  exactVisibleOption,
   openCustomerMenuAction,
   openRootMenu,
 } = require('./customer-menu.cjs');
@@ -11,6 +12,7 @@ const {
 const DATABASE = process.env.M31_DATABASE || 'pmqms_m31_uat_test';
 const LOGIN_PATH = `/web/login?db=${encodeURIComponent(DATABASE)}&redirect=%2Fodoo`;
 const CUSTOMER_SHELL = 'o_pm_qms_customer_shell';
+const ORGANIZATION_NAME = required('M31_ORGANIZATION_NAME');
 const IMPLEMENTATION_NAME = 'M31 Fictional ISO 9001 Initial Implementation';
 const state = {
   qm: null,
@@ -140,9 +142,9 @@ async function getImplementationList(page, inventory) {
 
 async function selectOrganization(page) {
   const field = page.locator('#organization_id_0');
-  await field.fill('M31 Fictional');
+  await field.fill(ORGANIZATION_NAME);
   await page.waitForTimeout(600);
-  const option = page.locator('[role="option"]:visible').filter({ hasText: /^M31 Fictional Customer$/ }).first();
+  const option = exactVisibleOption(page, ORGANIZATION_NAME);
   await expect(option).toBeVisible();
   await option.click();
 }
