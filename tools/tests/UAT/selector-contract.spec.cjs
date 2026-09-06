@@ -1,7 +1,13 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { test, expect } = require('@playwright/test');
-const { customerMenuAction, exactVisibleOption } = require('./customer-menu.cjs');
+const {
+  customerMenuAction,
+  customerRootSection,
+  customerRootSections,
+  exactVisibleOption,
+  openRootMenu,
+} = require('./customer-menu.cjs');
 
 test.describe('customer menu semantic selector contract', () => {
   test('accepts supported actionable menu markup and rejects unrelated text', async ({ page }) => {
@@ -39,5 +45,52 @@ test.describe('customer menu semantic selector contract', () => {
     const source = fs.readFileSync(path.join(__dirname, 'customer-browser.spec.cjs'), 'utf8');
     expect(source).toContain("required('M31_ORGANIZATION_NAME')");
     expect(source).not.toContain('M31 Fictional Customer');
+  });
+
+  test('resolves direct and overflow roots without accepting unrelated text', async ({ page }) => {
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <a href="#dashboard">Dashboard</a>
+        <button type="button" aria-expanded="false" onclick="this.setAttribute('aria-expanded', 'true')">
+          <span data-section="configuration">Configuration</span>
+        </button>
+        <button type="button" aria-label="More Menu" style="display: none">More</button>
+      </nav>
+      <h1>Configuration</h1>
+    `);
+
+    const direct = await customerRootSection(page, 'Configuration');
+    expect(direct).toEqual({ label: 'Configuration', direct: true, overflow: false, reachable: true });
+    await openRootMenu(page, 'Configuration');
+    await expect(page.locator('span[data-section="configuration"]').locator('xpath=..')).toHaveAttribute('aria-expanded', 'true');
+
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <a href="#dashboard">Dashboard</a>
+        <button type="button" aria-label="More Menu" aria-expanded="false"
+                onclick="document.querySelector('.o_popover').style.display = 'block'; this.setAttribute('aria-expanded', 'true')">
+          More
+        </button>
+        <span data-section="configuration" style="display: none">Configuration</span>
+      </nav>
+      <div class="o_popover" style="display: none">
+        <div class="o_more_dropdown_section" onclick="this.setAttribute('data-open', 'true')">Configuration</div>
+      </div>
+      <h1>Configuration</h1>
+      <p>Unrelated Configuration text</p>
+    `);
+
+    const roots = await customerRootSections(page);
+    expect(roots.filter((root) => root === 'Configuration')).toHaveLength(1);
+    expect(roots).not.toContain('Unrelated Configuration text');
+    const overflow = await customerRootSection(page, 'Configuration');
+    expect(overflow).toEqual({ label: 'Configuration', direct: false, overflow: true, reachable: true });
+    await openRootMenu(page, 'Configuration');
+    await expect(page.locator('.o_more_dropdown_section')).toHaveAttribute('data-open', 'true');
+
+    await page.setContent('<nav class="o_main_navbar"><h2>Configuration</h2></nav>');
+    expect(await customerRootSection(page, 'Configuration')).toEqual({
+      label: 'Configuration', direct: false, overflow: false, reachable: false,
+    });
   });
 });

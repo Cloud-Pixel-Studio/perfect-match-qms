@@ -7,6 +7,8 @@ const {
   exactVisibleOption,
   openCustomerMenuAction,
   openRootMenu,
+  customerRootSection,
+  customerRootSections,
 } = require('./customer-menu.cjs');
 
 const DATABASE = process.env.M31_DATABASE || 'pmqms_m31_uat_test';
@@ -102,7 +104,7 @@ async function login(page, user) {
 async function collectMenuInventory(page) {
   await page.goto('/odoo');
   await waitForApp(page);
-  const roots = await page.locator('span[data-section]:visible').evaluateAll((nodes) => [...new Set(nodes.map((node) => node.textContent.trim()).filter(Boolean))]);
+  const roots = await customerRootSections(page);
   const menus = {};
   for (const root of roots) {
     await openRootMenu(page, root);
@@ -209,9 +211,12 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   const telemetry = installTelemetry(page, 'quality-manager');
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
+  const rootNavigation = {};
   for (const label of ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards', 'Configuration']) {
-    expect(await hasText(page, label)).toBeTruthy();
+    rootNavigation[label] = await customerRootSection(page, label);
+    expect(rootNavigation[label].reachable, `${label} is not reachable through customer navigation`).toBeTruthy();
   }
+  test.info().annotations.push({ type: 'root-navigation', description: JSON.stringify(rootNavigation) });
   const inventory = await collectMenuInventory(page);
   state.menuInventory = inventory;
   const allLinks = menuLinks(inventory);
