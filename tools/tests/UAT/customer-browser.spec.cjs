@@ -1,6 +1,12 @@
 const fs = require('node:fs');
 const { test, expect } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
+const {
+  customerMenuAction,
+  customerMenuEntries,
+  openCustomerMenuAction,
+  openRootMenu,
+} = require('./customer-menu.cjs');
 
 const DATABASE = process.env.M31_DATABASE || 'pmqms_m31_uat_test';
 const LOGIN_PATH = `/web/login?db=${encodeURIComponent(DATABASE)}&redirect=%2Fodoo`;
@@ -91,20 +97,6 @@ async function login(page, user) {
   await waitForApp(page);
 }
 
-function escapedText(text) {
-  return text.replace(/[.*+?^$\\{}()|[\\]\\\\]/g, '\\\\$&');
-}
-
-async function openRootMenu(page, label) {
-  const root = page.locator('span[data-section]:visible').filter({ hasText: new RegExp(`^\\s*${escapedText(label)}\\s*$`) }).first();
-  await expect(root).toBeVisible();
-  const button = root.locator('xpath=..');
-  await button.hover();
-  await page.waitForTimeout(250);
-  if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
-  await page.waitForTimeout(250);
-}
-
 async function collectMenuInventory(page) {
   await page.goto('/odoo');
   await waitForApp(page);
@@ -112,11 +104,7 @@ async function collectMenuInventory(page) {
   const menus = {};
   for (const root of roots) {
     await openRootMenu(page, root);
-    menus[root] = await page.locator('a:visible').evaluateAll((nodes) => nodes.map((node) => ({
-      text: node.textContent.trim(),
-      href: node.getAttribute('href'),
-      xmlid: node.getAttribute('data-menu-xmlid'),
-    })).filter((item) => item.text));
+    menus[root] = (await customerMenuEntries(page)).map((entry) => ({ ...entry, root }));
   }
   return { roots, menus };
 }
@@ -147,9 +135,7 @@ async function getImplementationList(page, inventory) {
   const link = findMenuLink(inventory, 'Implementations', 'implementation_projects');
   if (!link) throw new Error('Implementations menu link not found');
   state.implementationMenuXmlid = link.xmlid;
-  await page.goto(link.href);
-  await waitForApp(page);
-  return link.href;
+  return openCustomerMenuAction(page, link, waitForApp);
 }
 
 async function selectOrganization(page) {
@@ -174,7 +160,7 @@ async function ensureGeneratedImplementation(page, inventory) {
   const existing = page.getByText(IMPLEMENTATION_NAME, { exact: true }).first();
   if (!(await existing.count())) {
     await openRootMenu(page, 'Implementation');
-    await page.locator('a:visible').filter({ hasText: /^\\s*New Implementation\\s*$/ }).first().click();
+    await (await customerMenuAction(page, 'New Implementation')).click();
     await waitForApp(page);
     await page.locator('#name_0').fill(IMPLEMENTATION_NAME);
     await selectOrganization(page);
@@ -203,10 +189,11 @@ function implementationStats(body) {
 }
 
 async function smokeRoute(page, label, href) {
-  await page.goto(new URL(href, page.url()).toString());
-  await waitForApp(page);
+  const resolvedHref = typeof href === 'string'
+    ? await openCustomerMenuAction(page, { href }, waitForApp)
+    : await openCustomerMenuAction(page, href, waitForApp);
   const snapshot = await appSnapshot(page);
-  return { label, href, ...snapshot };
+  return { label, href: resolvedHref, ...snapshot };
 }
 
 test.beforeAll(() => {
@@ -328,7 +315,7 @@ test('Quality Manager domain, Action Center, Company Profile and customer termin
       results.push({ key, label, status: 'NOT_EXPOSED' });
       continue;
     }
-    const result = await smokeRoute(page, label, link.href);
+    const result = await smokeRoute(page, label, link);
     result.status = result.clean ? 'PASS' : 'FAIL';
     results.push({ key, ...result });
     expect(result.clean, `${label} exposed an application error`).toBeTruthy();
@@ -380,15 +367,14 @@ test('Quality Manager accessibility and responsive baseline', async ({ page }) =
   const inventory = state.menuInventory || await collectMenuInventory(page);
   const implementation = await ensureGeneratedImplementation(page, inventory);
   const screens = [
-    ['dashboard', '/odoo'],
-    ['implementation', implementation.url],
-    ['action-center', findMenuLink(inventory, 'Action Center')?.href],
-    ['company-profile', findMenuLink(inventory, 'Company Profile')?.href],
+    ['dashboard', { href: '/odoo' }],
+    ['implementation', { href: implementation.url }],
+    ['action-center', findMenuLink(inventory, 'Action Center')],
+    ['company-profile', findMenuLink(inventory, 'Company Profile')],
   ];
-  for (const [screen, href] of screens) {
-    if (!href) continue;
-    await page.goto(href);
-    await waitForApp(page);
+  for (const [screen, entry] of screens) {
+    if (!entry) continue;
+    await openCustomerMenuAction(page, entry, waitForApp);
     axeResults.push({ screen, ...(await new AxeBuilder({ page }).analyze()) });
   }
   const axeSummary = axeResults.map((item) => ({
