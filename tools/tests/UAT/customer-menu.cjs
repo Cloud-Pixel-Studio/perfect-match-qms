@@ -21,7 +21,9 @@ async function customerMenuAction(page, label, xmlidFragment) {
   let actions = visibleNavigationMenu(page).locator(ACTION_SELECTOR).filter({ hasText: exactLabel });
   if (xmlidFragment) {
     const xmlid = escapedAttribute(xmlidFragment);
-    const scoped = actions.locator(`[data-menu-xmlid*="${xmlid}"]`);
+    const scoped = visibleNavigationMenu(page)
+      .locator('[data-menu-xmlid*="' + xmlid + '"]')
+      .filter({ hasText: exactLabel });
     if (await scoped.count()) actions = scoped;
   }
   return actions.first();
