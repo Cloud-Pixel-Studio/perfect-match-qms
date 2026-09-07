@@ -95,7 +95,7 @@ async function customerRootSections(page) {
       .filter((node) => node.closest('nav.o_main_navbar, .o_main_navbar') === root)
       .filter(visible)
       .filter((node) => !node.matches('[aria-label="More Menu"], [aria-label*="Messages"], [aria-label*="Notifications"]'))
-      .filter((node) => !node.closest('[role="menu"], .dropdown-menu, .o_popover'))
+      .filter((node) => node.matches('span[data-section]') || !node.closest('[role="menu"], .dropdown-menu, .o_popover'))
       .filter((node) => !node.querySelector('a, button'))
       .map(normalized)
       .filter(Boolean)
