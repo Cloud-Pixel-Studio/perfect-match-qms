@@ -320,13 +320,18 @@ class TestPmQmsAppShell(TransactionCase):
         management_action = self.env.ref("pm_qms_management_review.action_pm_qms_management_review")
         self.assertEqual(management_review.action, management_action)
         self.assertEqual(management_review.name, "Management Review")
-        self.assertEqual(
-            set(management_review.child_id.filtered("active").mapped("name")),
-            {"Reviews", "Actions", "Decisions", "Review Inputs"},
-        )
 
         performance = self.env.ref("pm_qms_kpi.menu_pm_qms_performance")
-        self.assertEqual(self.env.ref("pm_qms_management_review.menu_pm_qms_management_review").parent_id, performance)
+        self.assertEqual(management_review.parent_id, performance)
+        self.assertFalse(management_review.child_id.filtered("active"))
+        reviews_menu = self.env.ref("pm_qms_management_review.menu_pm_qms_management_reviews")
+        self.assertFalse(reviews_menu.active)
+        for xmlid in (
+            "pm_qms_management_review.menu_pm_qms_management_review_actions",
+            "pm_qms_management_review.menu_pm_qms_management_review_decisions",
+            "pm_qms_management_review.menu_pm_qms_management_review_inputs",
+        ):
+            self.assertEqual(self.env.ref(xmlid).parent_id, performance)
         cost_quality = self.env.ref("pm_qms_cost_quality.menu_pm_qms_cost_quality", raise_if_not_found=False)
         if cost_quality:
             self.assertEqual(cost_quality.parent_id, performance)

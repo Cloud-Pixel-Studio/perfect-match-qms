@@ -21,17 +21,14 @@ Existing records remain readable and editable under existing authority, while
 the generator wizard retains its model create capability. ACLs, record rules,
 company isolation, license enforcement, and model permissions are unchanged.
 
-The existing Management Review menu keeps its child destinations:
+Runtime evidence showed that assigning an action to a menu that still owns
+children does not make that parent actionable in Odoo 19: it renders as a group
+header. The final structure therefore makes `Management Review` a leaf under
+Performance, resolving to `pm_qms_management_review.action_pm_qms_management_review`.
 
-- Reviews
-- Actions
-- Decisions
-- Review Inputs
-
-The parent is also an actionable `Management Review` destination resolving to
-`pm_qms_management_review.action_pm_qms_management_review`. This removes the
-ambiguous container-only navigation without duplicating the underlying records
-or widening access.
+The redundant `Reviews` menu keeps its XML ID but is inactive. `Actions`,
+`Decisions`, and `Review Inputs` remain direct Performance siblings immediately
+after Management Review. Their actions and model security are unchanged.
 
 ## Verification
 
@@ -40,13 +37,16 @@ Focused automated tests assert:
 - canonical list/form creation is disabled;
 - manager model create capability and existing-record write capability remain;
 - the guided workflow remains the supported creation path;
-- Management Review has the expected action and preserves all four child menus;
+- Management Review is an actionable leaf, Reviews remains preserved but inactive,
+  and Actions/Decisions/Review Inputs remain Performance siblings;
 - no ACL or record-rule files are changed.
 
 The browser contract requires generic Implementation New/Create to be absent and
 requires Management Review to be exposed, clickable, and routable through normal
-customer navigation. Disposable runtime UAT, telemetry, responsive checks, and
-Axe before/after ownership evidence are required before Product Owner review.
+customer navigation. The harness supports span/data-section roots, direct anchor
+and button roots, and overflow roots, with bounded discovery and logical-label
+deduplication. Disposable runtime UAT, telemetry, responsive checks, and Axe
+before/after ownership evidence are required before Product Owner review.
 
 Expected generation contract:
 

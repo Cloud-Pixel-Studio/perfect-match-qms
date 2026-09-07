@@ -34,9 +34,12 @@ function directRoot(page, label) {
     .first();
 }
 
+function directRootCandidates(page) {
+  return customerNavbar(page).locator('a:visible, button:visible');
+}
+
 function directNavigationItem(page, label) {
-  return customerNavbar(page)
-    .locator('a:visible, button:visible')
+  return directRootCandidates(page)
     .filter({ hasText: exactLabel(label) })
     .filter({ hasNotText: MORE_MENU_NAME })
     .first();
@@ -84,9 +87,20 @@ async function customerRootSection(page, label) {
 }
 
 async function customerRootSections(page) {
-  const directLabels = await customerNavbar(page).locator('span[data-section]').evaluateAll((nodes) => [
-    ...new Set(nodes.map((node) => node.textContent.trim().replace(/\s+/g, ' ')).filter(Boolean)),
-  ]);
+  const directLabels = await directRootCandidates(page).evaluateAll((nodes) => {
+    const root = nodes[0]?.closest('nav.o_main_navbar, .o_main_navbar');
+    const visible = (node) => Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length);
+    const normalized = (node) => node.textContent.trim().replace(/\s+/g, ' ');
+    return [...new Set(nodes
+      .filter((node) => node.closest('nav.o_main_navbar, .o_main_navbar') === root)
+      .filter(visible)
+      .filter((node) => !node.matches('[aria-label="More Menu"], [aria-label*="Messages"], [aria-label*="Notifications"]'))
+      .filter((node) => !node.closest('[role="menu"], .dropdown-menu, .o_popover'))
+      .filter((node) => !node.querySelector('a, button'))
+      .map(normalized)
+      .filter(Boolean)
+      .filter((label) => label !== 'More Menu'))];
+  });
   const more = moreMenuButton(page);
   let overflowLabels = [];
   if (await more.isVisible().catch(() => false)) {
@@ -133,6 +147,23 @@ async function openRootMenu(page, label) {
     return 'DIRECT';
   }
 
+  const directItem = directNavigationItem(page, label);
+  if (await directItem.isVisible().catch(() => false)) {
+    const tagName = await directItem.evaluate((node) => node.tagName.toLowerCase());
+    if (tagName === 'a') {
+      await directItem.click();
+      await page.waitForTimeout(250);
+      return 'DIRECT_ACTION';
+    }
+    await directItem.hover();
+    await page.waitForTimeout(250);
+    if ((await directItem.getAttribute('aria-expanded')) !== 'true') await directItem.click();
+    await page.waitForTimeout(250);
+    return 'DIRECT_MENU';
+  }
+
+  const more = moreMenuButton(page);
+  await more.waitFor({ state: 'visible' });
   await openMoreMenu(page);
   const overflow = visibleOverflowRoot(page, label);
   await overflow.waitFor({ state: 'visible' });
