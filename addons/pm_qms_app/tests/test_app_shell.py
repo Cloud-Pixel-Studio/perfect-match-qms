@@ -262,6 +262,19 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertNotIn("#71639e", dashboard)
         self.assertNotIn(".oe_button_box", source)
 
+    def test_customer_creation_is_guided_without_removing_model_authority(self):
+        implementation_views = (
+            Path(__file__).parents[2]
+            / "pm_qms_implementation"
+            / "views"
+            / "implementation_project_views.xml"
+        ).read_text(encoding="utf-8")
+        self.assertIn('<list create="false">', implementation_views)
+        self.assertIn('<form create="false">', implementation_views)
+        manager_model = self.env["pm.qms.implementation.project"].with_user(self.manager)
+        self.assertTrue(manager_model.check_access_rights("create", raise_exception=False))
+        self.assertTrue(self.project.with_user(self.manager).check_access_rights("write", raise_exception=False))
+
     def test_expected_navigation_hierarchy_is_installed(self):
         root = self.env.ref("pm_qms_core.menu_pm_qms_root")
         child_names = set(root.child_id.filtered("active").mapped("name"))
@@ -303,8 +316,22 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertEqual(self.env.ref("pm_qms_audit.menu_pm_qms_audit").parent_id, assurance)
         self.assertEqual(self.env.ref("pm_qms_people.menu_pm_qms_people").parent_id, assurance)
 
+        management_review = self.env.ref("pm_qms_management_review.menu_pm_qms_management_review")
+        management_action = self.env.ref("pm_qms_management_review.action_pm_qms_management_review")
+        self.assertEqual(management_review.action, management_action)
+        self.assertEqual(management_review.name, "Management Review")
+
         performance = self.env.ref("pm_qms_kpi.menu_pm_qms_performance")
-        self.assertEqual(self.env.ref("pm_qms_management_review.menu_pm_qms_management_review").parent_id, performance)
+        self.assertEqual(management_review.parent_id, performance)
+        self.assertFalse(management_review.child_id.filtered("active"))
+        reviews_menu = self.env.ref("pm_qms_management_review.menu_pm_qms_management_reviews")
+        self.assertFalse(reviews_menu.active)
+        for xmlid in (
+            "pm_qms_management_review.menu_pm_qms_management_review_actions",
+            "pm_qms_management_review.menu_pm_qms_management_review_decisions",
+            "pm_qms_management_review.menu_pm_qms_management_review_inputs",
+        ):
+            self.assertEqual(self.env.ref(xmlid).parent_id, performance)
         cost_quality = self.env.ref("pm_qms_cost_quality.menu_pm_qms_cost_quality", raise_if_not_found=False)
         if cost_quality:
             self.assertEqual(cost_quality.parent_id, performance)

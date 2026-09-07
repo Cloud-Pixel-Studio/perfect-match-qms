@@ -28,6 +28,50 @@ test.describe('customer menu semantic selector contract', () => {
     await expect(await customerMenuAction(page, 'New Implementation')).toHaveCount(0);
   });
 
+  test('discovers direct roots, overflow roots, and rejects unrelated navbar text', async ({ page }) => {
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <a role="menuitem" href="#dashboard">Dashboard</a>
+        <button type="button" data-menu-xmlid="pm_qms_core.menu_pm_qms_configuration"
+                aria-expanded="false" onclick="this.setAttribute('aria-expanded', 'true')">
+          <span data-section="configuration">Configuration</span>
+        </button>
+        <button type="button" data-menu-xmlid="pm_qms_core.menu_pm_qms_action_center">Action Center</button>
+        <button type="button" aria-label="More Menu" style="display: none">More</button>
+        <button type="button" aria-label="Messages">2</button>
+      </nav>
+      <h1>Configuration</h1>
+    `);
+    expect(await customerRootSections(page)).toEqual(['Dashboard', 'Configuration', 'Action Center']);
+    expect(await customerRootSection(page, 'Dashboard')).toEqual({ label: 'Dashboard', direct: true, overflow: false, reachable: true });
+    await openRootMenu(page, 'Configuration');
+    await expect(page.locator('button[data-menu-xmlid*="configuration"]')).toHaveAttribute('aria-expanded', 'true');
+
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <button type="button" aria-label="More Menu" aria-expanded="false"
+                onclick="document.querySelector('.o_popover').style.display = 'block'; this.setAttribute('aria-expanded', 'true')">More</button>
+        <a href="#configuration" style="display:none">Configuration</a>
+      </nav>
+      <div class="o_popover" style="display:none">
+        <div class="o_more_dropdown_section">Configuration</div>
+      </div>
+      <p>Unrelated Configuration text</p>
+    `);
+    expect(await customerRootSections(page)).toEqual(['Configuration']);
+    expect(await customerRootSection(page, 'Configuration')).toEqual({ label: 'Configuration', direct: false, overflow: true, reachable: true });
+    await openRootMenu(page, 'Configuration');
+
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <a href="#dashboard">Dashboard</a>
+        <button type="button" aria-label="More Menu">More</button>
+      </nav>
+    `);
+    expect(await customerRootSections(page)).toEqual(['Dashboard']);
+    expect(await customerRootSection(page, 'More Menu')).toEqual({ label: 'More Menu', direct: false, overflow: false, reachable: false });
+  });
+
   test('selects an exact configured organization without the legacy fixture', async ({ page }) => {
     await page.setContent(`
       <div role="listbox">
@@ -92,5 +136,30 @@ test.describe('customer menu semantic selector contract', () => {
     expect(await customerRootSection(page, 'Configuration')).toEqual({
       label: 'Configuration', direct: false, overflow: false, reachable: false,
     });
+  });
+
+  test('discovers a span-only root and deduplicates its matching direct root', async ({ page }) => {
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <div role="menu">
+          <div role="button" aria-expanded="false"
+               onclick="this.setAttribute('aria-expanded', 'true')">
+            <span data-section="quality">Quality Operations</span>
+          </div>
+          <button type="button" data-menu-xmlid="pm_qms_core.menu_pm_qms_quality">
+            <span data-section="quality">Quality Operations</span>
+          </button>
+        </div>
+      </nav>
+    `);
+
+    const roots = await customerRootSections(page);
+    expect(roots.filter((root) => root === 'Quality Operations')).toHaveLength(1);
+    expect(roots).toContain('Quality Operations');
+    expect(await customerRootSection(page, 'Quality Operations')).toEqual({
+      label: 'Quality Operations', direct: true, overflow: false, reachable: true,
+    });
+    await openRootMenu(page, 'Quality Operations');
+    expect(await page.locator('div[role="button"]').getAttribute('aria-expanded')).toBe('true');
   });
 });
