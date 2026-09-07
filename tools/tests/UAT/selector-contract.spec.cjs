@@ -137,4 +137,27 @@ test.describe('customer menu semantic selector contract', () => {
       label: 'Configuration', direct: false, overflow: false, reachable: false,
     });
   });
+
+  test('discovers a span-only root and deduplicates its matching direct root', async ({ page }) => {
+    await page.setContent(`
+      <nav class="o_main_navbar">
+        <div role="button" aria-expanded="false"
+             onclick="this.setAttribute('aria-expanded', 'true')">
+          <span data-section="quality">Quality Operations</span>
+        </div>
+        <button type="button" data-menu-xmlid="pm_qms_core.menu_pm_qms_quality">
+          <span data-section="quality">Quality Operations</span>
+        </button>
+      </nav>
+    `);
+
+    const roots = await customerRootSections(page);
+    expect(roots.filter((root) => root === 'Quality Operations')).toHaveLength(1);
+    expect(roots).toContain('Quality Operations');
+    expect(await customerRootSection(page, 'Quality Operations')).toEqual({
+      label: 'Quality Operations', direct: true, overflow: false, reachable: true,
+    });
+    await openRootMenu(page, 'Quality Operations');
+    expect(await page.locator('div[role="button"]').getAttribute('aria-expanded')).toBe('true');
+  });
 });

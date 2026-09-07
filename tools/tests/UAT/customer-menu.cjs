@@ -87,7 +87,7 @@ async function customerRootSection(page, label) {
 }
 
 async function customerRootSections(page) {
-  const directLabels = await directRootCandidates(page).evaluateAll((nodes) => {
+  const directLabels = await customerNavbar(page).locator('span[data-section]:visible, a:visible, button:visible').evaluateAll((nodes) => {
     const root = nodes[0]?.closest('nav.o_main_navbar, .o_main_navbar');
     const visible = (node) => Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length);
     const normalized = (node) => node.textContent.trim().replace(/\s+/g, ' ');
