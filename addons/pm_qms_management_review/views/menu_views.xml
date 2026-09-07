@@ -4,6 +4,7 @@
         id="menu_pm_qms_management_review"
         name="Management Review"
         parent="pm_qms_core.menu_pm_qms_root"
+        action="action_pm_qms_management_review"
         sequence="30"/>
 
     <menuitem

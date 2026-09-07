@@ -4,7 +4,7 @@
         <field name="name">pm.qms.implementation.project.list</field>
         <field name="model">pm.qms.implementation.project</field>
         <field name="arch" type="xml">
-            <list>
+            <list create="false">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="organization_id"/>
@@ -23,7 +23,7 @@
         <field name="name">pm.qms.implementation.project.form</field>
         <field name="model">pm.qms.implementation.project</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="false">
                 <header>
                     <button name="action_sync_framework" type="object" string="Sync Framework" invisible="state in ('completed', 'cancelled')"/>
                     <button name="action_start_implementation" type="object" string="Start Implementation" invisible="state not in ('generated', 'readiness_review')"/>

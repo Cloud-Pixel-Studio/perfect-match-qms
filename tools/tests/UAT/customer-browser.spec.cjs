@@ -257,15 +257,8 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   await waitForApp(page);
   const createButton = page.getByRole('button', { name: /^New$/i });
   const directCreateVisible = await createButton.isVisible().catch(() => false);
-  let directCreate = { visible: directCreateVisible, possible: false, url: null, menuXmlid: state.implementationMenuXmlid };
-  if (directCreateVisible) {
-    await createButton.click();
-    await waitForApp(page);
-    directCreate = { ...directCreate, possible: /\/new(?:\?|$|\/)/.test(page.url()), url: page.url() };
-    expect((await appSnapshot(page)).clean).toBeTruthy();
-    await page.goto(generation.listHref);
-    await waitForApp(page);
-  }
+  const directCreate = { visible: directCreateVisible, possible: directCreateVisible, url: null, menuXmlid: state.implementationMenuXmlid };
+  expect(directCreateVisible, 'generic Implementation creation must stay behind the guided workflow').toBeFalsy();
 
   const search = page.locator('input[placeholder*="Search"], input.o_searchview_input').first();
   await expect(search).toBeVisible();
@@ -327,6 +320,9 @@ test('Quality Manager domain, Action Center, Company Profile and customer termin
     results.push({ key, ...result });
     expect(result.clean, `${label} exposed an application error`).toBeTruthy();
   }
+  const managementReview = results.find((item) => item.key === 'MANAGEMENT_REVIEW_BROWSER_FLOW');
+  expect(managementReview?.status, 'Management Review must be exposed through customer navigation').toBe('PASS');
+  expect(managementReview?.url, 'Management Review must resolve to an application route').toMatch(/\/odoo\//);
   await page.goto('/odoo');
   await waitForApp(page);
   const notificationButton = page.locator('button:has(.o-mail-MessagingMenu-counter), button:has(i[aria-label="Messages"])').first();
