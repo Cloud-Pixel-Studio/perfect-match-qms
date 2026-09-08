@@ -9,6 +9,7 @@ class TestApiKeySecurity(TransactionCase):
         super().setUpClass()
         cls.company = cls.env.company
         cls.internal_group = cls.env.ref("base.group_user")
+        cls.system_group = cls.env.ref("base.group_system")
         cls.quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
         cls.integration_group = cls.env.ref("pm_qms_app.group_api_integration_administrator")
 
@@ -32,6 +33,10 @@ class TestApiKeySecurity(TransactionCase):
             "m314b1-api-admin",
             [cls.internal_group, cls.quality_manager_group, cls.integration_group],
         )
+        cls.technical_admin = make_user(
+            "m314b1-technical-admin",
+            [cls.internal_group, cls.system_group],
+        )
 
     def _description(self, user, name):
         return self.env["res.users.apikeys.description"].with_user(user).create(
@@ -41,7 +46,7 @@ class TestApiKeySecurity(TransactionCase):
     def _make_key(self, user, name):
         description = self._description(user, name)
         self.assertIsNone(description.check_access_make_key())
-        self.env["res.users.apikeys"].with_user(user)._generate(
+        return self.env["res.users.apikeys"].with_user(user)._generate(
             None, description.name, description.expiration_date
         )
 
@@ -69,6 +74,62 @@ class TestApiKeySecurity(TransactionCase):
         self.assertTrue(key)
         key.with_user(self.integration_admin)._remove()
         self.assertFalse(key.exists())
+
+    def test_quality_manager_legacy_key_is_denied_and_record_retained(self):
+        secret = self._make_key(self.integration_admin, "M31.4-B1 legacy key")
+        self.integration_admin.sudo().write({
+            "group_ids": [Command.unlink(self.integration_group.id)],
+        })
+
+        self.assertFalse(
+            self.env["res.users.apikeys"]
+            .with_user(self.quality_manager)
+            ._check_credentials(scope="rpc", key=secret)
+        )
+        self.assertTrue(
+            self.env["res.users.apikeys"].sudo().search(
+                [("user_id", "=", self.integration_admin.id), ("name", "=", "M31.4-B1 legacy key")],
+                limit=1,
+            )
+        )
+
+    def test_authorized_api_key_owners_can_authenticate(self):
+        integration_secret = self._make_key(self.integration_admin, "M31.4-B1 integration auth")
+        self.assertEqual(
+            self.env["res.users.apikeys"]
+            .with_user(self.quality_manager)
+            ._check_credentials(scope="rpc", key=integration_secret),
+            self.integration_admin.id,
+        )
+
+        technical_secret = self._make_key(self.technical_admin, "M31.4-B1 technical auth")
+        self.assertEqual(
+            self.env["res.users.apikeys"]
+            .with_user(self.quality_manager)
+            ._check_credentials(scope="rpc", key=technical_secret),
+            self.technical_admin.id,
+        )
+
+    def test_role_restoration_reactivates_retained_key(self):
+        secret = self._make_key(self.integration_admin, "M31.4-B1 role restoration")
+        self.integration_admin.sudo().write({
+            "group_ids": [Command.unlink(self.integration_group.id)],
+        })
+        self.assertFalse(
+            self.env["res.users.apikeys"].with_user(self.quality_manager)._check_credentials(
+                scope="rpc", key=secret
+            )
+        )
+
+        self.integration_admin.sudo().write({
+            "group_ids": [Command.link(self.integration_group.id)],
+        })
+        self.assertEqual(
+            self.env["res.users.apikeys"].with_user(self.quality_manager)._check_credentials(
+                scope="rpc", key=secret
+            ),
+            self.integration_admin.id,
+        )
 
     def test_integration_admin_cannot_revoke_another_users_key(self):
         self._make_key(self.integration_admin, "M31.4-B1 owner key")

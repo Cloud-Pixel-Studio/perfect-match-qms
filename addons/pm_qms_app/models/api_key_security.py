@@ -1,4 +1,5 @@
 from odoo import models
+from odoo.api import SUPERUSER_ID
 from odoo.exceptions import AccessError
 
 
@@ -42,6 +43,20 @@ class ResUsersApiKeysDescription(models.TransientModel):
 
 class ResUsersApiKeys(models.Model):
     _inherit = "res.users.apikeys"
+
+    def _check_credentials(self, *, scope, key):
+        user_id = super()._check_credentials(scope=scope, key=key)
+        if not user_id:
+            return user_id
+
+        owner = self.env["res.users"].browse(user_id)
+        if not (
+            owner.id == SUPERUSER_ID
+            or owner._has_group("base.group_system")
+            or owner._has_group("pm_qms_app.group_api_integration_administrator")
+        ):
+            return None
+        return user_id
 
     def _remove(self):
         if not (
