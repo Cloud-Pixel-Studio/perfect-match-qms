@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_api_key_security" model="ir.ui.view">
+        <field name="name">res.users.api.key.security</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='api_keys']" position="attributes">
+                <attribute name="groups">base.group_system,pm_qms_app.group_api_integration_administrator</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_users_form_simple_modif_api_key_security" model="ir.ui.view">
+        <field name="name">res.users.simple.api.key.security</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='api_keys']" position="attributes">
+                <attribute name="groups">base.group_system,pm_qms_app.group_api_integration_administrator</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

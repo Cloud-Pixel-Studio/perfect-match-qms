@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="group_api_integration_administrator" model="res.groups">
+        <field name="name">API Integration Administrator</field>
+        <field name="privilege_id" ref="pm_qms_core.privilege_pm_qms"/>
+        <field name="comment">May manage only the current user's API keys. This role does not grant technical administration or QMS scope.</field>
+    </record>
+
     <!-- The Apps catalog is a technical platform surface. Menu groups alone
          do not protect a direct /odoo/apps action URL, so customer QMS roles
          must also receive no module records from the ORM. -->
