@@ -4,7 +4,6 @@ from odoo.tools import config
 
 
 QMS_ROLE_XMLIDS = (
-    "pm_qms_app.group_api_integration_administrator",
     "pm_qms_core.group_qms_quality_manager",
     "pm_qms_core.group_qms_quality_supervisor",
     "pm_qms_core.group_qms_quality_inspector",
@@ -111,14 +110,6 @@ class ResUsers(models.Model):
         for user in self:
             current = user.group_ids & role_groups
             desired = user.qms_role_group_ids & role_groups
-            api_group = self.env.ref(
-                "pm_qms_app.group_api_integration_administrator",
-                raise_if_not_found=False,
-            )
-            if api_group and api_group in (current | desired) and not self.env.is_system():
-                raise AccessError(
-                    "Only a Technical Administrator can assign or remove API Integration Administrator."
-                )
             commands = [(3, group.id) for group in current - desired]
             commands.extend((4, group.id) for group in desired - current)
             if commands:
@@ -226,31 +217,3 @@ class ResUsers(models.Model):
             ):
                 raise AccessError("Only an authorized QMS access administrator can change QMS access.")
         return super().write(vals)
-
-
-class ResUsersApiKeysDescription(models.TransientModel):
-    _inherit = "res.users.apikeys.description"
-
-    def check_access_make_key(self):
-        if not (
-            self.env.is_system()
-            or self.env.user.has_group("pm_qms_app.group_api_integration_administrator")
-        ):
-            raise AccessError(
-                "Only a Technical Administrator or API Integration Administrator can create API keys."
-            )
-        return super().check_access_make_key()
-
-
-class ResUsersApiKeys(models.Model):
-    _inherit = "res.users.apikeys"
-
-    def _remove(self):
-        if not (
-            self.env.is_system()
-            or self.env.user.has_group("pm_qms_app.group_api_integration_administrator")
-        ):
-            raise AccessError(
-                "Only a Technical Administrator or API Integration Administrator can revoke API keys."
-            )
-        return super()._remove()
