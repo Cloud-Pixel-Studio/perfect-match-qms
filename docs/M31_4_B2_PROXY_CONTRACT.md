@@ -112,10 +112,12 @@ managed databases. The agent is not implemented by M31.4-B2.1.
 The repository-level contract is statically validated by
 `deployment/scripts/tests/test_customer_proxy_contract.sh`. The disposable
 client-to-Nginx-to-Odoo runtime certification passed in QMS CI run
-`34372997030` on the certified branch head. It verified the normal client IP,
+`34381284722` for this corrective. It verified the normal client IP,
 rejection of a spoofed forwarding chain, replacement of a malformed value,
 construction when the header is absent, distinct direct-Odoo peer behavior,
 and rejection of an unexpected additional hop. The runtime used Odoo 19,
 PostgreSQL 15, Nginx 1.27-alpine, and Alpine 3.20 in an isolated Docker
 network. No production, Demo, customer, or CleanVM runtime was changed by
-this corrective.
+this corrective. The final exact-head regression for any subsequent
+documentation-only revision is represented by that revision's required CI
+checks, rather than by a self-referential run identifier.
