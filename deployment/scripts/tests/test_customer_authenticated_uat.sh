@@ -26,26 +26,32 @@ TAG_CREATED=0
 
 fail() { echo "authenticated customer UAT: FAIL: $*" >&2; exit 1; }
 cleanup() {
-  local rc=$?
+  local test_rc=$? cleanup_rc=0
   local -a disposable_containers=()
   trap - EXIT
   docker rm -f "$NGINX" >/dev/null 2>&1 || true
   if [[ -f "$INSTANCE_ROOT/$SLUG/config/instance.env" ]]; then
-    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || rc=1
-    [[ ! -e "$INSTANCE_ROOT/$SLUG" ]] || rc=1
+    bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || cleanup_rc=1
+    [[ ! -e "$INSTANCE_ROOT/$SLUG" ]] || cleanup_rc=1
   fi
   mapfile -t disposable_containers < <(docker ps -aq --filter "label=com.docker.compose.project=pmqms-customer-${SLUG}")
   if ((${#disposable_containers[@]})); then
-    docker rm -f "${disposable_containers[@]}" >/dev/null 2>&1 || rc=1
+    docker rm -f "${disposable_containers[@]}" >/dev/null 2>&1 || cleanup_rc=1
   fi
   docker volume rm "pmqms_${SLUG}_odoo_data" "pmqms_${SLUG}_postgres" >/dev/null 2>&1 || true
   if [[ -n "${ALPINE_IMAGE:-}" && -d "$WORK" ]]; then
     docker run --rm --user root -v "$WORK:/cleanup" "$ALPINE_IMAGE" \
-      sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || rc=1
+      sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || cleanup_rc=1
   fi
-  rm -rf -- "$WORK" || rc=1
-  if [[ "$TAG_CREATED" == 1 ]]; then git -C "$REPO_ROOT" tag -d "$TAG" >/dev/null 2>&1 || rc=1; fi
-  exit "$rc"
+  rm -rf -- "$WORK" || cleanup_rc=1
+  if [[ "$TAG_CREATED" == 1 ]]; then git -C "$REPO_ROOT" tag -d "$TAG" >/dev/null 2>&1 || cleanup_rc=1; fi
+  if [[ "$cleanup_rc" == 0 ]]; then
+    echo 'authenticated customer UAT cleanup: PASS'
+  else
+    echo 'authenticated customer UAT cleanup: FAIL' >&2
+  fi
+  if ((test_rc != 0)); then exit "$test_rc"; fi
+  exit "$cleanup_rc"
 }
 trap cleanup EXIT
 
