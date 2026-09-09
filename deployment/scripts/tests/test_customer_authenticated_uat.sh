@@ -89,7 +89,7 @@ done
 # Fixture creation is ORM-based and confined to the disposable database.
 docker run --rm --user root -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -v "$WORK:/work" "$ALPINE_IMAGE" sh -c 'chown -R 100:101 /work/users && chmod 600 /work/users/*' >/dev/null
 docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
-  -f "$ROOT/runtime/compose.yml" run --rm -v "$WORK:/var/lib/pmqms-uat:ro" odoo \
+  -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 -v "$WORK:/var/lib/pmqms-uat:ro" odoo \
   odoo shell -d "pmqms_${SLUG//-/_}" --log-level=error <<PY >/dev/null
 from pathlib import Path
 company = env.company
