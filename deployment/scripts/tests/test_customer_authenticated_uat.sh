@@ -12,7 +12,7 @@ WORK="$(mktemp -d)"
 INSTANCE_ROOT="$WORK/instances"
 export PMQMS_CUSTOMER_INSTANCE_ROOT="$INSTANCE_ROOT"
 export TMPDIR="$WORK/tmp"
-mkdir -p "$INSTANCE_ROOT" "$TMPDIR" "$WORK/users" "$WORK/nginx"
+mkdir -p "$INSTANCE_ROOT" "$TMPDIR" "$WORK/users" "$WORK/browser-users" "$WORK/nginx"
 umask 077
 
 RUN_ID="${GITHUB_RUN_ID:-local}-$$"
@@ -127,8 +127,8 @@ PY
 # Playwright runs as the GitHub runner user, so it receives temporary
 # read-only copies after ORM setup. They remain outside artifacts and are
 # removed by cleanup.
-docker run --rm --user root -v "$ROOT/secrets:/input:ro" -v "$WORK/users:/output" "$ALPINE_IMAGE" \
-  sh -eu -c 'cp /input/initial_admin_password /output/admin-password && chmod 644 /output/*' >/dev/null
+docker run --rm --user root -v "$WORK:/work" "$ALPINE_IMAGE" \
+  sh -eu -c 'cp /work/users/* /work/browser-users/ && cp /work/instances/'"$SLUG"'/secrets/initial_admin_password /work/browser-users/admin-password && chmod 755 /work/browser-users && chmod 644 /work/browser-users/*' >/dev/null
 
 # Nginx is derived from the shipped template; only the listener/upstream are
 # adapted for an HTTP-only, host-networked disposable proxy.
@@ -161,17 +161,17 @@ export M31_BASE_URL="http://127.0.0.1:$PROXY_PORT"
 export M31_DATABASE="pmqms_${SLUG//-/_}"
 export M31_ORGANIZATION_NAME="M31 Fictional Components"
 export M31_QM_LOGIN="quality.manager.${RUN_SUFFIX}@example.invalid"
-export M31_QM_PASSWORD_FILE="$WORK/users/qm-password"
+export M31_QM_PASSWORD_FILE="$WORK/browser-users/qm-password"
 export M31_ADMIN_LOGIN="admin"
-export M31_ADMIN_PASSWORD_FILE="$WORK/users/admin-password"
+export M31_ADMIN_PASSWORD_FILE="$WORK/browser-users/admin-password"
 export M31_AUDITOR_LOGIN="m31.auditor.${RUN_SUFFIX}@example.invalid"
-export M31_AUDITOR_PASSWORD_FILE="$WORK/users/auditor-password"
+export M31_AUDITOR_PASSWORD_FILE="$WORK/browser-users/auditor-password"
 export M31_OWNER_LOGIN="m31.owner.${RUN_SUFFIX}@example.invalid"
-export M31_OWNER_PASSWORD_FILE="$WORK/users/owner-password"
+export M31_OWNER_PASSWORD_FILE="$WORK/browser-users/owner-password"
 export M31_VIEWER_LOGIN="m31.viewer.${RUN_SUFFIX}@example.invalid"
-export M31_VIEWER_PASSWORD_FILE="$WORK/users/viewer-password"
+export M31_VIEWER_PASSWORD_FILE="$WORK/browser-users/viewer-password"
 export M31_API_LOGIN="m31.api.${RUN_SUFFIX}@example.invalid"
-export M31_API_PASSWORD_FILE="$WORK/users/api-password"
+export M31_API_PASSWORD_FILE="$WORK/browser-users/api-password"
 export M31_HEADLESS=true
 export M31_BROWSER_CHANNEL=chromium
 export M31_JSON_REPORT="$WORK/playwright.json"
