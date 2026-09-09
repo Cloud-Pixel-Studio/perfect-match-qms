@@ -20,6 +20,7 @@ class TestM314ConfigurationAccess(TransactionCase):
             "pm_qms_app.group_api_integration_administrator"
         )
         cls.technical_group = cls.env.ref("base.group_system")
+        cls.licensing_admin_group = cls.env.ref("pm_qms_license.group_pm_qms_license_admin")
         cls.quality_manager_user = cls._create_user("m314_quality_manager", cls.quality_manager)
         cls.quality_supervisor_user = cls._create_user("m314_quality_supervisor", cls.quality_supervisor)
         cls.internal_auditor_user = cls._create_user("m314_internal_auditor", cls.internal_auditor)
@@ -30,6 +31,7 @@ class TestM314ConfigurationAccess(TransactionCase):
         )
         cls.qms_admin_user = cls._create_user("m314_qms_admin", cls.qms_admin)
         cls.technical_user = cls._create_user("m314_technical_admin", cls.technical_group)
+        cls.licensing_admin_user = cls._create_user("m314_licensing_admin", cls.licensing_admin_group)
 
     @classmethod
     def _create_user(cls, login, group):
@@ -63,6 +65,7 @@ class TestM314ConfigurationAccess(TransactionCase):
             "pm_qms_core.menu_pm_qms_organizations",
             "pm_qms_core.menu_pm_qms_processes",
             "pm_qms_app.menu_pm_qms_sites",
+            "pm_qms_app.menu_pm_qms_users_access",
             "pm_qms_license.menu_pm_qms_license",
         ):
             with self.subTest(menu=xmlid):
@@ -88,6 +91,7 @@ class TestM314ConfigurationAccess(TransactionCase):
                     "pm_qms_core.menu_pm_qms_organizations",
                     "pm_qms_core.menu_pm_qms_processes",
                     "pm_qms_app.menu_pm_qms_sites",
+                    "pm_qms_app.menu_pm_qms_users_access",
                     "pm_qms_license.menu_pm_qms_license",
                 ):
                     self.assertFalse(self._visible(user, xmlid), xmlid)
@@ -140,6 +144,42 @@ class TestM314ConfigurationAccess(TransactionCase):
         self.assertIn(self.quality_manager, license_action.group_ids)
         self.assertIn(self.env.ref("pm_qms_license.group_pm_qms_license_admin"), license_action.group_ids)
         self.assertIn(self.technical_group, license_action.group_ids)
+
+    def test_users_access_has_customer_allow_list_and_independent_orm_guard(self):
+        action = self.env.ref("pm_qms_app.action_pm_qms_users_access")
+        menu = self.env.ref("pm_qms_app.menu_pm_qms_users_access")
+        allowed = {self.quality_manager, self.qms_admin}
+        self.assertEqual(set(action.group_ids.ids), {group.id for group in allowed})
+        self.assertEqual(set(menu.group_ids.ids), {group.id for group in allowed})
+        self.assertNotIn(self.qms_manager, action.group_ids)
+        self.assertEqual(
+            set(action._get_action_dict()["group_ids"]),
+            {group.id for group in allowed},
+        )
+
+        users_model = self.env["res.users"]
+        for user in (self.quality_manager_user, self.qms_admin_user):
+            with self.subTest(authorized=user.login):
+                self.assertTrue(users_model.with_user(user).check_access_rights("read", raise_exception=False))
+                self.assertTrue(users_model.with_user(user).check_access_rights("write", raise_exception=False))
+
+        for user in (
+            self.quality_supervisor_user,
+            self.internal_auditor_user,
+            self.process_owner_user,
+            self.viewer_user,
+            self.integration_admin_user,
+            self.licensing_admin_user,
+        ):
+            with self.subTest(unauthorized=user.login):
+                self.assertFalse(action.group_ids & user.all_group_ids)
+                self.assertFalse(users_model.with_user(user).check_access_rights("read", raise_exception=False))
+                self.assertFalse(users_model.with_user(user).check_access_rights("write", raise_exception=False))
+
+        # Technical administrators retain platform administration, but not this
+        # customer-facing action contract.
+        self.assertFalse(action.group_ids & self.technical_user.all_group_ids)
+        self.assertTrue(self.technical_user.has_group("base.group_system"))
 
     def test_configuration_orm_permissions_remain_separate_from_action_visibility(self):
         for model_name in ("pm.qms.organization", "pm.qms.process", "pm.qms.site"):

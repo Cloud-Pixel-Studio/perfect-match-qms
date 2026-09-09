@@ -21,10 +21,13 @@ Company Profile, Sites, and Processes surfaces explicitly allow:
 - the existing QMS Administrator compatibility boundary; and
 - Technical Administrator.
 
-Commercial License keeps its existing Quality Manager, Licensing Administrator,
-and Technical Administrator action boundary. Activation Requests remain
-Licensing Administrator-only. Framework Administration remains outside the
-Quality Manager surface and is explicitly limited to the established QMS
+Users & Access has a separate explicit action and menu allow-list for Quality
+Manager and QMS Administrator only. Technical Administrator retains generic
+Odoo platform administration, but that does not grant the customer Users &
+Access action. Commercial License keeps its existing Quality Manager, Licensing
+Administrator, and Technical Administrator action boundary. Activation Requests
+remain Licensing Administrator-only. Framework Administration remains outside
+the Quality Manager surface and is explicitly limited to the established QMS
 Administrator and Technical Administrator boundaries.
 
 No group implication, broad technical role, model ACL, record rule, Odoo core

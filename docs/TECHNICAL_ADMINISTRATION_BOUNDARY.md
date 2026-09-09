@@ -8,13 +8,17 @@ administration.
 Quality Managers can manage the QMS configuration exposed under the product
 shell, including Company Profile, Sites, Processes, Users & Access within the
 QMS role model, and the Commercial License view where the existing licensing
-contract permits it. These surfaces are explicit menu and action allow-lists;
+contract permits it. Users & Access is explicitly limited to Quality Manager and
+QMS Administrator; Technical Administrator platform authority does not grant
+that customer action. These surfaces are explicit menu and action allow-lists;
 they do not rely on the legacy QMS Manager implication.
 
 Framework Administration is outside the Quality Manager surface. It remains
 available only through the established QMS Administrator and Technical
-Administrator boundaries. Activation Requests likewise retain their existing
-Licensing Administrator boundary.
+Administrator boundaries. Commercial License remains available to Quality
+Manager, Licensing Administrator, and Technical Administrator under its
+existing action contract. Activation Requests retain their existing Licensing
+Administrator-only boundary.
 
 ## Platform administration
 

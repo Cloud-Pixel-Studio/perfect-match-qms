@@ -31,16 +31,22 @@ breadcrumbs, direct action identity, and module ownership.
   Integration Administrator receive their existing operational/read scope and
   no Configuration access or privilege escalation through navigation.
 - Technical Administrator retains Apps, Settings, maintenance, Framework
-  Administration, and Standards > ISO 9001. Commercial License remains denied
-  as designed.
+  Administration, Standards > ISO 9001, and the permitted Commercial License
+  surface. Technical administration does not authorize the customer Users &
+  Access action; that action is limited to Quality Manager and QMS
+  Administrator.
 - QMS Licensing Administrator retains Activation Requests through the
   Commercial License branch.
 
-Configuration menu and window-action records carry an explicit allow-list for
-Quality Manager, the existing QMS Administrator compatibility boundary, and
-Technical Administrator. Direct action loads remain governed by those action
-groups plus model ACLs and record rules; hiding a menu never grants access and
-is not used as an authorization control.
+Configuration menu and window-action records carry explicit allow-lists. Company
+Profile, Sites, and Processes allow Quality Manager, the existing QMS
+Administrator compatibility boundary, and Technical Administrator. Users &
+Access allows only Quality Manager and QMS Administrator. Commercial License
+retains its Quality Manager, Licensing Administrator, and Technical
+Administrator action contract, while Activation Requests remain Licensing
+Administrator-only. Direct action loads are paired with model ACLs and record
+rules; hiding a menu never grants access and is not used as an authorization
+control.
 
 ## Standards and framework separation
 
