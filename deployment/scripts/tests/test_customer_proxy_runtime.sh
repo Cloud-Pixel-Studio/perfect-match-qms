@@ -146,7 +146,7 @@ docker run -d --name "$ODOO" --network "$NETWORK" --network-alias odoo \
   -v "$WORK/probe-addons:/mnt/probe-addons:ro" \
   -v "$WORK/odoo.conf:/etc/odoo/odoo.conf:ro" \
   "$ODOO_IMAGE" odoo -c /etc/odoo/odoo.conf >/dev/null
-docker run -d --name "$NGINX" --network "$NETWORK" \
+docker run -d --name "$NGINX" --network "$NETWORK" --network-alias nginx \
   -v "$WORK/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro" \
   "$NGINX_IMAGE" >/dev/null
 docker run -d --name "$CLIENT" --network "$NETWORK" "$ALPINE_IMAGE" sleep 900
