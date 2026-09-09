@@ -34,9 +34,11 @@ validate_runtime_lock() {
     (.odoo.image | test("^odoo:[^@]+@sha256:[0-9a-f]{64}$")) and
     (.postgres.image | test("^postgres:[^@]+@sha256:[0-9a-f]{64}$")) and
     (.alpine.image | test("^alpine:[^@]+@sha256:[0-9a-f]{64}$")) and
+    (.nginx.image | test("^nginx:[^@]+@sha256:[0-9a-f]{64}$")) and
     (.odoo.digest | startswith("sha256:")) and
     (.postgres.digest | startswith("sha256:")) and
-    (.alpine.digest | startswith("sha256:"))
+    (.alpine.digest | startswith("sha256:")) and
+    (.nginx.digest | startswith("sha256:"))
   ' "$lock" >/dev/null || die "invalid runtime lock: $lock"
 }
 load_runtime_for_root() {
@@ -46,6 +48,7 @@ load_runtime_for_root() {
   ODOO_IMAGE="$(jq -er '.odoo.image' "$RUNTIME_LOCK_PATH")"
   POSTGRES_IMAGE="$(jq -er '.postgres.image' "$RUNTIME_LOCK_PATH")"
   ALPINE_IMAGE="$(jq -er '.alpine.image' "$RUNTIME_LOCK_PATH")"
+  NGINX_IMAGE="$(jq -er '.nginx.image' "$RUNTIME_LOCK_PATH")"
 }
 release_assets_complete() {
   local release_root="$1"
@@ -83,7 +86,7 @@ install_release_assets() {
 runtime_verify_lock() {
   local lock="$1" image
   validate_runtime_lock "$lock"
-  for image in "$(jq -er '.odoo.image' "$lock")" "$(jq -er '.postgres.image' "$lock")" "$(jq -er '.alpine.image' "$lock")"; do
+  for image in "$(jq -er '.odoo.image' "$lock")" "$(jq -er '.postgres.image' "$lock")" "$(jq -er '.alpine.image' "$lock")" "$(jq -er '.nginx.image' "$lock")"; do
     docker image inspect "$image" >/dev/null 2>&1 || die "approved runtime image is not available locally: $image; run runtime-fetch"
   done
 }
@@ -107,6 +110,7 @@ runtime_fetch() {
   docker pull "$(jq -er '.odoo.image' "$lock")"
   docker pull "$(jq -er '.postgres.image' "$lock")"
   docker pull "$(jq -er '.alpine.image' "$lock")"
+  docker pull "$(jq -er '.nginx.image' "$lock")"
 }
 update_manifest_runtime() {
   local root="$1" lock="$2"

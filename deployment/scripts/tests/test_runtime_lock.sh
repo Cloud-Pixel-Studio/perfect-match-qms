@@ -10,7 +10,8 @@ jq -e '
   .schema_version == 1 and
   (.odoo.image | test("^odoo:[^@]+@sha256:[0-9a-f]{64}$")) and
   (.postgres.image | test("^postgres:[^@]+@sha256:[0-9a-f]{64}$")) and
-  (.alpine.image | test("^alpine:[^@]+@sha256:[0-9a-f]{64}$"))
+  (.alpine.image | test("^alpine:[^@]+@sha256:[0-9a-f]{64}$")) and
+  (.nginx.image | test("^nginx:[^@]+@sha256:[0-9a-f]{64}$"))
 ' "$LOCK" >/dev/null
 
 for compose_file in \
@@ -29,12 +30,17 @@ if grep -nE 'odoo:19\.0|postgres:15|alpine:3\.20' "$CUSTOMER_SCRIPT" >/dev/null;
   echo "floating customer helper image reference found" >&2
   exit 1
 fi
+if grep -nE 'nginx:1\.27-alpine' "$CUSTOMER_SCRIPT" >/dev/null; then
+  echo "floating nginx helper image reference found" >&2
+  exit 1
+fi
 
 source "$CUSTOMER_SCRIPT"
 runtime_output="$(runtime_images)"
 grep -q '^odoo_image=odoo:19.0@sha256:' <<<"$runtime_output"
 grep -q '^postgres_image=postgres:15@sha256:' <<<"$runtime_output"
 grep -q '^alpine_image=alpine:3.20@sha256:' <<<"$runtime_output"
+grep -q '^nginx_image=nginx:1.27-alpine@sha256:' <<<"$runtime_output"
 
 docker() { return 1; }
 if (runtime_verify_lock "$LOCK"); then
@@ -52,5 +58,6 @@ runtime_fetch
 grep -q '^odoo:19.0@sha256:' <<<"$pulled"
 grep -q '^postgres:15@sha256:' <<<"$pulled"
 grep -q '^alpine:3.20@sha256:' <<<"$pulled"
+grep -q '^nginx:1.27-alpine@sha256:' <<<"$pulled"
 
 echo "runtime lock regression: PASS"

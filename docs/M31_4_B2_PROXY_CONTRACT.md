@@ -45,7 +45,7 @@ one `X-Forwarded-Proto`, and one `X-Forwarded-Host` value. Odoo does not use
 | Missing forwarding header | No proxy-derived address is available | Immediate socket peer |
 | Malformed forwarding value | Proxy must replace it; Odoo itself does not validate IP syntax | Proxy-observed address; direct malformed headers are not trusted |
 | Direct Odoo access | Bypasses the proxy boundary | Internal/container/bridge peer may appear |
-| Unexpected additional proxy hop | One-hop trust selects only the configured trusted hop | Not certified until every hop is controlled and the count is explicit |
+| Unexpected additional proxy hop | One-hop trust does not accept the injected extra client chain | Additional hops remain outside the certified single-proxy topology |
 
 Direct Odoo access is an operational diagnostic path, not a production access
 path. A 172.x Docker bridge address in that mode is expected platform behavior,
@@ -110,7 +110,14 @@ managed databases. The agent is not implemented by M31.4-B2.1.
 ## Validation status
 
 The repository-level contract is statically validated by
-`deployment/scripts/tests/test_customer_proxy_contract.sh`. A disposable
-client-to-Nginx-to-Odoo runtime test remains required when Docker and Nginx are
-available. No production, Demo, customer, or CleanVM runtime was changed by
-this corrective.
+`deployment/scripts/tests/test_customer_proxy_contract.sh`. The disposable
+client-to-Nginx-to-Odoo runtime certification passed in QMS CI run
+`34381284722` for this corrective. It verified the normal client IP,
+rejection of a spoofed forwarding chain, replacement of a malformed value,
+construction when the header is absent, distinct direct-Odoo peer behavior,
+and rejection of an unexpected additional hop. The runtime used Odoo 19,
+PostgreSQL 15, Nginx 1.27-alpine, and Alpine 3.20 in an isolated Docker
+network. No production, Demo, customer, or CleanVM runtime was changed by
+this corrective. The final exact-head regression for any subsequent
+documentation-only revision is represented by that revision's required CI
+checks, rather than by a self-referential run identifier.
