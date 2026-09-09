@@ -43,7 +43,7 @@ const EXPERIENCE_COVERAGE = {
   'behavior without SMTP': 'NOT TESTED',
   'captured email delivery': 'NOT TESTED',
   'keyboard navigation': 'NOT TESTED',
-  'visible focus': 'TESTED/PASS via axe/responsive smoke only',
+  'visible focus': 'NOT_TESTED',
   'accessible names': 'TESTED/PASS via axe',
   'form labels': 'TESTED/PASS via axe',
   'required-field communication': 'NOT TESTED',

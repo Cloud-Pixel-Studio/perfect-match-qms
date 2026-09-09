@@ -50,10 +50,12 @@ claimed as coverage; and `NOT_EXPOSED` records a role-appropriate unavailable
 surface. The current matrix covers login (logout is not tested), customer root
 navigation, guided implementation, empty states, direct URL restrictions,
 dialogs, accessible names/labels, visible focus checks, desktop and constrained
-viewports, and each discovered business-domain route. Breadcrumbs, reminders,
-chatter, notification links/duplication/recipient isolation, SMTP delivery,
-keyboard traversal, required-field errors, overdue behavior, and device/session
-IP require a later focused mission. Quality Manager Configuration, including
+viewports, and each discovered business-domain route. Axe coverage includes
+accessible names and form labels, but visible focus styling is not separately
+certified. Breadcrumbs, reminders, chatter, notification links/duplication/
+recipient isolation, SMTP delivery, keyboard traversal, required-field errors,
+overdue behavior, and device/session IP require a later focused mission. Quality
+Manager Configuration, including
 Company Profile, Sites, Processes, and Commercial License, is normative and is
 asserted as reachable; absence is reported as a product finding rather than
 reclassified as expected protection.
