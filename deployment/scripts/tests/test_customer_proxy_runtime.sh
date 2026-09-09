@@ -110,7 +110,7 @@ server {
 NGINX
 
 docker network create "$NETWORK" >/dev/null
-docker run -d --name "$POSTGRES" --network "$NETWORK" \
+docker run -d --name "$POSTGRES" --network "$NETWORK" --network-alias postgres \
   -e POSTGRES_DB=postgres -e POSTGRES_USER=odoo \
   -e POSTGRES_HOST_AUTH_METHOD=trust "$POSTGRES_IMAGE" >/dev/null
 
