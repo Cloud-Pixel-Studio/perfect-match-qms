@@ -155,9 +155,9 @@ docker run -d --name "$DIRECT" --network "$NETWORK" "$ALPINE_IMAGE" sleep 300
 http_get() {
   local target="$1" header="${2:-}"
   if [[ -n "$header" ]]; then
-    docker exec "$CLIENT" wget -qO- --header="$header" "$target"
+    docker exec "$CLIENT" wget -qO- --timeout=5 --header="$header" "$target"
   else
-    docker exec "$CLIENT" wget -qO- "$target"
+    docker exec "$CLIENT" wget -qO- --timeout=5 "$target"
   fi
 }
 PROBE_URL='http://nginx/__pmqms_probe/remote_addr?db=pmqms_proxy_runtime'
@@ -166,6 +166,11 @@ wait_for_http() {
     if http_get 'http://nginx/web/login?db=pmqms_proxy_runtime' >/dev/null 2>&1; then return 0; fi
     sleep 1
   done
+  printf 'proxy_runtime_diagnostics=begin\n' >&2
+  docker exec "$CLIENT" wget -S -O- --timeout=5 'http://nginx/web/login?db=pmqms_proxy_runtime' >/dev/null || true
+  docker exec "$CLIENT" wget -S -O- --timeout=5 'http://odoo:8069/web/login?db=pmqms_proxy_runtime' >/dev/null || true
+  docker exec "$CLIENT" getent hosts nginx odoo || true
+  printf 'proxy_runtime_diagnostics=end\n' >&2
   fail_with_logs
 }
 probe_remote() {
