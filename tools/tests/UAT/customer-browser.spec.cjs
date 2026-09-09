@@ -17,10 +17,11 @@ const CUSTOMER_SHELL = 'o_pm_qms_customer_shell';
 const ORGANIZATION_NAME = required('M31_ORGANIZATION_NAME');
 const IMPLEMENTATION_NAME = 'M31 Fictional ISO 9001 Initial Implementation';
 const CUSTOMER_ROOTS = ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards'];
+const CUSTOMER_ROLE_ROOTS = ['Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards'];
 const ROLE_CONTRACT = {
-  'Internal Auditor': { shell: true, roots: CUSTOMER_ROOTS, forbiddenRoots: ['Configuration'] },
-  'Process Owner': { shell: true, roots: CUSTOMER_ROOTS, forbiddenRoots: ['Configuration'] },
-  Viewer: { shell: true, roots: CUSTOMER_ROOTS, forbiddenRoots: ['Configuration'] },
+  'Internal Auditor': { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
+  'Process Owner': { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
+  Viewer: { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
   'API Integration Administrator': { shell: false, roots: [], forbiddenRoots: [] },
 };
 const EXPERIENCE_COVERAGE = {
