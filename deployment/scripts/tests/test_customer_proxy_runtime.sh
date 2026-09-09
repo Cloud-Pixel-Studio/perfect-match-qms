@@ -154,9 +154,10 @@ http_get() {
     docker exec "$CLIENT" wget -qO- "$target"
   fi
 }
+PROBE_URL='http://nginx/__pmqms_probe/remote_addr?db=pmqms_proxy_runtime'
 wait_for_http() {
   for _ in {1..90}; do
-    if http_get 'http://nginx/__pmqms_probe/remote_addr' >/dev/null 2>&1; then return 0; fi
+    if http_get "$PROBE_URL" >/dev/null 2>&1; then return 0; fi
     sleep 1
   done
   fail_with_logs
@@ -172,27 +173,27 @@ CLIENT_IP="$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}
 DIRECT_IP="$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$DIRECT")"
 NGINX_IP="$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$NGINX")"
 
-normal="$(http_get 'http://nginx/__pmqms_probe/remote_addr')"
+normal="$(http_get "$PROBE_URL")"
 normal_ip="$(probe_remote "$normal")"
 [[ "$normal_ip" == "$CLIENT_IP" ]] || fail_with_logs
 
-spoofed="$(http_get 'http://nginx/__pmqms_probe/remote_addr' 'X-Forwarded-For: 198.51.100.77')"
+spoofed="$(http_get "$PROBE_URL" 'X-Forwarded-For: 198.51.100.77')"
 spoofed_ip="$(probe_remote "$spoofed")"
 [[ "$spoofed_ip" == "$CLIENT_IP" && "$spoofed_ip" != 198.51.100.77 ]] || fail_with_logs
 
-malformed="$(http_get 'http://nginx/__pmqms_probe/remote_addr' 'X-Forwarded-For: not-an-ip')"
+malformed="$(http_get "$PROBE_URL" 'X-Forwarded-For: not-an-ip')"
 malformed_ip="$(probe_remote "$malformed")"
 [[ "$malformed_ip" == "$CLIENT_IP" && "$malformed_ip" != not-an-ip ]] || fail_with_logs
 
-missing="$(http_get 'http://nginx/__pmqms_probe/remote_addr')"
+missing="$(http_get "$PROBE_URL")"
 missing_ip="$(probe_remote "$missing")"
 [[ "$missing_ip" == "$CLIENT_IP" ]] || fail_with_logs
 
-direct="$(docker exec "$DIRECT" wget -qO- 'http://odoo:8069/__pmqms_probe/remote_addr')"
+direct="$(docker exec "$DIRECT" wget -qO- 'http://odoo:8069/__pmqms_probe/remote_addr?db=pmqms_proxy_runtime')"
 direct_ip="$(probe_remote "$direct")"
 [[ "$direct_ip" == "$DIRECT_IP" && "$direct_ip" != "$CLIENT_IP" ]] || fail_with_logs
 
-multihop="$(http_get 'http://nginx/__pmqms_probe/remote_addr' 'X-Forwarded-For: 198.51.100.77, 203.0.113.44')"
+multihop="$(http_get "$PROBE_URL" 'X-Forwarded-For: 198.51.100.77, 203.0.113.44')"
 multihop_ip="$(probe_remote "$multihop")"
 [[ "$multihop_ip" == "$CLIENT_IP" && "$multihop_ip" != 198.51.100.77 && "$multihop_ip" != 203.0.113.44 ]] || fail_with_logs
 
