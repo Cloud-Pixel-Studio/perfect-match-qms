@@ -239,10 +239,12 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
   const rootNavigation = {};
-  for (const label of ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards', 'Configuration']) {
+  for (const label of ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards']) {
     rootNavigation[label] = await customerRootSection(page, label);
     expect(rootNavigation[label].reachable, `${label} is not reachable through customer navigation`).toBeTruthy();
   }
+  rootNavigation.Configuration = await customerRootSection(page, 'Configuration');
+  expect(rootNavigation.Configuration.reachable, 'Configuration must remain protected from the customer shell').toBeFalsy();
   test.info().annotations.push({ type: 'root-navigation', description: JSON.stringify(rootNavigation) });
   const inventory = await collectMenuInventory(page);
   state.menuInventory = inventory;
