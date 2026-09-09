@@ -124,6 +124,12 @@ for key, xmlid in role_data.items():
 env.cr.commit()
 PY
 
+# Playwright runs as the GitHub runner user, so it receives temporary
+# read-only copies after ORM setup. They remain outside artifacts and are
+# removed by cleanup.
+docker run --rm --user root -v "$ROOT/secrets:/input:ro" -v "$WORK/users:/output" "$ALPINE_IMAGE" \
+  sh -eu -c 'cp /input/initial_admin_password /output/admin-password && chmod 644 /output/*' >/dev/null
+
 # Nginx is derived from the shipped template; only the listener/upstream are
 # adapted for an HTTP-only, host-networked disposable proxy.
 awk -v port="$ODOO_PORT" -v proxy_port="$PROXY_PORT" '
@@ -157,7 +163,7 @@ export M31_ORGANIZATION_NAME="M31 Fictional Components"
 export M31_QM_LOGIN="quality.manager.${RUN_SUFFIX}@example.invalid"
 export M31_QM_PASSWORD_FILE="$WORK/users/qm-password"
 export M31_ADMIN_LOGIN="admin"
-export M31_ADMIN_PASSWORD_FILE="$ROOT/secrets/initial_admin_password"
+export M31_ADMIN_PASSWORD_FILE="$WORK/users/admin-password"
 export M31_AUDITOR_LOGIN="m31.auditor.${RUN_SUFFIX}@example.invalid"
 export M31_AUDITOR_PASSWORD_FILE="$WORK/users/auditor-password"
 export M31_OWNER_LOGIN="m31.owner.${RUN_SUFFIX}@example.invalid"
