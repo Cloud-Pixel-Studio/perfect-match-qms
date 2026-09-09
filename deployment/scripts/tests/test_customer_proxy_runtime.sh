@@ -70,7 +70,13 @@ from odoo.http import Controller, Response, request, route
 
 
 class ProxyRuntimeProbe(Controller):
-    @route("/__pmqms_probe/remote_addr", auth="none", csrf=False, methods=["GET"])
+    @route(
+        "/__pmqms_probe/remote_addr",
+        type="http",
+        auth="public",
+        csrf=False,
+        methods=["GET"],
+    )
     def remote_addr(self):
         return Response(
             json.dumps({
