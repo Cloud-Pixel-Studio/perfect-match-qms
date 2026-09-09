@@ -50,6 +50,8 @@ cat > "$WORK/probe-addons/pmqms_proxy_probe/__manifest__.py" <<'PY'
 {
     "name": "Disposable Proxy Runtime Probe",
     "version": "19.0.1.0.0",
+    "author": "Perfect Match QMS",
+    "license": "LGPL-3",
     "depends": ["base"],
     "installable": True,
     "application": False,
@@ -121,7 +123,7 @@ done
 docker exec "$POSTGRES" pg_isready -U odoo -d postgres >/dev/null 2>&1 || fail_with_logs
 docker exec "$POSTGRES" createdb -U odoo "$DB_NAME"
 
-docker run -d --name "$ODOO" --network "$NETWORK" \
+docker run -d --name "$ODOO" --network "$NETWORK" --network-alias odoo \
   -v "$WORK/probe-addons:/mnt/probe-addons:ro" \
   -v "$WORK/odoo.conf:/etc/odoo/odoo.conf:ro" \
   "$ODOO_IMAGE" odoo -c /etc/odoo/odoo.conf -d "$DB_NAME" \
