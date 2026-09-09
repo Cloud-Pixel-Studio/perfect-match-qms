@@ -1,7 +1,7 @@
 # Runtime Lock
 
 `runtime-lock.json` is the source of truth for the approved Odoo,
-PostgreSQL, and Alpine image references. Each reference includes its human-
+PostgreSQL, Nginx, and Alpine image references. Each reference includes its human-
 readable tag and immutable content digest discovered from a validated
 environment.
 

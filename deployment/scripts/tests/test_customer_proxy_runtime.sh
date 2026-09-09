@@ -6,6 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LOCK_FILE="$REPO_ROOT/runtime/runtime-lock.json"
+AUTHORITATIVE_TEMPLATE="$REPO_ROOT/nginx/customer.conf.example"
 WORK="$(mktemp -d)"
 NETWORK="pmqms-proxy-runtime-${RANDOM}-${RANDOM}"
 POSTGRES="pmqms-proxy-postgres-${RANDOM}"
@@ -17,7 +18,7 @@ DIRECT="pmqms-proxy-direct-${RANDOM}"
 ODOO_IMAGE="$(jq -er '.odoo.image' "$LOCK_FILE")"
 POSTGRES_IMAGE="$(jq -er '.postgres.image' "$LOCK_FILE")"
 ALPINE_IMAGE="$(jq -er '.alpine.image' "$LOCK_FILE")"
-NGINX_IMAGE="${PMQMS_NGINX_IMAGE:-nginx:1.27-alpine}"
+NGINX_IMAGE="$(jq -er '.nginx.image' "$LOCK_FILE")"
 DB_NAME="pmqms_proxy_runtime"
 
 cleanup() {
@@ -101,21 +102,57 @@ proxy_mode = True
 workers = 0
 max_cron_threads = 0
 EOF
-cat > "$WORK/nginx/default.conf" <<'NGINX'
-server {
-    listen 80;
-    location / {
-        proxy_pass http://odoo:8069;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Proto http;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Port 80;
-        proxy_set_header Forwarded "";
-    }
+for required in \
+  'proxy_set_header Host $host;' \
+  'proxy_set_header X-Forwarded-Host $host;' \
+  'proxy_set_header X-Forwarded-Proto https;' \
+  'proxy_set_header X-Forwarded-For $remote_addr;' \
+  'proxy_set_header X-Real-IP $remote_addr;' \
+  'proxy_set_header X-Forwarded-Port 443;' \
+  'proxy_set_header Forwarded "";'; do
+  grep -Fq "$required" "$AUTHORITATIVE_TEMPLATE" || {
+    echo "authoritative Nginx template policy drift: $required" >&2
+    exit 1
+  }
+done
+if grep -Fq 'proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' "$AUTHORITATIVE_TEMPLATE"; then
+  echo 'authoritative Nginx template retains an untrusted forwarding chain' >&2
+  exit 1
+fi
+
+# Derive the HTTP-only disposable config from the shipped customer template.
+# Only TLS/listener and disposable upstream details are adapted for this test.
+awk '
+  /^server[[:space:]]*\{/ { block += 1 }
+  block == 1 { next }
+  block == 2 {
+    if ($0 ~ /^[[:space:]]*ssl_certificate(_key)?[[:space:]]/) next
+    sub(/listen 443 ssl http2;/, "listen 80;")
+    sub(/server_name customer\.example\.invalid;/, "server_name _;")
+    sub(/proxy_pass http:\/\/127\.0\.0\.1:__CUSTOMER_HTTP_PORT__;/, "proxy_pass http://odoo:8069;")
+    sub(/proxy_set_header X-Forwarded-Proto https;/, "proxy_set_header X-Forwarded-Proto http;")
+    sub(/proxy_set_header X-Forwarded-Port 443;/, "proxy_set_header X-Forwarded-Port 80;")
+    print
+  }
+' "$AUTHORITATIVE_TEMPLATE" > "$WORK/nginx/default.conf"
+
+for required in \
+  'proxy_set_header Host $host;' \
+  'proxy_set_header X-Forwarded-Host $host;' \
+  'proxy_set_header X-Forwarded-Proto http;' \
+  'proxy_set_header X-Forwarded-For $remote_addr;' \
+  'proxy_set_header X-Real-IP $remote_addr;' \
+  'proxy_set_header X-Forwarded-Port 80;' \
+  'proxy_set_header Forwarded "";'; do
+  grep -Fq "$required" "$WORK/nginx/default.conf" || {
+    echo "derived disposable Nginx config lost policy: $required" >&2
+    exit 1
+  }
+done
+grep -Fq 'proxy_pass http://odoo:8069;' "$WORK/nginx/default.conf" || {
+  echo 'derived disposable Nginx config has no disposable upstream' >&2
+  exit 1
 }
-NGINX
 
 docker network create "$NETWORK" >/dev/null
 docker run -d --name "$POSTGRES" --network "$NETWORK" --network-alias postgres \
