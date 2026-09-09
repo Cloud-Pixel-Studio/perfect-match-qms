@@ -149,8 +149,8 @@ docker run -d --name "$ODOO" --network "$NETWORK" --network-alias odoo \
 docker run -d --name "$NGINX" --network "$NETWORK" \
   -v "$WORK/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro" \
   "$NGINX_IMAGE" >/dev/null
-docker run -d --name "$CLIENT" --network "$NETWORK" "$ALPINE_IMAGE" sleep 300
-docker run -d --name "$DIRECT" --network "$NETWORK" "$ALPINE_IMAGE" sleep 300
+docker run -d --name "$CLIENT" --network "$NETWORK" "$ALPINE_IMAGE" sleep 900
+docker run -d --name "$DIRECT" --network "$NETWORK" "$ALPINE_IMAGE" sleep 900
 
 http_get() {
   local target="$1" header="${2:-}"
