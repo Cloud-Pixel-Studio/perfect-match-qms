@@ -87,7 +87,7 @@ for role in auditor owner viewer api; do
 done
 
 # Fixture creation is ORM-based and confined to the disposable database.
-docker run --rm --user root -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -v "$WORK:/work" "$ALPINE_IMAGE" sh -c 'chown 100:101 /work /work/users && chown -R 100:101 /work/users && chmod 700 /work /work/users && chmod 600 /work/users/*' >/dev/null
+docker run --rm --user root -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -v "$WORK:/work" "$ALPINE_IMAGE" sh -c 'chown -R 100:101 /work/users && chmod 711 /work && chmod 700 /work/users && chmod 600 /work/users/*' >/dev/null
 docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
   -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 -v "$WORK:/var/lib/pmqms-uat:ro" odoo \
   odoo shell -d "pmqms_${SLUG//-/_}" --log-level=error <<PY >/dev/null
