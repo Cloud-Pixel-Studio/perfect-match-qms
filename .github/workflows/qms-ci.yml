@@ -52,6 +52,9 @@ jobs:
       - name: Run customer deployment script regressions
         run: bash deployment/scripts/tests/test_customer_instance_cleanup.sh
 
+      - name: Validate customer proxy client-IP contract
+        run: bash deployment/scripts/tests/test_customer_proxy_contract.sh
+
       - name: Run customer bootstrap scope regressions
         run: bash deployment/scripts/tests/test_customer_bootstrap_scope.sh
 
