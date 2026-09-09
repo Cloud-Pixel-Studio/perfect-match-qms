@@ -55,6 +55,9 @@ jobs:
       - name: Validate customer proxy client-IP contract
         run: bash deployment/scripts/tests/test_customer_proxy_contract.sh
 
+      - name: Run disposable customer proxy runtime certification
+        run: bash deployment/scripts/tests/test_customer_proxy_runtime.sh
+
       - name: Run customer bootstrap scope regressions
         run: bash deployment/scripts/tests/test_customer_bootstrap_scope.sh
 
