@@ -163,7 +163,7 @@ http_get() {
 PROBE_URL='http://nginx/__pmqms_probe/remote_addr?db=pmqms_proxy_runtime'
 wait_for_http() {
   for _ in {1..90}; do
-    if http_get "$PROBE_URL" >/dev/null 2>&1; then return 0; fi
+    if http_get 'http://nginx/web/login?db=pmqms_proxy_runtime' >/dev/null 2>&1; then return 0; fi
     sleep 1
   done
   fail_with_logs
@@ -181,6 +181,7 @@ NGINX_IP="$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{
 
 normal="$(http_get "$PROBE_URL")"
 normal_ip="$(probe_remote "$normal")"
+printf 'normal_probe_remote_addr=%s\n' "$normal_ip"
 [[ "$normal_ip" == "$CLIENT_IP" ]] || fail_with_logs
 
 spoofed="$(http_get "$PROBE_URL" 'X-Forwarded-For: 198.51.100.77')"
