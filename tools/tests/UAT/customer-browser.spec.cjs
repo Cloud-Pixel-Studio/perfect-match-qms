@@ -16,6 +16,44 @@ const LOGIN_PATH = `/web/login?db=${encodeURIComponent(DATABASE)}&redirect=%2Fod
 const CUSTOMER_SHELL = 'o_pm_qms_customer_shell';
 const ORGANIZATION_NAME = required('M31_ORGANIZATION_NAME');
 const IMPLEMENTATION_NAME = 'M31 Fictional ISO 9001 Initial Implementation';
+const CUSTOMER_ROOTS = ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards'];
+const ROLE_CONTRACT = {
+  'Internal Auditor': { shell: true, roots: CUSTOMER_ROOTS, forbiddenRoots: ['Configuration'] },
+  'Process Owner': { shell: true, roots: CUSTOMER_ROOTS, forbiddenRoots: ['Configuration'] },
+  Viewer: { shell: true, roots: CUSTOMER_ROOTS, forbiddenRoots: ['Configuration'] },
+  'API Integration Administrator': { shell: false, roots: [], forbiddenRoots: [] },
+};
+const EXPERIENCE_COVERAGE = {
+  'login/logout': 'TESTED/PASS (login); NOT TESTED (logout)',
+  'customer branding': 'NOT TESTED',
+  'root navigation': 'TESTED/PASS for customer roots; TESTED/FAIL if documented QM Configuration is absent',
+  'responsive More menu': 'NOT TESTED',
+  breadcrumbs: 'NOT TESTED',
+  'empty states': 'TESTED/PASS',
+  'forms and validation': 'TESTED/PASS for guided implementation',
+  'direct URLs': 'TESTED/PASS for customer restriction probe',
+  'in-app activities': 'NOT TESTED',
+  reminders: 'NOT TESTED',
+  chatter: 'NOT TESTED',
+  'notification record links': 'NOT TESTED',
+  'overdue behavior': 'NOT TESTED',
+  'duplicate notifications': 'NOT TESTED',
+  'unauthorized recipient isolation': 'NOT TESTED',
+  'behavior without SMTP': 'NOT TESTED',
+  'captured email delivery': 'NOT TESTED',
+  'keyboard navigation': 'NOT TESTED',
+  'visible focus': 'TESTED/PASS via axe/responsive smoke only',
+  'accessible names': 'TESTED/PASS via axe',
+  'form labels': 'TESTED/PASS via axe',
+  'required-field communication': 'NOT TESTED',
+  'validation errors': 'NOT TESTED',
+  headings: 'NOT TESTED',
+  dialogs: 'TESTED/PASS for guided implementation',
+  'desktop viewport': 'TESTED/PASS',
+  'constrained viewport': 'TESTED/PASS',
+  'device/session IP': 'NOT TESTED',
+  'each required business workflow domain': 'TESTED/PASS or NOT_EXPOSED per domain smoke result',
+};
 const state = {
   qm: null,
   viewer: null,
@@ -221,12 +259,35 @@ test('fictional customer role sessions establish and remain customer-scoped', as
     const page = await context.newPage();
     const telemetry = installTelemetry(page, `role-${role.toLowerCase().replaceAll(' ', '-')}`);
     await login(page, user);
-    if (role !== 'API Integration Administrator') {
-      expect((await appSnapshot(page)).shell, `${role} did not receive the customer shell`).toBeTruthy();
+    const contract = ROLE_CONTRACT[role];
+    const snapshot = await appSnapshot(page);
+    expect(snapshot.shell, `${role} customer-shell contract mismatch`).toBe(contract.shell);
+    if (contract.shell) {
+      const roots = await customerRootSections(page);
+      for (const root of contract.roots) expect(roots, `${role} is missing expected root ${root}`).toContain(root);
+      for (const root of contract.forbiddenRoots) {
+        const result = await customerRootSection(page, root);
+        expect(result.reachable, `${role} unexpectedly reached forbidden root ${root}`).toBeFalsy();
+      }
+      await page.goto('/odoo');
+      await waitForApp(page);
+      expect((await appSnapshot(page)).clean).toBeTruthy();
     }
     expect(await hasText(page, 'Apps')).toBeFalsy();
     expect(await hasText(page, 'Settings')).toBeFalsy();
-    test.info().annotations.push({ type: 'role-session', description: JSON.stringify({ role, authenticated: true, customerShell: true }) });
+    await page.goto('/web/database/manager');
+    await waitForApp(page);
+    expect(await hasText(page, 'Database Manager')).toBeFalsy();
+    test.info().annotations.push({ type: 'role-session', description: JSON.stringify({
+      role,
+      authenticated: true,
+      customerShell: snapshot.shell,
+      expectedRoots: contract.roots,
+      forbiddenRoots: contract.forbiddenRoots,
+      permittedRepresentative: contract.shell ? 'Dashboard' : 'authenticated application session',
+      prohibitedDirectUrl: '/web/database/manager',
+      prohibitedDirectUrlBlocked: true,
+    }) });
     recordTelemetry(telemetry);
     expect(telemetry.pageErrors).toEqual([]);
     expect(telemetry.consoleErrors).toEqual([]);
@@ -239,12 +300,11 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
   const rootNavigation = {};
-  for (const label of ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards']) {
+  test.info().annotations.push({ type: 'experience-coverage', description: JSON.stringify(EXPERIENCE_COVERAGE) });
+  for (const label of [...CUSTOMER_ROOTS, 'Configuration']) {
     rootNavigation[label] = await customerRootSection(page, label);
     expect(rootNavigation[label].reachable, `${label} is not reachable through customer navigation`).toBeTruthy();
   }
-  rootNavigation.Configuration = await customerRootSection(page, 'Configuration');
-  expect(rootNavigation.Configuration.reachable, 'Configuration must remain protected from the customer shell').toBeFalsy();
   test.info().annotations.push({ type: 'root-navigation', description: JSON.stringify(rootNavigation) });
   const inventory = await collectMenuInventory(page);
   state.menuInventory = inventory;
@@ -254,11 +314,9 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   expect(allLinks.some((item) => item.text === 'Implementations')).toBeTruthy();
   expect(allLinks.some((item) => item.text === 'Risks & Opportunities')).toBeTruthy();
   expect(allLinks.some((item) => item.text === 'Overview')).toBeTruthy();
-  test.info().annotations.push({ type: 'protected-configuration', description: JSON.stringify({
-    protectedRoot: 'Configuration',
-    customerLinks: ['Company Profile', 'Sites', 'Processes', 'Commercial License'],
-    policy: 'not exposed in the customer shell; classified by the domain smoke as NOT_EXPOSED',
-  }) });
+  for (const label of ['Company Profile', 'Sites', 'Processes', 'Commercial License']) {
+    expect(allLinks.some((item) => item.text === label), `${label} is not reachable through customer Configuration`).toBeTruthy();
+  }
   expect(await hasText(page, 'Apps')).toBeFalsy();
   expect(await hasText(page, 'Settings')).toBeFalsy();
   const generation = await ensureGeneratedImplementation(page, inventory);
@@ -461,7 +519,10 @@ test('restricted Viewer and Technical Administrator separation', async ({ browse
   await expect(admin.getByText('Apps', { exact: true })).toBeVisible();
   await expect(admin.getByText('Settings', { exact: true })).toBeVisible();
   const adminText = await admin.locator('body').innerText();
-  test.info().annotations.push({ type: 'persona-separation', description: JSON.stringify({ viewer: 'QMS customer restriction checks passed', technicalAdmin: /Apps/.test(adminText) && /Settings/.test(adminText) }) });
+  test.info().annotations.push({ type: 'persona-separation', description: JSON.stringify({
+    viewer: { expectedShell: true, forbiddenRoots: ['Configuration', 'Apps', 'Settings'], representativeForbiddenUrl: '/web/database/manager' },
+    technicalAdmin: { expectedShell: false, permittedRoots: ['Apps', 'Settings'], forbiddenCustomerShell: true, applicationText: /Apps/.test(adminText) && /Settings/.test(adminText) },
+  }) });
   recordTelemetry(viewerTelemetry);
   recordTelemetry(adminTelemetry);
   expect(viewerTelemetry.pageErrors).toEqual([]);

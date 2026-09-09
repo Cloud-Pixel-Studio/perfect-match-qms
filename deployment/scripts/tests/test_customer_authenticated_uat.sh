@@ -27,12 +27,17 @@ TAG_CREATED=0
 fail() { echo "authenticated customer UAT: FAIL: $*" >&2; exit 1; }
 cleanup() {
   local rc=$?
+  local -a disposable_containers=()
   trap - EXIT
   docker rm -f "$NGINX" >/dev/null 2>&1 || true
   if [[ -f "$INSTANCE_ROOT/$SLUG/config/instance.env" ]]; then
     bash "$CUSTOMER_SCRIPT" destroy "$SLUG" --confirm-ephemeral >/dev/null 2>&1 || rc=1
+    [[ ! -e "$INSTANCE_ROOT/$SLUG" ]] || rc=1
   fi
-  docker rm -f $(docker ps -aq --filter "label=com.docker.compose.project=pmqms-customer-${SLUG}") >/dev/null 2>&1 || true
+  mapfile -t disposable_containers < <(docker ps -aq --filter "label=com.docker.compose.project=pmqms-customer-${SLUG}")
+  if ((${#disposable_containers[@]})); then
+    docker rm -f "${disposable_containers[@]}" >/dev/null 2>&1 || rc=1
+  fi
   docker volume rm "pmqms_${SLUG}_odoo_data" "pmqms_${SLUG}_postgres" >/dev/null 2>&1 || true
   if [[ -n "${ALPINE_IMAGE:-}" && -d "$WORK" ]]; then
     docker run --rm --user root -v "$WORK:/cleanup" "$ALPINE_IMAGE" \
@@ -75,7 +80,7 @@ docker run --rm --user root -v "$REPO_ROOT:/repo:ro" -v "$WORK:/work" "$ODOO_IMA
   --company-limit 1 --site-limit 3 --named-user-limit 10 >/dev/null
 bash "$CUSTOMER_SCRIPT" import-license "$SLUG" "$WORK/active.pmql" >/dev/null
 
-printf '%s' "qm-${RUN_SUFFIX}" > "$WORK/users/qm-password"
+openssl rand -hex 24 > "$WORK/users/qm-password"
 bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" \
   --company-name "M31 Fictional Components" --company-code M31-C11 \
   --user-login "quality.manager.${RUN_SUFFIX}@example.invalid" --user-name "M31 Fictional Quality Manager" \
@@ -83,7 +88,7 @@ bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" \
 bash "$CUSTOMER_SCRIPT" create-site "$SLUG" --code M31-HQ --name "M31 Fictional Headquarters" --type headquarters >/dev/null
 
 for role in auditor owner viewer api; do
-  printf '%s' "${role}-${RUN_SUFFIX}" > "$WORK/users/${role}-password"
+  openssl rand -hex 24 > "$WORK/users/${role}-password"
 done
 
 # Fixture creation is ORM-based and confined to the disposable database.

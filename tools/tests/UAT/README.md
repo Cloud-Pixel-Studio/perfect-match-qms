@@ -40,3 +40,20 @@ Generated reports and screenshots belong in the local `evidence/` directory,
 which is excluded by the adjacent `.gitignore`. Do not commit credentials,
 session state, customer data, or screenshots containing secrets. This harness
 is test tooling only and is not part of any Odoo customer bundle.
+
+## Coverage accounting
+
+The authenticated run records a role matrix and an experience matrix in
+Playwright annotations. `TESTED/PASS` means the named behavior was exercised;
+`TESTED/FAIL` is a real observed failure; `NOT_TESTED` is intentionally not
+claimed as coverage; and `NOT_EXPOSED` records a role-appropriate unavailable
+surface. The current matrix covers login (logout is not tested), customer root
+navigation, guided implementation, empty states, direct URL restrictions,
+dialogs, accessible names/labels, visible focus checks, desktop and constrained
+viewports, and each discovered business-domain route. Breadcrumbs, reminders,
+chatter, notification links/duplication/recipient isolation, SMTP delivery,
+keyboard traversal, required-field errors, overdue behavior, and device/session
+IP require a later focused mission. Quality Manager Configuration, including
+Company Profile, Sites, Processes, and Commercial License, is normative and is
+asserted as reachable; absence is reported as a product finding rather than
+reclassified as expected protection.
