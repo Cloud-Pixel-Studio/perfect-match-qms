@@ -89,10 +89,16 @@ done
 # Fixture creation is ORM-based and confined to the disposable database.
 docker run --rm --user root -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -v "$WORK:/work" "$ALPINE_IMAGE" sh -c 'chown -R 100:101 /work/users && chmod 711 /work && chmod 700 /work/users && chmod 600 /work/users/*' >/dev/null
 docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
-  -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 -v "$WORK:/var/lib/pmqms-uat:ro" odoo \
-  odoo shell -d "pmqms_${SLUG//-/_}" --log-level=error <<PY >/dev/null
+  -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 \
+  -v "$WORK:/var/lib/pmqms-uat:ro" \
+  -v "$ROOT/secrets/initial_admin_password:/var/lib/pmqms-admin-password:ro" \
+  odoo odoo shell -d "pmqms_${SLUG//-/_}" --log-level=error <<PY >/dev/null
 from pathlib import Path
 company = env.company
+admin = env["res.users"].sudo().search([("login", "=", "admin")], limit=1)
+if not admin:
+    raise RuntimeError("technical admin fixture missing")
+admin.write({"password": Path("/var/lib/pmqms-admin-password").read_text().strip()})
 organization = env["pm.qms.organization"].sudo().search([("organization_kind", "=", "operational")], limit=1)
 if not organization:
     raise RuntimeError("operational organization missing")
