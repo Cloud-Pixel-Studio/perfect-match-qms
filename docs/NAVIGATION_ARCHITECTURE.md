@@ -14,7 +14,7 @@ without duplicating business functionality.
 | Performance | Performance, Cost of Quality, Management Review | Existing analytics and review actions |
 | Action Center | Unified actions | Intentionally prominent cross-functional entry |
 | Standards | ISO 9001 > Overview | ISO add-on owns the standard surface |
-| Configuration | Company Profile, Sites, Processes, Users & Access, Commercial License, Framework Administration | Administrative customer configuration |
+| Configuration | Company Profile, Sites, Processes, Users & Access, Commercial License, Framework Administration | Explicitly allow-listed administrative configuration |
 
 ## Action ownership
 
@@ -27,16 +27,20 @@ breadcrumbs, direct action identity, and module ownership.
 - Quality Manager receives the customer QMS shell, Commercial License, and
   operational configuration intended for that role, but not Framework
   Administration or Activation Requests.
-- Quality Supervisor and QMS Viewer receive their existing operational/read
-  scope and no privilege escalation through navigation.
+- Quality Supervisor, Internal Auditor, Process Owner, QMS Viewer, and API
+  Integration Administrator receive their existing operational/read scope and
+  no Configuration access or privilege escalation through navigation.
 - Technical Administrator retains Apps, Settings, maintenance, Framework
   Administration, and Standards > ISO 9001. Commercial License remains denied
   as designed.
 - QMS Licensing Administrator retains Activation Requests through the
   Commercial License branch.
 
-Direct URLs remain governed by model ACLs, record rules, and action security.
-Hiding a menu never grants access and is not used as an authorization control.
+Configuration menu and window-action records carry an explicit allow-list for
+Quality Manager, the existing QMS Administrator compatibility boundary, and
+Technical Administrator. Direct action loads remain governed by those action
+groups plus model ACLs and record rules; hiding a menu never grants access and
+is not used as an authorization control.
 
 ## Standards and framework separation
 
