@@ -17,7 +17,7 @@ umask 077
 
 RUN_ID="${GITHUB_RUN_ID:-local}-$$"
 RUN_SUFFIX="$(printf '%s' "$RUN_ID" | tr -cd '[:alnum:]' | cut -c1-24)"
-SLUG="m314-c11-uat-${RUN_SUFFIX}"
+SLUG="m314-c11-uat-test-${RUN_SUFFIX}"
 ODOO_PORT="$((18000 + ($$ % 700)))"
 PROXY_PORT="$((19000 + ($$ % 700)))"
 TAG="v99.99.$((100 + ($$ % 800)))-rc0"
