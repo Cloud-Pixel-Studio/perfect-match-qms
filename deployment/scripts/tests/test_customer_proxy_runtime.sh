@@ -136,7 +136,7 @@ done
 [[ "$(docker inspect -f '{{.State.ExitCode}}' "$ODOO")" == 0 ]] || fail_with_logs
 
 docker rm "$ODOO" >/dev/null
-docker run -d --name "$ODOO" --network "$NETWORK" \
+docker run -d --name "$ODOO" --network "$NETWORK" --network-alias odoo \
   -v "$WORK/probe-addons:/mnt/probe-addons:ro" \
   -v "$WORK/odoo.conf:/etc/odoo/odoo.conf:ro" \
   "$ODOO_IMAGE" odoo -c /etc/odoo/odoo.conf >/dev/null
