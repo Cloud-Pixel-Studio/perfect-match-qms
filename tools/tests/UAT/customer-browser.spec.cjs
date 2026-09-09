@@ -23,6 +23,7 @@ const state = {
   implementationHref: null,
   implementationMenuXmlid: null,
   menuInventory: null,
+  roles: {},
 };
 
 function required(name) {
@@ -204,7 +205,33 @@ test.beforeAll(() => {
   state.qm = userFromEnv('M31_QM');
   state.viewer = userFromEnv('M31_VIEWER');
   state.admin = userFromEnv('M31_ADMIN');
+  state.roles = {
+    'Internal Auditor': userFromEnv('M31_AUDITOR'),
+    'Process Owner': userFromEnv('M31_OWNER'),
+    'Viewer': userFromEnv('M31_VIEWER'),
+    'API Integration Administrator': userFromEnv('M31_API'),
+  };
   if (!state.qm || !state.admin) throw new Error('Quality Manager and Technical Administrator credentials are required');
+  if (Object.entries(state.roles).some(([, user]) => !user)) throw new Error('All authenticated customer role fixtures are required');
+});
+
+test('fictional customer role sessions establish and remain customer-scoped', async ({ browser }) => {
+  for (const [role, user] of Object.entries(state.roles)) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const telemetry = installTelemetry(page, `role-${role.toLowerCase().replaceAll(' ', '-')}`);
+    await login(page, user);
+    if (role !== 'API Integration Administrator') {
+      expect((await appSnapshot(page)).shell, `${role} did not receive the customer shell`).toBeTruthy();
+    }
+    expect(await hasText(page, 'Apps')).toBeFalsy();
+    expect(await hasText(page, 'Settings')).toBeFalsy();
+    test.info().annotations.push({ type: 'role-session', description: JSON.stringify({ role, authenticated: true, customerShell: true }) });
+    recordTelemetry(telemetry);
+    expect(telemetry.pageErrors).toEqual([]);
+    expect(telemetry.consoleErrors).toEqual([]);
+    await context.close();
+  }
 });
 
 test('Quality Manager customer shell, navigation, guided implementation and idempotent sync', async ({ page }) => {

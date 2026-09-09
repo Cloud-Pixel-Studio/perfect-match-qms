@@ -1,8 +1,10 @@
 # Customer Browser UAT
 
-This is a disposable, test-only browser harness for M31 customer UAT. It must
-run against a disposable customer instance and never against Demo, production,
-`cleanvm-test-02`, or a real customer environment.
+This is a disposable, test-only browser harness for M31 customer UAT. The CI
+entry point is `deployment/scripts/tests/test_customer_authenticated_uat.sh`;
+it provisions through `customer-instance.sh`, generates fictional credentials
+and license material ephemerally, and cleans up on exit. It must never run
+against Demo, production, `cleanvm-test-02`, or a real customer environment.
 
 ## Run
 
@@ -10,6 +12,10 @@ Set `M31_BASE_URL`, `M31_DATABASE`, `M31_ORGANIZATION_NAME`, `M31_QM_LOGIN`,
 `M31_QM_PASSWORD_FILE`, `M31_ADMIN_LOGIN`, and `M31_ADMIN_PASSWORD_FILE`. A
 restricted Viewer may be provided with `M31_VIEWER_LOGIN` and
 `M31_VIEWER_PASSWORD_FILE`.
+The CI runner also supplies `M31_AUDITOR_*`, `M31_OWNER_*`, and `M31_API_*`
+fixtures for Internal Auditor, Process Owner, and API Integration
+Administrator sessions. These values are generated only in the disposable
+runner and are never printed or persisted as artifacts.
 
 `M31_ORGANIZATION_NAME` is required and must exactly match the operational
 organization created by `bootstrap-customer`. The harness does not select an
