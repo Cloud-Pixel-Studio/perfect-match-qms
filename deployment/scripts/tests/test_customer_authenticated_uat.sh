@@ -34,6 +34,10 @@ cleanup() {
   fi
   docker rm -f $(docker ps -aq --filter "label=com.docker.compose.project=pmqms-customer-${SLUG}") >/dev/null 2>&1 || true
   docker volume rm "pmqms_${SLUG}_odoo_data" "pmqms_${SLUG}_postgres" >/dev/null 2>&1 || true
+  if [[ -n "${ALPINE_IMAGE:-}" && -d "$WORK" ]]; then
+    docker run --rm --user root -v "$WORK:/cleanup" "$ALPINE_IMAGE" \
+      sh -eu -c 'rm -rf /cleanup/* /cleanup/.[!.]* /cleanup/..?*' >/dev/null 2>&1 || rc=1
+  fi
   rm -rf -- "$WORK" || rc=1
   if [[ "$TAG_CREATED" == 1 ]]; then git -C "$REPO_ROOT" tag -d "$TAG" >/dev/null 2>&1 || rc=1; fi
   exit "$rc"
@@ -84,8 +88,9 @@ done
 
 # Fixture creation is ORM-based and confined to the disposable database.
 docker run --rm --user root -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -v "$WORK:/work" "$ALPINE_IMAGE" sh -c 'chown -R 100:101 /work/users && chmod 600 /work/users/*' >/dev/null
-docker run --rm --user root -v "$WORK:/var/lib/pmqms-uat:ro" -v "$ROOT/config/odoo.conf:/etc/odoo/odoo.conf:ro" \
-  -v "$ROOT/runtime/addons:/mnt/extra-addons:ro" "$ODOO_IMAGE" odoo shell -c /etc/odoo/odoo.conf -d "pmqms_${SLUG//-/_}" --log-level=error <<PY >/dev/null
+docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
+  -f "$ROOT/runtime/compose.yml" run --rm -v "$WORK:/var/lib/pmqms-uat:ro" odoo \
+  odoo shell -d "pmqms_${SLUG//-/_}" --log-level=error <<PY >/dev/null
 from pathlib import Path
 company = env.company
 organization = env["pm.qms.organization"].sudo().search([("organization_kind", "=", "operational")], limit=1)
