@@ -123,6 +123,49 @@ function recordTelemetry(telemetry) {
   }) });
 }
 
+async function browserRuntimeDiagnostics(page, telemetry) {
+  const roots = await customerRootSections(page);
+  const navbar = page.locator('nav.o_main_navbar, .o_main_navbar').first();
+  const accessibleNames = await navbar.locator('a:visible, button:visible, span[data-section]:visible').evaluateAll((nodes) => [
+    ...new Set(nodes
+      .filter((node) => !node.matches('[aria-label="More Menu"], [aria-label*="Messages"], [aria-label*="Notifications"]'))
+      .map((node) => node.getAttribute('aria-label') || node.textContent.trim().replace(/\s+/g, ' '))
+      .filter(Boolean)),
+  ]);
+  const moreMenu = navbar.getByRole('button', { name: 'More Menu', exact: true }).first();
+  const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
+  let overflowLabels = [];
+  if (moreMenuPresent) {
+    if ((await moreMenu.getAttribute('aria-expanded')) !== 'true') await moreMenu.click();
+    overflowLabels = await page.locator([
+      '.o_popover:visible .o_more_dropdown_section',
+      '.o-popover:visible .o_more_dropdown_section',
+      '[role="menu"]:visible .o_more_dropdown_section',
+      '.dropdown-menu:visible .o_more_dropdown_section',
+    ].join(', ')).allTextContents();
+    await page.keyboard.press('Escape');
+  }
+  return {
+    pathname: new URL(page.url()).pathname,
+    viewport: page.viewportSize(),
+    visibleRootLabels: roots,
+    accessibleNavigationNames: accessibleNames,
+    moreMenuPresent,
+    configurationInOverflow: overflowLabels.some((label) => label.trim() === 'Configuration'),
+    overflowRootLabels: overflowLabels.map((label) => label.trim()).filter(Boolean),
+    consoleErrors: telemetry.consoleErrors.map((item) => item.text.slice(0, 300)),
+    pageErrors: telemetry.pageErrors.map((item) => item.slice(0, 300)),
+    failedRequests: telemetry.failedRequests.map((item) => ({
+      path: new URL(item.url, page.url()).pathname,
+      error: item.error,
+    })),
+    httpErrors: telemetry.httpErrors.map((item) => ({
+      status: item.status,
+      path: new URL(item.url, page.url()).pathname,
+    })),
+  };
+}
+
 async function waitForApp(page) {
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(900);
@@ -300,6 +343,10 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   const telemetry = installTelemetry(page, 'quality-manager');
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
+  test.info().annotations.push({
+    type: 'browser-runtime-diagnostics',
+    description: JSON.stringify(await browserRuntimeDiagnostics(page, telemetry)),
+  });
   const rootNavigation = {};
   test.info().annotations.push({ type: 'experience-coverage', description: JSON.stringify(EXPERIENCE_COVERAGE) });
   for (const label of [...CUSTOMER_ROOTS, 'Configuration']) {

@@ -23,6 +23,7 @@ PROXY_PORT="$((19000 + ($$ % 700)))"
 TAG="v99.99.$((100 + ($$ % 800)))-rc0"
 NGINX="pmqms-customer-uat-nginx-${RUN_SUFFIX}"
 TAG_CREATED=0
+RUNTIME_DIAGNOSTICS="$WORK/runtime-diagnostics.txt"
 
 fail() { echo "authenticated customer UAT: FAIL: $*" >&2; exit 1; }
 cleanup() {
@@ -68,8 +69,13 @@ while IFS= read -r image; do docker pull "$image" >/dev/null; done < <(jq -er '.
 git -C "$REPO_ROOT" tag "$TAG"
 TAG_CREATED=1
 bash "$CUSTOMER_SCRIPT" bundle --release "$TAG" --output "$WORK/customer-bundle.tar.gz" >/dev/null
+DB_NAME="pmqms_${SLUG//-/_}"
+RUNTIME_REPOSITORY_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+DB_PREEXISTED="NO"
+if [[ -e "$INSTANCE_ROOT/$SLUG" ]]; then DB_PREEXISTED="YES"; fi
 bash "$CUSTOMER_SCRIPT" provision "$SLUG" --bundle "$WORK/customer-bundle.tar.gz" --type test --port "$ODOO_PORT" >/dev/null
 ROOT="$INSTANCE_ROOT/$SLUG"
+ADDON_COPY_COUNT="$(find "$ROOT/runtime/addons" -mindepth 1 -maxdepth 1 -type d -name pm_qms_app | wc -l | tr -d ' ')"
 
 bash "$CUSTOMER_SCRIPT" bootstrap "$SLUG" >"$WORK/bootstrap.log" 2>&1
 bash "$CUSTOMER_SCRIPT" activation-request "$SLUG" >"$WORK/activation.log" 2>&1
@@ -147,6 +153,181 @@ PY
 # removed by cleanup.
 docker run --rm --user root -v "$WORK:/work" "$ALPINE_IMAGE" \
   sh -eu -c 'cp /work/users/* /work/browser-users/ && cp /work/instances/'"$SLUG"'/secrets/initial_admin_password /work/browser-users/admin-password && chmod 755 /work/browser-users && chmod 644 /work/browser-users/*' >/dev/null
+
+# Emit a sanitized ORM/runtime inventory before browser navigation.  This is
+# deliberately diagnostic-only: it must not change the fixture or weaken the
+# normative Configuration assertion in customer-browser.spec.cjs.
+set +e
+docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
+  -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 \
+  -e PMQMS_RUNTIME_REPOSITORY_SHA="$RUNTIME_REPOSITORY_SHA" \
+  -e PMQMS_QM_LOGIN="quality.manager.${RUN_SUFFIX}@example.invalid" \
+  -e PMQMS_DB_NAME="$DB_NAME" \
+  -e PMQMS_DB_PREEXISTED="$DB_PREEXISTED" \
+  -e PMQMS_ADDON_COPY_COUNT="$ADDON_COPY_COUNT" \
+  odoo odoo shell -d "$DB_NAME" --log-level=error <<'PY' >"$RUNTIME_DIAGNOSTICS" 2>&1
+import json
+import os
+from odoo.modules.module import get_module_path
+
+
+def emit(key, value):
+    print("%s=%s" % (key, json.dumps(value, sort_keys=True, default=str)))
+
+
+def xmlid_for(record):
+    if not record:
+        return None
+    data = env["ir.model.data"].sudo().search([
+        ("model", "=", record._name), ("res_id", "=", record.id)
+    ], limit=1)
+    return data.complete_name if data else None
+
+
+def groups_for(groups):
+    return sorted(filter(None, (xmlid_for(group) for group in groups)))
+
+
+def safe_menu(xmlid, visible_menu_ids):
+    menu = env.ref(xmlid, raise_if_not_found=False)
+    if not menu:
+        return {"xmlid": xmlid, "resolves": False}
+    action = menu.action
+    allowed = not menu.groups_id or bool(menu.groups_id & qm.all_group_ids)
+    children = menu.child_id.filtered(
+        lambda child: child.active and (not child.groups_id or bool(child.groups_id & qm.all_group_ids))
+    )
+    action_groups = groups_for(action.groups_id) if action else []
+    action_xmlid = xmlid_for(action) if action else None
+    return {
+        "xmlid": xmlid,
+        "resolves": True,
+        "active": bool(menu.active),
+        "parent": xmlid_for(menu.parent_id),
+        "sequence": menu.sequence,
+        "groups": groups_for(menu.groups_id),
+        "action": action_xmlid,
+        "action_model": action.res_model if action and hasattr(action, "res_model") else None,
+        "action_groups": action_groups,
+        "quality_manager_passes_menu_group": allowed,
+        "accessible_child": bool(children),
+        "visible_menu_computation": menu.id in visible_menu_ids,
+    }
+
+
+def safe_action(xmlid, model_name):
+    action = env.ref(xmlid, raise_if_not_found=False)
+    if not action:
+        return {"xmlid": xmlid, "resolves": False}
+    model = env[model_name].with_user(qm)
+    result = {
+        "xmlid": xmlid,
+        "resolves": True,
+        "groups": groups_for(action.groups_id),
+        "target_model": action.res_model,
+        "action_read": False,
+        "action_dict": False,
+        "load_error": None,
+        "model_access": {},
+        "record_rule_search_count": None,
+    }
+    try:
+        action.with_user(qm).read(["id", "name", "res_model"])
+        result["action_read"] = True
+        result["action_dict"] = True
+    except Exception as exc:
+        result["load_error"] = type(exc).__name__
+    for operation in ("read", "create", "write", "unlink"):
+        try:
+            result["model_access"][operation] = bool(model.check_access_rights(operation, raise_exception=False))
+        except Exception as exc:
+            result["model_access"][operation] = type(exc).__name__
+    try:
+        result["record_rule_search_count"] = model.search_count([])
+    except Exception as exc:
+        result["record_rule_search_count"] = type(exc).__name__
+    return result
+
+
+qm_login = os.environ.get("PMQMS_QM_LOGIN")
+qm = env["res.users"].sudo().search([("login", "=", qm_login)], limit=1)
+visible = env["ir.ui.menu"].with_user(qm).load_menus(False) if qm else {}
+visible_ids = set()
+if isinstance(visible, dict):
+    for key in visible.keys():
+        try:
+            visible_ids.add(int(key))
+        except (TypeError, ValueError):
+            pass
+module = env["ir.module.module"].sudo().search([("name", "=", "pm_qms_app")], limit=1)
+module_path = get_module_path("pm_qms_app")
+emit("DATABASE", {
+    "name": os.environ.get("PMQMS_DB_NAME"),
+    "fresh_by_unique_run": os.environ.get("PMQMS_DB_PREEXISTED") == "NO",
+    "volume_reuse": False,
+})
+emit("RUNTIME", {
+    "repository_sha": os.environ.get("PMQMS_RUNTIME_REPOSITORY_SHA"),
+    "pm_qms_app_path": module_path,
+    "effective_addons_path": os.path.dirname(module_path) if module_path else None,
+    "pm_qms_app_copy_count": int(os.environ.get("PMQMS_ADDON_COPY_COUNT", "0")),
+    "pm_qms_app_duplicate_copy": int(os.environ.get("PMQMS_ADDON_COPY_COUNT", "0")) > 1,
+})
+emit("MODULE", {
+    "name": "pm_qms_app",
+    "state": module.state if module else None,
+    "installed_version": module.installed_version if module else None,
+    "latest_version": module.latest_version if module else None,
+    "fresh_bootstrap_mode": "--init customer module set",
+})
+emit("QUALITY_MANAGER", {
+    "login": qm_login,
+    "exists": bool(qm),
+    "active": bool(qm.active) if qm else False,
+    "company": qm.company_id.name if qm else None,
+    "allowed_companies": sorted(qm.company_ids.mapped("name")) if qm else [],
+    "direct_groups": groups_for(qm.groups_id) if qm else [],
+    "effective_groups": groups_for(qm.all_group_ids) if qm else [],
+    "intended_group_xmlid": "pm_qms_core.group_qms_quality_manager",
+    "intended_group_received": bool(qm and qm.has_group("pm_qms_core.group_qms_quality_manager")),
+    "portal_or_public": bool(qm and (qm.has_group("base.group_portal") or qm.has_group("base.group_public"))),
+    "shared": bool(qm.share) if qm else False,
+})
+menu_xmlids = [
+    "pm_qms_core.menu_pm_qms_configuration",
+    "pm_qms_core.menu_pm_qms_organizations",
+    "pm_qms_app.menu_pm_qms_sites",
+    "pm_qms_core.menu_pm_qms_processes",
+    "pm_qms_app.menu_pm_qms_users_access",
+    "pm_qms_license.menu_pm_qms_license",
+    "pm_qms_core.menu_pm_qms_framework",
+]
+emit("MENUS", [safe_menu(xmlid, visible_ids) for xmlid in menu_xmlids])
+action_specs = [
+    ("pm_qms_core.action_pm_qms_organization", "pm.qms.organization"),
+    ("pm_qms_core.action_pm_qms_site", "pm.qms.site"),
+    ("pm_qms_core.action_pm_qms_process", "pm.qms.process"),
+    ("pm_qms_app.action_pm_qms_users_access", "res.users"),
+    ("pm_qms_license.action_pm_qms_license", "pm.qms.license"),
+]
+emit("ACTIONS", [safe_action(xmlid, model_name) for xmlid, model_name in action_specs])
+license_status = None
+try:
+    license_status = env["pm.qms.license"].sudo().current_status().get("status")
+except Exception as exc:
+    license_status = type(exc).__name__
+emit("LICENSE", {"status": license_status})
+PY
+DIAGNOSTIC_RC=$?
+set -e
+echo "M31_RUNTIME_DIAGNOSTICS_BEGIN"
+if [[ "$DIAGNOSTIC_RC" == 0 ]]; then
+  cat "$RUNTIME_DIAGNOSTICS"
+else
+  echo "DIAGNOSTIC_COMMAND_STATUS=FAIL"
+  sed -E 's/(password|token|secret|cookie|csrf|key)[^[:space:]]*/[REDACTED]/Ig' "$RUNTIME_DIAGNOSTICS" || true
+fi
+echo "M31_RUNTIME_DIAGNOSTICS_END"
 
 # Nginx is derived from the shipped template; only the listener/upstream are
 # adapted for an HTTP-only, host-networked disposable proxy.

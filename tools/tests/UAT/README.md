@@ -59,3 +59,13 @@ Manager Configuration, including
 Company Profile, Sites, Processes, and Commercial License, is normative and is
 asserted as reachable; absence is reported as a product finding rather than
 reclassified as expected protection.
+
+## Failure diagnostics
+
+Before browser navigation, CI emits a sanitized `M31_RUNTIME_DIAGNOSTICS`
+section. It contains only module/version state, non-secret XML IDs and group
+names, model access booleans, visible-menu computation, ephemeral runtime
+identity, and browser navigation telemetry. Passwords, cookies, tokens, license
+material, database credentials, customer data, screenshots, and traces are not
+included. The diagnostics are evidence for classifying a failed UAT; they do
+not replace the normative browser assertions.
