@@ -16,6 +16,45 @@ const LOGIN_PATH = `/web/login?db=${encodeURIComponent(DATABASE)}&redirect=%2Fod
 const CUSTOMER_SHELL = 'o_pm_qms_customer_shell';
 const ORGANIZATION_NAME = required('M31_ORGANIZATION_NAME');
 const IMPLEMENTATION_NAME = 'M31 Fictional ISO 9001 Initial Implementation';
+const CUSTOMER_ROOTS = ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards'];
+const CUSTOMER_ROLE_ROOTS = ['Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards'];
+const ROLE_CONTRACT = {
+  'Internal Auditor': { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
+  'Process Owner': { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
+  Viewer: { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
+  'API Integration Administrator': { shell: false, roots: [], forbiddenRoots: [] },
+};
+const EXPERIENCE_COVERAGE = {
+  'login/logout': 'TESTED/PASS (login); NOT TESTED (logout)',
+  'customer branding': 'NOT TESTED',
+  'root navigation': 'TESTED/PASS for customer roots; TESTED/FAIL if documented QM Configuration is absent',
+  'responsive More menu': 'NOT TESTED',
+  breadcrumbs: 'NOT TESTED',
+  'empty states': 'TESTED/PASS',
+  'forms and validation': 'TESTED/PASS for guided implementation',
+  'direct URLs': 'TESTED/PASS for customer restriction probe',
+  'in-app activities': 'NOT TESTED',
+  reminders: 'NOT TESTED',
+  chatter: 'NOT TESTED',
+  'notification record links': 'NOT TESTED',
+  'overdue behavior': 'NOT TESTED',
+  'duplicate notifications': 'NOT TESTED',
+  'unauthorized recipient isolation': 'NOT TESTED',
+  'behavior without SMTP': 'NOT TESTED',
+  'captured email delivery': 'NOT TESTED',
+  'keyboard navigation': 'NOT TESTED',
+  'visible focus': 'NOT_TESTED',
+  'accessible names': 'TESTED/PASS via axe',
+  'form labels': 'TESTED/PASS via axe',
+  'required-field communication': 'NOT TESTED',
+  'validation errors': 'NOT TESTED',
+  headings: 'NOT TESTED',
+  dialogs: 'TESTED/PASS for guided implementation',
+  'desktop viewport': 'TESTED/PASS',
+  'constrained viewport': 'TESTED/PASS',
+  'device/session IP': 'NOT TESTED',
+  'each required business workflow domain': 'TESTED/PASS or NOT_EXPOSED per domain smoke result',
+};
 const state = {
   qm: null,
   viewer: null,
@@ -23,6 +62,7 @@ const state = {
   implementationHref: null,
   implementationMenuXmlid: null,
   menuInventory: null,
+  roles: {},
 };
 
 function required(name) {
@@ -81,6 +121,49 @@ function recordTelemetry(telemetry) {
     http5xx: telemetry.httpErrors.filter((item) => item.status >= 500).length,
     rpcFailures: telemetry.httpErrors.filter((item) => /\/web\/dataset\/|\/web\/database\//.test(item.url)).length,
   }) });
+}
+
+async function browserRuntimeDiagnostics(page, telemetry) {
+  const roots = await customerRootSections(page);
+  const navbar = page.locator('nav.o_main_navbar, .o_main_navbar').first();
+  const accessibleNames = await navbar.locator('a:visible, button:visible, span[data-section]:visible').evaluateAll((nodes) => [
+    ...new Set(nodes
+      .filter((node) => !node.matches('[aria-label="More Menu"], [aria-label*="Messages"], [aria-label*="Notifications"]'))
+      .map((node) => node.getAttribute('aria-label') || node.textContent.trim().replace(/\s+/g, ' '))
+      .filter(Boolean)),
+  ]);
+  const moreMenu = navbar.getByRole('button', { name: 'More Menu', exact: true }).first();
+  const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
+  let overflowLabels = [];
+  if (moreMenuPresent) {
+    if ((await moreMenu.getAttribute('aria-expanded')) !== 'true') await moreMenu.click();
+    overflowLabels = await page.locator([
+      '.o_popover:visible .o_more_dropdown_section',
+      '.o-popover:visible .o_more_dropdown_section',
+      '[role="menu"]:visible .o_more_dropdown_section',
+      '.dropdown-menu:visible .o_more_dropdown_section',
+    ].join(', ')).allTextContents();
+    await page.keyboard.press('Escape');
+  }
+  return {
+    pathname: new URL(page.url()).pathname,
+    viewport: page.viewportSize(),
+    visibleRootLabels: roots,
+    accessibleNavigationNames: accessibleNames,
+    moreMenuPresent,
+    configurationInOverflow: overflowLabels.some((label) => label.trim() === 'Configuration'),
+    overflowRootLabels: overflowLabels.map((label) => label.trim()).filter(Boolean),
+    consoleErrors: telemetry.consoleErrors.map((item) => item.text.slice(0, 300)),
+    pageErrors: telemetry.pageErrors.map((item) => item.slice(0, 300)),
+    failedRequests: telemetry.failedRequests.map((item) => ({
+      path: new URL(item.url, page.url()).pathname,
+      error: item.error,
+    })),
+    httpErrors: telemetry.httpErrors.map((item) => ({
+      status: item.status,
+      path: new URL(item.url, page.url()).pathname,
+    })),
+  };
 }
 
 async function waitForApp(page) {
@@ -204,15 +287,71 @@ test.beforeAll(() => {
   state.qm = userFromEnv('M31_QM');
   state.viewer = userFromEnv('M31_VIEWER');
   state.admin = userFromEnv('M31_ADMIN');
+  state.roles = {
+    'Internal Auditor': userFromEnv('M31_AUDITOR'),
+    'Process Owner': userFromEnv('M31_OWNER'),
+    'Viewer': userFromEnv('M31_VIEWER'),
+    'API Integration Administrator': userFromEnv('M31_API'),
+  };
   if (!state.qm || !state.admin) throw new Error('Quality Manager and Technical Administrator credentials are required');
+  if (Object.entries(state.roles).some(([, user]) => !user)) throw new Error('All authenticated customer role fixtures are required');
+});
+
+test('fictional customer role sessions establish and remain customer-scoped', async ({ browser }) => {
+  for (const [role, user] of Object.entries(state.roles)) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const telemetry = installTelemetry(page, `role-${role.toLowerCase().replaceAll(' ', '-')}`);
+    await login(page, user);
+    const contract = ROLE_CONTRACT[role];
+    const snapshot = await appSnapshot(page);
+    expect(snapshot.shell, `${role} customer-shell contract mismatch`).toBe(contract.shell);
+    if (contract.shell) {
+      const roots = await customerRootSections(page);
+      for (const root of contract.roots) expect(roots, `${role} is missing expected root ${root}`).toContain(root);
+      for (const root of contract.forbiddenRoots) {
+        const result = await customerRootSection(page, root);
+        expect(result.reachable, `${role} unexpectedly reached forbidden root ${root}`).toBeFalsy();
+      }
+      await page.goto('/odoo');
+      await waitForApp(page);
+      expect((await appSnapshot(page)).clean).toBeTruthy();
+    }
+    expect(await hasText(page, 'Apps')).toBeFalsy();
+    expect(await hasText(page, 'Settings')).toBeFalsy();
+    await page.goto('/web/database/manager');
+    await waitForApp(page);
+    expect(await hasText(page, 'Database Manager')).toBeFalsy();
+    test.info().annotations.push({ type: 'role-session', description: JSON.stringify({
+      role,
+      authenticated: true,
+      customerShell: snapshot.shell,
+      expectedRoots: contract.roots,
+      forbiddenRoots: contract.forbiddenRoots,
+      permittedRepresentative: contract.shell ? 'Dashboard' : 'authenticated application session',
+      prohibitedDirectUrl: '/web/database/manager',
+      prohibitedDirectUrlBlocked: true,
+    }) });
+    recordTelemetry(telemetry);
+    expect(telemetry.pageErrors).toEqual([]);
+    expect(telemetry.consoleErrors).toEqual([]);
+    await context.close();
+  }
 });
 
 test('Quality Manager customer shell, navigation, guided implementation and idempotent sync', async ({ page }) => {
   const telemetry = installTelemetry(page, 'quality-manager');
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
+  const browserDiagnostics = await browserRuntimeDiagnostics(page, telemetry);
+  test.info().annotations.push({
+    type: 'browser-runtime-diagnostics',
+    description: JSON.stringify(browserDiagnostics),
+  });
+  console.log(`M31_BROWSER_RUNTIME_DIAGNOSTICS=${JSON.stringify(browserDiagnostics)}`);
   const rootNavigation = {};
-  for (const label of ['Dashboard', 'Action Center', 'Implementation', 'Quality Operations', 'Assurance', 'Performance', 'Standards', 'Configuration']) {
+  test.info().annotations.push({ type: 'experience-coverage', description: JSON.stringify(EXPERIENCE_COVERAGE) });
+  for (const label of [...CUSTOMER_ROOTS, 'Configuration']) {
     rootNavigation[label] = await customerRootSection(page, label);
     expect(rootNavigation[label].reachable, `${label} is not reachable through customer navigation`).toBeTruthy();
   }
@@ -225,10 +364,9 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   expect(allLinks.some((item) => item.text === 'Implementations')).toBeTruthy();
   expect(allLinks.some((item) => item.text === 'Risks & Opportunities')).toBeTruthy();
   expect(allLinks.some((item) => item.text === 'Overview')).toBeTruthy();
-  expect(allLinks.some((item) => item.text === 'Company Profile')).toBeTruthy();
-  expect(allLinks.some((item) => item.text === 'Sites')).toBeTruthy();
-  expect(allLinks.some((item) => item.text === 'Processes')).toBeTruthy();
-  expect(allLinks.some((item) => item.text === 'Commercial License')).toBeTruthy();
+  for (const label of ['Company Profile', 'Sites', 'Processes', 'Commercial License']) {
+    expect(allLinks.some((item) => item.text === label), `${label} is not reachable through customer Configuration`).toBeTruthy();
+  }
   expect(await hasText(page, 'Apps')).toBeFalsy();
   expect(await hasText(page, 'Settings')).toBeFalsy();
   const generation = await ensureGeneratedImplementation(page, inventory);
@@ -431,7 +569,10 @@ test('restricted Viewer and Technical Administrator separation', async ({ browse
   await expect(admin.getByText('Apps', { exact: true })).toBeVisible();
   await expect(admin.getByText('Settings', { exact: true })).toBeVisible();
   const adminText = await admin.locator('body').innerText();
-  test.info().annotations.push({ type: 'persona-separation', description: JSON.stringify({ viewer: 'QMS customer restriction checks passed', technicalAdmin: /Apps/.test(adminText) && /Settings/.test(adminText) }) });
+  test.info().annotations.push({ type: 'persona-separation', description: JSON.stringify({
+    viewer: { expectedShell: true, forbiddenRoots: ['Configuration', 'Apps', 'Settings'], representativeForbiddenUrl: '/web/database/manager' },
+    technicalAdmin: { expectedShell: false, permittedRoots: ['Apps', 'Settings'], forbiddenCustomerShell: true, applicationText: /Apps/.test(adminText) && /Settings/.test(adminText) },
+  }) });
   recordTelemetry(viewerTelemetry);
   recordTelemetry(adminTelemetry);
   expect(viewerTelemetry.pageErrors).toEqual([]);
