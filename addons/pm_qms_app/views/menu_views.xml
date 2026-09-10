@@ -30,6 +30,25 @@
         <field name="sequence">60</field>
         <field name="web_icon">pm_qms_app,static/description/icon.svg</field>
         <field name="action" eval="'ir.actions.act_window,%d' % ref('pm_qms_app.action_pm_qms_dashboard')"/>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_user'),
+            ref('pm_qms_core.group_qms_viewer'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+
+    <!-- Configuration is a product surface, so its allow-list is explicit.
+         The legacy manager group is intentionally not used here: Quality
+         Manager receives the customer configuration contract, while the
+         existing QMS Administrator and Technical Administrator boundaries
+         remain available without changing group implications. -->
+    <record id="pm_qms_core.menu_pm_qms_configuration" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_qms_quality_manager'),
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('pm_qms_license.group_pm_qms_license_admin'),
+            ref('base.group_system')
+        ])]"/>
     </record>
 
     <menuitem
@@ -86,7 +105,10 @@
         <field name="name">Framework Administration</field>
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">70</field>
-        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_pm_qms_administrator')])]"/>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_controls" model="ir.ui.menu">
         <field name="name">Framework Controls</field>
@@ -115,10 +137,20 @@
         <field name="name">Company Profile</field>
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">10</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_qms_quality_manager'),
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_processes" model="ir.ui.menu">
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">20</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_qms_quality_manager'),
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <menuitem
         id="menu_pm_qms_sites"
@@ -126,7 +158,7 @@
         parent="pm_qms_core.menu_pm_qms_configuration"
         action="pm_qms_core.action_pm_qms_site"
         sequence="30"
-        groups="pm_qms_core.group_pm_qms_manager"/>
+        groups="pm_qms_core.group_qms_quality_manager,pm_qms_core.group_pm_qms_administrator,base.group_system"/>
     <record id="pm_qms_migration.menu_pm_qms_migration" model="ir.ui.menu">
         <field name="name">Administration / Migration</field>
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
@@ -173,6 +205,30 @@
     <record id="pm_qms_license.menu_pm_qms_activation_requests" model="ir.ui.menu">
         <field name="parent_id" ref="pm_qms_license.menu_pm_qms_license"/>
         <field name="sequence">10</field>
+    </record>
+
+    <!-- Direct action loads use the same product allow-list as navigation. The
+         underlying model ACLs and record rules remain independently enforced. -->
+    <record id="pm_qms_core.action_pm_qms_organization" model="ir.actions.act_window">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_qms_quality_manager'),
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_core.action_pm_qms_process" model="ir.actions.act_window">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_qms_quality_manager'),
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_core.action_pm_qms_site" model="ir.actions.act_window">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_qms_quality_manager'),
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
 
     <record id="pm_qms_implementation.action_pm_qms_implementation_project" model="ir.actions.act_window">

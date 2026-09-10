@@ -135,6 +135,7 @@
     <record id="action_pm_qms_users_access" model="ir.actions.act_window">
         <field name="name">Users &amp; Access</field>
         <field name="res_model">res.users</field>
+        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_qms_quality_manager'), ref('pm_qms_core.group_pm_qms_administrator')])]"/>
         <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_pm_qms_users_access_list"/>
         <field name="domain">[('share', '=', False)]</field>
