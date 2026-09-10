@@ -24,6 +24,13 @@ organization by partial text or by position.
 The password variables contain file paths, not password text. The harness
 reads them at runtime and never writes them to reports.
 
+The Configuration acceptance adds ephemeral QMS Administrator and Licensing
+Administrator sessions. It verifies the permitted menu/action surfaces for
+Quality Manager, QMS Administrator, and Licensing Administrator, and probes
+protected action URLs with unauthorized customer and Technical Administrator
+sessions. Users & Access is restricted to Quality Manager and QMS
+Administrator; Activation Requests is restricted to Licensing Administrator.
+
 ```powershell
 $env:M31_BASE_URL = 'http://127.0.0.1:18220'
 $env:M31_DATABASE = 'pmqms_m31_uat_test'
@@ -54,11 +61,12 @@ viewports, and each discovered business-domain route. Axe coverage includes
 accessible names and form labels, but visible focus styling is not separately
 certified. Breadcrumbs, reminders, chatter, notification links/duplication/
 recipient isolation, SMTP delivery, keyboard traversal, required-field errors,
-overdue behavior, and device/session IP require a later focused mission. Quality
-Manager Configuration, including
-Company Profile, Sites, Processes, and Commercial License, is normative and is
-asserted as reachable; absence is reported as a product finding rather than
-reclassified as expected protection.
+overdue behavior, and device/session IP require a later focused mission.
+Quality Manager Configuration, including Company Profile, Sites, Processes,
+Users & Access, and Commercial License, is normative and is asserted as
+reachable. Direct action authorization and the negative role matrix are tested
+independently; absence or unexpected access is reported as a product finding
+rather than reclassified as expected protection.
 
 ## Failure diagnostics
 

@@ -24,6 +24,11 @@ const ROLE_CONTRACT = {
   Viewer: { shell: true, roots: CUSTOMER_ROLE_ROOTS, forbiddenRoots: ['Configuration'] },
   'API Integration Administrator': { shell: false, roots: [], forbiddenRoots: [] },
 };
+const CONFIGURATION_CONTRACT = {
+  'Quality Manager': ['Company Profile', 'Sites', 'Processes', 'Users & Access', 'Commercial License'],
+  'QMS Administrator': ['Company Profile', 'Sites', 'Processes', 'Users & Access', 'Framework Administration'],
+  'Licensing Administrator': ['Commercial License', 'Activation Requests'],
+};
 const EXPERIENCE_COVERAGE = {
   'login/logout': 'TESTED/PASS (login); NOT TESTED (logout)',
   'customer branding': 'NOT TESTED',
@@ -57,6 +62,8 @@ const EXPERIENCE_COVERAGE = {
 };
 const state = {
   qm: null,
+  qmsAdmin: null,
+  licensingAdmin: null,
   viewer: null,
   admin: null,
   implementationHref: null,
@@ -204,6 +211,18 @@ function findMenuLink(inventory, text, xmlidFragment) {
   return menuLinks(inventory).find((item) => item.text === text && (!xmlidFragment || item.xmlid?.includes(xmlidFragment))) || null;
 }
 
+async function directActionDenied(page, entry, label) {
+  expect(entry?.href, `${label} must expose a probeable action URL`).toBeTruthy();
+  await page.goto(new URL(entry.href, page.url()).toString());
+  await waitForApp(page);
+  const body = await page.locator('body').innerText();
+  const denied = /Access Error|not allowed|restricted|permission/i.test(body)
+    || await page.getByText('Oops!', { exact: true }).isVisible().catch(() => false);
+  expect(denied, `${label} direct action unexpectedly loaded`).toBeTruthy();
+  expect(body, `${label} direct action rendered its protected surface`).not.toContain(label);
+  return { label, denied, url: page.url() };
+}
+
 function cleanBody(text) {
   return !/Traceback|Internal Server Error|OwlError|AccessError|Uncaught Promise|RPC_ERROR/i.test(text);
 }
@@ -285,6 +304,8 @@ async function smokeRoute(page, label, href) {
 
 test.beforeAll(() => {
   state.qm = userFromEnv('M31_QM');
+  state.qmsAdmin = userFromEnv('M31_QMS_ADMIN');
+  state.licensingAdmin = userFromEnv('M31_LICENSE_ADMIN');
   state.viewer = userFromEnv('M31_VIEWER');
   state.admin = userFromEnv('M31_ADMIN');
   state.roles = {
@@ -294,7 +315,67 @@ test.beforeAll(() => {
     'API Integration Administrator': userFromEnv('M31_API'),
   };
   if (!state.qm || !state.admin) throw new Error('Quality Manager and Technical Administrator credentials are required');
+  if (!state.qmsAdmin || !state.licensingAdmin) throw new Error('QMS Administrator and Licensing Administrator credentials are required');
   if (Object.entries(state.roles).some(([, user]) => !user)) throw new Error('All authenticated customer role fixtures are required');
+});
+
+test('Configuration browser contract and direct action authorization', async ({ browser }) => {
+  const users = [
+    ['Quality Manager', state.qm],
+    ['QMS Administrator', state.qmsAdmin],
+    ['Licensing Administrator', state.licensingAdmin],
+  ];
+  const inventories = {};
+  const roleEvidence = [];
+  for (const [role, user] of users) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const telemetry = installTelemetry(page, `configuration-${role.toLowerCase().replaceAll(' ', '-')}`);
+    await login(page, user);
+    const inventory = await collectMenuInventory(page);
+    inventories[role] = inventory;
+    const configuration = await customerRootSection(page, 'Configuration');
+    expect(configuration.reachable, `${role} cannot reach Configuration`).toBeTruthy();
+    const allowed = CONFIGURATION_CONTRACT[role];
+    const allowedResults = [];
+    for (const label of allowed) {
+      const link = findMenuLink(inventory, label);
+      expect(link, `${role} is missing permitted ${label}`).toBeTruthy();
+      const result = await smokeRoute(page, label, link);
+      expect(result.clean, `${role} ${label} rendered an application error`).toBeTruthy();
+      allowedResults.push({ label, url: result.url, clean: result.clean });
+    }
+    roleEvidence.push({ role, allowed: allowedResults });
+    recordTelemetry(telemetry);
+    expect(telemetry.pageErrors).toEqual([]);
+    expect(telemetry.consoleErrors).toEqual([]);
+    await context.close();
+  }
+
+  const directProbes = [
+    ['Quality Manager', state.qm, 'Framework Administration', inventories['QMS Administrator']],
+    ['Quality Manager', state.qm, 'Activation Requests', inventories['Licensing Administrator']],
+    ['QMS Administrator', state.qmsAdmin, 'Commercial License', inventories['Quality Manager']],
+    ['QMS Administrator', state.qmsAdmin, 'Activation Requests', inventories['Licensing Administrator']],
+    ['Licensing Administrator', state.licensingAdmin, 'Company Profile', inventories['Quality Manager']],
+    ['Licensing Administrator', state.licensingAdmin, 'Users & Access', inventories['Quality Manager']],
+    ['Technical Administrator', state.admin, 'Users & Access', inventories['Quality Manager']],
+    ['Technical Administrator', state.admin, 'Activation Requests', inventories['Licensing Administrator']],
+  ];
+  const directEvidence = [];
+  for (const [role, user, label, inventory] of directProbes) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${label.toLowerCase().replaceAll(' ', '-')}`);
+    await login(page, user);
+    const result = await directActionDenied(page, findMenuLink(inventory, label), label);
+    directEvidence.push({ role, ...result });
+    recordTelemetry(telemetry);
+    expect(telemetry.pageErrors).toEqual([]);
+    expect(telemetry.consoleErrors).toEqual([]);
+    await context.close();
+  }
+  test.info().annotations.push({ type: 'configuration-authorization', description: JSON.stringify({ roleEvidence, directEvidence }) });
 });
 
 test('fictional customer role sessions establish and remain customer-scoped', async ({ browser }) => {
@@ -364,7 +445,7 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   expect(allLinks.some((item) => item.text === 'Implementations')).toBeTruthy();
   expect(allLinks.some((item) => item.text === 'Risks & Opportunities')).toBeTruthy();
   expect(allLinks.some((item) => item.text === 'Overview')).toBeTruthy();
-  for (const label of ['Company Profile', 'Sites', 'Processes', 'Commercial License']) {
+  for (const label of ['Company Profile', 'Sites', 'Processes', 'Users & Access', 'Commercial License']) {
     expect(allLinks.some((item) => item.text === label), `${label} is not reachable through customer Configuration`).toBeTruthy();
   }
   expect(await hasText(page, 'Apps')).toBeFalsy();

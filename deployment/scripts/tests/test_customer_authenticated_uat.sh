@@ -100,7 +100,7 @@ bash "$CUSTOMER_SCRIPT" bootstrap-customer "$SLUG" \
   --user-email "quality.manager.${RUN_SUFFIX}@example.invalid" --user-password-file "$WORK/users/qm-password" >/dev/null
 bash "$CUSTOMER_SCRIPT" create-site "$SLUG" --code M31-HQ --name "M31 Fictional Headquarters" --type headquarters >/dev/null
 
-for role in auditor owner viewer api; do
+for role in qms_admin licensing_admin auditor owner viewer api; do
   openssl rand -hex 24 > "$WORK/users/${role}-password"
 done
 
@@ -123,12 +123,16 @@ if not organization:
     raise RuntimeError("operational organization missing")
 base_user = env.ref("base.group_user")
 role_data = {
+    "qms_admin": "pm_qms_core.group_pm_qms_administrator",
+    "licensing_admin": "pm_qms_license.group_pm_qms_license_admin",
     "auditor": "pm_qms_core.group_qms_internal_auditor",
     "owner": "pm_qms_core.group_qms_process_owner",
     "viewer": "pm_qms_core.group_qms_viewer",
     "api": "pm_qms_app.group_api_integration_administrator",
 }
 names = {
+    "qms_admin": "M31 Fictional QMS Administrator",
+    "licensing_admin": "M31 Fictional Licensing Administrator",
     "auditor": "M31 Fictional Internal Auditor",
     "owner": "M31 Fictional Process Owner",
     "viewer": "M31 Fictional Viewer",
@@ -387,6 +391,10 @@ export M31_QM_LOGIN="quality.manager.${RUN_SUFFIX}@example.invalid"
 export M31_QM_PASSWORD_FILE="$WORK/browser-users/qm-password"
 export M31_ADMIN_LOGIN="admin"
 export M31_ADMIN_PASSWORD_FILE="$WORK/browser-users/admin-password"
+export M31_QMS_ADMIN_LOGIN="m31.qms_admin.${RUN_SUFFIX}@example.invalid"
+export M31_QMS_ADMIN_PASSWORD_FILE="$WORK/browser-users/qms_admin-password"
+export M31_LICENSE_ADMIN_LOGIN="m31.licensing_admin.${RUN_SUFFIX}@example.invalid"
+export M31_LICENSE_ADMIN_PASSWORD_FILE="$WORK/browser-users/licensing_admin-password"
 export M31_AUDITOR_LOGIN="m31.auditor.${RUN_SUFFIX}@example.invalid"
 export M31_AUDITOR_PASSWORD_FILE="$WORK/browser-users/auditor-password"
 export M31_OWNER_LOGIN="m31.owner.${RUN_SUFFIX}@example.invalid"
