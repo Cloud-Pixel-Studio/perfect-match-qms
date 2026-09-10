@@ -35,17 +35,17 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep configuration access fixed-key; M28 review if configuration becomes tenant-specific",
         "runtime_covered": "NO",
     },
-    ("addons/pm_qms_app/models/actions.py", "23"): {
+    ("addons/pm_qms_app/models/actions.py", "73"): {
         "invoker": "Odoo action manager reading an act_window action",
         "input_provenance": "Action record IDs supplied by the Odoo action/menu resolver",
-        "user_controlled_input": "Action ID may be requested by a client, but only the selected action record is read",
+        "user_controlled_input": "Action ID may be requested by a client, but only explicitly allow-listed action records are delegated",
         "records_before_sudo": "The current action recordset; no arbitrary model search or domain is introduced",
-        "scope": "Only the Users & Access action receives delegated read; group gate is checked first",
+        "scope": "Only six fixed Configuration action XML IDs receive delegated read; group gate and all-recordset allow-list are checked first",
         "output_mutation": "Returns action metadata; no mutation",
         "audit_history": "No business record mutation or history event",
-        "regression_test": "TestM27Security.test_qms_administrator_framework_authority and native action boundary tests",
+        "regression_test": "TestM314ConfigurationAccess action-ID and role matrix",
         "risk": "P1 authorization-sensitive",
-        "follow_up": "Keep allow-list action gate; add endpoint-level action-ID test in M31",
+        "follow_up": "Retain the fixed action-ID allow-list and target-model ACL/record-rule boundary",
         "runtime_covered": "YES",
     },
     ("addons/pm_qms_app/models/mail_activity.py", "11"): {
