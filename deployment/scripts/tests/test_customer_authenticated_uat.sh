@@ -170,6 +170,7 @@ docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/
   odoo odoo shell -d "$DB_NAME" --log-level=error <<'PY' >"$RUNTIME_DIAGNOSTICS" 2>&1
 import json
 import os
+import re
 from odoo.modules.module import get_module_path
 
 
@@ -197,6 +198,11 @@ def assigned_groups(record):
     return env["res.groups"]
 
 
+def safe_error(exc):
+    message = re.sub(r"[\w.+-]+@[\w.-]+", "[REDACTED_LOGIN]", str(exc))
+    return "%s: %s" % (type(exc).__name__, message[:240])
+
+
 def safe_menu(xmlid, visible_menu_ids):
     menu = env.ref(xmlid, raise_if_not_found=False)
     if not menu:
@@ -207,6 +213,12 @@ def safe_menu(xmlid, visible_menu_ids):
     children = menu.child_id.filtered(
         lambda child: child.active and (not assigned_groups(child) or bool(assigned_groups(child) & qm.all_group_ids))
     )
+    child_details = [{
+        "xmlid": xmlid_for(child),
+        "active": bool(child.active),
+        "groups": groups_for(assigned_groups(child)),
+        "quality_manager_passes_menu_group": not assigned_groups(child) or bool(assigned_groups(child) & qm.all_group_ids),
+    } for child in menu.child_id]
     action_groups = groups_for(assigned_groups(action)) if action else []
     action_xmlid = xmlid_for(action) if action else None
     return {
@@ -221,6 +233,7 @@ def safe_menu(xmlid, visible_menu_ids):
         "action_groups": action_groups,
         "quality_manager_passes_menu_group": allowed,
         "accessible_child": bool(children),
+        "child_details": child_details,
         "visible_menu_computation": menu.id in visible_menu_ids,
     }
 
@@ -246,7 +259,7 @@ def safe_action(xmlid, model_name):
         result["action_read"] = True
         result["action_dict"] = True
     except Exception as exc:
-        result["load_error"] = type(exc).__name__
+        result["load_error"] = safe_error(exc)
     for operation in ("read", "create", "write", "unlink"):
         try:
             result["model_access"][operation] = bool(model.check_access_rights(operation, raise_exception=False))
@@ -255,7 +268,7 @@ def safe_action(xmlid, model_name):
     try:
         result["record_rule_search_count"] = model.search_count([])
     except Exception as exc:
-        result["record_rule_search_count"] = type(exc).__name__
+        result["record_rule_search_count"] = safe_error(exc)
     return result
 
 

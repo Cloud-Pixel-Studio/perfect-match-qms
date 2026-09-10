@@ -343,10 +343,12 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   const telemetry = installTelemetry(page, 'quality-manager');
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
+  const browserDiagnostics = await browserRuntimeDiagnostics(page, telemetry);
   test.info().annotations.push({
     type: 'browser-runtime-diagnostics',
-    description: JSON.stringify(await browserRuntimeDiagnostics(page, telemetry)),
+    description: JSON.stringify(browserDiagnostics),
   });
+  console.log(`M31_BROWSER_RUNTIME_DIAGNOSTICS=${JSON.stringify(browserDiagnostics)}`);
   const rootNavigation = {};
   test.info().annotations.push({ type: 'experience-coverage', description: JSON.stringify(EXPERIENCE_COVERAGE) });
   for (const label of [...CUSTOMER_ROOTS, 'Configuration']) {
