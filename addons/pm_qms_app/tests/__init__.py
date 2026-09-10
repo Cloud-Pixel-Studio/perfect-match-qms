@@ -9,3 +9,4 @@ from . import test_qms_history_ui
 from . import test_m30_5_control_instance_authorization
 from . import test_product_identity
 from . import test_api_key_security
+from . import test_m31_4_configuration_access
