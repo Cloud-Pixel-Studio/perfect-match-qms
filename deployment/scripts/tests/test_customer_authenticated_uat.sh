@@ -71,6 +71,7 @@ TAG_CREATED=1
 bash "$CUSTOMER_SCRIPT" bundle --release "$TAG" --output "$WORK/customer-bundle.tar.gz" >/dev/null
 DB_NAME="pmqms_${SLUG//-/_}"
 RUNTIME_REPOSITORY_SHA="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+RUNTIME_SOURCE_TREE_SHA="$(git -C "$REPO_ROOT" rev-parse 'HEAD^{tree}')"
 DB_PREEXISTED="NO"
 if [[ -e "$INSTANCE_ROOT/$SLUG" ]]; then DB_PREEXISTED="YES"; fi
 bash "$CUSTOMER_SCRIPT" provision "$SLUG" --bundle "$WORK/customer-bundle.tar.gz" --type test --port "$ODOO_PORT" >/dev/null
@@ -161,6 +162,7 @@ set +e
 docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
   -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 \
   -e PMQMS_RUNTIME_REPOSITORY_SHA="$RUNTIME_REPOSITORY_SHA" \
+  -e PMQMS_RUNTIME_SOURCE_TREE_SHA="$RUNTIME_SOURCE_TREE_SHA" \
   -e PMQMS_QM_LOGIN="quality.manager.${RUN_SUFFIX}@example.invalid" \
   -e PMQMS_DB_NAME="$DB_NAME" \
   -e PMQMS_DB_PREEXISTED="$DB_PREEXISTED" \
@@ -268,6 +270,7 @@ emit("DATABASE", {
 })
 emit("RUNTIME", {
     "repository_sha": os.environ.get("PMQMS_RUNTIME_REPOSITORY_SHA"),
+    "source_tree_sha": os.environ.get("PMQMS_RUNTIME_SOURCE_TREE_SHA"),
     "pm_qms_app_path": module_path,
     "effective_addons_path": os.path.dirname(module_path) if module_path else None,
     "pm_qms_app_copy_count": int(os.environ.get("PMQMS_ADDON_COPY_COUNT", "0")),
@@ -286,7 +289,7 @@ emit("QUALITY_MANAGER", {
     "active": bool(qm.active) if qm else False,
     "company": qm.company_id.name if qm else None,
     "allowed_companies": sorted(qm.company_ids.mapped("name")) if qm else [],
-    "direct_groups": groups_for(qm.groups_id) if qm else [],
+    "direct_groups": groups_for(qm.group_ids) if qm else [],
     "effective_groups": groups_for(qm.all_group_ids) if qm else [],
     "intended_group_xmlid": "pm_qms_core.group_qms_quality_manager",
     "intended_group_received": bool(qm and qm.has_group("pm_qms_core.group_qms_quality_manager")),
