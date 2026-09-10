@@ -190,16 +190,24 @@ def groups_for(groups):
     return sorted(filter(None, (xmlid_for(group) for group in groups)))
 
 
+def assigned_groups(record):
+    for field_name in ("group_ids", "groups_id"):
+        if field_name in record._fields:
+            return getattr(record, field_name)
+    return env["res.groups"]
+
+
 def safe_menu(xmlid, visible_menu_ids):
     menu = env.ref(xmlid, raise_if_not_found=False)
     if not menu:
         return {"xmlid": xmlid, "resolves": False}
     action = menu.action
-    allowed = not menu.groups_id or bool(menu.groups_id & qm.all_group_ids)
+    menu_groups = assigned_groups(menu)
+    allowed = not menu_groups or bool(menu_groups & qm.all_group_ids)
     children = menu.child_id.filtered(
-        lambda child: child.active and (not child.groups_id or bool(child.groups_id & qm.all_group_ids))
+        lambda child: child.active and (not assigned_groups(child) or bool(assigned_groups(child) & qm.all_group_ids))
     )
-    action_groups = groups_for(action.groups_id) if action else []
+    action_groups = groups_for(assigned_groups(action)) if action else []
     action_xmlid = xmlid_for(action) if action else None
     return {
         "xmlid": xmlid,
@@ -207,7 +215,7 @@ def safe_menu(xmlid, visible_menu_ids):
         "active": bool(menu.active),
         "parent": xmlid_for(menu.parent_id),
         "sequence": menu.sequence,
-        "groups": groups_for(menu.groups_id),
+        "groups": groups_for(menu_groups),
         "action": action_xmlid,
         "action_model": action.res_model if action and hasattr(action, "res_model") else None,
         "action_groups": action_groups,
@@ -225,7 +233,7 @@ def safe_action(xmlid, model_name):
     result = {
         "xmlid": xmlid,
         "resolves": True,
-        "groups": groups_for(action.groups_id),
+        "groups": groups_for(assigned_groups(action)),
         "target_model": action.res_model,
         "action_read": False,
         "action_dict": False,
