@@ -44,9 +44,9 @@ Administrator compatibility boundary, and Technical Administrator. Users &
 Access allows only Quality Manager and QMS Administrator. Commercial License
 retains its Quality Manager, Licensing Administrator, and Technical
 Administrator action contract, while Activation Requests remain Licensing
-Administrator-only. Direct action loads are paired with model ACLs and record
-rules; hiding a menu never grants access and is not used as an authorization
-control.
+Administrator-only. Direct action loads use the explicit action-metadata
+allow-list plus the target model ACLs and record rules; hiding a menu never
+grants access and is not used as an authorization control.
 
 ## Standards and framework separation
 
