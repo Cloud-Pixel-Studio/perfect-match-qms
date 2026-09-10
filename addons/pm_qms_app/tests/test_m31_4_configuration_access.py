@@ -155,6 +155,93 @@ class TestM314ConfigurationAccess(TransactionCase):
         self.assertFalse(activation_action.group_ids & self.quality_manager_user.all_group_ids)
         self.assertFalse(activation_action.group_ids & self.technical_user.all_group_ids)
 
+    def test_configuration_action_metadata_is_scoped_by_action_and_role(self):
+        permitted = {
+            "pm_qms_core.action_pm_qms_organization": (
+                self.quality_manager_user,
+                self.qms_admin_user,
+                self.technical_user,
+            ),
+            "pm_qms_core.action_pm_qms_process": (
+                self.quality_manager_user,
+                self.qms_admin_user,
+                self.technical_user,
+            ),
+            "pm_qms_core.action_pm_qms_site": (
+                self.quality_manager_user,
+                self.qms_admin_user,
+                self.technical_user,
+            ),
+            "pm_qms_app.action_pm_qms_users_access": (
+                self.quality_manager_user,
+                self.qms_admin_user,
+            ),
+            "pm_qms_license.action_pm_qms_license": (
+                self.quality_manager_user,
+                self.licensing_admin_user,
+                self.technical_user,
+            ),
+            "pm_qms_license.action_pm_qms_activation_request": (
+                self.licensing_admin_user,
+            ),
+        }
+        all_users = (
+            self.quality_manager_user,
+            self.qms_admin_user,
+            self.licensing_admin_user,
+            self.technical_user,
+            self.quality_supervisor_user,
+            self.internal_auditor_user,
+            self.process_owner_user,
+            self.viewer_user,
+            self.integration_admin_user,
+        )
+
+        for xmlid, users in permitted.items():
+            action = self.env.ref(xmlid)
+            for user in users:
+                with self.subTest(action=xmlid, user=user.login):
+                    self.assertEqual(
+                        action.with_user(user).read(["id", "name", "res_model"])[0]["id"],
+                        action.id,
+                    )
+            permitted_ids = {user.id for user in users}
+            for user in all_users:
+                if user.id in permitted_ids:
+                    continue
+                with self.subTest(action=xmlid, denied_user=user.login):
+                    with self.assertRaises(AccessError):
+                        action.with_user(user).read(["id", "name", "res_model"])
+
+        # Technical administrators retain native platform administration, but
+        # not the customer-facing Users & Access action contract.
+        with self.assertRaises(AccessError):
+            self.env.ref("pm_qms_app.action_pm_qms_users_access").with_user(
+                self.technical_user
+            ).read(["id", "name", "res_model"])
+
+        # No model-level action read ACL was added: an ordinary customer user
+        # cannot enumerate unrelated technical actions.
+        action_model = self.env["ir.actions.act_window"].with_user(self.quality_manager_user)
+        self.assertFalse(action_model.check_access_rights("read", raise_exception=False))
+        with self.assertRaises(AccessError):
+            self.env.ref("base.open_module_tree").with_user(self.quality_manager_user).read()
+
+    def test_customer_action_metadata_read_does_not_delegate_mutation(self):
+        action = self.env.ref("pm_qms_core.action_pm_qms_organization").with_user(
+            self.quality_manager_user
+        )
+        with self.assertRaises(AccessError):
+            action.write({"name": "Unexpected"})
+        with self.assertRaises(AccessError):
+            self.env["ir.actions.act_window"].with_user(self.quality_manager_user).create(
+                {
+                    "name": "Unexpected",
+                    "res_model": "pm.qms.organization",
+                    "view_mode": "list",
+                }
+            )
+
     def test_users_access_has_customer_allow_list_and_independent_orm_guard(self):
         action = self.env.ref("pm_qms_app.action_pm_qms_users_access")
         menu = self.env.ref("pm_qms_app.menu_pm_qms_users_access")
