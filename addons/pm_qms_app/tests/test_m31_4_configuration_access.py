@@ -1,4 +1,5 @@
 from odoo import Command
+from odoo.exceptions import AccessError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -172,11 +173,9 @@ class TestM314ConfigurationAccess(TransactionCase):
             {group.id for group in allowed},
         )
 
-        users_model = self.env["res.users"]
         for user in (self.quality_manager_user, self.qms_admin_user):
             with self.subTest(authorized=user.login):
-                self.assertTrue(users_model.with_user(user).check_access_rights("read", raise_exception=False))
-                self.assertTrue(users_model.with_user(user).check_access_rights("write", raise_exception=False))
+                self.assertTrue(action.with_user(user).read(["id", "name", "res_model"]))
 
         for user in (
             self.quality_supervisor_user,
@@ -188,13 +187,15 @@ class TestM314ConfigurationAccess(TransactionCase):
         ):
             with self.subTest(unauthorized=user.login):
                 self.assertFalse(action.group_ids & user.all_group_ids)
-                self.assertFalse(users_model.with_user(user).check_access_rights("read", raise_exception=False))
-                self.assertFalse(users_model.with_user(user).check_access_rights("write", raise_exception=False))
+                with self.assertRaises(AccessError):
+                    action.with_user(user).read(["id", "name", "res_model"])
 
         # Technical administrators retain platform administration, but not this
         # customer-facing action contract.
         self.assertFalse(action.group_ids & self.technical_user.all_group_ids)
         self.assertTrue(self.technical_user.has_group("base.group_system"))
+        with self.assertRaises(AccessError):
+            action.with_user(self.technical_user).read(["id", "name", "res_model"])
 
     def test_configuration_orm_permissions_remain_separate_from_action_visibility(self):
         for model_name in ("pm.qms.organization", "pm.qms.process", "pm.qms.site"):

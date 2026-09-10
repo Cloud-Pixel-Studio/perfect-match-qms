@@ -15,7 +15,6 @@ class IrActionsActWindow(models.Model):
             and not (
                 self.env.user.has_group("pm_qms_core.group_qms_quality_manager")
                 or self.env.user.has_group("pm_qms_core.group_pm_qms_administrator")
-                or self.env.user.has_group("base.group_system")
             )
         ):
             raise AccessError("Users & Access is restricted to QMS administrators.")
