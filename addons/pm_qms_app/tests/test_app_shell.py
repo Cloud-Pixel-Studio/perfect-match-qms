@@ -24,6 +24,9 @@ class TestPmQmsAppShell(TransactionCase):
         cls.quality_manager = cls._create_user(
             "app_shell_quality_manager", cls.quality_manager_group, cls.company
         )
+        cls.qms_admin = cls._create_user(
+            "app_shell_qms_admin", cls.qms_admin_group, cls.company
+        )
         cls.viewer = cls._create_user(
             "app_shell_viewer", cls.env.ref("pm_qms_core.group_qms_viewer"), cls.company
         )
@@ -384,7 +387,7 @@ class TestPmQmsAppShell(TransactionCase):
         with self.assertRaises(AccessError):
             action.with_user(self.manager).read()
         self.assertTrue(action.with_user(self.quality_manager).read())
-        self.assertTrue(action.with_user(self.env.user).read())
+        self.assertTrue(action.with_user(self.qms_admin).read())
 
     def test_viewer_can_open_read_only_dashboard_transient(self):
         dashboard = self.env["pm.qms.dashboard"].with_user(self.viewer).create(

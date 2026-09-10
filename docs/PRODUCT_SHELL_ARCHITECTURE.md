@@ -38,10 +38,19 @@ Menu visibility is presentation only. ACLs, record rules, action groups, and
 workflow authority remain authoritative. Mission 19 and Mission 20 security
 was not replaced by menu hiding.
 
-Framework Administration remains restricted to the existing QMS Administrator
-group. Technical Administrators retain Odoo Apps, Settings, maintenance, and
-troubleshooting surfaces. Normal QMS users do not receive generic Apps,
+Configuration root, Company Profile, Sites, and Processes use explicit menu
+and action allow-lists. Quality Manager is listed directly rather than relying
+on the legacy QMS Manager implication. The existing QMS Administrator and
+Technical Administrator boundaries remain explicit. Technical Administrators
+retain Odoo Apps, Settings, maintenance, troubleshooting, and Framework
+Administration surfaces. Normal QMS users do not receive generic Apps,
 Project, Tests, or Discuss roots.
+
+The explicit configuration allow-list does not change ORM authority. Quality
+Manager retains the existing scoped organization/process/site create and write
+ACLs. Internal Auditor, Process Owner, Viewer, and API Integration
+Administrator do not gain those ACLs; Quality Supervisor retains its existing
+compatibility ACLs without receiving the Configuration navigation contract.
 
 Commercial License is under Configuration. Activation Requests is a child of
 Commercial License and keeps its Licensing Administrator group. The RC10

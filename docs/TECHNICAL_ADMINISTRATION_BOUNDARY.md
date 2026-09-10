@@ -6,9 +6,19 @@ administration.
 ## Customer QMS administration
 
 Quality Managers can manage the QMS configuration exposed under the product
-shell, including Company Profile, Sites, Processes, users and access within
-the QMS role model, and the commercial license view or activation workflow
-where their role permits it.
+shell, including Company Profile, Sites, Processes, Users & Access within the
+QMS role model, and the Commercial License view where the existing licensing
+contract permits it. Users & Access is explicitly limited to Quality Manager and
+QMS Administrator; Technical Administrator platform authority does not grant
+that customer action. These surfaces are explicit menu and action allow-lists;
+they do not rely on the legacy QMS Manager implication.
+
+Framework Administration is outside the Quality Manager surface. It remains
+available only through the established QMS Administrator and Technical
+Administrator boundaries. Commercial License remains available to Quality
+Manager, Licensing Administrator, and Technical Administrator under its
+existing action contract. Activation Requests retain their existing Licensing
+Administrator-only boundary.
 
 ## Platform administration
 
@@ -19,8 +29,9 @@ troubleshooting, and other runtime maintenance surfaces through
 
 ## Enforcement
 
-Menu grouping is only the navigation layer. Access is enforced by Odoo groups,
-ACLs, record rules, and action security. The Demo administrator is a separate
+Menu grouping is only the navigation layer. Configuration actions declare the
+same allow-list as their menus, while access is independently enforced by Odoo
+groups, ACLs, record rules, and workflow guards. The Demo administrator is a separate
 technical account and is exempt from named customer-user license consumption;
 the seeded Quality Manager is not a System Administrator. Cost Analytics is
 restricted to Quality Manager and Management User personas; QMS Viewer does
