@@ -142,8 +142,23 @@ class TestM314ConfigurationAccess(TransactionCase):
 
         license_action = self.env.ref("pm_qms_license.action_pm_qms_license")
         self.assertIn(self.quality_manager, license_action.group_ids)
-        self.assertIn(self.env.ref("pm_qms_license.group_pm_qms_license_admin"), license_action.group_ids)
+        self.assertIn(self.licensing_admin_group, license_action.group_ids)
         self.assertIn(self.technical_group, license_action.group_ids)
+
+        activation_action = self.env.ref("pm_qms_license.action_pm_qms_activation_request")
+        activation_menu = self.env.ref("pm_qms_license.menu_pm_qms_activation_requests")
+        self.assertEqual(
+            set(activation_action.group_ids.ids),
+            {self.licensing_admin_group.id},
+        )
+        self.assertEqual(
+            set(activation_action._get_action_dict()["group_ids"]),
+            {self.licensing_admin_group.id},
+        )
+        self.assertEqual(set(activation_menu.group_ids.ids), {self.licensing_admin_group.id})
+        self.assertTrue(activation_action.group_ids & self.licensing_admin_user.all_group_ids)
+        self.assertFalse(activation_action.group_ids & self.quality_manager_user.all_group_ids)
+        self.assertFalse(activation_action.group_ids & self.technical_user.all_group_ids)
 
     def test_users_access_has_customer_allow_list_and_independent_orm_guard(self):
         action = self.env.ref("pm_qms_app.action_pm_qms_users_access")

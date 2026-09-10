@@ -26,7 +26,8 @@ Manager and QMS Administrator only. Technical Administrator retains generic
 Odoo platform administration, but that does not grant the customer Users &
 Access action. Commercial License keeps its existing Quality Manager, Licensing
 Administrator, and Technical Administrator action boundary. Activation Requests
-remain Licensing Administrator-only. Framework Administration remains outside
+remain Licensing Administrator-only at both menu and direct-action levels.
+Framework Administration remains outside
 the Quality Manager surface and is explicitly limited to the established QMS
 Administrator and Technical Administrator boundaries.
 
