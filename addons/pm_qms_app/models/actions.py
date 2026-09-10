@@ -44,7 +44,9 @@ class IrActionsActWindow(models.Model):
         }
 
     def _qms_can_read_customer_action(self, groups):
-        return any(self.env.user.has_group(group) for group in groups)
+        # Keep metadata inspection available to Odoo's internal superuser used
+        # by framework setup/tests; normal users still require the explicit map.
+        return self.env.is_superuser() or any(self.env.user.has_group(group) for group in groups)
 
     def read(self, fields=None, load="_classic_read"):
         action_groups = self._qms_customer_action_groups_by_id()
