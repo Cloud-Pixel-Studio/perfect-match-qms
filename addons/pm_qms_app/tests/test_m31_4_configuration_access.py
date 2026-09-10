@@ -163,7 +163,7 @@ class TestM314ConfigurationAccess(TransactionCase):
         self.assertEqual(set(menu.group_ids.ids), {group.id for group in allowed})
         self.assertNotIn(self.qms_manager, action.group_ids)
         self.assertEqual(
-            set(action._get_action_dict()["group_ids"]),
+            set(action.with_user(self.quality_manager_user)._get_action_dict()["group_ids"]),
             {group.id for group in allowed},
         )
 
