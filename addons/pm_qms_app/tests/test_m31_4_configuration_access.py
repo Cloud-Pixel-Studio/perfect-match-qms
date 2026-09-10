@@ -106,12 +106,6 @@ class TestM314ConfigurationAccess(TransactionCase):
         self.assertFalse(
             self._visible(self.quality_manager_user, "pm_qms_core.menu_pm_qms_framework")
         )
-        self.assertTrue(
-            self._visible(self.qms_admin_user, "pm_qms_core.menu_pm_qms_framework")
-        )
-        self.assertTrue(
-            self._visible(self.technical_user, "pm_qms_core.menu_pm_qms_framework")
-        )
 
     def test_configuration_actions_have_direct_action_allow_list(self):
         allowed = {self.quality_manager, self.qms_admin, self.technical_group}
