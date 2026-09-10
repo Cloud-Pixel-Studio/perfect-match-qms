@@ -35,7 +35,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep configuration access fixed-key; M28 review if configuration becomes tenant-specific",
         "runtime_covered": "NO",
     },
-    ("addons/pm_qms_app/models/actions.py", "73"): {
+    ("addons/pm_qms_app/models/actions.py", "79"): {
         "invoker": "Odoo action manager reading an act_window action",
         "input_provenance": "Action record IDs supplied by the Odoo action/menu resolver",
         "user_controlled_input": "Action ID may be requested by a client, but only explicitly allow-listed action records are delegated",

@@ -60,6 +60,12 @@ class IrActionsActWindow(models.Model):
         ):
             raise AccessError("Users & Access is restricted to QMS administrators.")
 
+        for action_id in self.ids:
+            if action_id in action_groups and not self._qms_can_read_customer_action(
+                action_groups[action_id]
+            ):
+                raise AccessError("This QMS action is restricted to its configured role allow-list.")
+
         # Odoo's native ir.actions.act_window ACL is restricted to technical
         # administrators. Customer users may read metadata only for the
         # explicit action IDs above; target-model ACLs and record rules remain
