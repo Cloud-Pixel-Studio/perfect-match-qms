@@ -46,7 +46,9 @@ function directNavigationItem(page, label) {
 }
 
 function moreMenuButton(page) {
-  return customerNavbar(page).getByRole('button', { name: MORE_MENU_NAME, exact: true }).first();
+  return customerNavbar(page)
+    .locator(`button[title="${MORE_MENU_NAME}"], button[aria-label="${MORE_MENU_NAME}"]`)
+    .first();
 }
 
 function visibleOverflowRoot(page, label) {

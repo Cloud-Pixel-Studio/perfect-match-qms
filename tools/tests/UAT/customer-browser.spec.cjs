@@ -277,10 +277,9 @@ async function navigationViewportDiagnostics(page) {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(300);
     const roots = await customerRootSections(page);
-    const moreMenu = page.locator('nav.o_main_navbar, .o_main_navbar')
-      .first()
-      .getByRole('button', { name: 'More Menu', exact: true })
-      .first();
+    const moreMenu = page.locator(
+      'nav.o_main_navbar button[title="More Menu"], nav.o_main_navbar button[aria-label="More Menu"]',
+    ).first();
     const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
     let overflowLabels = [];
     if (moreMenuPresent) {
@@ -336,7 +335,9 @@ async function browserRuntimeDiagnostics(page, telemetry) {
       .map((node) => node.getAttribute('aria-label') || node.textContent.trim().replace(/\s+/g, ' '))
       .filter(Boolean)),
   ]);
-  const moreMenu = navbar.getByRole('button', { name: 'More Menu', exact: true }).first();
+  const moreMenu = navbar.locator(
+    'button[title="More Menu"], button[aria-label="More Menu"]',
+  ).first();
   const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
   let overflowLabels = [];
   if (moreMenuPresent) {
