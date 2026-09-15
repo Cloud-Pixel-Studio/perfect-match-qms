@@ -203,7 +203,7 @@ async function customerMenuEntries(page) {
 
 async function openCustomerMenuAction(page, entry, waitForApp) {
   if (entry.href) {
-    await page.goto(new URL(entry.href, page.url()).toString());
+    await page.goto(new URL(entry.href, page.url()).toString(), { waitUntil: 'commit', timeout: 15_000 });
   } else {
     await openRootMenu(page, entry.root);
     await (await customerMenuAction(page, entry.text, entry.xmlid)).click();

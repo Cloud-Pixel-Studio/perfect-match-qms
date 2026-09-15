@@ -385,12 +385,12 @@ async function browserRuntimeDiagnostics(page, telemetry) {
 }
 
 async function waitForApp(page) {
-  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
   await page.waitForTimeout(900);
 }
 
 async function openQmsApplication(page) {
-  await page.goto('/odoo');
+  await page.goto('/odoo', { waitUntil: 'commit', timeout: 15_000 });
   await waitForApp(page);
   const appHref = await page.evaluate(() => {
     const raw = window.localStorage.getItem('webclient_menus');
@@ -406,7 +406,7 @@ async function openQmsApplication(page) {
       return null;
     }
   });
-  if (appHref) await page.goto(appHref);
+  if (appHref) await page.goto(appHref, { waitUntil: 'commit', timeout: 15_000 });
   await waitForApp(page);
 }
 
@@ -420,15 +420,15 @@ async function waitForCustomerNavigation(page) {
 }
 
 async function login(page, user) {
-  await page.goto(LOGIN_PATH);
+  await page.goto(LOGIN_PATH, { waitUntil: 'commit', timeout: 15_000 });
   await expect(page.locator('input[name="login"], input[type="email"]').first()).toBeVisible();
   await page.locator('input[name="login"], input[type="email"]').first().fill(user.login);
   await page.locator('input[name="password"], input[type="password"]').first().fill(user.password);
   await page.getByRole('button', { name: /log in|iniciar sesión/i }).click();
   await page.waitForTimeout(1_500);
   if (/\/web\/login(?:\?|$)/.test(page.url())) throw new Error('Authentication failed');
-  if (page.url().includes('/web/login_successful')) await page.goto('/odoo');
-  if (!/\/odoo(?:\/|\?|$)/.test(page.url())) await page.goto('/odoo');
+  if (page.url().includes('/web/login_successful')) await page.goto('/odoo', { waitUntil: 'commit', timeout: 15_000 });
+  if (!/\/odoo(?:\/|\?|$)/.test(page.url())) await page.goto('/odoo', { waitUntil: 'commit', timeout: 15_000 });
   await waitForApp(page);
 }
 
@@ -464,7 +464,7 @@ async function directActionProbe(page, entry, expected) {
     }
   };
   page.on('response', onResponse);
-  await page.goto(new URL(entry.href, page.url()).toString());
+  await page.goto(new URL(entry.href, page.url()).toString(), { waitUntil: 'commit', timeout: 15_000 });
   await waitForApp(page);
   await page.waitForTimeout(250);
   page.off('response', onResponse);
