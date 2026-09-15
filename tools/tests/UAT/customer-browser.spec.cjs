@@ -130,8 +130,59 @@ function recordTelemetry(telemetry) {
   }) });
 }
 
+async function browserMenuDataDiagnostics(page) {
+  return page.evaluate(() => {
+    const raw = window.localStorage.getItem('webclient_menus');
+    if (!raw) return { available: false, reason: 'webclient_menus not present' };
+    try {
+      const payload = JSON.parse(raw);
+      const node = (id) => payload[id] || payload[String(id)];
+      const label = (item) => item?.name || item?.label || '';
+      const children = (item) => item?.children || item?.childrenTree?.map((child) => child.id) || [];
+      const rootChildren = (payload.root?.children || []).map((id) => node(id)).filter(Boolean);
+      const configuration = Object.values(payload).filter(
+        (item) => item && typeof item === 'object' && label(item) === 'Configuration',
+      );
+      return {
+        available: true,
+        rootChildren: rootChildren.map((item) => ({
+          id: item.id,
+          label: label(item),
+          actionId: item.actionID ?? item.action_id ?? null,
+          children: children(item),
+        })),
+        configuration: configuration.map((item) => ({
+          id: item.id,
+          label: label(item),
+          appId: item.appID ?? item.app_id ?? null,
+          actionId: item.actionID ?? item.action_id ?? null,
+          children: children(item),
+          xmlid: item.xmlid || null,
+        })),
+      };
+    } catch (error) {
+      return { available: false, reason: `invalid menu payload: ${error.name}` };
+    }
+  }).catch((error) => ({ available: false, reason: `browser inspection failed: ${error.name}` }));
+}
+
+async function renderedNavigationDiagnostics(page) {
+  return page.locator('nav.o_main_navbar, .o_main_navbar').first().locator('[data-section]').evaluateAll(
+    (nodes) => nodes.map((node) => ({
+      tag: node.tagName.toLowerCase(),
+      text: node.textContent.trim().replace(/\s+/g, ' '),
+      visible: Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length),
+      menuXmlid: node.getAttribute('data-menu-xmlid'),
+      ariaExpanded: node.getAttribute('aria-expanded'),
+      classes: node.className,
+    })),
+  ).catch(() => []);
+}
+
 async function browserRuntimeDiagnostics(page, telemetry) {
   const roots = await customerRootSections(page);
+  const menuData = await browserMenuDataDiagnostics(page);
+  const renderedNavigation = await renderedNavigationDiagnostics(page);
   const navbar = page.locator('nav.o_main_navbar, .o_main_navbar').first();
   const accessibleNames = await navbar.locator('a:visible, button:visible, span[data-section]:visible').evaluateAll((nodes) => [
     ...new Set(nodes
@@ -155,6 +206,8 @@ async function browserRuntimeDiagnostics(page, telemetry) {
   return {
     pathname: new URL(page.url()).pathname,
     viewport: page.viewportSize(),
+    menuData,
+    renderedNavigation,
     visibleRootLabels: roots,
     accessibleNavigationNames: accessibleNames,
     moreMenuPresent,
