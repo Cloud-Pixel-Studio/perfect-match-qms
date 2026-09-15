@@ -33,6 +33,7 @@
         <field name="group_ids" eval="[(6, 0, [
             ref('pm_qms_core.group_pm_qms_user'),
             ref('pm_qms_core.group_qms_viewer'),
+            ref('pm_qms_license.group_pm_qms_license_admin'),
             ref('base.group_system')
         ])]"/>
     </record>
