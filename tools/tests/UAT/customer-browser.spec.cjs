@@ -287,8 +287,6 @@ async function navigationViewportDiagnostics(page) {
         '.o-dropdown--menu:visible',
         '.o_popover:visible',
         '.o-popover:visible',
-        '[role="menu"]:visible',
-        '.dropdown-menu:visible',
       ].join(', ')).last();
       if (!(await morePopover.isVisible().catch(() => false))) await moreMenu.click();
       overflowLabels = await page.locator([
@@ -353,8 +351,6 @@ async function browserRuntimeDiagnostics(page, telemetry) {
       '.o-dropdown--menu:visible',
       '.o_popover:visible',
       '.o-popover:visible',
-      '[role="menu"]:visible',
-      '.dropdown-menu:visible',
     ].join(', ')).last();
     if (!(await morePopover.isVisible().catch(() => false))) await moreMenu.click();
     overflowLabels = await page.locator([

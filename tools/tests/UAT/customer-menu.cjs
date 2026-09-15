@@ -68,8 +68,6 @@ async function openMoreMenu(page) {
     '.o-dropdown--menu:visible',
     '.o_popover:visible',
     '.o-popover:visible',
-    '[role="menu"]:visible',
-    '.dropdown-menu:visible',
   ].join(', ')).last();
   if (!(await menu.isVisible().catch(() => false))) await button.click();
   await page.waitForTimeout(250);
