@@ -456,9 +456,13 @@ async function collectMenuInventory(page) {
 }
 
 async function collectConfigurationInventory(page) {
+  console.log('M31_CONFIGURATION_OPEN_APP_BEGIN');
   await openQmsApplication(page);
+  console.log('M31_CONFIGURATION_OPEN_APP_END');
   await waitForCustomerNavigation(page);
+  console.log('M31_CONFIGURATION_NAV_END');
   const configuration = await customerRootSection(page, 'Configuration');
+  console.log(`M31_CONFIGURATION_ROOT=${JSON.stringify(configuration)}`);
   if (!configuration.reachable) throw new Error('Configuration root is not reachable');
   await openRootMenu(page, 'Configuration');
   return { roots: ['Configuration'], menus: { Configuration: await customerMenuEntries(page) } };
@@ -646,8 +650,12 @@ test('Configuration browser contract and direct action authorization', async ({ 
     const telemetry = installTelemetry(page, `configuration-${role.toLowerCase().replaceAll(' ', '-')}`);
     const result = { role, configuration: 'NOT TESTED', allowed: [] };
     try {
+      console.log(`M31_CONFIGURATION_LOGIN_BEGIN=${role}`);
       await login(page, user);
+      console.log(`M31_CONFIGURATION_LOGIN_END=${role}`);
+      console.log(`M31_CONFIGURATION_APP_BEGIN=${role}`);
       const inventory = await collectConfigurationInventory(page);
+      console.log(`M31_CONFIGURATION_APP_END=${role}`);
       console.log(`M31_CONFIGURATION_INVENTORY=${role}:${inventory.roots.join('|')}`);
       inventories[role] = inventory;
       payloadActions[role] = await browserMenuActionEntries(page);
