@@ -377,6 +377,14 @@ async function browserRuntimeDiagnostics(page, telemetry) {
 
 async function waitForApp(page) {
   await page.waitForLoadState('domcontentloaded');
+  await page.locator('nav.o_main_navbar, .o_main_navbar').first()
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .catch(() => {});
+  await page.waitForFunction(
+    () => document.querySelector('nav.o_main_navbar [data-section], nav.o_main_navbar a, nav.o_main_navbar button') !== null,
+    null,
+    { timeout: 15_000 },
+  ).catch(() => {});
   await page.waitForTimeout(900);
 }
 
