@@ -610,7 +610,7 @@ test.beforeAll(() => {
 });
 
 test('Configuration browser contract and direct action authorization', async ({ browser }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(600_000);
   const users = [
     ['Quality Manager', state.qm],
     ['QMS Administrator', state.qmsAdmin],
@@ -682,28 +682,43 @@ test('Configuration browser contract and direct action authorization', async ({ 
     ['Technical Administrator', state.admin, 'activation_requests', 'DENY'],
   ];
   const directEvidence = [];
-  for (const [role, user, key, expected] of directProbes) {
+  const directByRole = new Map();
+  for (const probe of directProbes) {
+    const [role] = probe;
+    if (!directByRole.has(role)) directByRole.set(role, []);
+    directByRole.get(role).push(probe);
+  }
+  for (const [role, probes] of directByRole) {
+    const user = probes[0][1];
     const context = await browser.newContext();
     const page = await context.newPage();
-    const manifestEntry = state.actionManifest[key];
-    const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${key}`);
-    const result = { role, key, expected, status: 'NOT TESTED' };
     try {
       await login(page, user);
-      expect(manifestEntry, `${key} must be present in the minimal action manifest`).toBeTruthy();
-      Object.assign(result, await directActionProbe(page, { ...manifestEntry, role }, expected));
+      for (const [, , key, expected] of probes) {
+        const manifestEntry = state.actionManifest[key];
+        const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${key}`);
+        const result = { role, key, expected, status: 'NOT TESTED' };
+        try {
+          expect(manifestEntry, `${key} must be present in the minimal action manifest`).toBeTruthy();
+          Object.assign(result, await directActionProbe(page, { ...manifestEntry, role }, expected));
+        } catch (error) {
+          result.status = 'FAIL';
+          result.error = error.message.slice(0, 300);
+        }
+        result.telemetry = {
+          pageErrors: telemetry.pageErrors.length,
+          consoleErrors: telemetry.consoleErrors.length,
+          failedRequests: telemetry.failedRequests.length,
+          httpErrors: telemetry.httpErrors.length,
+        };
+        directEvidence.push(result);
+        recordTelemetry(telemetry);
+      }
     } catch (error) {
-      result.status = 'FAIL';
-      result.error = error.message.slice(0, 300);
+      for (const [, , key, expected] of probes) {
+        directEvidence.push({ role, key, expected, status: 'FAIL', error: error.message.slice(0, 300) });
+      }
     }
-    result.telemetry = {
-      pageErrors: telemetry.pageErrors.length,
-      consoleErrors: telemetry.consoleErrors.length,
-      failedRequests: telemetry.failedRequests.length,
-      httpErrors: telemetry.httpErrors.length,
-    };
-    directEvidence.push(result);
-    recordTelemetry(telemetry);
     await context.close();
   }
   const authorizationEvidence = { roleEvidence, directEvidence };

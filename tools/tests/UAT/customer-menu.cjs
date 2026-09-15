@@ -64,10 +64,14 @@ function visibleOverflowRoot(page, label) {
 async function openMoreMenu(page) {
   const button = moreMenuButton(page);
   await button.waitFor({ state: 'visible' });
+  const hasExpansionState = (await button.getAttribute('aria-expanded')) !== null;
+  const hasOverflowMarkup = await page.locator('.o_more_dropdown_section').count() > 0;
+  if (!hasExpansionState && !hasOverflowMarkup) return false;
   await page.keyboard.press('Escape').catch(() => {});
   await page.waitForTimeout(100);
   await button.click();
   await page.locator('.o_more_dropdown_section:visible').first().waitFor({ state: 'visible', timeout: 5_000 });
+  return true;
 }
 
 async function customerRootSection(page, label) {
@@ -85,7 +89,9 @@ async function customerRootSection(page, label) {
   if (!(await more.isVisible().catch(() => false))) {
     return { label, direct: false, overflow: false, reachable: false };
   }
-  await openMoreMenu(page);
+  if (!(await openMoreMenu(page))) {
+    return { label, direct: false, overflow: false, reachable: false };
+  }
   const overflow = visibleOverflowRoot(page, label);
   const overflowVisible = await overflow.isVisible().catch(() => false);
   return { label, direct: false, overflow: overflowVisible, reachable: overflowVisible };
@@ -109,7 +115,7 @@ async function customerRootSections(page) {
   const more = moreMenuButton(page);
   let overflowLabels = [];
   if (await more.isVisible().catch(() => false)) {
-    await openMoreMenu(page);
+    if (!(await openMoreMenu(page))) return directLabels;
     overflowLabels = await page.locator([
       '.o-dropdown--menu:visible .o_more_dropdown_section',
       '.o_popover:visible .o_more_dropdown_section',
