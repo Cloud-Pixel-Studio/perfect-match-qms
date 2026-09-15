@@ -83,6 +83,17 @@ function readSecret(name) {
   return fs.readFileSync(required(name), 'utf8').trim();
 }
 
+async function closeContext(page, context) {
+  await Promise.race([
+    page.close({ runBeforeUnload: false }).catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, 1_000)),
+  ]);
+  await Promise.race([
+    context.close().catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, 1_000)),
+  ]);
+}
+
 function readActionManifest() {
   const manifest = JSON.parse(fs.readFileSync(required('M31_ACTION_MANIFEST_FILE'), 'utf8'));
   if (!Array.isArray(manifest) || !manifest.length) throw new Error('Action manifest is empty');
@@ -666,8 +677,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
     };
     roleEvidence.push(result);
     console.log(`M31_CONFIGURATION_ROLE_END=${role}:${result.configuration}`);
-    await page.close();
-    await context.close();
+    await closeContext(page, context);
   }
 
   const directProbes = [
@@ -735,8 +745,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
         directEvidence.push({ role, key, expected, status: 'FAIL', error: error.message.slice(0, 300) });
       }
     }
-    await page.close();
-    await context.close();
+    await closeContext(page, context);
     console.log(`M31_DIRECT_ROLE_END=${role}`);
   }
   const authorizationEvidence = { roleEvidence, directEvidence };
