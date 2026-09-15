@@ -53,6 +53,7 @@ function moreMenuButton(page) {
 
 function visibleOverflowRoot(page, label) {
   return page.locator([
+    '.o-dropdown--menu:visible .o_more_dropdown_section',
     '.o_popover:visible .o_more_dropdown_section',
     '.o-popover:visible .o_more_dropdown_section',
     '[role="menu"]:visible .o_more_dropdown_section',

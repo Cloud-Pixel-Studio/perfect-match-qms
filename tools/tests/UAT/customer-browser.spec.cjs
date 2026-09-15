@@ -285,6 +285,7 @@ async function navigationViewportDiagnostics(page) {
     if (moreMenuPresent) {
       if ((await moreMenu.getAttribute('aria-expanded')) !== 'true') await moreMenu.click();
       overflowLabels = await page.locator([
+        '.o-dropdown--menu:visible .o_more_dropdown_section',
         '.o_popover:visible .o_more_dropdown_section',
         '.o-popover:visible .o_more_dropdown_section',
         '[role="menu"]:visible .o_more_dropdown_section',
@@ -343,6 +344,7 @@ async function browserRuntimeDiagnostics(page, telemetry) {
   if (moreMenuPresent) {
     if ((await moreMenu.getAttribute('aria-expanded')) !== 'true') await moreMenu.click();
     overflowLabels = await page.locator([
+      '.o-dropdown--menu:visible .o_more_dropdown_section',
       '.o_popover:visible .o_more_dropdown_section',
       '.o-popover:visible .o_more_dropdown_section',
       '[role="menu"]:visible .o_more_dropdown_section',
