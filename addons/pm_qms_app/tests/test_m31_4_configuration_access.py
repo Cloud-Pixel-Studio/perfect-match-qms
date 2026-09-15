@@ -106,6 +106,14 @@ class TestM314ConfigurationAccess(TransactionCase):
         self.assertFalse(
             self._visible(self.quality_manager_user, "pm_qms_core.menu_pm_qms_framework")
         )
+        self.assertTrue(
+            self._visible(self.technical_user, "pm_qms_migration.menu_pm_qms_migration")
+        )
+
+    def test_configuration_root_is_prioritized_for_adaptive_customer_navigation(self):
+        configuration = self.env.ref("pm_qms_core.menu_pm_qms_configuration")
+        implementation = self.env.ref("pm_qms_core.menu_pm_qms_implementation")
+        self.assertLess(configuration.sequence, implementation.sequence)
 
     def test_configuration_actions_have_direct_action_allow_list(self):
         allowed = {self.quality_manager, self.qms_admin, self.technical_group}
@@ -226,6 +234,35 @@ class TestM314ConfigurationAccess(TransactionCase):
         self.assertFalse(action_model.check_access_rights("read", raise_exception=False))
         with self.assertRaises(AccessError):
             self.env.ref("base.open_module_tree").with_user(self.quality_manager_user).read()
+
+    def test_framework_action_metadata_is_not_a_customer_configuration_surface(self):
+        framework_actions = (
+            "pm_qms_core.action_pm_qms_control",
+            "pm_qms_core.action_pm_qms_activity",
+            "pm_qms_core.action_pm_qms_evidence_requirement",
+            "pm_qms_implementation.action_pm_qms_framework_pack",
+            "pm_qms_core.action_pm_qms_external_mapping",
+            "pm_qms_core.action_pm_qms_event",
+            "pm_qms_migration.action_pm_qms_document_import_wizard",
+            "pm_qms_migration.action_pm_qms_evidence_import_wizard",
+        )
+        for xmlid in framework_actions:
+            action = self.env.ref(xmlid)
+            for user in (self.qms_admin_user, self.technical_user):
+                with self.subTest(action=xmlid, authorized=user.login):
+                    self.assertEqual(action.with_user(user)._get_action_dict()["id"], action.id)
+            for user in (
+                self.quality_manager_user,
+                self.licensing_admin_user,
+                self.quality_supervisor_user,
+                self.internal_auditor_user,
+                self.process_owner_user,
+                self.viewer_user,
+                self.integration_admin_user,
+            ):
+                with self.subTest(action=xmlid, denied_user=user.login):
+                    with self.assertRaises(AccessError):
+                        action.with_user(user)._get_action_dict()
 
     def test_customer_action_metadata_read_does_not_delegate_mutation(self):
         action = self.env.ref("pm_qms_core.action_pm_qms_organization").with_user(
