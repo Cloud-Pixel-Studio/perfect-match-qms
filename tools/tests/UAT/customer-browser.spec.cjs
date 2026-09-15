@@ -291,7 +291,10 @@ async function navigationViewportDiagnostics(page) {
       overflowRootLabels: overflowLabels.map((label) => label.trim()).filter(Boolean),
     });
   }
-  if (originalViewport) await page.setViewportSize(originalViewport);
+  if (originalViewport) {
+    await page.setViewportSize(originalViewport);
+    await page.waitForTimeout(300);
+  }
   return snapshots;
 }
 
