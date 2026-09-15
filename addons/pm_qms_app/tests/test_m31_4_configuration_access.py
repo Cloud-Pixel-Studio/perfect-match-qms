@@ -110,6 +110,19 @@ class TestM314ConfigurationAccess(TransactionCase):
             self._visible(self.technical_user, "pm_qms_migration.menu_pm_qms_migration")
         )
 
+    def test_operational_events_do_not_leak_into_customer_configuration(self):
+        operational_events = self.env.ref("pm_qms_core.menu_pm_qms_operational_events")
+        self.assertEqual(
+            set(operational_events.group_ids.ids),
+            {self.qms_admin.id, self.technical_group.id},
+        )
+        self.assertFalse(
+            self._visible(self.quality_manager_user, "pm_qms_core.menu_pm_qms_operational_events")
+        )
+        self.assertFalse(
+            self._visible(self.licensing_admin_user, "pm_qms_core.menu_pm_qms_operational_events")
+        )
+
     def test_configuration_root_is_prioritized_for_adaptive_customer_navigation(self):
         configuration = self.env.ref("pm_qms_core.menu_pm_qms_configuration")
         implementation = self.env.ref("pm_qms_core.menu_pm_qms_implementation")
