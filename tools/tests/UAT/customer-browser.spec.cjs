@@ -444,6 +444,15 @@ async function collectMenuInventory(page) {
   return { roots, menus };
 }
 
+async function collectConfigurationInventory(page) {
+  await openQmsApplication(page);
+  await waitForCustomerNavigation(page);
+  const configuration = await customerRootSection(page, 'Configuration');
+  if (!configuration.reachable) throw new Error('Configuration root is not reachable');
+  await openRootMenu(page, 'Configuration');
+  return { roots: ['Configuration'], menus: { Configuration: await customerMenuEntries(page) } };
+}
+
 function menuLinks(inventory) {
   return Object.values(inventory.menus).flat();
 }
@@ -627,7 +636,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
     const result = { role, configuration: 'NOT TESTED', allowed: [] };
     try {
       await login(page, user);
-      const inventory = await collectMenuInventory(page);
+      const inventory = await collectConfigurationInventory(page);
       console.log(`M31_CONFIGURATION_INVENTORY=${role}:${inventory.roots.join('|')}`);
       inventories[role] = inventory;
       payloadActions[role] = await browserMenuActionEntries(page);
