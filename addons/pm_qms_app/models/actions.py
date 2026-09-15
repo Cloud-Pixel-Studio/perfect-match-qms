@@ -73,7 +73,7 @@ class IrActionsActWindow(models.Model):
         return {
             action.id: groups
             for xmlid, groups in self._QMS_CUSTOMER_ACTION_GROUPS.items()
-            if (action := self.env.sudo().ref(xmlid, raise_if_not_found=False))
+            if (action := self.sudo().env.ref(xmlid, raise_if_not_found=False))
         }
 
     def _qms_authorization_env(self):
