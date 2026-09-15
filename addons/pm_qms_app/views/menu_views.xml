@@ -221,6 +221,12 @@
             ref('base.group_system')
         ])]"/>
     </record>
+    <record id="pm_qms_core.menu_pm_qms_external_mappings" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
 
     <!-- Direct action loads use the same product allow-list as navigation. The
          underlying model ACLs and record rules remain independently enforced. -->
