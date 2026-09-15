@@ -377,15 +377,37 @@ async function browserRuntimeDiagnostics(page, telemetry) {
 
 async function waitForApp(page) {
   await page.waitForLoadState('domcontentloaded');
-  await page.locator('nav.o_main_navbar, .o_main_navbar').first()
-    .waitFor({ state: 'visible', timeout: 15_000 })
-    .catch(() => {});
+  await page.waitForTimeout(900);
+}
+
+async function openQmsApplication(page) {
+  await page.goto('/odoo');
+  await waitForApp(page);
+  const appHref = await page.evaluate(() => {
+    const raw = window.localStorage.getItem('webclient_menus');
+    if (!raw) return null;
+    try {
+      const payload = JSON.parse(raw);
+      const app = Object.values(payload).find(
+        (item) => item && item.xmlid === 'pm_qms_core.menu_pm_qms_root',
+      );
+      const actionId = app?.actionID ?? app?.action_id;
+      return actionId ? `/odoo/action-${actionId}` : null;
+    } catch {
+      return null;
+    }
+  });
+  if (appHref) await page.goto(appHref);
+  await waitForApp(page);
+}
+
+async function waitForCustomerNavigation(page) {
   await page.waitForFunction(
-    () => document.querySelector('nav.o_main_navbar [data-section], nav.o_main_navbar a, nav.o_main_navbar button') !== null,
+    () => document.querySelector('nav.o_main_navbar [data-section], nav.o_main_navbar .o_menu_sections') !== null,
     null,
     { timeout: 15_000 },
-  ).catch(() => {});
-  await page.waitForTimeout(900);
+  );
+  await page.waitForTimeout(300);
 }
 
 async function login(page, user) {
@@ -402,8 +424,8 @@ async function login(page, user) {
 }
 
 async function collectMenuInventory(page) {
-  await page.goto('/odoo');
-  await waitForApp(page);
+  await openQmsApplication(page);
+  await waitForCustomerNavigation(page);
   const roots = await customerRootSections(page);
   const menus = {};
   for (const root of roots) {
@@ -698,6 +720,8 @@ test('fictional customer role sessions establish and remain customer-scoped', as
     const snapshot = await appSnapshot(page);
     expect(snapshot.shell, `${role} customer-shell contract mismatch`).toBe(contract.shell);
     if (contract.shell) {
+      await openQmsApplication(page);
+      await waitForCustomerNavigation(page);
       const roots = await customerRootSections(page);
       for (const root of contract.roots) expect(roots, `${role} is missing expected root ${root}`).toContain(root);
       for (const root of contract.forbiddenRoots) {
@@ -734,6 +758,8 @@ test('Quality Manager customer shell, navigation, guided implementation and idem
   const telemetry = installTelemetry(page, 'quality-manager');
   await login(page, state.qm);
   expect((await appSnapshot(page)).shell).toBeTruthy();
+  await openQmsApplication(page);
+  await waitForCustomerNavigation(page);
   const browserDiagnostics = await browserRuntimeDiagnostics(page, telemetry);
   test.info().annotations.push({
     type: 'browser-runtime-diagnostics',
