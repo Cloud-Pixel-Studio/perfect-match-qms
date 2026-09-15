@@ -154,7 +154,9 @@ async function openRootMenu(page, label) {
     const button = root.locator('xpath=..');
     await button.hover();
     await page.waitForTimeout(250);
-    if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+    if ((await button.getAttribute('aria-expanded')) !== 'true') {
+      await button.click({ timeout: 10_000, noWaitAfter: true });
+    }
     await page.waitForTimeout(250);
     return 'DIRECT';
   }
@@ -169,7 +171,9 @@ async function openRootMenu(page, label) {
     }
     await directItem.hover();
     await page.waitForTimeout(250);
-    if ((await directItem.getAttribute('aria-expanded')) !== 'true') await directItem.click();
+    if ((await directItem.getAttribute('aria-expanded')) !== 'true') {
+      await directItem.click({ timeout: 10_000, noWaitAfter: true });
+    }
     await page.waitForTimeout(250);
     return 'DIRECT_MENU';
   }
