@@ -592,10 +592,18 @@ test('Configuration browser contract and direct action authorization', async ({ 
     recordTelemetry(telemetry);
     await context.close();
   }
-  test.info().annotations.push({ type: 'configuration-authorization', description: JSON.stringify({ roleEvidence, directEvidence }) });
-  expect(roleEvidence.every((item) => item.configuration === 'PASS')).toBeTruthy();
-  expect(roleEvidence.flatMap((item) => item.allowed).every((item) => item.status === 'PASS')).toBeTruthy();
-  expect(directEvidence.every((item) => item.status === 'PASS')).toBeTruthy();
+  const authorizationEvidence = { roleEvidence, directEvidence };
+  test.info().annotations.push({ type: 'configuration-authorization', description: JSON.stringify(authorizationEvidence) });
+  console.log(`M31_CONFIGURATION_AUTHORIZATION=${JSON.stringify(authorizationEvidence)}`);
+  expect({
+    configurationRolesPass: roleEvidence.every((item) => item.configuration === 'PASS'),
+    permittedSurfacesPass: roleEvidence.flatMap((item) => item.allowed).every((item) => item.status === 'PASS'),
+    directActionChecksPass: directEvidence.every((item) => item.status === 'PASS'),
+  }).toEqual({
+    configurationRolesPass: true,
+    permittedSurfacesPass: true,
+    directActionChecksPass: true,
+  });
 });
 
 test('fictional customer role sessions establish and remain customer-scoped', async ({ browser }) => {
