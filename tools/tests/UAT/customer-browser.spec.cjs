@@ -385,7 +385,7 @@ async function browserRuntimeDiagnostics(page, telemetry) {
 }
 
 async function waitForApp(page) {
-  await page.waitForLoadState('domcontentloaded', { timeout: 15_000 }).catch(() => {});
+  await page.waitForLoadState('domcontentloaded', { timeout: 5_000 }).catch(() => {});
   await page.waitForTimeout(900);
 }
 
@@ -620,6 +620,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
   const payloadActions = {};
   const roleEvidence = [];
   for (const [role, user] of users) {
+    console.log(`M31_CONFIGURATION_ROLE_BEGIN=${role}`);
     const context = await browser.newContext();
     const page = await context.newPage();
     const telemetry = installTelemetry(page, `configuration-${role.toLowerCase().replaceAll(' ', '-')}`);
@@ -627,12 +628,14 @@ test('Configuration browser contract and direct action authorization', async ({ 
     try {
       await login(page, user);
       const inventory = await collectMenuInventory(page);
+      console.log(`M31_CONFIGURATION_INVENTORY=${role}:${inventory.roots.join('|')}`);
       inventories[role] = inventory;
       payloadActions[role] = await browserMenuActionEntries(page);
       const configuration = await customerRootSection(page, 'Configuration');
       result.configuration = configuration.reachable ? 'PASS' : 'FAIL';
       result.configurationEvidence = configuration;
       for (const label of CONFIGURATION_CONTRACT[role]) {
+        console.log(`M31_CONFIGURATION_SURFACE=${role}:${label}`);
         const link = findMenuLink(inventory, label);
         if (!link) {
           result.allowed.push({ label, status: 'NOT TESTED', reason: 'surface not exposed through normal navigation' });
@@ -653,6 +656,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
       httpErrors: telemetry.httpErrors.length,
     };
     roleEvidence.push(result);
+    console.log(`M31_CONFIGURATION_ROLE_END=${role}:${result.configuration}`);
     await context.close();
   }
 
@@ -689,12 +693,14 @@ test('Configuration browser contract and direct action authorization', async ({ 
     directByRole.get(role).push(probe);
   }
   for (const [role, probes] of directByRole) {
+    console.log(`M31_DIRECT_ROLE_BEGIN=${role}`);
     const user = probes[0][1];
     const context = await browser.newContext();
     const page = await context.newPage();
     try {
       await login(page, user);
       for (const [, , key, expected] of probes) {
+        console.log(`M31_DIRECT_PROBE=${role}:${key}:${expected}`);
         const manifestEntry = state.actionManifest[key];
         const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${key}`);
         const result = { role, key, expected, status: 'NOT TESTED' };
@@ -720,6 +726,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
       }
     }
     await context.close();
+    console.log(`M31_DIRECT_ROLE_END=${role}`);
   }
   const authorizationEvidence = { roleEvidence, directEvidence };
   test.info().annotations.push({ type: 'configuration-authorization', description: JSON.stringify(authorizationEvidence) });
