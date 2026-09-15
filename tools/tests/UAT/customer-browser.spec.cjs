@@ -666,6 +666,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
     };
     roleEvidence.push(result);
     console.log(`M31_CONFIGURATION_ROLE_END=${role}:${result.configuration}`);
+    await page.close();
     await context.close();
   }
 
@@ -734,6 +735,7 @@ test('Configuration browser contract and direct action authorization', async ({ 
         directEvidence.push({ role, key, expected, status: 'FAIL', error: error.message.slice(0, 300) });
       }
     }
+    await page.close();
     await context.close();
     console.log(`M31_DIRECT_ROLE_END=${role}`);
   }
