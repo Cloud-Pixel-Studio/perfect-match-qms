@@ -35,12 +35,12 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep configuration access fixed-key; M28 review if configuration becomes tenant-specific",
         "runtime_covered": "NO",
     },
-    ("addons/pm_qms_app/models/actions.py", "81"): {
+    ("addons/pm_qms_app/models/actions.py", "76"): {
         "invoker": "Odoo action manager reading an act_window action",
         "input_provenance": "Action record IDs supplied by the Odoo action/menu resolver",
         "user_controlled_input": "Action ID may be requested by a client, but only explicitly allow-listed action records are delegated",
         "records_before_sudo": "The current action recordset; no arbitrary model search or domain is introduced",
-        "scope": "Only six fixed Configuration action XML IDs receive delegated read; group gate and all-recordset allow-list are checked first",
+        "scope": "Only the fixed Configuration and Framework Administration action XML IDs receive delegated read; group gate and all-recordset allow-list are checked first",
         "output_mutation": "Returns action metadata; no mutation",
         "audit_history": "No business record mutation or history event",
         "regression_test": "TestM314ConfigurationAccess action-ID and role matrix",
