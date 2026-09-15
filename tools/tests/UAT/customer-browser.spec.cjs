@@ -283,7 +283,14 @@ async function navigationViewportDiagnostics(page) {
     const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
     let overflowLabels = [];
     if (moreMenuPresent) {
-      if ((await moreMenu.getAttribute('aria-expanded')) !== 'true') await moreMenu.click();
+      const morePopover = page.locator([
+        '.o-dropdown--menu:visible',
+        '.o_popover:visible',
+        '.o-popover:visible',
+        '[role="menu"]:visible',
+        '.dropdown-menu:visible',
+      ].join(', ')).last();
+      if (!(await morePopover.isVisible().catch(() => false))) await moreMenu.click();
       overflowLabels = await page.locator([
         '.o-dropdown--menu:visible .o_more_dropdown_section',
         '.o_popover:visible .o_more_dropdown_section',
@@ -342,7 +349,14 @@ async function browserRuntimeDiagnostics(page, telemetry) {
   const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
   let overflowLabels = [];
   if (moreMenuPresent) {
-    if ((await moreMenu.getAttribute('aria-expanded')) !== 'true') await moreMenu.click();
+    const morePopover = page.locator([
+      '.o-dropdown--menu:visible',
+      '.o_popover:visible',
+      '.o-popover:visible',
+      '[role="menu"]:visible',
+      '.dropdown-menu:visible',
+    ].join(', ')).last();
+    if (!(await morePopover.isVisible().catch(() => false))) await moreMenu.click();
     overflowLabels = await page.locator([
       '.o-dropdown--menu:visible .o_more_dropdown_section',
       '.o_popover:visible .o_more_dropdown_section',

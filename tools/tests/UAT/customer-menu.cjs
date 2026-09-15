@@ -64,7 +64,14 @@ function visibleOverflowRoot(page, label) {
 async function openMoreMenu(page) {
   const button = moreMenuButton(page);
   await button.waitFor({ state: 'visible' });
-  if ((await button.getAttribute('aria-expanded')) !== 'true') await button.click();
+  const menu = page.locator([
+    '.o-dropdown--menu:visible',
+    '.o_popover:visible',
+    '.o-popover:visible',
+    '[role="menu"]:visible',
+    '.dropdown-menu:visible',
+  ].join(', ')).last();
+  if (!(await menu.isVisible().catch(() => false))) await button.click();
   await page.waitForTimeout(250);
 }
 
