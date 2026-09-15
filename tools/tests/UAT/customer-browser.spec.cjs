@@ -283,7 +283,10 @@ async function navigationViewportDiagnostics(page) {
     const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
     let overflowLabels = [];
     if (moreMenuPresent) {
-      if (!(await page.locator('.o_more_dropdown_section:visible').count())) await moreMenu.click();
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForTimeout(100);
+      await moreMenu.click();
+      await page.locator('.o_more_dropdown_section:visible').first().waitFor({ state: 'visible', timeout: 5_000 });
       overflowLabels = await page.locator([
         '.o-dropdown--menu:visible .o_more_dropdown_section',
         '.o_popover:visible .o_more_dropdown_section',
@@ -342,7 +345,10 @@ async function browserRuntimeDiagnostics(page, telemetry) {
   const moreMenuPresent = await moreMenu.isVisible().catch(() => false);
   let overflowLabels = [];
   if (moreMenuPresent) {
-    if (!(await page.locator('.o_more_dropdown_section:visible').count())) await moreMenu.click();
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.waitForTimeout(100);
+    await moreMenu.click();
+    await page.locator('.o_more_dropdown_section:visible').first().waitFor({ state: 'visible', timeout: 5_000 });
     overflowLabels = await page.locator([
       '.o-dropdown--menu:visible .o_more_dropdown_section',
       '.o_popover:visible .o_more_dropdown_section',
