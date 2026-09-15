@@ -467,10 +467,21 @@ async function collectConfigurationInventory(page) {
   console.log('M31_CONFIGURATION_ROOT_OPEN_BEGIN');
   await openRootMenu(page, 'Configuration');
   console.log('M31_CONFIGURATION_ROOT_OPEN_END');
-  const entries = await Promise.race([
-    customerMenuEntries(page),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Configuration menu inventory timed out')), 10_000)),
-  ]);
+  const menu = page.locator([
+    '.o-dropdown--menu:visible',
+    '.o_popover:visible',
+    '.o-popover:visible',
+    '[role="menu"]:visible',
+    '.dropdown-menu:visible',
+  ].join(', ')).last();
+  await menu.waitFor({ state: 'visible', timeout: 5_000 });
+  const entries = await menu.locator('a:visible, [role="menuitem"]:visible, button:visible').evaluateAll((nodes) => nodes.map((node) => ({
+    tagName: node.tagName.toLowerCase(),
+    role: node.getAttribute('role'),
+    text: node.textContent.trim().replace(/\s+/g, ' '),
+    href: node.getAttribute('href'),
+    xmlid: node.getAttribute('data-menu-xmlid'),
+  })).filter((entry) => entry.text && (entry.href || entry.xmlid)));
   console.log(`M31_CONFIGURATION_ENTRIES=${entries.length}`);
   return { roots: ['Configuration'], menus: { Configuration: entries } };
 }
