@@ -155,7 +155,10 @@ async function openRootMenu(page, label) {
     await button.hover();
     await page.waitForTimeout(250);
     if ((await button.getAttribute('aria-expanded')) !== 'true') {
-      await button.click({ timeout: 10_000, noWaitAfter: true });
+      // Odoo's navbar dropdown is a client-side control, not a navigation.
+      // Dispatching the native event avoids Playwright waiting on a route
+      // transition while preserving the real click handler and menu state.
+      await button.evaluate((node) => node.click());
     }
     await page.waitForTimeout(250);
     return 'DIRECT';
@@ -172,7 +175,7 @@ async function openRootMenu(page, label) {
     await directItem.hover();
     await page.waitForTimeout(250);
     if ((await directItem.getAttribute('aria-expanded')) !== 'true') {
-      await directItem.click({ timeout: 10_000, noWaitAfter: true });
+      await directItem.evaluate((node) => node.click());
     }
     await page.waitForTimeout(250);
     return 'DIRECT_MENU';
