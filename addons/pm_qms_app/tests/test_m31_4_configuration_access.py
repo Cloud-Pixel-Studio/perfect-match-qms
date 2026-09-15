@@ -112,8 +112,14 @@ class TestM314ConfigurationAccess(TransactionCase):
 
     def test_technical_configuration_branches_do_not_leak_to_customers(self):
         technical_menus = (
+            "pm_qms_core.menu_pm_qms_controls",
+            "pm_qms_implementation.menu_pm_qms_framework_packs",
+            "pm_qms_core.menu_pm_qms_activities",
+            "pm_qms_core.menu_pm_qms_evidence_requirements",
             "pm_qms_core.menu_pm_qms_operational_events",
             "pm_qms_core.menu_pm_qms_external_mappings",
+            "pm_qms_migration.menu_pm_qms_document_import",
+            "pm_qms_migration.menu_pm_qms_evidence_import",
         )
         for xmlid in technical_menus:
             menu = self.env.ref(xmlid)
