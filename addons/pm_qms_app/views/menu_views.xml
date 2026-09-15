@@ -117,17 +117,33 @@
     <record id="pm_qms_core.menu_pm_qms_controls" model="ir.ui.menu">
         <field name="name">Framework Controls</field>
         <field name="sequence">10</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_implementation.menu_pm_qms_framework_packs" model="ir.ui.menu">
         <field name="name">Packs</field>
         <field name="sequence">20</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_activities" model="ir.ui.menu">
         <field name="name">Framework Activities</field>
         <field name="sequence">30</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_evidence_requirements" model="ir.ui.menu">
         <field name="sequence">40</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_external_mappings" model="ir.ui.menu">
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
@@ -167,6 +183,18 @@
         <field name="name">Administration / Migration</field>
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
         <field name="sequence">80</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_migration.menu_pm_qms_document_import" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_migration.menu_pm_qms_evidence_import" model="ir.ui.menu">
         <field name="group_ids" eval="[(6, 0, [
             ref('pm_qms_core.group_pm_qms_administrator'),
             ref('base.group_system')
