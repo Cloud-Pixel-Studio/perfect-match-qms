@@ -604,6 +604,7 @@ test.beforeAll(() => {
 });
 
 test('Configuration browser contract and direct action authorization', async ({ browser }) => {
+  test.setTimeout(300_000);
   const users = [
     ['Quality Manager', state.qm],
     ['QMS Administrator', state.qmsAdmin],

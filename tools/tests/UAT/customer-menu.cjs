@@ -109,6 +109,7 @@ async function customerRootSections(page) {
   if (await more.isVisible().catch(() => false)) {
     await openMoreMenu(page);
     overflowLabels = await page.locator([
+      '.o-dropdown--menu:visible .o_more_dropdown_section',
       '.o_popover:visible .o_more_dropdown_section',
       '.o-popover:visible .o_more_dropdown_section',
       '[role="menu"]:visible .o_more_dropdown_section',
