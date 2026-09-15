@@ -109,6 +109,7 @@ class IrActionsActWindow(models.Model):
         return super()._get_action_dict()
 
     def read(self, fields=None, load="_classic_read"):
+        action_groups = self._qms_customer_action_groups_by_id()
         self._qms_check_customer_action_access()
 
         # Odoo's native ir.actions.act_window ACL is restricted to technical
