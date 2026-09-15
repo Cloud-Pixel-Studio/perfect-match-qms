@@ -464,8 +464,15 @@ async function collectConfigurationInventory(page) {
   const configuration = await customerRootSection(page, 'Configuration');
   console.log(`M31_CONFIGURATION_ROOT=${JSON.stringify(configuration)}`);
   if (!configuration.reachable) throw new Error('Configuration root is not reachable');
+  console.log('M31_CONFIGURATION_ROOT_OPEN_BEGIN');
   await openRootMenu(page, 'Configuration');
-  return { roots: ['Configuration'], menus: { Configuration: await customerMenuEntries(page) } };
+  console.log('M31_CONFIGURATION_ROOT_OPEN_END');
+  const entries = await Promise.race([
+    customerMenuEntries(page),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Configuration menu inventory timed out')), 10_000)),
+  ]);
+  console.log(`M31_CONFIGURATION_ENTRIES=${entries.length}`);
+  return { roots: ['Configuration'], menus: { Configuration: entries } };
 }
 
 function menuLinks(inventory) {
