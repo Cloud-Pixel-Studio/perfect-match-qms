@@ -345,7 +345,7 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertEqual(self.env.ref("pm_qms_license.menu_pm_qms_license").parent_id, configuration)
         self.assertEqual(
             self.env.ref("pm_qms_license.menu_pm_qms_activation_requests").parent_id,
-            self.env.ref("pm_qms_license.menu_pm_qms_license"),
+            configuration,
         )
 
     def test_menu_permissions_keep_framework_out_of_user_navigation(self):

@@ -238,8 +238,11 @@
         <field name="sequence">50</field>
     </record>
     <record id="pm_qms_license.menu_pm_qms_activation_requests" model="ir.ui.menu">
-        <field name="parent_id" ref="pm_qms_license.menu_pm_qms_license"/>
-        <field name="sequence">10</field>
+        <!-- Keep both license workflows as sibling Configuration actions.
+             This avoids rendering an action-bearing parent with a nested
+             action for the Licensing Administrator navbar tree. -->
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
+        <field name="sequence">60</field>
     </record>
     <record id="pm_qms_core.menu_pm_qms_operational_events" model="ir.ui.menu">
         <!-- Keep this technical configuration branch aligned with the
