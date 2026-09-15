@@ -48,7 +48,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Retain the fixed action-ID allow-list and target-model ACL/record-rule boundary",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_app/models/actions.py", "124"): {
+    ("addons/pm_qms_app/models/actions.py", "125"): {
         "invoker": "Odoo action manager reading an allow-listed act_window action",
         "input_provenance": "Action recordset already checked against the fixed XML-ID map and authenticated role",
         "user_controlled_input": "Action ID may be requested by a client, but delegation occurs only after the fixed allow-list and caller gate",
