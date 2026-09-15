@@ -159,6 +159,41 @@ PY
 docker run --rm --user root -v "$WORK:/work" "$ALPINE_IMAGE" \
   sh -eu -c 'cp /work/users/* /work/browser-users/ && cp /work/instances/'"$SLUG"'/secrets/initial_admin_password /work/browser-users/admin-password && chmod 755 /work/browser-users && chmod 644 /work/browser-users/*' >/dev/null
 
+# The browser direct-action contract is resolved from a small, fixed fixture
+# manifest.  It is discovered with ORM metadata as superuser, but grants no
+# permissions to the authenticated browser users and does not depend on menu
+# visibility.
+ACTION_MANIFEST="$WORK/action-manifest.json"
+docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
+  -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 \
+  -v "$WORK:/var/lib/pmqms-uat:ro" \
+  odoo odoo shell -d "$DB_NAME" --log-level=error <<'PY' >"$ACTION_MANIFEST"
+import json
+
+specs = [
+    ("company_profile", "Company Profile", "pm_qms_core.action_pm_qms_organization"),
+    ("sites", "Sites", "pm_qms_core.action_pm_qms_site"),
+    ("processes", "Processes", "pm_qms_core.action_pm_qms_process"),
+    ("users_access", "Users & Access", "pm_qms_app.action_pm_qms_users_access"),
+    ("commercial_license", "Commercial License", "pm_qms_license.action_pm_qms_license"),
+    ("activation_requests", "Activation Requests", "pm_qms_license.action_pm_qms_activation_request"),
+    ("framework_controls", "Framework Administration", "pm_qms_core.action_pm_qms_control"),
+]
+manifest = []
+for key, label, xmlid in specs:
+    action = env.ref(xmlid)
+    manifest.append({
+        "key": key,
+        "label": label,
+        "xmlid": xmlid,
+        "actionId": action.id,
+        "href": "/odoo/action-%s" % action.id,
+        "resModel": action.res_model,
+    })
+print(json.dumps(manifest, sort_keys=True))
+PY
+jq -e 'length == 7 and all(.[]; .key and .xmlid and (.actionId | type == "number") and .href and .resModel)' "$ACTION_MANIFEST" >/dev/null || fail "minimal action manifest is invalid"
+
 # Emit a sanitized ORM/runtime inventory before browser navigation.  This is
 # deliberately diagnostic-only: it must not change the fixture or weaken the
 # normative Configuration assertion in customer-browser.spec.cjs.
@@ -403,6 +438,7 @@ export M31_VIEWER_LOGIN="m31.viewer.${RUN_SUFFIX}@example.invalid"
 export M31_VIEWER_PASSWORD_FILE="$WORK/browser-users/viewer-password"
 export M31_API_LOGIN="m31.api.${RUN_SUFFIX}@example.invalid"
 export M31_API_PASSWORD_FILE="$WORK/browser-users/api-password"
+export M31_ACTION_MANIFEST_FILE="$ACTION_MANIFEST"
 export M31_HEADLESS=true
 export M31_BROWSER_CHANNEL=chromium
 export M31_JSON_REPORT="$WORK/playwright.json"

@@ -69,6 +69,7 @@ const state = {
   implementationHref: null,
   implementationMenuXmlid: null,
   menuInventory: null,
+  actionManifest: null,
   roles: {},
 };
 
@@ -80,6 +81,12 @@ function required(name) {
 
 function readSecret(name) {
   return fs.readFileSync(required(name), 'utf8').trim();
+}
+
+function readActionManifest() {
+  const manifest = JSON.parse(fs.readFileSync(required('M31_ACTION_MANIFEST_FILE'), 'utf8'));
+  if (!Array.isArray(manifest) || !manifest.length) throw new Error('Action manifest is empty');
+  return Object.fromEntries(manifest.map((entry) => [entry.key, entry]));
 }
 
 function userFromEnv(prefix) {
@@ -262,7 +269,11 @@ async function configurationDomDiagnostics(page) {
 async function navigationViewportDiagnostics(page) {
   const originalViewport = page.viewportSize();
   const snapshots = [];
-  for (const viewport of [{ width: 1280, height: 720 }, { width: 1024, height: 720 }]) {
+  for (const viewport of [
+    { width: 1600, height: 900 },
+    { width: 1280, height: 720 },
+    { width: 1024, height: 720 },
+  ]) {
     await page.setViewportSize(viewport);
     await page.waitForTimeout(300);
     const roots = await customerRootSections(page);
@@ -402,16 +413,64 @@ function findMenuLink(inventory, text, xmlidFragment) {
   return menuLinks(inventory).find((item) => item.text === text && (!xmlidFragment || item.xmlid?.includes(xmlidFragment))) || null;
 }
 
-async function directActionDenied(page, entry, label) {
-  expect(entry?.href, `${label} must expose a probeable action URL`).toBeTruthy();
+async function directActionProbe(page, entry, expected) {
+  expect(entry?.href, `${entry?.label || 'action'} must expose a probeable action URL`).toBeTruthy();
+  const actionResponses = [];
+  const onResponse = async (response) => {
+    if (new URL(response.url()).pathname !== '/web/action/load') return;
+    try {
+      actionResponses.push({ status: response.status(), payload: await response.json() });
+    } catch (error) {
+      actionResponses.push({ status: response.status(), payloadError: error.name });
+    }
+  };
+  page.on('response', onResponse);
   await page.goto(new URL(entry.href, page.url()).toString());
   await waitForApp(page);
+  await page.waitForTimeout(250);
+  page.off('response', onResponse);
+
+  const payload = actionResponses.at(-1)?.payload || {};
+  const action = payload.result && typeof payload.result === 'object' ? payload.result : null;
+  const rpcError = payload.error && typeof payload.error === 'object' ? payload.error : null;
+  const errorData = rpcError?.data || {};
+  const explicitAuthorizationError = Boolean(rpcError && (
+    /AccessError|Access Denied|Forbidden|not allowed/i.test(String(errorData.name || ''))
+    || /access denied|not allowed|forbidden/i.test(String(errorData.message || rpcError.message || ''))
+  ));
+  const metadata = {
+    returned: Boolean(action),
+    actionId: action?.id ?? null,
+    targetModel: action?.res_model ?? null,
+    type: action?.type ?? null,
+    rpcError: rpcError ? {
+      name: String(errorData.name || rpcError.message || 'unknown').slice(0, 160),
+      authorization: explicitAuthorizationError,
+    } : null,
+  };
   const body = await page.locator('body').innerText();
-  const denied = /Access Error|not allowed|restricted|permission/i.test(body)
-    || await page.getByText('Oops!', { exact: true }).isVisible().catch(() => false);
-  expect(denied, `${label} direct action unexpectedly loaded`).toBeTruthy();
-  expect(body, `${label} direct action rendered its protected surface`).not.toContain(label);
-  return { label, denied, url: page.url() };
+  const screen = {
+    loaded: Boolean(action) && metadata.actionId === entry.actionId,
+    clean: cleanBody(body),
+    url: page.url(),
+  };
+  const result = {
+    role: entry.role,
+    label: entry.label,
+    expected,
+    actionMetadata: metadata,
+    screen,
+    protectedData: action ? 'NOT_SEPARATELY_PROBED' : 'NOT_RETURNED_BEFORE_AUTHORIZATION_FAILURE',
+    workflowMutation: 'NOT_PROBED',
+    url: page.url(),
+  };
+  if (expected === 'ALLOW') {
+    result.status = metadata.returned && metadata.actionId === entry.actionId
+      && metadata.targetModel === entry.resModel && screen.clean ? 'PASS' : 'FAIL';
+  } else {
+    result.status = !metadata.returned && explicitAuthorizationError ? 'PASS' : 'FAIL';
+  }
+  return result;
 }
 
 function cleanBody(text) {
@@ -505,6 +564,7 @@ test.beforeAll(() => {
     'Viewer': userFromEnv('M31_VIEWER'),
     'API Integration Administrator': userFromEnv('M31_API'),
   };
+  state.actionManifest = readActionManifest();
   if (!state.qm || !state.admin) throw new Error('Quality Manager and Technical Administrator credentials are required');
   if (!state.qmsAdmin || !state.licensingAdmin) throw new Error('QMS Administrator and Licensing Administrator credentials are required');
   if (Object.entries(state.roles).some(([, user]) => !user)) throw new Error('All authenticated customer role fixtures are required');
@@ -557,30 +617,41 @@ test('Configuration browser contract and direct action authorization', async ({ 
   }
 
   const directProbes = [
-    ['Quality Manager', state.qm, 'Framework Administration'],
-    ['Quality Manager', state.qm, 'Activation Requests'],
-    ['QMS Administrator', state.qmsAdmin, 'Commercial License'],
-    ['QMS Administrator', state.qmsAdmin, 'Activation Requests'],
-    ['Licensing Administrator', state.licensingAdmin, 'Company Profile'],
-    ['Licensing Administrator', state.licensingAdmin, 'Users & Access'],
-    ['Technical Administrator', state.admin, 'Users & Access'],
-    ['Technical Administrator', state.admin, 'Activation Requests'],
+    ['Quality Manager', state.qm, 'company_profile', 'ALLOW'],
+    ['Quality Manager', state.qm, 'sites', 'ALLOW'],
+    ['Quality Manager', state.qm, 'processes', 'ALLOW'],
+    ['Quality Manager', state.qm, 'users_access', 'ALLOW'],
+    ['Quality Manager', state.qm, 'commercial_license', 'ALLOW'],
+    ['Quality Manager', state.qm, 'framework_controls', 'DENY'],
+    ['Quality Manager', state.qm, 'activation_requests', 'DENY'],
+    ['QMS Administrator', state.qmsAdmin, 'company_profile', 'ALLOW'],
+    ['QMS Administrator', state.qmsAdmin, 'sites', 'ALLOW'],
+    ['QMS Administrator', state.qmsAdmin, 'processes', 'ALLOW'],
+    ['QMS Administrator', state.qmsAdmin, 'users_access', 'ALLOW'],
+    ['QMS Administrator', state.qmsAdmin, 'framework_controls', 'ALLOW'],
+    ['QMS Administrator', state.qmsAdmin, 'commercial_license', 'DENY'],
+    ['QMS Administrator', state.qmsAdmin, 'activation_requests', 'DENY'],
+    ['Licensing Administrator', state.licensingAdmin, 'commercial_license', 'ALLOW'],
+    ['Licensing Administrator', state.licensingAdmin, 'activation_requests', 'ALLOW'],
+    ['Licensing Administrator', state.licensingAdmin, 'company_profile', 'DENY'],
+    ['Licensing Administrator', state.licensingAdmin, 'users_access', 'DENY'],
+    ['Technical Administrator', state.admin, 'company_profile', 'ALLOW'],
+    ['Technical Administrator', state.admin, 'commercial_license', 'ALLOW'],
+    ['Technical Administrator', state.admin, 'framework_controls', 'ALLOW'],
+    ['Technical Administrator', state.admin, 'users_access', 'DENY'],
+    ['Technical Administrator', state.admin, 'activation_requests', 'DENY'],
   ];
   const directEvidence = [];
-  for (const [role, user, label] of directProbes) {
+  for (const [role, user, key, expected] of directProbes) {
     const context = await browser.newContext();
     const page = await context.newPage();
-    const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${label.toLowerCase().replaceAll(' ', '-')}`);
-    const result = { role, label, status: 'NOT TESTED' };
+    const manifestEntry = state.actionManifest[key];
+    const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${key}`);
+    const result = { role, key, expected, status: 'NOT TESTED' };
     try {
-      const sourceEntries = Object.values(payloadActions).flat().filter((item) => item.text === label);
       await login(page, user);
-      if (!sourceEntries.length) {
-        result.reason = 'authorized source session did not expose an action URL';
-      } else {
-        Object.assign(result, await directActionDenied(page, sourceEntries[0], label));
-        result.status = 'PASS';
-      }
+      expect(manifestEntry, `${key} must be present in the minimal action manifest`).toBeTruthy();
+      Object.assign(result, await directActionProbe(page, { ...manifestEntry, role }, expected));
     } catch (error) {
       result.status = 'FAIL';
       result.error = error.message.slice(0, 300);
