@@ -393,10 +393,13 @@ Product PR #150 was merged only after rechecking its exact HEAD
 `5aa735c7b09dfa46cfab8ca5d9d725039d4b982e`, now the exact `origin/main`.
 No squash, rebase, force push, release, tag, or history rewrite was used.
 
-Post-merge QMS CI `35260595200` passed on that merge SHA.  All functional and
-post-job steps passed, including the disposable authenticated customer UAT,
-Mission16, Mission23, and cleanup; no step was skipped.  The post-merge
-workflow authorization transition remains `NOT TESTED` because the release
+Post-merge QMS CI `35260595200` passed on that merge SHA.  All 33 functional
+steps and post-job cleanup passed, including Mission16 and Mission23; no
+workflow step was skipped.  The main-branch QMS workflow does not include the
+authenticated browser UAT.  A manual post-merge harness attempt confirmed
+cleanup but emitted no UAT success marker, so post-merge authenticated UAT is
+`NOT TESTED` and must not be inferred from QMS.  The post-merge workflow
+authorization transition also remains `NOT TESTED` because the release
 exposes no supported workflow transition method and no synthetic state write
 was accepted as evidence.
 
