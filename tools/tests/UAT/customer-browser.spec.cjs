@@ -1224,8 +1224,8 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
       [riskId],
       'mail.mail_activity_data_todo',
     ], { summary: 'M31 disposable reminder', note: 'Fictional reminder fixture.', user_id: qmUid, date_deadline: yesterday });
-    if (!rpcAllowed(scheduled) || !Number.isInteger(scheduled.result)) throw new Error(`Activity fixture creation failed: ${JSON.stringify(summarizeRpc(scheduled))}`);
-    activityId = scheduled.result;
+    activityId = Array.isArray(scheduled.result) ? scheduled.result[0] : scheduled.result;
+    if (!rpcAllowed(scheduled) || !Number.isInteger(activityId)) throw new Error(`Activity fixture creation failed: ${JSON.stringify(summarizeRpc(scheduled))}`);
     const qmActivities = await callKw(qmPage, 'mail.activity', 'search_read', [[['id', '=', activityId]], ['id', 'res_model', 'res_id', 'summary', 'date_deadline', 'user_id']]);
     evidence.activity = { status: rpcAllowed(qmActivities) && qmActivities.result?.length === 1 ? 'PASS' : 'FAIL', assignedToAuthorizedRole: qmActivities.result?.[0]?.user_id?.[0] === qmUid, recordId: qmActivities.result?.[0]?.res_id ?? null };
 
@@ -1251,6 +1251,9 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.overdue.status).toBe('PASS');
     expect(evidence.isolation.status).toBe('PASS');
   } finally {
+    if (activityId) {
+      await callKw(qmPage, 'mail.activity', 'unlink', [[activityId]]).catch(() => null);
+    }
     if (riskId) {
       const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
       evidence.cleanup = { status: rpcAllowed(removed) ? 'PASS' : 'NOT_CONFIRMED' };
