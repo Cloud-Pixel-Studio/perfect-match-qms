@@ -343,3 +343,45 @@ Read root `AGENTS.md`, `addons/AGENTS.md` before addon work,
 `docs/BACKUP_AND_RECOVERY.md`, and the workflow/runner files cited above.
 This WIP handoff takes precedence over stale PASS wording in prior PR comments
 only as an evidence correction; it does not change the approved security contract.
+
+## M31.4-C4.5 Licensing Navigation and Runtime Authorization Checkpoint
+
+Candidate evidence was published without force-push.  The authoritative SHAs
+at the last completed gate were:
+
+- `origin/main`: `d57ce391cc262c68d5bbe255eb53f448cd7356ff`
+- PR #150 product: `d0678c119167a6a7fd8db3f1317994c52797458f`
+- PR #151 validation: `e764359` (full SHA is recorded by the next pushed
+  commit and its checks; PR #151 remains draft)
+- product-to-validation normal merge: `51ec492799cf2a8d85f00c35879a23f2ca755aeb`
+
+The product correction is limited to removing the shared app-root action so a
+license-only role does not trigger an unauthorized dashboard read; Dashboard
+remains an explicit child action.  The Licensing Administrator normal
+Configuration route now passes at 1600x900, 1280x720 and 1024x720.  The first
+diagnostic divergence was in the validation harness: the direct Commercial
+License probe observed no action-load response before its bounded wait, and
+the QMS Framework Administration menu is a parent group whose navigable child
+is Framework Controls.  The harness now uses fresh contexts per direct probe,
+has a bounded action-metadata fallback, and validates the child action.
+
+The completed candidate QMS run was `35242060944`: browser UAT passed,
+direct authorization was 23/23, protected reads and field denial passed,
+permitted create/write passed, prohibited create/write/unlink probes passed,
+company isolation returned zero out-of-company records, and cleanup passed.
+Mission16 and Mission23 both ran and completed; no downstream stage was
+skipped.  Workflow transitions remain `NOT TESTED` because this release
+exposes no supported transition method and no synthetic state write was used.
+
+Security Audit run `35242061023` passed on the same candidate.  The local
+control record remains: OpenGrep v1.29.0 local rules and positive/negative
+tests pass; Trivy 0.74.0 vulnerability/misconfiguration/secret scans pass;
+secret and content scans pass; sudo inventory/review and XML/Python/addon/
+workflow validation pass; `git diff --check` passes.  Canonical pip-audit is
+`NOT_EXECUTED` because no dependency input is declared; Issue #98 remains the
+tracked follow-up.  No credentials, private keys, databases, filestores,
+raw browser traces or node_modules were uploaded.
+
+No PR was merged, no release or tag was created, PR #151 remains draft, and
+PR #147 is unchanged.  Before Product Owner review, verify the final pushed
+handoff SHA and rerun/inspect QMS CI and Security Audit on that exact SHA.
