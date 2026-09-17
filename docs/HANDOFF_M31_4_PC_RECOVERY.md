@@ -385,3 +385,27 @@ raw browser traces or node_modules were uploaded.
 
 No PR was merged, no release or tag was created, PR #151 remains draft, and
 PR #147 is unchanged.  Product Owner review is the next approval gate.
+
+## M31.4-C4.7 Controlled Product Merge and Post-Merge Validation
+
+Product PR #150 was merged only after rechecking its exact HEAD
+`d0678c119167a6a7fd8db3f1317994c52797458f`.  The normal merge commit is
+`5aa735c7b09dfa46cfab8ca5d9d725039d4b982e`, now the exact `origin/main`.
+No squash, rebase, force push, release, tag, or history rewrite was used.
+
+Post-merge QMS CI `35260595200` passed on that merge SHA.  All functional and
+post-job steps passed, including the disposable authenticated customer UAT,
+Mission16, Mission23, and cleanup; no step was skipped.  The post-merge
+workflow authorization transition remains `NOT TESTED` because the release
+exposes no supported workflow transition method and no synthetic state write
+was accepted as evidence.
+
+Post-merge Security Audit `35260595185` passed on the same SHA.  OpenGrep
+local/pinned rules, Trivy vulnerability/misconfiguration/secret scanners,
+secret scan, content safety, sudo review, XML/Python/addon/workflow checks and
+git diff check passed.  pip-audit remains `NOT EXECUTED` under Issue #98 due
+to the missing canonical dependency input.
+
+PR #151 remains open and draft as validation-only; PR #147 is unchanged;
+Issues #146 and #148 remain open.  Demo, production, customers, CleanVM,
+repository protections, releases and tags were not modified.
