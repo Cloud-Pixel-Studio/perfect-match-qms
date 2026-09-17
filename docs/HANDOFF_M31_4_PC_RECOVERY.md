@@ -351,8 +351,8 @@ at the last completed gate were:
 
 - `origin/main`: `d57ce391cc262c68d5bbe255eb53f448cd7356ff`
 - PR #150 product: `d0678c119167a6a7fd8db3f1317994c52797458f`
-- PR #151 validation: `e764359` (full SHA is recorded by the next pushed
-  commit and its checks; PR #151 remains draft)
+- PR #151 validation: `87d689bb907e858bf6275167cbf356d651f776fe` (PR #151
+  remains draft)
 - product-to-validation normal merge: `51ec492799cf2a8d85f00c35879a23f2ca755aeb`
 
 The product correction is limited to removing the shared app-root action so a
