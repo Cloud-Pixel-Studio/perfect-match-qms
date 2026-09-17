@@ -170,6 +170,59 @@ async function boundedHover(target, label) {
   }
 }
 
+async function interactionSnapshot(page, target) {
+  return target.evaluate((node) => {
+    const rect = node.getBoundingClientRect();
+    const style = getComputedStyle(node);
+    const center = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    const visibleOverlay = (candidate) => {
+      const candidateStyle = getComputedStyle(candidate);
+      return candidateStyle.display !== 'none'
+        && candidateStyle.visibility !== 'hidden'
+        && candidateStyle.opacity !== '0';
+    };
+    return {
+      tag: node.tagName.toLowerCase(),
+      text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 120),
+      role: node.getAttribute('role'),
+      dataSection: node.getAttribute('data-section'),
+      xmlid: node.getAttribute('data-menu-xmlid'),
+      ariaExpanded: node.getAttribute('aria-expanded'),
+      visible: Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length),
+      rect: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) },
+      computed: {
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        pointerEvents: style.pointerEvents,
+        zIndex: style.zIndex,
+      },
+      topAtCenter: center ? {
+        tag: center.tagName.toLowerCase(),
+        text: center.textContent.trim().replace(/\s+/g, ' ').slice(0, 120),
+      } : null,
+      overlays: [...document.querySelectorAll('[role="dialog"], .modal, .o_popover, .o-dropdown--menu, .dropdown-menu')]
+        .filter(visibleOverlay)
+        .slice(0, 8)
+        .map((candidate) => {
+          const candidateRect = candidate.getBoundingClientRect();
+          const candidateStyle = getComputedStyle(candidate);
+          return {
+            tag: candidate.tagName.toLowerCase(),
+            text: candidate.textContent.trim().replace(/\s+/g, ' ').slice(0, 160),
+            rect: { x: Math.round(candidateRect.x), y: Math.round(candidateRect.y), width: Math.round(candidateRect.width), height: Math.round(candidateRect.height) },
+            zIndex: candidateStyle.zIndex,
+          };
+        }),
+    };
+  });
+}
+
+async function logInteraction(page, label, phase, target) {
+  const snapshot = await interactionSnapshot(page, target).catch((error) => ({ error: error.name }));
+  console.log(`M31_CONFIGURATION_INTERACTION=${JSON.stringify({ label, phase, viewport: page.viewportSize(), snapshot })}`);
+}
+
 async function customerMenuAction(page, label, xmlidFragment) {
   const exactLabel = new RegExp(`^\\s*${escapedText(label)}\\s*$`);
   let actions = visibleNavigationMenu(page).locator(ACTION_SELECTOR).filter({ hasText: exactLabel });
@@ -187,15 +240,20 @@ async function openRootMenu(page, label) {
   const root = directRoot(page, label);
   if (await root.isVisible().catch(() => false)) {
     const button = root.locator('xpath=..');
+    await logInteraction(page, label, 'locator-visible', button);
+    console.log(`M31_CONFIGURATION_OPERATION=${JSON.stringify({ label, operation: 'hover', timeoutMs: 5000 })}`);
     await boundedHover(button, `root ${label}`);
+    await logInteraction(page, label, 'after-hover', button);
     await page.waitForTimeout(250);
-    if ((await button.getAttribute('aria-expanded')) !== 'true') {
-      // Odoo's navbar dropdown is a client-side control, not a navigation.
-      // Dispatching the native event avoids Playwright waiting on a route
-      // transition while preserving the real click handler and menu state.
-      await button.evaluate((node) => node.click());
+    const ariaBefore = await button.getAttribute('aria-expanded');
+    console.log(`M31_CONFIGURATION_OPERATION=${JSON.stringify({ label, operation: 'aria-before-click', ariaExpanded: ariaBefore })}`);
+    if (ariaBefore !== 'true') {
+      console.log(`M31_CONFIGURATION_OPERATION=${JSON.stringify({ label, operation: 'playwright-click', timeoutMs: 5000 })}`);
+      await button.click({ timeout: 5_000 });
     }
     await page.waitForTimeout(250);
+    await logInteraction(page, label, 'after-click', button);
+    console.log(`M31_CONFIGURATION_OPERATION=${JSON.stringify({ label, operation: 'dropdown-dom', menus: await page.locator('[role="menu"]:visible, .o-dropdown--menu:visible, .o_popover:visible, .o-popover:visible, .dropdown-menu:visible').evaluateAll((nodes) => nodes.slice(-4).map((node) => ({ tag: node.tagName.toLowerCase(), text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 240), role: node.getAttribute('role'), className: node.className }))).catch(() => []) })}`);
     return 'DIRECT';
   }
 
@@ -203,14 +261,14 @@ async function openRootMenu(page, label) {
   if (await directItem.isVisible().catch(() => false)) {
     const tagName = await directItem.evaluate((node) => node.tagName.toLowerCase());
     if (tagName === 'a') {
-      await directItem.click();
+      await directItem.click({ timeout: 5_000 });
       await page.waitForTimeout(250);
       return 'DIRECT_ACTION';
     }
     await boundedHover(directItem, `direct ${label}`);
     await page.waitForTimeout(250);
     if ((await directItem.getAttribute('aria-expanded')) !== 'true') {
-      await directItem.evaluate((node) => node.click());
+      await directItem.click({ timeout: 5_000 });
     }
     await page.waitForTimeout(250);
     return 'DIRECT_MENU';

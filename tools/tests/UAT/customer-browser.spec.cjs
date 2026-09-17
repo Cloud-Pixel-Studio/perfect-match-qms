@@ -465,7 +465,21 @@ async function collectConfigurationInventory(page) {
   console.log(`M31_CONFIGURATION_ROOT=${JSON.stringify(configuration)}`);
   if (!configuration.reachable) throw new Error('Configuration root is not reachable');
   console.log('M31_CONFIGURATION_ROOT_OPEN_BEGIN');
-  await openRootMenu(page, 'Configuration');
+  try {
+    await openRootMenu(page, 'Configuration');
+  } catch (error) {
+    console.log(`M31_CONFIGURATION_ROOT_OPEN_ERROR=${JSON.stringify({
+      error: error.message.slice(0, 500),
+      viewport: page.viewportSize(),
+      dom: await configurationDomDiagnostics(page),
+      visibleMenus: await page.locator('[role="menu"]:visible, .o-dropdown--menu:visible, .o_popover:visible, .o-popover:visible, .dropdown-menu:visible').evaluateAll((nodes) => nodes.slice(-4).map((node) => ({
+        tag: node.tagName.toLowerCase(),
+        text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 240),
+        className: node.className,
+      })).catch(() => []),
+    })}`);
+    throw error;
+  }
   console.log('M31_CONFIGURATION_ROOT_OPEN_END');
   const menu = page.locator([
     '.o-dropdown--menu:visible',
