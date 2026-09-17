@@ -522,7 +522,14 @@ async function directActionProbe(page, entry, expected) {
   page.on('response', onResponse);
   await page.goto(new URL(entry.href, page.url()).toString(), { waitUntil: 'commit', timeout: 15_000 });
   await waitForApp(page);
-  await page.waitForTimeout(250);
+  // The license action can complete its bounded action-load RPC after the
+  // shell is visible. Wait only for that response, with a local cap, so the
+  // direct probe does not mistake a slow action load for an authorization
+  // denial or an empty result.
+  const actionDeadline = Date.now() + 5_000;
+  while (!actionResponses.length && Date.now() < actionDeadline) {
+    await page.waitForTimeout(100);
+  }
   page.off('response', onResponse);
 
   const payload = actionResponses.at(-1)?.payload || {};
