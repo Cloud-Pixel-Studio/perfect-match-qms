@@ -510,3 +510,39 @@ is unchanged, Issues #146 and #148 remain open, and no release/tag or
 Demo/production/customer/CleanVM/protection change occurred. Status is
 `PARTIAL`; M31.4 should not be closed until the remaining browser coverage is
 implemented and executed on a supported disposable target.
+
+## M31.4-C4.10 Complete Remaining UAT Coverage
+
+The requested live pre-edit verification passed: main remained
+`5aa735c7b09dfa46cfab8ca5d9d725039d4b982e`, and PR #151 remained OPEN/DRAFT at
+`5d046179dc16e0ccdb91c1a1e02e37793bbe62aa`. QMS CI `35268195672` completed
+PASS on that exact checkout. Every listed step completed successfully with
+zero skips, including authenticated UAT, Mission16, Mission23 and cleanup.
+Security Audit `35268195849` also completed PASS on the exact checkout with
+zero skipped controls.
+
+This run did not add coverage code or product behavior. The existing harness
+therefore retains the following truthful classifications: role sessions,
+23/23 direct authorization, Configuration, protected data, permitted and
+prohibited mutations, company isolation, restricted URLs, UAT, Mission16,
+Mission23 and normal cleanup are `TESTED/PASS`. Keyboard traversal, focus
+order/visible focus, 1600x900/1280x720/1024x720, responsive More-menu
+behavior, notification/reminder/activity delivery, chatter and record links,
+overdue/expired notifications, duplicate and recipient isolation, and SMTP
+capture are `NOT TESTED`. Workflow authorization is `NOT APPLICABLE/NOT
+TESTED`: no supported real transition exists and no synthetic write was used.
+Cancellation-specific cleanup is `NOT TESTED`; no safe GitHub Actions
+post-cancellation assertion is available.
+
+Security controls on this checkout were PASS through Security Audit: pinned
+OpenGrep v1.29.0 local rules and positive/negative tests, Trivy v0.74.0
+vulnerability/misconfiguration/secret scanners, secret scan, content safety,
+sudo review, XML/Python/addon/workflow validation and `git diff --check`.
+pip-audit remains `NOT EXECUTED` under Issue #98 because the canonical input
+is absent. No product code, credentials, private keys, databases, filestores,
+cookies, raw traces or node_modules were changed or uploaded.
+
+The handoff update is documentation-only. PR #151 remains OPEN/DRAFT and is
+not merged; PR #147 is unchanged; Issues #146 and #148 remain open. M31.4
+remains `PARTIAL/BLOCKED FOR CLOSURE` until a supported disposable UAT adds
+and executes the remaining browser and mail coverage.
