@@ -31,7 +31,10 @@ troubleshooting, and other runtime maintenance surfaces through
 
 Menu grouping is only the navigation layer. Configuration actions declare the
 same allow-list as their menus, while access is independently enforced by Odoo
-groups, ACLs, record rules, and workflow guards. The Demo administrator is a separate
+groups, ACLs, record rules, and workflow guards. The customer shell delegates
+read-only metadata only for the explicit Configuration action XML IDs; it does
+not grant a model-wide `ir.actions.act_window` read ACL or action-definition
+mutation. The Demo administrator is a separate
 technical account and is exempt from named customer-user license consumption;
 the seeded Quality Manager is not a System Administrator. Cost Analytics is
 restricted to Quality Manager and Management User personas; QMS Viewer does

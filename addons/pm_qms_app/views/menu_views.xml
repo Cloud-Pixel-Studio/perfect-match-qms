@@ -29,10 +29,13 @@
         <field name="name">Perfect Match QMS</field>
         <field name="sequence">60</field>
         <field name="web_icon">pm_qms_app,static/description/icon.svg</field>
-        <field name="action" eval="'ir.actions.act_window,%d' % ref('pm_qms_app.action_pm_qms_dashboard')"/>
+        <!-- The Dashboard is an explicit child menu. Keep the shared app root
+             action-free so roles that only receive Configuration do not
+             trigger an unauthorized dashboard read while opening the app. -->
         <field name="group_ids" eval="[(6, 0, [
             ref('pm_qms_core.group_pm_qms_user'),
             ref('pm_qms_core.group_qms_viewer'),
+            ref('pm_qms_license.group_pm_qms_license_admin'),
             ref('base.group_system')
         ])]"/>
     </record>
@@ -43,6 +46,9 @@
          existing QMS Administrator and Technical Administrator boundaries
          remain available without changing group implications. -->
     <record id="pm_qms_core.menu_pm_qms_configuration" model="ir.ui.menu">
+        <!-- Keep this approved customer entry point ahead of the adaptive
+             navbar overflow boundary at constrained desktop widths. -->
+        <field name="sequence">5</field>
         <field name="group_ids" eval="[(6, 0, [
             ref('pm_qms_core.group_qms_quality_manager'),
             ref('pm_qms_core.group_pm_qms_administrator'),
@@ -113,17 +119,33 @@
     <record id="pm_qms_core.menu_pm_qms_controls" model="ir.ui.menu">
         <field name="name">Framework Controls</field>
         <field name="sequence">10</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_implementation.menu_pm_qms_framework_packs" model="ir.ui.menu">
         <field name="name">Packs</field>
         <field name="sequence">20</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_activities" model="ir.ui.menu">
         <field name="name">Framework Activities</field>
         <field name="sequence">30</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_evidence_requirements" model="ir.ui.menu">
         <field name="sequence">40</field>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
     <record id="pm_qms_core.menu_pm_qms_external_mappings" model="ir.ui.menu">
         <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
@@ -161,9 +183,24 @@
         groups="pm_qms_core.group_qms_quality_manager,pm_qms_core.group_pm_qms_administrator,base.group_system"/>
     <record id="pm_qms_migration.menu_pm_qms_migration" model="ir.ui.menu">
         <field name="name">Administration / Migration</field>
-        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">80</field>
-        <field name="group_ids" eval="[(6, 0, [ref('pm_qms_core.group_pm_qms_administrator')])]"/>
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_migration.menu_pm_qms_document_import" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_migration.menu_pm_qms_evidence_import" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
 
     <record id="pm_qms_documents.menu_pm_qms_documents" model="ir.ui.menu">
@@ -203,8 +240,25 @@
         <field name="sequence">50</field>
     </record>
     <record id="pm_qms_license.menu_pm_qms_activation_requests" model="ir.ui.menu">
-        <field name="parent_id" ref="pm_qms_license.menu_pm_qms_license"/>
-        <field name="sequence">10</field>
+        <!-- Keep both license workflows as sibling Configuration actions.
+             This avoids rendering an action-bearing parent with a nested
+             action for the Licensing Administrator navbar tree. -->
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
+        <field name="sequence">60</field>
+    </record>
+    <record id="pm_qms_core.menu_pm_qms_operational_events" model="ir.ui.menu">
+        <!-- Keep this technical configuration branch aligned with the
+             action allow-list; it is not a customer Configuration surface. -->
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
+    </record>
+    <record id="pm_qms_core.menu_pm_qms_external_mappings" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [
+            ref('pm_qms_core.group_pm_qms_administrator'),
+            ref('base.group_system')
+        ])]"/>
     </record>
 
     <!-- Direct action loads use the same product allow-list as navigation. The

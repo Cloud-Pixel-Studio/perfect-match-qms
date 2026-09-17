@@ -45,3 +45,12 @@ validated independently. Direct action metadata is explicit and reviewable,
 while record access still depends on ACLs and record rules. Future customer
 configuration additions must declare both menu and action groups and add
 positive and negative role tests.
+
+The native Odoo action-definition read ACL remains technical-administrator-only.
+`pm_qms_app` therefore delegates read-only action metadata through an explicit
+XML-ID allow-list for the approved customer configuration actions and their
+existing role groups. This is a narrow action-record exception, not a
+model-wide read ACL: customer users cannot enumerate unrelated action
+definitions, and no create, write, or unlink capability is delegated. The
+target model ACLs and record rules remain the data boundary after an action is
+loaded.

@@ -144,7 +144,11 @@ class TestPmQmsAppShell(TransactionCase):
     def test_product_app_shell_owns_single_root_menu_and_application_tile(self):
         root = self.env.ref("pm_qms_core.menu_pm_qms_root")
         self.assertEqual(root.name, "Perfect Match QMS")
-        self.assertEqual(root.action, self.env.ref("pm_qms_app.action_pm_qms_dashboard"))
+        self.assertFalse(root.action)
+        self.assertEqual(
+            self.env.ref("pm_qms_app.menu_pm_qms_dashboard").action,
+            self.env.ref("pm_qms_app.action_pm_qms_dashboard"),
+        )
         self.assertEqual(root.web_icon, "pm_qms_app,static/description/icon.svg")
         roots = self.env["ir.ui.menu"].search([("parent_id", "=", False), ("name", "=", "Perfect Match QMS")])
         self.assertEqual(len(roots), 1)
@@ -345,7 +349,7 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertEqual(self.env.ref("pm_qms_license.menu_pm_qms_license").parent_id, configuration)
         self.assertEqual(
             self.env.ref("pm_qms_license.menu_pm_qms_activation_requests").parent_id,
-            self.env.ref("pm_qms_license.menu_pm_qms_license"),
+            configuration,
         )
 
     def test_menu_permissions_keep_framework_out_of_user_navigation(self):
