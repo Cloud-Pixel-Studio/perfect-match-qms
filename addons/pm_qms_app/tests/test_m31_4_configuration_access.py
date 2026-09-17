@@ -136,6 +136,14 @@ class TestM314ConfigurationAccess(TransactionCase):
         implementation = self.env.ref("pm_qms_core.menu_pm_qms_implementation")
         self.assertLess(configuration.sequence, implementation.sequence)
 
+    def test_shared_app_root_does_not_trigger_dashboard_for_license_only_role(self):
+        root = self.env.ref("pm_qms_core.menu_pm_qms_root")
+        dashboard = self.env.ref("pm_qms_app.menu_pm_qms_dashboard")
+        self.assertFalse(root.action)
+        self.assertEqual(dashboard.action, self.env.ref("pm_qms_app.action_pm_qms_dashboard"))
+        self.assertTrue(self._visible(self.licensing_admin_user, "pm_qms_core.menu_pm_qms_root"))
+        self.assertTrue(self._visible(self.licensing_admin_user, "pm_qms_core.menu_pm_qms_configuration"))
+
     def test_configuration_actions_have_direct_action_allow_list(self):
         allowed = {self.quality_manager, self.qms_admin, self.technical_group}
         actions = (

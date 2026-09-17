@@ -29,7 +29,9 @@
         <field name="name">Perfect Match QMS</field>
         <field name="sequence">60</field>
         <field name="web_icon">pm_qms_app,static/description/icon.svg</field>
-        <field name="action" eval="'ir.actions.act_window,%d' % ref('pm_qms_app.action_pm_qms_dashboard')"/>
+        <!-- The Dashboard is an explicit child menu. Keep the shared app root
+             action-free so roles that only receive Configuration do not
+             trigger an unauthorized dashboard read while opening the app. -->
         <field name="group_ids" eval="[(6, 0, [
             ref('pm_qms_core.group_pm_qms_user'),
             ref('pm_qms_core.group_qms_viewer'),
