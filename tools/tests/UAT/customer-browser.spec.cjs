@@ -26,7 +26,9 @@ const ROLE_CONTRACT = {
 };
 const CONFIGURATION_CONTRACT = {
   'Quality Manager': ['Company Profile', 'Sites', 'Processes', 'Users & Access', 'Commercial License'],
-  'QMS Administrator': ['Company Profile', 'Sites', 'Processes', 'Users & Access', 'Framework Administration'],
+  // Framework Administration is a permission-scoped navigation group; its
+  // supported action surface is the Framework Controls child menu.
+  'QMS Administrator': ['Company Profile', 'Sites', 'Processes', 'Users & Access', 'Framework Controls'],
   'Licensing Administrator': ['Commercial License', 'Activation Requests'],
 };
 const EXPERIENCE_COVERAGE = {
