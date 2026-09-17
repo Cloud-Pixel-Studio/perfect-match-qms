@@ -532,7 +532,23 @@ async function directActionProbe(page, entry, expected) {
   }
   page.off('response', onResponse);
 
-  const payload = actionResponses.at(-1)?.payload || {};
+  let payload = actionResponses.at(-1)?.payload || {};
+  if (!actionResponses.length) {
+    const directLoad = await page.evaluate(async (actionId) => {
+      const response = await fetch('/web/action/load', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'call',
+          params: { action_id: actionId, additional_context: {} },
+        }),
+      });
+      return { status: response.status, payload: await response.json().catch(() => ({})) };
+    }, entry.actionId);
+    payload = directLoad.payload;
+    actionResponses.push(directLoad);
+  }
   const action = payload.result && typeof payload.result === 'object' ? payload.result : null;
   const rpcError = payload.error && typeof payload.error === 'object' ? payload.error : null;
   const errorData = rpcError?.data || {};
