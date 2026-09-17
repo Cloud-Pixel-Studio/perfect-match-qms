@@ -1260,13 +1260,13 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.overdue.status).toBe('PASS');
     expect(evidence.isolation.status).toBe('PASS');
   } finally {
-    for (const activityId of Object.values(activityIds)) {
-      if (activityId) await callKw(qmPage, 'mail.activity', 'unlink', [[activityId]]).catch(() => null);
-    }
+    if (activityIds.qm) await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.qm]]).catch(() => null);
+    if (activityIds.viewer) await callKw(viewerPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null);
     if (riskId) {
       const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
-      const remaining = await callKw(qmPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
-      evidence.cleanup = { status: rpcAllowed(removed) && rpcAllowed(remaining) && !remaining.result?.length ? 'PASS' : 'NOT_CONFIRMED' };
+      const remainingRisk = await callKw(qmPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
+      const remainingActivities = await callKw(qmPage, 'mail.activity', 'search_read', [[['id', 'in', Object.values(activityIds).filter(Boolean)]], ['id']]).catch(() => null);
+      evidence.cleanup = { status: rpcAllowed(removed) && rpcAllowed(remainingRisk) && rpcAllowed(remainingActivities) && !remainingRisk.result?.length && !remainingActivities.result?.length ? 'PASS' : 'NOT_CONFIRMED' };
     } else {
       evidence.cleanup = { status: 'NOT_REQUIRED' };
     }
