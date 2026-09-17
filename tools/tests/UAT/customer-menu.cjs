@@ -135,6 +135,24 @@ function visibleNavigationMenu(page) {
   return page.locator('[role="menu"]:visible, .dropdown-menu:visible').last();
 }
 
+async function boundedHover(target, label) {
+  try {
+    await target.hover({ timeout: 5_000 });
+  } catch (error) {
+    const diagnostics = await target.evaluate((node) => ({
+      tag: node.tagName.toLowerCase(),
+      text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 120),
+      visible: Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length),
+      ariaExpanded: node.getAttribute('aria-expanded'),
+      rect: (() => {
+        const rect = node.getBoundingClientRect();
+        return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) };
+      })(),
+    })).catch(() => ({ unavailable: true }));
+    throw new Error(`Timed out hovering ${label}: ${JSON.stringify(diagnostics)}; ${error.message}`);
+  }
+}
+
 async function customerMenuAction(page, label, xmlidFragment) {
   const exactLabel = new RegExp(`^\\s*${escapedText(label)}\\s*$`);
   let actions = visibleNavigationMenu(page).locator(ACTION_SELECTOR).filter({ hasText: exactLabel });
@@ -152,7 +170,7 @@ async function openRootMenu(page, label) {
   const root = directRoot(page, label);
   if (await root.isVisible().catch(() => false)) {
     const button = root.locator('xpath=..');
-    await button.hover();
+    await boundedHover(button, `root ${label}`);
     await page.waitForTimeout(250);
     if ((await button.getAttribute('aria-expanded')) !== 'true') {
       // Odoo's navbar dropdown is a client-side control, not a navigation.
@@ -172,7 +190,7 @@ async function openRootMenu(page, label) {
       await page.waitForTimeout(250);
       return 'DIRECT_ACTION';
     }
-    await directItem.hover();
+    await boundedHover(directItem, `direct ${label}`);
     await page.waitForTimeout(250);
     if ((await directItem.getAttribute('aria-expanded')) !== 'true') {
       await directItem.evaluate((node) => node.click());
