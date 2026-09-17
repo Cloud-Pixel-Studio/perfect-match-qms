@@ -181,7 +181,7 @@
         groups="pm_qms_core.group_qms_quality_manager,pm_qms_core.group_pm_qms_administrator,base.group_system"/>
     <record id="pm_qms_migration.menu_pm_qms_migration" model="ir.ui.menu">
         <field name="name">Administration / Migration</field>
-        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_framework"/>
+        <field name="parent_id" ref="pm_qms_core.menu_pm_qms_configuration"/>
         <field name="sequence">80</field>
         <field name="group_ids" eval="[(6, 0, [
             ref('pm_qms_core.group_pm_qms_administrator'),
