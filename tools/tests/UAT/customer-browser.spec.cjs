@@ -476,7 +476,7 @@ async function collectConfigurationInventory(page) {
         tag: node.tagName.toLowerCase(),
         text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 240),
         className: node.className,
-      })).catch(() => []),
+      }))).catch(() => []),
     })}`);
     throw error;
   }
