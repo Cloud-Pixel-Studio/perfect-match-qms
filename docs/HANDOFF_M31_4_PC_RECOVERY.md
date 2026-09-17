@@ -1,8 +1,10 @@
 # M31.4-C4.2 PC Recovery Handoff
 
 Status: WIP / PRODUCT ACCEPTANCE BLOCKED. Snapshot: 2026-09-16.
-This document preserves work, not a passing certification. No merge is
-authorized. Separate Product Owner authorization is required for any merge.
+This document preserves work, not a passing certification. The M31.4-C4.3
+execution is still PARTIAL: the normal merge was created locally, but GitHub
+push was rejected with HTTP 403 by the currently cached account. No remote
+merge or release is claimed.
 Do not modify Demo, production, real customers, cleanvm-test-02, PR #147,
 release tags, RC11, or repository protections. Do not create RC12.
 
@@ -34,6 +36,62 @@ and validation `eec293aed0d9742344023d6e35148ffb07223083`, on the main above.
 The objective remains supported Odoo action authorization plus verified normal
 Configuration navigation, with independent direct-action and data/workflow
 tests. Product changes belong to #150; harness/evidence changes to #151.
+
+## M31.4-C4.3 Resume Evidence
+
+The fresh-clone authority check was completed before editing: main resolved to
+`d57ce391cc262c68d5bbe255eb53f448cd7356ff`, product resolved to
+`0d66fd21e5ea1fcdba8e984febed626b835d0442`, and validation resolved to
+`e8b866ad3f6ed934ee1916a1c14dacf2bc2b5315`. The required root/addon/governance,
+recovery, navigation, boundary, UAT and runtime documents were read from that
+clone. No advanced remote refs were detected.
+
+Product commits `7784bf5`, `d7ed018` and `5a8cd18` correct the reproduced
+Framework Administration regression by keeping migration below Configuration
+and granting only the two migration wizard models to `base.group_system`.
+The focused Mission16 run completed `0 failed, 0 error(s) of 266 tests`.
+No broad legacy-manager or technical ACL was added.
+
+Validation commits `3e95522` and `99e9b5a` bound the menu hover diagnostics
+and split Configuration navigation from the direct action authorization
+matrix into independent Playwright tests and browser contexts. The navigation
+diagnostic records bounded actionability, viewport, geometry, computed display
+state, `aria-expanded`, overlay candidates and the top element at the target
+center. The direct matrix remains independently executed and records action
+metadata, rendered screen cleanliness, authorization error correlation and
+explicit NOT-PROBED states for protected data/mutation until those probes run.
+
+Local normal merge commit `4f55f35` merges product into validation. It is not
+yet a GitHub PR head: the authorized push attempt was rejected because the
+cached HTTPS account lacks write permission. Re-authenticate through the
+approved GitHub integration or SSH agent before pushing; never put a token in
+a URL, command, document or log.
+
+The disposable authenticated UAT reached provisioning, 61-module bootstrap
+and customer HTTP health 200, then failed before browser setup because the
+Windows Docker Desktop/WSL bind mount did not expose
+`activation-request.json` to the post-command host-side check. Cleanup passed,
+but this is not a UAT PASS and does not certify Linux runtime parity. The
+remaining browser acceptance, viewport matrix, direct protected-data/mutation
+probes, full Mission23/QMS, Security/OpenGrep/Trivy and exact remote-head CI
+are pending.
+
+### Current checkpoint
+
+```text
+STATUS: PARTIAL
+MAIN_SHA: d57ce391cc262c68d5bbe255eb53f448cd7356ff
+PRODUCT_LOCAL_SHA: 5a8cd18ff8b2203a587398da6a100ff8a637e898
+VALIDATION_LOCAL_SHA: 4f55f35
+PRODUCT_REMOTE_SHA: 0d66fd21e5ea1fcdba8e984febed626b835d0442
+VALIDATION_REMOTE_SHA: e8b866ad3f6ed934ee1916a1c14dacf2bc2b5315
+REMOTE_PUSH: BLOCKED_BY_GITHUB_403
+REMOTE_MERGE: NOT_PERFORMED
+RELEASE_OR_PRODUCTION_CHANGE: NO
+UAT: BLOCKED_BEFORE_BROWSER_BY_WINDOWS_DOCKER_BIND_MOUNT
+MISSION16: PASS_266_0_0
+CLEANUP: PASS
+```
 
 ## Required Authorization Contract
 
