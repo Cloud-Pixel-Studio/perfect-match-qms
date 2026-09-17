@@ -746,6 +746,7 @@ test('Configuration browser navigation contract', async ({ browser }) => {
         }
         const screen = await smokeRoute(page, label, link);
         result.allowed.push({ label, status: screen.clean ? 'PASS' : 'FAIL', url: screen.url });
+        console.log(`M31_CONFIGURATION_SURFACE_RESULT=${JSON.stringify({ role, label, status: screen.clean ? 'PASS' : 'FAIL', url: screen.url, clean: screen.clean })}`);
       }
     } catch (error) {
       result.error = error.message.slice(0, 300);
@@ -832,6 +833,7 @@ test('Direct action authorization matrix runs independently of navigation', asyn
           httpErrors: telemetry.httpErrors.length,
         };
         directEvidence.push(result);
+        console.log(`M31_DIRECT_RESULT=${JSON.stringify({ role, key, expected, status: result.status, error: result.error || null, actionReturned: result.actionMetadata?.returned ?? null, actionId: result.actionMetadata?.actionId ?? null, targetModel: result.actionMetadata?.targetModel ?? null, screenClean: result.screen?.clean ?? null })}`);
         recordTelemetry(telemetry);
       }
     } catch (error) {
