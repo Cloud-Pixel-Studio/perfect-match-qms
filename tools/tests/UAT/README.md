@@ -57,11 +57,14 @@ claimed as coverage; and `NOT_EXPOSED` records a role-appropriate unavailable
 surface. The current matrix covers login (logout is not tested), customer root
 navigation, guided implementation, empty states, direct URL restrictions,
 dialogs, accessible names/labels, visible focus checks, desktop and constrained
-viewports, and each discovered business-domain route. Axe coverage includes
-accessible names and form labels, but visible focus styling is not separately
-certified. Breadcrumbs, reminders, chatter, notification links/duplication/
-recipient isolation, SMTP delivery, keyboard traversal, required-field errors,
-overdue behavior, and device/session IP require a later focused mission.
+viewports, and each discovered business-domain route. The focused responsive
+test exercises 1600x900, 1280x720 and 1024x720, records keyboard focus
+progression, and opens the responsive More menu when Odoo exposes it. Axe
+coverage includes accessible names and form labels; visible focus state is
+recorded from the focused element and is not inferred from login success.
+Breadcrumbs, reminders, chatter, notification links/duplication/recipient
+isolation, SMTP delivery, required-field errors, overdue behavior, and
+device/session IP require a later focused mission.
 Quality Manager Configuration, including Company Profile, Sites, Processes,
 Users & Access, and Commercial License, is normative and is asserted as
 reachable. Direct action authorization and the negative role matrix are tested

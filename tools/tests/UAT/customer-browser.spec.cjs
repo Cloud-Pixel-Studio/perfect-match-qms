@@ -1224,6 +1224,81 @@ test('Quality Manager accessibility and responsive baseline', async ({ page }) =
   expect(telemetry.httpErrors.filter((item) => item.status >= 500)).toEqual([]);
 });
 
+test('Quality Manager keyboard focus and responsive navigation contract', async ({ page }) => {
+  const telemetry = installTelemetry(page, 'keyboard-responsive-navigation');
+  await login(page, state.qm);
+  await openQmsApplication(page);
+  await waitForCustomerNavigation(page);
+  const evidence = [];
+  for (const viewport of [
+    { width: 1600, height: 900 },
+    { width: 1280, height: 720 },
+    { width: 1024, height: 720 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/odoo');
+    await waitForApp(page);
+    await expect(page.getByText('Dashboard', { exact: true }).first()).toBeVisible();
+    const navbar = page.locator('nav.o_main_navbar, .o_main_navbar').first();
+    const actionable = navbar.locator('a:visible, button:visible').filter({ hasNotText: /Messages|Notifications/ });
+    await expect(actionable.first()).toBeVisible();
+    await actionable.first().focus();
+    const focusBefore = await page.evaluate(() => {
+      const node = document.activeElement;
+      if (!node) return null;
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      return {
+        tag: node.tagName.toLowerCase(),
+        text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 100),
+        inNavbar: Boolean(node.closest('nav.o_main_navbar, .o_main_navbar')),
+        visible: Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length),
+        focusVisible: node.matches(':focus-visible'),
+        outline: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+        boxShadow: style.boxShadow,
+        rect: { width: Math.round(rect.width), height: Math.round(rect.height) },
+      };
+    });
+    expect(focusBefore?.inNavbar).toBeTruthy();
+    expect(focusBefore?.visible).toBeTruthy();
+    await page.keyboard.press('Tab');
+    const focusAfter = await page.evaluate(() => ({
+      inNavbar: Boolean(document.activeElement?.closest('nav.o_main_navbar, .o_main_navbar')),
+      visible: Boolean(document.activeElement?.offsetWidth || document.activeElement?.offsetHeight || document.activeElement?.getClientRects().length),
+      tag: document.activeElement?.tagName?.toLowerCase() || null,
+    }));
+    expect(focusAfter.visible).toBeTruthy();
+
+    const more = navbar.locator('button[title="More Menu"], button[aria-label="More Menu"]').first();
+    const moreVisible = await more.isVisible().catch(() => false);
+    let moreEvidence = { status: 'NOT_APPLICABLE', visible: false };
+    if (moreVisible) {
+      await more.focus();
+      expect(await more.getAttribute('aria-expanded')).not.toBeNull();
+      await more.click({ timeout: 5_000 });
+      const overflow = page.locator('.o_more_dropdown_section:visible').first();
+      await expect(overflow).toBeVisible();
+      moreEvidence = {
+        status: 'PASS',
+        visible: true,
+        ariaExpanded: await more.getAttribute('aria-expanded'),
+        roots: await page.locator('.o_more_dropdown_section:visible').allTextContents(),
+      };
+      await page.keyboard.press('Escape');
+    }
+    const roots = await customerRootSections(page);
+    const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+    expect(horizontalOverflow, `horizontal overflow at ${viewport.width}x${viewport.height}`).toBeFalsy();
+    evidence.push({ viewport, focusBefore, focusAfter, more: moreEvidence, roots });
+  }
+  test.info().annotations.push({ type: 'keyboard-responsive-evidence', description: JSON.stringify(evidence) });
+  recordTelemetry(telemetry);
+  expect(telemetry.pageErrors).toEqual([]);
+  expect(telemetry.consoleErrors).toEqual([]);
+  expect(telemetry.httpErrors.filter((item) => item.status >= 500)).toEqual([]);
+});
+
 test('restricted Viewer and Technical Administrator separation', async ({ browser }) => {
   test.skip(!state.viewer, 'Viewer fixture not supplied');
   const viewerContext = await browser.newContext();
