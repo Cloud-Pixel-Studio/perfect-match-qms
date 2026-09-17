@@ -412,3 +412,55 @@ to the missing canonical dependency input.
 PR #151 remains open and draft as validation-only; PR #147 is unchanged;
 Issues #146 and #148 remain open.  Demo, production, customers, CleanVM,
 repository protections, releases and tags were not modified.
+
+## M31.4-C4.8 Post-Merge Authenticated UAT Against Main
+
+Live verification before synchronization confirmed `origin/main` at
+`5aa735c7b09dfa46cfab8ca5d9d725039d4b982e` and PR #151 open/draft at
+`056f2cc5be799313516a7b5e266f12734fd4d5ae`. PR #151 was synchronized with
+main using the normal merge commit
+`6dee1a7f8822a33ad0c32a63fb6216704eb6444f`; no rebase, force push or history
+rewrite was used. The resulting remote PR head is that merge SHA.
+
+QMS CI `35263307398` and Security Audit `35263307137` both completed
+successfully on the exact validation head. QMS checkout and all 63 listed
+steps completed; no step was skipped, including the disposable authenticated
+UAT, Mission16, Mission23 and post-job cleanup. The authenticated UAT passed
+its implemented assertions for the customer shell and the Quality Manager,
+QMS Administrator, Licensing Administrator, Technical Administrator, Internal
+Auditor, Process Owner, Viewer and API Integration Administrator fixtures.
+The implemented direct authorization matrix remained 23/23 PASS. Protected
+record reads, protected-field denial, permitted activation-request
+create/write, prohibited organization create/write/unlink, prohibited
+activation-request unlink, and same-company isolation all passed; disposable
+mutation cleanup passed.
+
+The evidence remains bounded by the actual test contract. The current browser
+suite explicitly leaves customer branding, breadcrumbs, notifications,
+keyboard navigation, visible focus, logout, and workflow transitions
+`NOT TESTED`. The responsive More-menu path is also `NOT TESTED`; the
+accessibility test covers axe checks and horizontal-overflow checks only at
+1440x900 and 1366x768, not 1600x900, 1280x720 or 1024x720. Workflow
+authorization is `NOT TESTED` because this release exposes no supported
+transition method and no synthetic state write was used. These gaps are not
+converted to PASS by the successful workflow. Direct customer restriction
+URLs, Apps/Settings separation and database-manager blocking were exercised by
+the implemented role-session tests and passed.
+
+Security Audit `35263307137` passed. The repository control record remains:
+OpenGrep v1.29.0 with local pinned rules and positive/negative tests PASS;
+Trivy v0.74.0 vulnerability, misconfiguration and secret scans PASS;
+secret-scan.py, qms-content-safety.py, sudo inventory/review,
+XML/Python/addon/workflow validation and `git diff --check` PASS. pip-audit
+is `NOT EXECUTED` under Issue #98 because the canonical dependency input is
+still absent. No credentials, private keys, databases, filestores, cookies,
+raw browser traces or node_modules were uploaded; cleanup was unconditional
+and PASS.
+
+PR #151 remains open and draft and was not merged. PR #147 remains unchanged;
+Issues #146 and #148 remain open. Demo, production, customers, CleanVM,
+repository protections, releases and tags were not modified. M31.4-C4.8 is
+`PARTIAL`: the merged-main validation gate passed for implemented coverage,
+but final closure requires explicit follow-up for the listed NOT TESTED
+categories, especially 1600/1280/1024 responsive navigation and any supported
+workflow transition.
