@@ -809,39 +809,32 @@ test('Direct action authorization matrix runs independently of navigation', asyn
   }
   for (const [role, probes] of directByRole) {
     console.log(`M31_DIRECT_ROLE_BEGIN=${role}`);
-    const user = probes[0][1];
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    try {
-      await login(page, user);
-      for (const [, , key, expected] of probes) {
-        console.log(`M31_DIRECT_PROBE=${role}:${key}:${expected}`);
-        const manifestEntry = state.actionManifest[key];
-        const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${key}`);
-        const result = { role, key, expected, status: 'NOT TESTED' };
-        try {
-          expect(manifestEntry, `${key} must be present in the minimal action manifest`).toBeTruthy();
-          Object.assign(result, await directActionProbe(page, { ...manifestEntry, role }, expected));
-        } catch (error) {
-          result.status = 'FAIL';
-          result.error = error.message.slice(0, 300);
-        }
-        result.telemetry = {
-          pageErrors: telemetry.pageErrors.length,
-          consoleErrors: telemetry.consoleErrors.length,
-          failedRequests: telemetry.failedRequests.length,
-          httpErrors: telemetry.httpErrors.length,
-        };
-        directEvidence.push(result);
-        console.log(`M31_DIRECT_RESULT=${JSON.stringify({ role, key, expected, status: result.status, error: result.error || null, actionReturned: result.actionMetadata?.returned ?? null, actionId: result.actionMetadata?.actionId ?? null, targetModel: result.actionMetadata?.targetModel ?? null, screenClean: result.screen?.clean ?? null })}`);
-        recordTelemetry(telemetry);
+    for (const [, user, key, expected] of probes) {
+      console.log(`M31_DIRECT_PROBE=${role}:${key}:${expected}`);
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      const manifestEntry = state.actionManifest[key];
+      const telemetry = installTelemetry(page, `direct-${role.toLowerCase().replaceAll(' ', '-')}-${key}`);
+      const result = { role, key, expected, status: 'NOT TESTED' };
+      try {
+        await login(page, user);
+        expect(manifestEntry, `${key} must be present in the minimal action manifest`).toBeTruthy();
+        Object.assign(result, await directActionProbe(page, { ...manifestEntry, role }, expected));
+      } catch (error) {
+        result.status = 'FAIL';
+        result.error = error.message.slice(0, 300);
       }
-    } catch (error) {
-      for (const [, , key, expected] of probes) {
-        directEvidence.push({ role, key, expected, status: 'FAIL', error: error.message.slice(0, 300) });
-      }
+      result.telemetry = {
+        pageErrors: telemetry.pageErrors.length,
+        consoleErrors: telemetry.consoleErrors.length,
+        failedRequests: telemetry.failedRequests.length,
+        httpErrors: telemetry.httpErrors.length,
+      };
+      directEvidence.push(result);
+      console.log(`M31_DIRECT_RESULT=${JSON.stringify({ role, key, expected, status: result.status, error: result.error || null, actionReturned: result.actionMetadata?.returned ?? null, actionId: result.actionMetadata?.actionId ?? null, targetModel: result.actionMetadata?.targetModel ?? null, screenClean: result.screen?.clean ?? null })}`);
+      recordTelemetry(telemetry);
+      await closeContext(page, context);
     }
-    await closeContext(page, context);
     console.log(`M31_DIRECT_ROLE_END=${role}`);
   }
   const authorizationEvidence = { directEvidence };
