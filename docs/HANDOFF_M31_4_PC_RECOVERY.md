@@ -351,7 +351,7 @@ at the last completed gate were:
 
 - `origin/main`: `d57ce391cc262c68d5bbe255eb53f448cd7356ff`
 - PR #150 product: `d0678c119167a6a7fd8db3f1317994c52797458f`
-- PR #151 validation: `87d689bb907e858bf6275167cbf356d651f776fe` (PR #151
+- PR #151 validation: `01d0043e233339fed58b41b54a517679ac1f6dc6` (PR #151
   remains draft)
 - product-to-validation normal merge: `51ec492799cf2a8d85f00c35879a23f2ca755aeb`
 
@@ -365,7 +365,8 @@ the QMS Framework Administration menu is a parent group whose navigable child
 is Framework Controls.  The harness now uses fresh contexts per direct probe,
 has a bounded action-metadata fallback, and validates the child action.
 
-The completed candidate QMS run was `35242060944`: browser UAT passed,
+The completed candidate QMS run was `35244397828` on the exact SHA above:
+all 63 job steps completed successfully; browser UAT passed,
 direct authorization was 23/23, protected reads and field denial passed,
 permitted create/write passed, prohibited create/write/unlink probes passed,
 company isolation returned zero out-of-company records, and cleanup passed.
@@ -373,7 +374,7 @@ Mission16 and Mission23 both ran and completed; no downstream stage was
 skipped.  Workflow transitions remain `NOT TESTED` because this release
 exposes no supported transition method and no synthetic state write was used.
 
-Security Audit run `35242061023` passed on the same candidate.  The local
+Security Audit run `35244397710` passed on the same candidate.  The local
 control record remains: OpenGrep v1.29.0 local rules and positive/negative
 tests pass; Trivy 0.74.0 vulnerability/misconfiguration/secret scans pass;
 secret and content scans pass; sudo inventory/review and XML/Python/addon/
@@ -383,5 +384,4 @@ tracked follow-up.  No credentials, private keys, databases, filestores,
 raw browser traces or node_modules were uploaded.
 
 No PR was merged, no release or tag was created, PR #151 remains draft, and
-PR #147 is unchanged.  Before Product Owner review, verify the final pushed
-handoff SHA and rerun/inspect QMS CI and Security Audit on that exact SHA.
+PR #147 is unchanged.  Product Owner review is the next approval gate.
