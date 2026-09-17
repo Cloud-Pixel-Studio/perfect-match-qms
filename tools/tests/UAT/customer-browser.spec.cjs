@@ -617,6 +617,14 @@ async function callKw(page, model, method, args = [], kwargs = {}) {
   }, { model, method, args, kwargs });
 }
 
+async function sessionUid(page) {
+  return page.evaluate(async () => {
+    const response = await fetch('/web/session/get_session_info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const payload = await response.json().catch(() => ({}));
+    return payload.result?.uid ?? null;
+  });
+}
+
 function rpcAllowed(response) {
   return Boolean(response && !response.error && response.httpStatus < 400);
 }
@@ -1177,6 +1185,82 @@ test('Quality Manager domain, Action Center, Company Profile and customer termin
   expect(telemetry.pageErrors).toEqual([]);
   expect(telemetry.consoleErrors).toEqual([]);
   expect(telemetry.httpErrors.filter((item) => item.status >= 500)).toEqual([]);
+});
+
+test('notification fixtures: assigned activity, chatter, record link, overdue and recipient isolation', async ({ browser }) => {
+  test.setTimeout(180_000);
+  const qmContext = await browser.newContext();
+  const viewerContext = await browser.newContext();
+  const qmPage = await qmContext.newPage();
+  const viewerPage = await viewerContext.newPage();
+  const evidence = { fixture: {}, activity: {}, chatter: {}, overdue: {}, isolation: {}, duplicates: { status: 'NOT_TESTED', reason: 'No supported repository idempotency API for generic mail.activity fixtures.' }, inAppEmail: { status: 'NOT_TESTED', reason: 'No supported disposable email target; in-app and email delivery cannot be compared.' }, cleanup: { status: 'NOT_CONFIRMED' } };
+  let riskId = null;
+  let activityId = null;
+  try {
+    await login(qmPage, state.qm);
+    await login(viewerPage, state.viewer);
+    const qmUid = await sessionUid(qmPage);
+    const viewerUid = await sessionUid(viewerPage);
+    const organizations = await callKw(qmPage, 'pm.qms.organization', 'search_read', [[], ['id']], { limit: 1 });
+    const processes = await callKw(qmPage, 'pm.qms.process', 'search_read', [[], ['id']], { limit: 1 });
+    const organizationId = organizations.result?.[0]?.id;
+    const processId = processes.result?.[0]?.id;
+    if (!qmUid || !viewerUid || !organizationId || !processId) throw new Error('Supported notification fixture prerequisites were not available');
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const created = await callKw(qmPage, 'pm.qms.risk', 'create', [{
+      name: 'M31 disposable notification fixture',
+      description: 'Fictional disposable notification fixture.',
+      organization_id: organizationId,
+      process_id: processId,
+      owner_id: qmUid,
+      target_date: yesterday,
+      source: 'M31 disposable UAT',
+    }]);
+    if (!rpcAllowed(created) || !Number.isInteger(created.result)) throw new Error(`Risk fixture creation failed: ${JSON.stringify(summarizeRpc(created))}`);
+    riskId = created.result;
+    evidence.fixture = { status: 'PASS', model: 'pm.qms.risk', recordCreated: true };
+
+    const scheduled = await callKw(qmPage, 'pm.qms.risk', 'activity_schedule', [
+      [riskId],
+      'mail.mail_activity_data_todo',
+    ], { summary: 'M31 disposable reminder', note: 'Fictional reminder fixture.', user_id: qmUid, date_deadline: yesterday });
+    if (!rpcAllowed(scheduled) || !Number.isInteger(scheduled.result)) throw new Error(`Activity fixture creation failed: ${JSON.stringify(summarizeRpc(scheduled))}`);
+    activityId = scheduled.result;
+    const qmActivities = await callKw(qmPage, 'mail.activity', 'search_read', [[['id', '=', activityId]], ['id', 'res_model', 'res_id', 'summary', 'date_deadline', 'user_id']]);
+    evidence.activity = { status: rpcAllowed(qmActivities) && qmActivities.result?.length === 1 ? 'PASS' : 'FAIL', assignedToAuthorizedRole: qmActivities.result?.[0]?.user_id?.[0] === qmUid, recordId: qmActivities.result?.[0]?.res_id ?? null };
+
+    const posted = await callKw(qmPage, 'pm.qms.risk', 'message_post', [[riskId]], { body: 'M31 disposable chatter fixture.', subtype_xmlid: 'mail.mt_note' });
+    const messages = await callKw(qmPage, 'mail.message', 'search_read', [[['model', '=', 'pm.qms.risk'], ['res_id', '=', riskId]], ['id', 'model', 'res_id', 'message_type']]);
+    evidence.chatter = { status: rpcAllowed(posted) && rpcAllowed(messages) && messages.result?.some((item) => item.res_id === riskId) ? 'PASS' : 'FAIL', linkedModel: 'pm.qms.risk', linkedRecordId: riskId };
+
+    const risk = await callKw(qmPage, 'pm.qms.risk', 'read', [[riskId], ['id', 'code', 'is_overdue', 'days_overdue']]);
+    evidence.overdue = { status: rpcAllowed(risk) && risk.result?.[0]?.is_overdue === true ? 'PASS' : 'FAIL', isOverdue: risk.result?.[0]?.is_overdue ?? null, daysOverdue: risk.result?.[0]?.days_overdue ?? null };
+
+    const viewerActivity = await callKw(viewerPage, 'mail.activity', 'search_read', [[['id', '=', activityId]], ['id', 'res_model', 'res_id', 'summary']]);
+    const viewerRisk = await callKw(viewerPage, 'pm.qms.risk', 'read', [[riskId], ['id', 'code']]);
+    evidence.isolation = {
+      status: !viewerActivity.result?.length && !viewerRisk.result?.length && (rpcDenied(viewerActivity) || rpcAllowed(viewerActivity)) ? 'PASS' : 'FAIL',
+      unauthorizedActivityVisible: Boolean(viewerActivity.result?.length),
+      unauthorizedRecordVisible: Boolean(viewerRisk.result?.length),
+      linkedRecordNotExposed: !viewerRisk.result?.length,
+    };
+    test.info().annotations.push({ type: 'notification-evidence', description: JSON.stringify(evidence) });
+    expect(evidence.fixture.status).toBe('PASS');
+    expect(evidence.activity.status).toBe('PASS');
+    expect(evidence.chatter.status).toBe('PASS');
+    expect(evidence.overdue.status).toBe('PASS');
+    expect(evidence.isolation.status).toBe('PASS');
+  } finally {
+    if (riskId) {
+      const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
+      evidence.cleanup = { status: rpcAllowed(removed) ? 'PASS' : 'NOT_CONFIRMED' };
+    } else {
+      evidence.cleanup = { status: 'NOT_REQUIRED' };
+    }
+    console.log(`M31_NOTIFICATION_CLEANUP=${JSON.stringify(evidence.cleanup)}`);
+    await qmContext.close();
+    await viewerContext.close();
+  }
 });
 
 test('Quality Manager accessibility and responsive baseline', async ({ page }) => {
