@@ -2,9 +2,9 @@
 
 Status: WIP / PRODUCT ACCEPTANCE BLOCKED. Snapshot: 2026-09-16.
 This document preserves work, not a passing certification. The M31.4-C4.3
-execution is still PARTIAL: the normal merge was created locally, but GitHub
-push was rejected with HTTP 403 by the currently cached account. No remote
-merge or release is claimed.
+execution is still PARTIAL because authenticated browser UAT and downstream
+CI evidence remain pending. The normal product-to-validation merge exists in
+the validation history; no remote merge or release is claimed.
 Do not modify Demo, production, real customers, cleanvm-test-02, PR #147,
 release tags, RC11, or repository protections. Do not create RC12.
 
@@ -61,11 +61,11 @@ center. The direct matrix remains independently executed and records action
 metadata, rendered screen cleanliness, authorization error correlation and
 explicit NOT-PROBED states for protected data/mutation until those probes run.
 
-Local normal merge commit `4f55f35` merges product into validation. It is not
-yet a GitHub PR head: the authorized push attempt was rejected because the
-cached HTTPS account lacks write permission. Re-authenticate through the
-approved GitHub integration or SSH agent before pushing; never put a token in
-a URL, command, document or log.
+Local normal merge commit `4f55f35` merges product into validation. It is
+published through normal pushes: product PR #150 is at
+`5a8cd18ff8b2203a587398da6a100ff8a637e898`, and validation PR #151 is at
+`71941ddb2d343285e6716342b9c6cb534f03f7ae`. PR #151 remains draft. PR #147
+remains open and unchanged. No force push was used.
 
 The disposable authenticated UAT reached provisioning, 61-module bootstrap
 and customer HTTP health 200, then failed before browser setup because the
@@ -85,7 +85,9 @@ PRODUCT_LOCAL_SHA: 5a8cd18ff8b2203a587398da6a100ff8a637e898
 VALIDATION_LOCAL_SHA: 4f55f35
 PRODUCT_REMOTE_SHA: 0d66fd21e5ea1fcdba8e984febed626b835d0442
 VALIDATION_REMOTE_SHA: e8b866ad3f6ed934ee1916a1c14dacf2bc2b5315
-REMOTE_PUSH: BLOCKED_BY_GITHUB_403
+PRODUCT_REMOTE_SHA: 5a8cd18ff8b2203a587398da6a100ff8a637e898
+VALIDATION_REMOTE_SHA: 71941ddb2d343285e6716342b9c6cb534f03f7ae
+REMOTE_PUSH: PASS_NORMAL_PUSH
 REMOTE_MERGE: NOT_PERFORMED
 RELEASE_OR_PRODUCTION_CHANGE: NO
 UAT: BLOCKED_BEFORE_BROWSER_BY_WINDOWS_DOCKER_BIND_MOUNT
