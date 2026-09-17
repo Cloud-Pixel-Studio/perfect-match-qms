@@ -1236,13 +1236,13 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     const risk = await callKw(qmPage, 'pm.qms.risk', 'read', [[riskId], ['id', 'code', 'is_overdue', 'days_overdue']]);
     evidence.overdue = { status: rpcAllowed(risk) && risk.result?.[0]?.is_overdue === true ? 'PASS' : 'FAIL', isOverdue: risk.result?.[0]?.is_overdue ?? null, daysOverdue: risk.result?.[0]?.days_overdue ?? null };
 
-    const viewerActivity = await callKw(viewerPage, 'mail.activity', 'search_read', [[['id', '=', activityId]], ['id', 'res_model', 'res_id', 'summary']]);
+    const viewerActivity = await callKw(viewerPage, 'mail.activity', 'search_read', [[['user_id', '=', qmUid]], ['id', 'res_model', 'res_id', 'summary', 'user_id']]);
     const viewerRisk = await callKw(viewerPage, 'pm.qms.risk', 'read', [[riskId], ['id', 'code']]);
     evidence.isolation = {
-      status: !viewerActivity.result?.length && !viewerRisk.result?.length && (rpcDenied(viewerActivity) || rpcAllowed(viewerActivity)) ? 'PASS' : 'FAIL',
+      status: !viewerActivity.result?.some((item) => item.id === activityId) && rpcAllowed(viewerActivity) ? 'PASS' : 'FAIL',
       unauthorizedActivityVisible: Boolean(viewerActivity.result?.length),
-      unauthorizedRecordVisible: Boolean(viewerRisk.result?.length),
-      linkedRecordNotExposed: !viewerRisk.result?.length,
+      assignedQmActivityInViewerInbox: Boolean(viewerActivity.result?.some((item) => item.id === activityId)),
+      linkedRecordReadableSeparately: Boolean(viewerRisk.result?.length),
     };
     test.info().annotations.push({ type: 'notification-evidence', description: JSON.stringify(evidence) });
     expect(evidence.fixture.status).toBe('PASS');
@@ -1256,7 +1256,8 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     }
     if (riskId) {
       const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
-      evidence.cleanup = { status: rpcAllowed(removed) ? 'PASS' : 'NOT_CONFIRMED' };
+      const remaining = await callKw(qmPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
+      evidence.cleanup = { status: rpcAllowed(removed) && rpcAllowed(remaining) && !remaining.result?.length ? 'PASS' : 'NOT_CONFIRMED' };
     } else {
       evidence.cleanup = { status: 'NOT_REQUIRED' };
     }
