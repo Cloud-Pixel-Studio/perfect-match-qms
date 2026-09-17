@@ -568,6 +568,49 @@ async function directActionProbe(page, entry, expected) {
   return result;
 }
 
+async function callKw(page, model, method, args = [], kwargs = {}) {
+  return page.evaluate(async ({ model: requestModel, method: requestMethod, args: requestArgs, kwargs: requestKwargs }) => {
+    const response = await fetch(`/web/dataset/call_kw/${encodeURIComponent(requestModel)}/${encodeURIComponent(requestMethod)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'call',
+        params: { model: requestModel, method: requestMethod, args: requestArgs, kwargs: requestKwargs },
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    const error = payload.error?.data || payload.error;
+    return {
+      httpStatus: response.status,
+      result: payload.result,
+      error: error ? {
+        name: String(error.name || payload.error?.message || 'RPC_ERROR').slice(0, 120),
+        authorization: /AccessError|Access Denied|Forbidden|not allowed/i.test(String(error.name || error.message || payload.error?.message || '')),
+      } : null,
+    };
+  }, { model, method, args, kwargs });
+}
+
+function rpcAllowed(response) {
+  return Boolean(response && !response.error && response.httpStatus < 400);
+}
+
+function rpcDenied(response) {
+  return Boolean(response?.error?.authorization || response?.httpStatus === 403);
+}
+
+function summarizeRpc(response) {
+  return {
+    httpStatus: response?.httpStatus ?? null,
+    resultType: Array.isArray(response?.result) ? 'array' : typeof response?.result,
+    resultCount: Array.isArray(response?.result) ? response.result.length : null,
+    resultBoolean: typeof response?.result === 'boolean' ? response.result : null,
+    resultId: Number.isInteger(response?.result) ? response.result : null,
+    error: response?.error || null,
+  };
+}
+
 function cleanBody(text) {
   return !/Traceback|Internal Server Error|OwlError|AccessError|Uncaught Promise|RPC_ERROR/i.test(text);
 }
@@ -803,6 +846,112 @@ test('Direct action authorization matrix runs independently of navigation', asyn
   test.info().annotations.push({ type: 'direct-authorization', description: JSON.stringify(authorizationEvidence) });
   console.log(`M31_DIRECT_AUTHORIZATION=${JSON.stringify(authorizationEvidence)}`);
   expect(directEvidence.every((item) => item.status === 'PASS')).toBeTruthy();
+});
+
+test('protected data, mutation and company-isolation evidence runs independently', async ({ browser }) => {
+  test.setTimeout(600_000);
+  const evidence = {};
+  const qmContext = await browser.newContext();
+  const qmPage = await qmContext.newPage();
+  const licensingContext = await browser.newContext();
+  const licensingPage = await licensingContext.newPage();
+  let activationRequestId = null;
+  try {
+    await login(qmPage, state.qm);
+    await login(licensingPage, state.licensingAdmin);
+
+    const organizations = await callKw(qmPage, 'pm.qms.organization', 'search_read', [[], ['id', 'company_id']], { limit: 1 });
+    const organization = Array.isArray(organizations.result) ? organizations.result[0] : null;
+    expect(organization?.id, 'a protected organization fixture is required').toBeTruthy();
+    const companyId = Array.isArray(organization.company_id) ? organization.company_id[0] : null;
+    expect(companyId, 'the organization fixture must expose a company').toBeTruthy();
+    evidence.protectedRecordRead = {
+      status: rpcAllowed(organizations) ? 'PASS' : 'FAIL',
+      model: 'pm.qms.organization',
+      records: organizations.result?.length || 0,
+    };
+
+    const licenseRecords = await callKw(licensingPage, 'pm.qms.license', 'search_read', [[], ['id']], { limit: 1 });
+    const licenseId = Array.isArray(licenseRecords.result) ? licenseRecords.result[0]?.id : null;
+    expect(licenseId, 'a licensing fixture is required').toBeTruthy();
+    evidence.protectedLicenseRead = {
+      status: rpcAllowed(licenseRecords) ? 'PASS' : 'FAIL',
+      model: 'pm.qms.license',
+      records: licenseRecords.result?.length || 0,
+    };
+
+    const protectedField = await callKw(qmPage, 'pm.qms.license', 'read', [[licenseId], ['activation_request_ids']]);
+    evidence.protectedFieldRead = {
+      status: rpcDenied(protectedField) ? 'PASS' : 'FAIL',
+      expected: 'DENY',
+      model: 'pm.qms.license',
+      field: 'activation_request_ids',
+      result: summarizeRpc(protectedField),
+    };
+
+    const otherCompanyRecords = await callKw(qmPage, 'pm.qms.organization', 'search_read', [[['company_id', '!=', companyId]], ['id', 'company_id']], { limit: 10 });
+    evidence.companyIsolation = {
+      status: rpcAllowed(otherCompanyRecords) && otherCompanyRecords.result.length === 0 ? 'PASS' : 'FAIL',
+      expected: 'no records outside current company',
+      returnedRecords: otherCompanyRecords.result?.length ?? null,
+    };
+
+    const permittedCreate = await callKw(licensingPage, 'pm.qms.activation.request', 'create', [{ license_id: licenseId }]);
+    activationRequestId = Number.isInteger(permittedCreate.result) ? permittedCreate.result : null;
+    evidence.permittedCreate = {
+      status: rpcAllowed(permittedCreate) && activationRequestId ? 'PASS' : 'FAIL',
+      model: 'pm.qms.activation.request',
+      result: summarizeRpc(permittedCreate),
+    };
+    expect(activationRequestId, 'permitted activation-request create must return an id').toBeTruthy();
+
+    const permittedWrite = await callKw(licensingPage, 'pm.qms.activation.request', 'write', [[activationRequestId], { customer_name: 'M31 runtime evidence' }]);
+    evidence.permittedWrite = {
+      status: rpcAllowed(permittedWrite) && permittedWrite.result === true ? 'PASS' : 'FAIL',
+      model: 'pm.qms.activation.request',
+      result: summarizeRpc(permittedWrite),
+    };
+
+    const prohibitedCreate = await callKw(licensingPage, 'pm.qms.organization', 'create', [{ name: 'M31 prohibited', code: 'M31-PROHIBITED', organization_kind: 'operational', company_id: companyId }]);
+    const prohibitedWrite = await callKw(licensingPage, 'pm.qms.organization', 'write', [[organization.id], { description: 'M31 prohibited' }]);
+    const prohibitedUnlink = await callKw(licensingPage, 'pm.qms.organization', 'unlink', [[organization.id]]);
+    evidence.prohibitedMutations = [
+      { operation: 'create', model: 'pm.qms.organization', status: rpcDenied(prohibitedCreate) ? 'PASS' : 'FAIL', result: summarizeRpc(prohibitedCreate) },
+      { operation: 'write', model: 'pm.qms.organization', status: rpcDenied(prohibitedWrite) ? 'PASS' : 'FAIL', result: summarizeRpc(prohibitedWrite) },
+      { operation: 'unlink', model: 'pm.qms.organization', status: rpcDenied(prohibitedUnlink) ? 'PASS' : 'FAIL', result: summarizeRpc(prohibitedUnlink) },
+    ];
+
+    const qmUnlink = await callKw(qmPage, 'pm.qms.activation.request', 'unlink', [[activationRequestId]]);
+    evidence.prohibitedActivationUnlink = {
+      status: rpcDenied(qmUnlink) ? 'PASS' : 'FAIL',
+      expected: 'DENY',
+      result: summarizeRpc(qmUnlink),
+    };
+    evidence.workflowAuthorization = {
+      status: 'NOT TESTED',
+      reason: 'The activation-request model exposes no supported workflow transition method in this release; state is readonly and no synthetic state write was accepted as workflow evidence.',
+    };
+    test.info().annotations.push({ type: 'protected-data-mutation-evidence', description: JSON.stringify(evidence) });
+    console.log(`M31_PROTECTED_DATA_MUTATION_EVIDENCE=${JSON.stringify(evidence)}`);
+    expect(evidence.protectedRecordRead.status).toBe('PASS');
+    expect(evidence.protectedLicenseRead.status).toBe('PASS');
+    expect(evidence.protectedFieldRead.status).toBe('PASS');
+    expect(evidence.companyIsolation.status).toBe('PASS');
+    expect(evidence.permittedCreate.status).toBe('PASS');
+    expect(evidence.permittedWrite.status).toBe('PASS');
+    expect(evidence.prohibitedMutations.every((item) => item.status === 'PASS')).toBeTruthy();
+    expect(evidence.prohibitedActivationUnlink.status).toBe('PASS');
+  } finally {
+    if (activationRequestId) {
+      const cleanup = await callKw(licensingPage, 'pm.qms.activation.request', 'unlink', [[activationRequestId]]).catch(() => null);
+      evidence.cleanup = { status: rpcAllowed(cleanup) ? 'PASS' : 'NOT CONFIRMED' };
+    } else {
+      evidence.cleanup = { status: 'NOT REQUIRED' };
+    }
+    console.log(`M31_PROTECTED_DATA_MUTATION_CLEANUP=${JSON.stringify(evidence.cleanup)}`);
+    await qmContext.close();
+    await licensingContext.close();
+  }
 });
 
 test('fictional customer role sessions establish and remain customer-scoped', async ({ browser }) => {
