@@ -651,7 +651,7 @@ test.beforeAll(() => {
   if (Object.entries(state.roles).some(([, user]) => !user)) throw new Error('All authenticated customer role fixtures are required');
 });
 
-test('Configuration browser contract and direct action authorization', async ({ browser }) => {
+test('Configuration browser navigation contract', async ({ browser }) => {
   test.setTimeout(600_000);
   const users = [
     ['Quality Manager', state.qm],
@@ -706,6 +706,17 @@ test('Configuration browser contract and direct action authorization', async ({ 
     await closeContext(page, context);
   }
 
+  expect({
+    configurationRolesPass: roleEvidence.every((item) => item.configuration === 'PASS'),
+    permittedSurfacesPass: roleEvidence.flatMap((item) => item.allowed).every((item) => item.status === 'PASS'),
+  }).toEqual({
+    configurationRolesPass: true,
+    permittedSurfacesPass: true,
+  });
+});
+
+test('Direct action authorization matrix runs independently of navigation', async ({ browser }) => {
+  test.setTimeout(600_000);
   const directProbes = [
     ['Quality Manager', state.qm, 'company_profile', 'ALLOW'],
     ['Quality Manager', state.qm, 'sites', 'ALLOW'],
@@ -774,18 +785,10 @@ test('Configuration browser contract and direct action authorization', async ({ 
     await closeContext(page, context);
     console.log(`M31_DIRECT_ROLE_END=${role}`);
   }
-  const authorizationEvidence = { roleEvidence, directEvidence };
-  test.info().annotations.push({ type: 'configuration-authorization', description: JSON.stringify(authorizationEvidence) });
-  console.log(`M31_CONFIGURATION_AUTHORIZATION=${JSON.stringify(authorizationEvidence)}`);
-  expect({
-    configurationRolesPass: roleEvidence.every((item) => item.configuration === 'PASS'),
-    permittedSurfacesPass: roleEvidence.flatMap((item) => item.allowed).every((item) => item.status === 'PASS'),
-    directActionChecksPass: directEvidence.every((item) => item.status === 'PASS'),
-  }).toEqual({
-    configurationRolesPass: true,
-    permittedSurfacesPass: true,
-    directActionChecksPass: true,
-  });
+  const authorizationEvidence = { directEvidence };
+  test.info().annotations.push({ type: 'direct-authorization', description: JSON.stringify(authorizationEvidence) });
+  console.log(`M31_DIRECT_AUTHORIZATION=${JSON.stringify(authorizationEvidence)}`);
+  expect(directEvidence.every((item) => item.status === 'PASS')).toBeTruthy();
 });
 
 test('fictional customer role sessions establish and remain customer-scoped', async ({ browser }) => {

@@ -69,7 +69,7 @@ async function openMoreMenu(page) {
   if (!hasExpansionState && !hasOverflowMarkup) return false;
   await page.keyboard.press('Escape').catch(() => {});
   await page.waitForTimeout(100);
-  await button.click();
+  await button.click({ timeout: 5_000 });
   await page.locator('.o_more_dropdown_section:visible').first().waitFor({ state: 'visible', timeout: 5_000 });
   return true;
 }
@@ -144,10 +144,27 @@ async function boundedHover(target, label) {
       text: node.textContent.trim().replace(/\s+/g, ' ').slice(0, 120),
       visible: Boolean(node.offsetWidth || node.offsetHeight || node.getClientRects().length),
       ariaExpanded: node.getAttribute('aria-expanded'),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
       rect: (() => {
         const rect = node.getBoundingClientRect();
         return { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) };
       })(),
+      computed: (() => {
+        const style = getComputedStyle(node);
+        return { display: style.display, visibility: style.visibility, pointerEvents: style.pointerEvents, zIndex: style.zIndex };
+      })(),
+      topAtCenter: (() => {
+        const rect = node.getBoundingClientRect();
+        const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        return top ? { tag: top.tagName.toLowerCase(), text: top.textContent.trim().replace(/\s+/g, ' ').slice(0, 120) } : null;
+      })(),
+      overlays: [...document.querySelectorAll('[role="dialog"], .modal, .o_popover, .o-dropdown--menu, .dropdown-menu')]
+        .filter((candidate) => {
+          const style = getComputedStyle(candidate);
+          return style.display !== 'none' && style.visibility !== 'hidden';
+        })
+        .slice(0, 8)
+        .map((candidate) => ({ tag: candidate.tagName.toLowerCase(), text: candidate.textContent.trim().replace(/\s+/g, ' ').slice(0, 100) })),
     })).catch(() => ({ unavailable: true }));
     throw new Error(`Timed out hovering ${label}: ${JSON.stringify(diagnostics)}; ${error.message}`);
   }
@@ -200,11 +217,11 @@ async function openRootMenu(page, label) {
   }
 
   const more = moreMenuButton(page);
-  await more.waitFor({ state: 'visible' });
+  await more.waitFor({ state: 'visible', timeout: 5_000 });
   await openMoreMenu(page);
   const overflow = visibleOverflowRoot(page, label);
-  await overflow.waitFor({ state: 'visible' });
-  await overflow.click();
+  await overflow.waitFor({ state: 'visible', timeout: 5_000 });
+  await overflow.click({ timeout: 5_000 });
   await page.waitForTimeout(250);
   return 'OVERFLOW';
 }
