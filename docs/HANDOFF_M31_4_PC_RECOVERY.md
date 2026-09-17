@@ -63,9 +63,10 @@ explicit NOT-PROBED states for protected data/mutation until those probes run.
 
 Local normal merge commit `4f55f35` merges product into validation. It is
 published through normal pushes: product PR #150 is at
-`5a8cd18ff8b2203a587398da6a100ff8a637e898`, and validation PR #151 is at
-`71941ddb2d343285e6716342b9c6cb534f03f7ae`. PR #151 remains draft. PR #147
-remains open and unchanged. No force push was used.
+`5a8cd18ff8b2203a587398da6a100ff8a637e898`. Validation PR #151 was published
+at `71941ddb2d343285e6716342b9c6cb534f03f7ae` and this handoff update was
+published as `f50f8d319e448fa4d9c486ac2defa14f2197f5ac`. PR #151 remains draft.
+PR #147 remains open and unchanged. No force push was used.
 
 The disposable authenticated UAT reached provisioning, 61-module bootstrap
 and customer HTTP health 200, then failed before browser setup because the
