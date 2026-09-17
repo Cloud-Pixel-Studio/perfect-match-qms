@@ -464,3 +464,49 @@ repository protections, releases and tags were not modified. M31.4-C4.8 is
 but final closure requires explicit follow-up for the listed NOT TESTED
 categories, especially 1600/1280/1024 responsive navigation and any supported
 workflow transition.
+
+## M31.4-C4.9 Complete Post-Merge UAT Coverage
+
+Live verification remains consistent with the authorized revisions:
+`origin/main` is `5aa735c7b09dfa46cfab8ca5d9d725039d4b982e` and PR #151 is
+OPEN/DRAFT at validation head
+`3218cbe44f8aa5833ea15962bfb3d2a6113bed5e`. The final exact-head workflows
+are QMS CI `35265467009` and Security Audit `35265466947`; both PASS with no
+skipped or failed steps. QMS ran the disposable authenticated UAT, Mission16,
+Mission23 and cleanup.
+
+Final coverage matrix:
+
+| Category | Result | Evidence boundary |
+| --- | --- | --- |
+| Eight authenticated role sessions and customer shell | TESTED/PASS | QM, QMS Administrator, Licensing Administrator, Technical Administrator, Internal Auditor, Process Owner, Viewer and API Integration Administrator fixtures |
+| Direct authorization | TESTED/PASS | 23/23 independent probes |
+| Protected records/fields | TESTED/PASS | organization/license reads and protected-field denial |
+| Permitted/prohibited mutations | TESTED/PASS | activation-request create/write allowed; organization and unlink denials enforced; cleanup passed |
+| Company isolation | TESTED/PASS | no out-of-company records returned |
+| Configuration and direct URLs | TESTED/PASS | implemented action/menu and restricted database-manager probes |
+| Keyboard traversal | NOT TESTED | no complete traversal assertion in the current suite |
+| Visible focus | NOT TESTED | axe does not certify focus styling |
+| Responsive 1600/1280/1024 and More menu | NOT TESTED | current checks are only 1440x900 and 1366x768; More-menu coverage is explicitly untested |
+| In-app notifications and record links | NOT TESTED | only bounded messaging-menu presence inspection exists |
+| Reminders and activities | NOT TESTED | no independent notification/reminder recipient assertion |
+| Chatter | NOT TESTED | no independent post/read assertion |
+| SMTP disposable delivery | NOT TESTED | no supported disposable SMTP target is configured |
+| Recipient isolation/duplicate notifications | NOT TESTED | no independent mail-delivery evidence |
+| Workflow authorization | NOT TESTED | no supported real transition method exists; no synthetic write used |
+
+Security controls on the exact validation head passed through Security Audit:
+OpenGrep v1.29.0 local rules, Trivy v0.74.0 vulnerability/misconfiguration/
+secret scanners, secret scan, content safety, sudo review, XML/Python/addon/
+workflow validation and `git diff --check`. pip-audit remains `NOT_EXECUTED`
+under Issue #98 because no canonical dependency input exists. Cleanup passed;
+no credentials, cookies, private keys, databases, filestores, raw traces or
+node_modules were uploaded. Cancellation-specific cleanup was not separately
+exercised because GitHub Actions provides no safe post-cancellation assertion
+for this disposable environment; this is `NOT TESTED`.
+
+No product change was made. PR #151 remains OPEN/DRAFT and unmerged, PR #147
+is unchanged, Issues #146 and #148 remain open, and no release/tag or
+Demo/production/customer/CleanVM/protection change occurred. Status is
+`PARTIAL`; M31.4 should not be closed until the remaining browser coverage is
+implemented and executed on a supported disposable target.
