@@ -1195,7 +1195,7 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
   const viewerPage = await viewerContext.newPage();
   const evidence = { fixture: {}, activity: {}, chatter: {}, overdue: {}, isolation: {}, duplicates: { status: 'NOT_TESTED', reason: 'No supported repository idempotency API for generic mail.activity fixtures.' }, inAppEmail: { status: 'NOT_TESTED', reason: 'No supported disposable email target; in-app and email delivery cannot be compared.' }, cleanup: { status: 'NOT_CONFIRMED' } };
   let riskId = null;
-  let activityId = null;
+  const activityIds = { qm: null, viewer: null };
   try {
     await login(qmPage, state.qm);
     await login(viewerPage, state.viewer);
@@ -1224,9 +1224,11 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
       [riskId],
       'mail.mail_activity_data_todo',
     ], { summary: 'M31 disposable reminder', note: 'Fictional reminder fixture.', user_id: qmUid, date_deadline: yesterday });
-    activityId = Array.isArray(scheduled.result) ? scheduled.result[0] : scheduled.result;
-    if (!rpcAllowed(scheduled) || !Number.isInteger(activityId)) throw new Error(`Activity fixture creation failed: ${JSON.stringify(summarizeRpc(scheduled))}`);
-    const qmActivities = await callKw(qmPage, 'mail.activity', 'search_read', [[['id', '=', activityId]], ['id', 'res_model', 'res_id', 'summary', 'date_deadline', 'user_id']]);
+    activityIds.qm = Array.isArray(scheduled.result) ? scheduled.result[0] : scheduled.result;
+    const viewerScheduled = await callKw(qmPage, 'pm.qms.risk', 'activity_schedule', [[riskId], 'mail.mail_activity_data_todo'], { summary: 'M31 disposable viewer reminder', note: 'Fictional viewer reminder fixture.', user_id: viewerUid, date_deadline: yesterday });
+    activityIds.viewer = Array.isArray(viewerScheduled.result) ? viewerScheduled.result[0] : viewerScheduled.result;
+    if (!rpcAllowed(scheduled) || !rpcAllowed(viewerScheduled) || !Number.isInteger(activityIds.qm) || !Number.isInteger(activityIds.viewer)) throw new Error(`Activity fixture creation failed: ${JSON.stringify({ qm: summarizeRpc(scheduled), viewer: summarizeRpc(viewerScheduled) })}`);
+    const qmActivities = await callKw(qmPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.qm]], ['id', 'res_model', 'res_id', 'summary', 'date_deadline', 'user_id']]);
     evidence.activity = { status: rpcAllowed(qmActivities) && qmActivities.result?.length === 1 ? 'PASS' : 'FAIL', assignedToAuthorizedRole: qmActivities.result?.[0]?.user_id?.[0] === qmUid, recordId: qmActivities.result?.[0]?.res_id ?? null };
 
     const posted = await callKw(qmPage, 'pm.qms.risk', 'message_post', [[riskId]], { body: 'M31 disposable chatter fixture.', subtype_xmlid: 'mail.mt_note' });
@@ -1236,12 +1238,19 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     const risk = await callKw(qmPage, 'pm.qms.risk', 'read', [[riskId], ['id', 'code', 'is_overdue', 'days_overdue']]);
     evidence.overdue = { status: rpcAllowed(risk) && risk.result?.[0]?.is_overdue === true ? 'PASS' : 'FAIL', isOverdue: risk.result?.[0]?.is_overdue ?? null, daysOverdue: risk.result?.[0]?.days_overdue ?? null };
 
-    const viewerActivity = await callKw(viewerPage, 'mail.activity', 'search_read', [[['user_id', '=', qmUid]], ['id', 'res_model', 'res_id', 'summary', 'user_id']]);
+    const qmInbox = await callKw(qmPage, 'mail.activity', 'search_read', [[['user_id', '=', qmUid]], ['id', 'res_model', 'res_id', 'summary', 'user_id']]);
+    const viewerInbox = await callKw(viewerPage, 'mail.activity', 'search_read', [[['user_id', '=', viewerUid]], ['id', 'res_model', 'res_id', 'summary', 'user_id']]);
     const viewerRisk = await callKw(viewerPage, 'pm.qms.risk', 'read', [[riskId], ['id', 'code']]);
     evidence.isolation = {
-      status: !viewerActivity.result?.some((item) => item.id === activityId) && rpcAllowed(viewerActivity) ? 'PASS' : 'FAIL',
-      unauthorizedActivityVisible: Boolean(viewerActivity.result?.length),
-      assignedQmActivityInViewerInbox: Boolean(viewerActivity.result?.some((item) => item.id === activityId)),
+      status: rpcAllowed(qmInbox) && rpcAllowed(viewerInbox)
+        && qmInbox.result?.some((item) => item.id === activityIds.qm)
+        && !qmInbox.result?.some((item) => item.id === activityIds.viewer)
+        && viewerInbox.result?.some((item) => item.id === activityIds.viewer)
+        && !viewerInbox.result?.some((item) => item.id === activityIds.qm) ? 'PASS' : 'FAIL',
+      qmOwnActivityVisible: Boolean(qmInbox.result?.some((item) => item.id === activityIds.qm)),
+      qmSeesViewerActivity: Boolean(qmInbox.result?.some((item) => item.id === activityIds.viewer)),
+      viewerOwnActivityVisible: Boolean(viewerInbox.result?.some((item) => item.id === activityIds.viewer)),
+      viewerSeesQmActivity: Boolean(viewerInbox.result?.some((item) => item.id === activityIds.qm)),
       linkedRecordReadableSeparately: Boolean(viewerRisk.result?.length),
     };
     test.info().annotations.push({ type: 'notification-evidence', description: JSON.stringify(evidence) });
@@ -1251,8 +1260,8 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.overdue.status).toBe('PASS');
     expect(evidence.isolation.status).toBe('PASS');
   } finally {
-    if (activityId) {
-      await callKw(qmPage, 'mail.activity', 'unlink', [[activityId]]).catch(() => null);
+    for (const activityId of Object.values(activityIds)) {
+      if (activityId) await callKw(qmPage, 'mail.activity', 'unlink', [[activityId]]).catch(() => null);
     }
     if (riskId) {
       const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
