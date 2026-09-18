@@ -28,7 +28,7 @@ records are modified by this mission.
 | pylint | `4.0.8` | Isolated Python virtualenv | Added |
 | pylint-odoo | `10.0.11` | Isolated Python virtualenv | Added |
 | Trivy | `0.74.0` | Official release asset, Linux SHA-256 `2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a`, Windows SHA-256 `94c40e0696e4b907a74b7b2e1438d5d72ebaca83115817407f568a002d520842` | Added |
-| pip-audit | `2.10.1` | Isolated Python virtualenv | Added; explicit `NOT_EXECUTED`, `PASS_NO_FINDINGS`, `FINDINGS_UNTRIAGED` and `ERROR/BLOCKED` states |
+| pip-audit | `2.10.1` | Isolated Python virtualenv | Canonical input: repository `requirements.txt`; explicit `PASS_NO_FINDINGS`, `FINDINGS_UNTRIAGED` and `ERROR/BLOCKED` states |
 | PMQMS secret scan | repository script plus masked git history grep | Local only | Reused and extended |
 | OWASP ZAP | Not installed by default | Requires disposable local target | Not executed |
 
@@ -51,9 +51,8 @@ Existing Odoo focused/full regression commands remain the canonical
 
 ## Local Result By Tool
 
-The security baseline uses a dedicated run id. A missing dependency input
-produces `NOT_EXECUTED` and is tracked by Issue #98; it is never reported as a
-clean dependency result. A clean input produces `PASS_NO_FINDINGS`, a
+The security baseline uses a dedicated run id. The canonical dependency input
+is repository `requirements.txt`. A clean input produces `PASS_NO_FINDINGS`, a
 vulnerability result produces `FINDINGS_UNTRIAGED` with a non-zero policy
 result, and malformed output or tool failure produces `ERROR/BLOCKED`.
 
@@ -63,7 +62,7 @@ result, and malformed output or tool failure produces `ERROR/BLOCKED`.
 | OpenGrep rule tests | `PASS` | 26 positive fixture findings, 0 negative fixture findings, 18 expected rule IDs present. |
 | pylint-odoo | `EXECUTED_BASELINE` | 4,624 messages remain untriaged under Issue #99: 3,727 convention, 353 error, 300 warning, 244 refactor. |
 | Trivy | `EXECUTED` | 0 vulnerabilities, misconfigurations or secrets in repository scan; CycloneDX SBOM generated. |
-| pip-audit | `NOT_EXECUTED` | No canonical requirements or Python lockfile exists; Issue #98. This is not a clean dependency result. |
+| pip-audit | `PENDING` | M31.5 adds `requirements.txt`; the first exact-head Security Audit run records the executed result. |
 | PMQMS secret scan | `PASS` | Current-code scan pass; masked git-history scan pass with 0 locations. |
 | OWASP ZAP | `NOT_EXECUTED` | No disposable local Odoo target and non-destructive test-account configuration are defined. |
 | M27 evidence tools | `PASS` | 4 unit tests pass; sudo inventory reports 18 production-reviewed sites and 130 test-only fixtures. |
@@ -125,8 +124,9 @@ work and possible future M29 candidates.
 
 ## Tools Not Executed
 
-- `pip-audit` is `NOT_EXECUTED` because no canonical requirements or Python
-  lockfile exists. Issue #98 tracks the missing reproducible dependency input.
+- Before M31.5, `pip-audit` was `NOT_EXECUTED` because no canonical
+  requirements or Python lockfile existed. M31.5 supplies `requirements.txt`;
+  the exact-head Security Audit records its executed result.
 - OWASP ZAP is explicitly `NOT_EXECUTED` under Issue #100 until a local
   throwaway Odoo target, credentials through environment variables or GitHub
   Secrets, and a passive baseline policy are defined.
