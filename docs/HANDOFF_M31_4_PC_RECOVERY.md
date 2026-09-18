@@ -582,3 +582,31 @@ this validation head and unmerged; PR #147 is unchanged; Issues #146 and
 #148 remain open; no release/tag or Demo/production/customer/CleanVM/protection
 change occurred. M31.4 remains `PARTIAL` for the separately untested browser
 notification categories, but the C4.21 teardown blocker is resolved.
+
+## M31.4-C4.23 Final Coverage Reconciliation
+
+Final reconciliation was performed against validation HEAD
+`84e2bafb095ec085e04ae8fb039eba0c98aa3ff`. QMS CI `35358965958` and Security
+Audit `35358965959` both report PASS on that exact HEAD. QMS completed with no
+skipped steps; Mission16, Mission23, authenticated UAT and cleanup completed.
+
+Notification teardown evidence remains PASS: `riskRemoved=true`,
+`qmActivityRemoved=true`, `viewerActivityRemoved=true`, `remaining={}`, and
+the temporary manifest was deleted after verification. This is disposable
+harness evidence and does not change product permissions.
+
+Remaining categories are formally classified as:
+
+- Duplicate notification prevention: `NOT TESTED` — no supported API exists.
+- SMTP/email delivery: `CONFIGURATION REQUIREMENT` / `NOT TESTED` — no
+  supported disposable SMTP target is configured.
+- Workflow authorization: `NOT APPLICABLE` / `NOT TESTED` — no supported real
+  transition exists in this validation scope.
+- Cancellation-specific cleanup: `NOT TESTED` — no safe supported assertion
+  was available without manufacturing a cancellation scenario.
+- pip-audit: `NOT EXECUTED` pending canonical dependency input under Issue #98.
+
+These categories are not converted to PASS. PR #151 remains OPEN/DRAFT and
+unmerged; PR #147 and Issues #146/#148 remain unchanged. No release or tag
+was created. Closure of M31.4 is conditional on Product Owner acceptance of
+these documented exceptions; otherwise the mission remains open.
