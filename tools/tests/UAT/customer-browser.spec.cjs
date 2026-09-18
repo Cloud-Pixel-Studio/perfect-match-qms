@@ -1261,7 +1261,9 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.isolation.status).toBe('PASS');
   } finally {
     const qmActivityRemoval = activityIds.qm ? await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.qm]]).catch(() => null) : null;
-    const viewerActivityRemoval = activityIds.viewer ? await callKw(viewerPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null) : null;
+    // Use the fixture owner context for teardown so recipient ACLs do not make
+    // cleanup look successful while leaving the disposable activity behind.
+    const viewerActivityRemoval = activityIds.viewer ? await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null) : null;
     if (riskId) {
       const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
       const remainingRisk = await callKw(qmPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
