@@ -1,6 +1,6 @@
 # M31.5 Release Hardening and Reproducibility
 
-Status: in progress. This branch is based on product `main` at
+Status: validation gates passed on the current branch head. This branch is based on product `main` at
 `5aa735c7b09dfa46cfab8ca5d9d725039d4b982e1`. It is a focused hardening branch
 and does not modify PR #151 or PR #147.
 
@@ -58,6 +58,25 @@ baseline through provision, bootstrap, license issuance/activation, customer
 initialization, module update, backup/restore, rollback and cleanup. The gate
 must also verify the runtime lock, package input, lockfiles, release manifest,
 and rollback identity. No release or tag is created by M31.5.
+
+The current QMS run `35382499359` passed on
+`803bfd6b888f14849654ab3d8aab312e2c2a7f9b`. Its single quality-gate job
+completed without skipped steps and executed the checkout, syntax, addon/XML,
+secret/content, Compose, customer provision/bootstrap, unlicensed activation,
+upgrade/rollback, backup/recovery, restore, scheduler, runtime-lock, Mission16
+and Mission23 stages. The run completed with cleanup/post-job steps successful.
+
+Security Audit run `35382573046` passed on the same exact HEAD. The pinned
+security script executed OpenGrep `v1.29.0` with local rules, Trivy `0.74.0`
+with vulnerability/misconfiguration/secret scanners, secret and content scans,
+sudo review, XML/Python/addon/workflow validation, git diff checks and
+`pip-audit==2.10.1` against `requirements.txt`. The evidence-test step also
+passed. The workflow emitted only GitHub action deprecation warnings; no
+security finding or skipped control was reported.
+
+Issue #98 is now operationally resolved by the canonical dependency input and
+the executed PASS_NO_FINDINGS result; closing the issue remains a separate
+repository-state action if the Product Owner wants that audit trail closed.
 
 ## Version and operational documentation proposal
 
