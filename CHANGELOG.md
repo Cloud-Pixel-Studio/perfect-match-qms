@@ -2,13 +2,19 @@
 
 ## Unreleased
 
-- Added a canonical Python dependency input for reproducible `pip-audit`
-  execution under M31.5 release hardening. No release or tag is created.
+No unreleased changes.
+
+## 1.0.0 - 2026-09-18
+
+- Established the reproducible release-hardening baseline and canonical Python
+  dependency input for `pip-audit`.
 - Added the external `pmqms-license-2026` issuance authority while retaining
   `pmqms-demo-2026` for historical license verification.
 - Made operational process resolution idempotent when multiple framework
   controls share a source process, while preserving company and organization
   boundaries.
+- Validated provision, bootstrap, licensing, upgrade/rollback, backup/restore,
+  Mission 16, Mission 23, security scanning and cleanup gates.
 
 ## 1.0.0-rc7 - 2026-08-23
 

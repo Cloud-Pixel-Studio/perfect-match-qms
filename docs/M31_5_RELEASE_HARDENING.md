@@ -1,6 +1,7 @@
 # M31.5 Release Hardening and Reproducibility
 
-Status: validation gates passed on the current branch head. This branch is based on product `main` at
+Status: release metadata prepared; publication remains gated on the exact
+post-metadata QMS and Security Audit runs. This branch is based on product `main` at
 `5aa735c7b09dfa46cfab8ca5d9d725039d4b982e1`. It is a focused hardening branch
 and does not modify PR #151 or PR #147.
 
@@ -80,9 +81,9 @@ repository-state action if the Product Owner wants that audit trail closed.
 
 ## Version and operational documentation proposal
 
-Proposed first stable product version: `1.0.0`, subject to Product Owner
-authorization after all hardening gates pass. Until then the proposal is not a
-release and no tag is created. Installation follows `docs/DEPLOYMENT.md` and
+First stable product version: `1.0.0`, subject to the post-metadata exact-head
+gates and Product Owner authorization. No tag or GitHub release is created by
+this metadata-preparation commit. Installation follows `docs/DEPLOYMENT.md` and
 customer upgrades/rollback follow `docs/CUSTOMER_UPGRADE_RUNBOOK.md`; those
 runbooks remain the operational authority for bundle identity, backups,
 runtime-lock approval and automatic rollback.
