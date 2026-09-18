@@ -1191,14 +1191,17 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
   test.setTimeout(180_000);
   const qmContext = await browser.newContext();
   const viewerContext = await browser.newContext();
+  const teardownContext = await browser.newContext();
   const qmPage = await qmContext.newPage();
   const viewerPage = await viewerContext.newPage();
+  const teardownPage = await teardownContext.newPage();
   const evidence = { fixture: {}, activity: {}, chatter: {}, overdue: {}, isolation: {}, duplicates: { status: 'NOT_TESTED', reason: 'No supported repository idempotency API for generic mail.activity fixtures.' }, inAppEmail: { status: 'NOT_TESTED', reason: 'No supported disposable email target; in-app and email delivery cannot be compared.' }, cleanup: { status: 'NOT_CONFIRMED' } };
   let riskId = null;
   const activityIds = { qm: null, viewer: null };
   try {
     await login(qmPage, state.qm);
     await login(viewerPage, state.viewer);
+    await login(teardownPage, state.admin);
     const qmUid = await sessionUid(qmPage);
     const viewerUid = await sessionUid(viewerPage);
     const organizations = await callKw(qmPage, 'pm.qms.organization', 'search_read', [[], ['id']], { limit: 1 });
@@ -1260,15 +1263,16 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.overdue.status).toBe('PASS');
     expect(evidence.isolation.status).toBe('PASS');
   } finally {
-    const qmActivityRemoval = activityIds.qm ? await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.qm]]).catch(() => null) : null;
-    // Use the fixture owner context for teardown so recipient ACLs do not make
-    // cleanup look successful while leaving the disposable activity behind.
-    const viewerActivityRemoval = activityIds.viewer ? await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null) : null;
+    // The disposable technical-admin fixture is the supported teardown
+    // authority. It receives no new permissions and is restricted to these
+    // exact IDs created by this test.
+    const qmActivityRemoval = activityIds.qm ? await callKw(teardownPage, 'mail.activity', 'unlink', [[activityIds.qm]]).catch(() => null) : null;
+    const viewerActivityRemoval = activityIds.viewer ? await callKw(teardownPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null) : null;
     if (riskId) {
-      const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
-      const remainingRisk = await callKw(qmPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
-      const remainingQmActivity = activityIds.qm ? await callKw(qmPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.qm]], ['id']]).catch(() => null) : null;
-      const remainingViewerActivity = activityIds.viewer ? await callKw(viewerPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.viewer]], ['id']]).catch(() => null) : null;
+      const removed = await callKw(teardownPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
+      const remainingRisk = await callKw(teardownPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
+      const remainingQmActivity = activityIds.qm ? await callKw(teardownPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.qm]], ['id']]).catch(() => null) : null;
+      const remainingViewerActivity = activityIds.viewer ? await callKw(teardownPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.viewer]], ['id']]).catch(() => null) : null;
       const riskGone = rpcAllowed(remainingRisk) && !remainingRisk.result?.length;
       const qmActivityGone = !activityIds.qm || (rpcAllowed(remainingQmActivity) && !remainingQmActivity.result?.length);
       const viewerActivityGone = !activityIds.viewer || (rpcAllowed(remainingViewerActivity) && !remainingViewerActivity.result?.length);
@@ -1286,6 +1290,7 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.cleanup.status).toBe('PASS');
     await qmContext.close();
     await viewerContext.close();
+    await teardownContext.close();
   }
 });
 
