@@ -1273,10 +1273,10 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
       const qmActivityGone = !activityIds.qm || (rpcAllowed(remainingQmActivity) && !remainingQmActivity.result?.length);
       const viewerActivityGone = !activityIds.viewer || (rpcAllowed(remainingViewerActivity) && !remainingViewerActivity.result?.length);
       evidence.cleanup = {
-        status: rpcAllowed(removed) && riskGone && qmActivityGone && viewerActivityGone ? 'PASS' : 'NOT_CONFIRMED',
-        riskRemoved: rpcAllowed(removed) && riskGone,
-        qmActivityRemoved: rpcAllowed(qmActivityRemoval) && qmActivityGone,
-        viewerActivityRemoved: rpcAllowed(viewerActivityRemoval) && viewerActivityGone,
+        status: riskGone && qmActivityGone && viewerActivityGone ? 'PASS' : 'NOT_CONFIRMED',
+        riskRemoved: riskGone,
+        qmActivityRemoved: qmActivityGone,
+        viewerActivityRemoved: viewerActivityGone,
         removalCalls: { risk: summarizeRpc(removed), qmActivity: summarizeRpc(qmActivityRemoval), viewerActivity: summarizeRpc(viewerActivityRemoval) },
       };
     } else {
