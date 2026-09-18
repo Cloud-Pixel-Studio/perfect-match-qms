@@ -2,7 +2,8 @@
 #
 # These are the non-stdlib packages imported by repository-owned Python code
 # outside the Odoo source tree. Odoo itself remains supplied by the pinned
-# deployment/runtime image in deployment/runtime/runtime-lock.json.
+# deployment/runtime image in deployment/runtime/runtime-lock.json. Runtime
+# image packages are documented and audited from that image separately.
 # The pins are compatible with the Python 3.12 CI baseline and selected for
 # current security fixes; the Odoo runtime image remains independently pinned.
 

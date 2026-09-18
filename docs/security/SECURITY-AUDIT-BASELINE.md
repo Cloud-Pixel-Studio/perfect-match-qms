@@ -62,7 +62,7 @@ result, and malformed output or tool failure produces `ERROR/BLOCKED`.
 | OpenGrep rule tests | `PASS` | 26 positive fixture findings, 0 negative fixture findings, 18 expected rule IDs present. |
 | pylint-odoo | `EXECUTED_BASELINE` | 4,624 messages remain untriaged under Issue #99: 3,727 convention, 353 error, 300 warning, 244 refactor. |
 | Trivy | `EXECUTED` | 0 vulnerabilities, misconfigurations or secrets in repository scan; CycloneDX SBOM generated. |
-| pip-audit | `PENDING` | M31.5 adds `requirements.txt`; the first exact-head Security Audit run records the executed result. |
+| pip-audit | `PASS_NO_FINDINGS` | 0 vulnerabilities in repository-owned `requirements.txt`; Security Audit run `35383772331`, exact SHA `89fce668f330dd5ff52c5289cf91568b1b66fda6`. The pinned Odoo image separately contains `psycopg2 2.9.9`; it is not represented as a repository requirement because pip-audit's requirements resolver requires `pg_config` for that sdist. |
 | PMQMS secret scan | `PASS` | Current-code scan pass; masked git-history scan pass with 0 locations. |
 | OWASP ZAP | `NOT_EXECUTED` | No disposable local Odoo target and non-destructive test-account configuration are defined. |
 | M27 evidence tools | `PASS` | 4 unit tests pass; sudo inventory reports 18 production-reviewed sites and 130 test-only fixtures. |
@@ -126,7 +126,7 @@ work and possible future M29 candidates.
 
 - Before M31.5, `pip-audit` was `NOT_EXECUTED` because no canonical
   requirements or Python lockfile existed. M31.5 supplies `requirements.txt`;
-  the exact-head Security Audit records its executed result.
+  the exact-head Security Audit now records `PASS_NO_FINDINGS`.
 - OWASP ZAP is explicitly `NOT_EXECUTED` under Issue #100 until a local
   throwaway Odoo target, credentials through environment variables or GitHub
   Secrets, and a passive baseline policy are defined.
@@ -162,5 +162,5 @@ summary includes pip-audit status, policy result and finding count.
 Re-run the audit after any security-sensitive controller, role, rule, license,
 attachment, evidence, deployment, dependency or workflow change. Reevaluate the
 baseline before moving `security/policy.yml` from `baseline` to enforcement.
-Issues #98, #99 and #100 are SEC-AUDIT-01 follow-ups and possible future M29
-candidates; official M29 has not started.
+Issues #99 and #100 remain SEC-AUDIT-01 follow-ups and possible future M29
+candidates; Issue #98 is resolved; official M29 has not started.
