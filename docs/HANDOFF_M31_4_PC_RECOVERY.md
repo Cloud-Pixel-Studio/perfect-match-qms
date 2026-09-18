@@ -546,3 +546,39 @@ The handoff update is documentation-only. PR #151 remains OPEN/DRAFT and is
 not merged; PR #147 is unchanged; Issues #146 and #148 remain open. M31.4
 remains `PARTIAL/BLOCKED FOR CLOSURE` until a supported disposable UAT adds
 and executes the remaining browser and mail coverage.
+
+## M31.4-C4.22 ORM Teardown File Access
+
+The notification teardown harness was corrected on validation head
+`63adf02853af3ca11c813f589b64732fd82000e1`. The previous failure was a
+fixture-manifest `PermissionError` before ORM execution: the Odoo teardown
+container ran as UID/GID `100:101`, while the runner-owned manifest was not
+readable. The harness now prepares only the numeric-ID manifest with owner
+`100:101` and mode `600`, mounts that single file read-only, records the
+sanitized teardown UID/GID and permissions, and removes the manifest after
+teardown. Passwords and other restricted files are not mounted into this
+teardown container.
+
+QMS CI `35356909115` completed PASS on the exact head in 16m35s. The focused
+authenticated UAT, Mission16, Mission23, all downstream steps and normal
+cleanup completed; no steps were skipped. The script returns nonzero unless
+the ORM shell reads the exact fixture IDs, unlinks the risk and both
+activities with `sudo()`, commits, and independently verifies no records
+remain. Therefore this run confirms `riskRemoved=true`,
+`qmActivityRemoved=true`, `viewerActivityRemoved=true` and `remaining={}`.
+The final manifest is removed by harness cleanup.
+
+Security Audit `35356909164` completed PASS on the same exact head. Its
+repository controls passed, including local/pinned OpenGrep, Trivy,
+secret/content scans, sudo review, XML/Python/addon/workflow validation and
+`git diff --check`. No credentials, private keys, databases, filestores,
+cookies, raw browser traces or node_modules were uploaded. pip-audit remains
+`NOT EXECUTED` under Issue #98. SMTP/email, duplicate-notification coverage
+and workflow authorization remain `NOT TESTED`/`NOT APPLICABLE` where no
+supported target or real transition exists.
+
+No product behavior or permissions changed. PR #151 remains OPEN/DRAFT at
+this validation head and unmerged; PR #147 is unchanged; Issues #146 and
+#148 remain open; no release/tag or Demo/production/customer/CleanVM/protection
+change occurred. M31.4 remains `PARTIAL` for the separately untested browser
+notification categories, but the C4.21 teardown blocker is resolved.
