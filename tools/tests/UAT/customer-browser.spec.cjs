@@ -1260,17 +1260,28 @@ test('notification fixtures: assigned activity, chatter, record link, overdue an
     expect(evidence.overdue.status).toBe('PASS');
     expect(evidence.isolation.status).toBe('PASS');
   } finally {
-    if (activityIds.qm) await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.qm]]).catch(() => null);
-    if (activityIds.viewer) await callKw(viewerPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null);
+    const qmActivityRemoval = activityIds.qm ? await callKw(qmPage, 'mail.activity', 'unlink', [[activityIds.qm]]).catch(() => null) : null;
+    const viewerActivityRemoval = activityIds.viewer ? await callKw(viewerPage, 'mail.activity', 'unlink', [[activityIds.viewer]]).catch(() => null) : null;
     if (riskId) {
       const removed = await callKw(qmPage, 'pm.qms.risk', 'unlink', [[riskId]]).catch(() => null);
       const remainingRisk = await callKw(qmPage, 'pm.qms.risk', 'search_read', [[['id', '=', riskId]], ['id']]).catch(() => null);
-      const remainingActivities = await callKw(qmPage, 'mail.activity', 'search_read', [[['id', 'in', Object.values(activityIds).filter(Boolean)]], ['id']]).catch(() => null);
-      evidence.cleanup = { status: rpcAllowed(removed) && rpcAllowed(remainingRisk) && rpcAllowed(remainingActivities) && !remainingRisk.result?.length && !remainingActivities.result?.length ? 'PASS' : 'NOT_CONFIRMED' };
+      const remainingQmActivity = activityIds.qm ? await callKw(qmPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.qm]], ['id']]).catch(() => null) : null;
+      const remainingViewerActivity = activityIds.viewer ? await callKw(viewerPage, 'mail.activity', 'search_read', [[['id', '=', activityIds.viewer]], ['id']]).catch(() => null) : null;
+      const riskGone = rpcAllowed(remainingRisk) && !remainingRisk.result?.length;
+      const qmActivityGone = !activityIds.qm || (rpcAllowed(remainingQmActivity) && !remainingQmActivity.result?.length);
+      const viewerActivityGone = !activityIds.viewer || (rpcAllowed(remainingViewerActivity) && !remainingViewerActivity.result?.length);
+      evidence.cleanup = {
+        status: rpcAllowed(removed) && riskGone && qmActivityGone && viewerActivityGone ? 'PASS' : 'NOT_CONFIRMED',
+        riskRemoved: rpcAllowed(removed) && riskGone,
+        qmActivityRemoved: rpcAllowed(qmActivityRemoval) && qmActivityGone,
+        viewerActivityRemoved: rpcAllowed(viewerActivityRemoval) && viewerActivityGone,
+        removalCalls: { risk: summarizeRpc(removed), qmActivity: summarizeRpc(qmActivityRemoval), viewerActivity: summarizeRpc(viewerActivityRemoval) },
+      };
     } else {
       evidence.cleanup = { status: 'NOT_REQUIRED' };
     }
     console.log(`M31_NOTIFICATION_CLEANUP=${JSON.stringify(evidence.cleanup)}`);
+    expect(evidence.cleanup.status).toBe('PASS');
     await qmContext.close();
     await viewerContext.close();
   }
