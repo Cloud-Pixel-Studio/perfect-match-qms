@@ -456,13 +456,21 @@ set -e
 # teardown authority, restricted to the exact IDs emitted by this test.
 NOTIFICATION_CLEANUP_RC=0
 if [[ -f "$M31_NOTIFICATION_FIXTURE_FILE" ]]; then
+  # The browser runner writes only ephemeral numeric IDs. Prepare that one
+  # manifest for the disposable ORM user; do not expose the work directory,
+  # which also contains passwords and other restricted test material.
+  docker run --rm --user root -v "$WORK:/work" "$ALPINE_IMAGE" \
+    sh -eu -c 'test -f /work/notification-fixture.json && chown 100:101 /work/notification-fixture.json && chmod 600 /work/notification-fixture.json' >/dev/null
+  echo "M31_NOTIFICATION_FIXTURE_PERMISSIONS=$(stat -c '%u:%g %a' "$M31_NOTIFICATION_FIXTURE_FILE")"
   docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
     -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 \
-    -v "$WORK:/var/lib/pmqms-uat:ro" \
+    -v "$M31_NOTIFICATION_FIXTURE_FILE:/var/lib/pmqms-uat/notification-fixture.json:ro" \
     odoo odoo shell -d "$DB_NAME" --log-level=error <<'PY' || NOTIFICATION_CLEANUP_RC=$?
 import json
+import os
 from pathlib import Path
 
+print("M31_NOTIFICATION_TEARDOWN_CONTEXT=" + json.dumps({"uid": os.geteuid(), "gid": os.getegid()}, sort_keys=True))
 fixture = json.loads(Path("/var/lib/pmqms-uat/notification-fixture.json").read_text())
 risk_id = fixture.get("riskId")
 activity_ids = fixture.get("activityIds") or {}
@@ -489,6 +497,7 @@ PY
 else
   echo 'M31_NOTIFICATION_CLEANUP_AUTHORIZED={"status":"PASS","scope":"no_fixture_ids_emitted"}'
 fi
+rm -f -- "$M31_NOTIFICATION_FIXTURE_FILE"
 
 if [[ "$UAT_RC" != 0 ]]; then exit "$UAT_RC"; fi
 if [[ "$NOTIFICATION_CLEANUP_RC" != 0 ]]; then exit "$NOTIFICATION_CLEANUP_RC"; fi
