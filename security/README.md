@@ -30,7 +30,7 @@ artifacts.
 | M27 sudo inventory | Yes | `tools/security/m27_sudo_inventory.py` reviews production and test-only `.sudo()` call sites. | Reuse as context; OpenGrep adds future-review detection. |
 | OpenGrep SAST | No | No existing OpenGrep/Semgrep-compatible scanner. | Add pinned OpenGrep binary install with local PMQMS rules, JSON and SARIF. |
 | Odoo quality lint | No | No OCA `pylint-odoo` workflow. | Add pinned `pylint`/`pylint-odoo` in an isolated venv against `addons/pm_qms_*`. |
-| Dependency vulnerability audit | Partial | Odoo/PostgreSQL/Alpine runtime images are pinned by digest; no Python requirements or lockfile exists. | Run Trivy for repo/config; classify pip-audit as `NOT_EXECUTED` until Issue #98 supplies a reproducible input. |
+| Dependency vulnerability audit | Yes for repository-owned Python inputs | Odoo/PostgreSQL/Alpine runtime images are pinned by digest and `requirements.txt` is the canonical input for repository-owned Python dependencies. | Run pinned `pip-audit`; classify findings explicitly as `PASS_NO_FINDINGS`, `FINDINGS_UNTRIAGED` or `ERROR/BLOCKED`. |
 | SBOM | No | No CycloneDX artifact is generated. | Add Trivy CycloneDX SBOM artifact. |
 | DAST/ZAP | No | No reproducible disposable local target is defined for passive ZAP. | Document as `NOT EXECUTED` until a local target URL and test account flow exist. |
 
@@ -46,8 +46,9 @@ artifacts.
 - Findings are reported in baseline mode first. Critical findings, untriaged
   pip-audit vulnerabilities and scanner infrastructure failures affect the
   command's exit decision.
-- pip-audit states are explicit: `NOT_EXECUTED` (no input), `PASS_NO_FINDINGS`,
-  `FINDINGS_UNTRIAGED` (non-zero policy result), and `ERROR/BLOCKED`.
+- pip-audit states are explicit: `PASS_NO_FINDINGS`, `FINDINGS_UNTRIAGED`
+  (non-zero policy result), and `ERROR/BLOCKED`. `NOT_EXECUTED` is only valid
+  when the canonical input is absent; M31.5 adds `requirements.txt`.
 - The baseline reports **0 confirmed P0/P1 from executed OpenGrep, Trivy and
   secret scans**. It does not claim total P0/P1 open is zero before triage.
 - 4,624 pylint-odoo messages remain untriaged under Issue #99.
