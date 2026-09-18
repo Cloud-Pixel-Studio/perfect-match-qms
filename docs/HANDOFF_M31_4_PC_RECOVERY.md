@@ -610,3 +610,43 @@ These categories are not converted to PASS. PR #151 remains OPEN/DRAFT and
 unmerged; PR #147 and Issues #146/#148 remain unchanged. No release or tag
 was created. Closure of M31.4 is conditional on Product Owner acceptance of
 these documented exceptions; otherwise the mission remains open.
+
+## M31.4-C4.24 Product Owner Conditional Closeout
+
+The Product Owner explicitly accepted conditional closeout for M31.4 as
+`PARTIAL — ACCEPTED LIMITATIONS`.
+
+Authoritative references:
+
+- Product SHA: `5aa735c7b09dfa46cfab8ca5d9d725039d4b982e1`
+- Validated harness SHA: `84e2bafb095ec085e04ae8fb039eba0c98aa3ff`
+- Documentation head before this closeout entry: `3ae322b00c18bffcf66da693575f071e16d1447d`
+- QMS CI: `35358965958` PASS, exact validated harness SHA
+- Security Audit: `35358965959` PASS, exact validated harness SHA
+
+Accepted PASS scope includes authenticated customer UAT, the role matrix,
+23/23 direct authorization probes, Configuration, protected data,
+permitted/prohibited mutations, company isolation, keyboard/focus/responsive
+coverage, Mission16, Mission23, cleanup and authorized ORM teardown.
+
+This is pilot-technical acceptance, not full production certification of email
+delivery, workflow transitions or cancellation behavior. The accepted open
+limitations and follow-up work items are:
+
+1. Duplicate notification detection — `NOT TESTED`; identify and use a
+   supported API or fixture mechanism before claiming coverage.
+2. SMTP/email — `CONFIGURATION REQUIREMENT / NOT TESTED`; provision only a
+   supported disposable target before testing delivery and recipient
+   isolation.
+3. Workflow authorization — `NOT APPLICABLE / NOT TESTED`; test only when a
+   real supported transition exists.
+4. Cancellation-specific cleanup — `NOT TESTED`; add a safe supported
+   cancellation assertion before claiming coverage.
+5. pip-audit — `NOT EXECUTED`; provide the canonical dependency input under
+   Issue #98 before execution.
+
+None of these limitations is reported as PASS. PR #151 remains validation-only
+and unmerged; PR #147 remains unchanged; Issues #146 and #148 remain open;
+no release or tag was created and no Demo, production, customer, CleanVM or
+repository-protection state was changed. M31.4 is closed only as conditional
+pilot-technical acceptance with the limitations above tracked separately.
