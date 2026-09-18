@@ -443,5 +443,53 @@ export M31_HEADLESS=true
 export M31_BROWSER_CHANNEL=chromium
 export M31_JSON_REPORT="$WORK/playwright.json"
 export M31_OUTPUT_DIR="$WORK/playwright-output"
+export M31_NOTIFICATION_FIXTURE_FILE="$WORK/notification-fixture.json"
+rm -f -- "$M31_NOTIFICATION_FIXTURE_FILE"
+
+set +e
 npm --prefix "$UAT_DIR" test -- --reporter=line
+UAT_RC=$?
+set -e
+
+# The browser roles deliberately cannot unlink these records. Use the
+# repository's existing disposable Odoo-shell fixture mechanism as the sole
+# teardown authority, restricted to the exact IDs emitted by this test.
+NOTIFICATION_CLEANUP_RC=0
+if [[ -f "$M31_NOTIFICATION_FIXTURE_FILE" ]]; then
+  docker compose --project-name "pmqms-customer-${SLUG}" --env-file "$ROOT/config/instance.env" \
+    -f "$ROOT/runtime/compose.yml" run --rm --user 100:101 \
+    -v "$WORK:/var/lib/pmqms-uat:ro" \
+    odoo odoo shell -d "$DB_NAME" --log-level=error <<'PY' || NOTIFICATION_CLEANUP_RC=$?
+import json
+from pathlib import Path
+
+fixture = json.loads(Path("/var/lib/pmqms-uat/notification-fixture.json").read_text())
+risk_id = fixture.get("riskId")
+activity_ids = fixture.get("activityIds") or {}
+ids = {"risk": risk_id, "qmActivity": activity_ids.get("qm"), "viewerActivity": activity_ids.get("viewer")}
+models = {"risk": "pm.qms.risk", "qmActivity": "mail.activity", "viewerActivity": "mail.activity"}
+for key in ("qmActivity", "viewerActivity", "risk"):
+    record_id = ids[key]
+    if isinstance(record_id, int):
+        env[models[key]].sudo().browse(record_id).unlink()
+env.cr.commit()
+remaining = {key: bool(isinstance(ids[key], int) and env[models[key]].sudo().browse(ids[key]).exists()) for key in ids}
+evidence = {
+    "status": "PASS" if not any(remaining.values()) else "NOT_CONFIRMED",
+    "riskRemoved": not remaining["risk"],
+    "qmActivityRemoved": not remaining["qmActivity"],
+    "viewerActivityRemoved": not remaining["viewerActivity"],
+    "remaining": remaining,
+    "scope": "exact_fixture_ids_only",
+}
+print("M31_NOTIFICATION_CLEANUP_AUTHORIZED=" + json.dumps(evidence, sort_keys=True))
+if evidence["status"] != "PASS":
+    raise RuntimeError("notification fixture cleanup verification failed")
+PY
+else
+  echo 'M31_NOTIFICATION_CLEANUP_AUTHORIZED={"status":"PASS","scope":"no_fixture_ids_emitted"}'
+fi
+
+if [[ "$UAT_RC" != 0 ]]; then exit "$UAT_RC"; fi
+if [[ "$NOTIFICATION_CLEANUP_RC" != 0 ]]; then exit "$NOTIFICATION_CLEANUP_RC"; fi
 echo 'authenticated customer UAT: PASS'
