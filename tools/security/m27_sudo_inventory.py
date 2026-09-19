@@ -217,7 +217,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Retain fixed helper; M28 review caller inventory",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_license/models/license.py", "189"): {
+    ("addons/pm_qms_license/models/license.py", "185"): {
         "invoker": "Controlled license import/update path",
         "input_provenance": "Validated signed license payload after environment/signature checks",
         "user_controlled_input": "Payload is externally supplied but validated before create; no arbitrary model/domain",
