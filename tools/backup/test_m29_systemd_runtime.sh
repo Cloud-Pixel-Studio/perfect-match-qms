@@ -325,6 +325,18 @@ wait_for_retry() {
   echo "timed out waiting for ${service} retry after contention (restarts=${restarts:-unknown} exit_status=${result:-unknown})" >&2
   return 1
 }
+wait_for_lock_free() {
+  local lock_path="$1" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    if flock -n "$lock_path" -c ':' 2>/dev/null; then
+      echo "systemd_runtime_lock_release_observed lock_path=${lock_path} state=free"
+      return 0
+    fi
+    sleep 0.2
+  done
+  echo "timed out waiting for scheduler lock release: ${lock_path}" >&2
+  return 1
+}
 wait_for_count() {
   local tier="$1" minimum="$2" deadline=$((SECONDS + 30))
   while (( SECONDS < deadline )); do
@@ -549,6 +561,8 @@ echo "systemd_runtime_phase=monthly_exit_code_3_observed"
 # itself is guaranteed to exercise the successful recovery path.
 touch "$DAILY_LOCK_RELEASE"
 echo "systemd_runtime_phase=daily_lock_release_requested"
+wait_for_lock_free "$SCHEDULER_LOCK"
+echo "systemd_runtime_phase=daily_lock_released"
 wait_for_retry "$MONTHLY_INSTANCE_SERVICE"
 echo "systemd_runtime_phase=monthly_retry_observed"
 wait_for_count monthly "$(( monthly_before_collision + 2 ))"
