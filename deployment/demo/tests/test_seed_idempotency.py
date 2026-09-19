@@ -297,8 +297,10 @@ class SeedIdentityTests(unittest.TestCase):
 
     def test_demo_validation_requires_confirmed_cost_event_and_six_lines(self):
         source = VALIDATE_PATH.read_text(encoding="utf-8")
-        self.assertIn('[("state", "=", "confirmed")]', source)
-        self.assertIn('require(confirmed_events >= 1, "expected confirmed Cost of Quality events")', source)
+        self.assertIn('event.state == "confirmed"', source)
+        self.assertIn('expected_cost_lines = {"APEX-CQ-001": 4, "APEX-CQ-002": 2}', source)
+        self.assertIn('require(confirmed_events == 2, "expected both canonical Cost of Quality events confirmed")', source)
+        self.assertIn('require(line_count == expected_lines, f"expected {expected_lines} lines for {code}, found {line_count}")', source)
         self.assertIn('require(lines >= 6, "expected six Cost of Quality lines")', source)
 
     def test_generic_upsert_skips_unchanged_values(self):

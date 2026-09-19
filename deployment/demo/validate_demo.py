@@ -190,16 +190,31 @@ for role, login in EXPECTED_QMS_PERSONAS.items():
     if persona:
         require(not persona.has_group("base.group_system"), f"QMS persona is System Administrator: {role}")
 
+canonical_cost_lines = 0
 if "pm.qms.cost.event" in env:
-    confirmed_events = env["pm.qms.cost.event"].search_count(org_domain + [("state", "=", "confirmed")])
+    expected_cost_lines = {"APEX-CQ-001": 4, "APEX-CQ-002": 2}
+    cost_events = env["pm.qms.cost.event"].search(
+        org_domain + [("code", "in", list(expected_cost_lines))]
+    )
+    confirmed_events = sum(1 for event in cost_events if event.state == "confirmed")
     summary["pm.qms.cost.event.confirmed"] = confirmed_events
-    require(confirmed_events >= 1, "expected confirmed Cost of Quality events")
+    require(len(cost_events) == 2, "expected both canonical Cost of Quality events")
+    require(confirmed_events == 2, "expected both canonical Cost of Quality events confirmed")
+    for code, expected_lines in expected_cost_lines.items():
+        event = cost_events.filtered(lambda candidate: candidate.code == code)
+        line_count = sum(len(candidate.line_ids) for candidate in event)
+        summary[f"cost_lines.{code}"] = line_count
+        canonical_cost_lines += line_count
+        require(bool(event), f"missing canonical Cost of Quality event: {code}")
+        require(line_count == expected_lines, f"expected {expected_lines} lines for {code}, found {line_count}")
+    summary["pm.qms.cost.line.canonical"] = canonical_cost_lines
 else:
     errors.append("missing model: pm.qms.cost.event")
 if "pm.qms.cost.line" in env:
     lines = env["pm.qms.cost.line"].search_count(org_domain)
     summary["pm.qms.cost.line"] = lines
     require(lines >= 6, "expected six Cost of Quality lines")
+    require(canonical_cost_lines == 6, "expected six canonical Cost of Quality lines")
 else:
     errors.append("missing model: pm.qms.cost.line")
 
