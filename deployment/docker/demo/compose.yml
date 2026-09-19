@@ -43,6 +43,7 @@ services:
     command: ["odoo", "--log-level=info"]
     volumes:
       - ../../../addons:/mnt/extra-addons:rw
+      - ../../../deployment/demo/public_keys_demo_qa.json:/run/pmqms-demo-qa-public-keys.json:ro
       - ${ODOO_DEMO_CONFIG_DIR:-/opt/perfect-match/secrets/odoo-demo/config}:/etc/odoo:ro
       - pmqms_demo_odoo_data:/var/lib/odoo
     secrets:

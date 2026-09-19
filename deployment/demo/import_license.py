@@ -1,6 +1,8 @@
 from pathlib import Path
 import json
 
+from odoo.addons.pm_qms_license.services.license_service import load_demo_qa_public_keys
+
 
 license_path = Path("/run/pmqms-demo-license.pmql")
 if not license_path.exists():
@@ -12,7 +14,10 @@ if current and current.license_id == payload.get("license_id") and current.licen
     license_record = current
     print("DEMO_LICENSE_ALREADY_CURRENT")
 else:
-    license_record = env["pm.qms.license"].import_document(license_path.read_bytes())
+    license_record = env["pm.qms.license"].import_document(
+        license_path.read_bytes(),
+        public_keys=load_demo_qa_public_keys(),
+    )
 env.cr.commit()
 print("DEMO_LICENSE_IMPORTED")
 print(f"license_id={license_record.license_id}")

@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument("--site-limit", type=int, default=3)
     parser.add_argument("--named-user-limit", type=int, default=1)
     parser.add_argument("--key-id", default=license_service.DEFAULT_ISSUANCE_KEY_ID)
+    parser.add_argument("--deployment-scope", choices=("demo-qa",), default=None)
     parser.add_argument("--expires-at", default=None, help="ISO-8601 UTC timestamp; omit for perpetual license")
     return parser.parse_args()
 
@@ -46,6 +47,10 @@ def parse_args():
 def main():
     args = parse_args()
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    if args.key_id == license_service.DEMO_QA_KEY_ID and args.deployment_scope != "demo-qa":
+        raise SystemExit("--key-id pmqms-demo-2026-v2 requires --deployment-scope demo-qa")
+    if args.key_id != license_service.DEMO_QA_KEY_ID and args.deployment_scope is not None:
+        raise SystemExit("--deployment-scope is only valid with --key-id pmqms-demo-2026-v2")
     payload = {
         "schema_version": 1,
         "license_id": args.license_id or f"PMQMS-{uuid.uuid4().hex[:12].upper()}",
@@ -63,6 +68,8 @@ def main():
         "key_id": args.key_id,
         "metadata": {"issuer": "Perfect Match Investments LLC", "purpose": "offline entitlement"},
     }
+    if args.deployment_scope is not None:
+        payload["deployment_scope"] = args.deployment_scope
     document = issue_license(payload, args.private_key, args.output)
     print(json.dumps({"license_id": payload["license_id"], "revision": payload["license_revision"], "output": str(Path(args.output).resolve())}, sort_keys=True))
     return document

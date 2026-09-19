@@ -149,10 +149,14 @@ class PmQmsLicense(models.Model):
         return super().write(vals)
 
     @api.model
-    def import_document(self, document, expected_environment_id=None):
+    def import_document(self, document, expected_environment_id=None, public_keys=None):
         expected_environment_id = expected_environment_id or read_environment_id()
         try:
-            result = validate_document(document, expected_environment_id=expected_environment_id)
+            result = validate_document(
+                document,
+                expected_environment_id=expected_environment_id,
+                public_keys=public_keys,
+            )
         except LicenseValidationError as exc:
             raise UserError(str(exc)) from exc
         payload = result["payload"]

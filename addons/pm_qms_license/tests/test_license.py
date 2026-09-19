@@ -1,4 +1,5 @@
 import base64
+import base64
 import hashlib
 import json
 import tempfile
@@ -193,6 +194,67 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         for encoded_key in registry.values():
             self.assertEqual(len(base64.b64decode(encoded_key, validate=True)), 32)
         self.assertEqual(license_service.DEFAULT_ISSUANCE_KEY_ID, "pmqms-license-2026")
+
+    def test_standard_bundle_rejects_v2_demo_qa_authority(self):
+        v2_private = Ed25519PrivateKey.generate()
+        v2_public = v2_private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        document = self._document_for_key(
+            v2_private,
+            key_id=license_service.DEMO_QA_KEY_ID,
+            deployment_scope="demo-qa",
+            license_id="PMQMS-DEMO-QA-V2",
+        )
+        standard_keys = {
+            "pmqms-demo-2026": self.public_key_b64,
+            "pmqms-license-2026": self.public_key_b64,
+        }
+        with self.assertRaises(ValueError):
+            validate_document(document, expected_environment_id=self.environment_id, public_keys=standard_keys)
+        demo_keys = dict(standard_keys, **{license_service.DEMO_QA_KEY_ID: base64.b64encode(v2_public).decode()})
+        result = validate_document(document, expected_environment_id=self.environment_id, public_keys=demo_keys)
+        self.assertEqual(result["payload"]["deployment_scope"], "demo-qa")
+        self.assertEqual(result["public_key_fingerprint"], hashlib.sha256(v2_public).hexdigest())
+
+    def test_v2_scope_and_negative_cases(self):
+        v2_private = Ed25519PrivateKey.generate()
+        v2_public = v2_private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        demo_keys = {license_service.DEMO_QA_KEY_ID: base64.b64encode(v2_public).decode()}
+        valid = self._document_for_key(
+            v2_private,
+            key_id=license_service.DEMO_QA_KEY_ID,
+            deployment_scope="demo-qa",
+        )
+        self.assertEqual(
+            validate_document(valid, expected_environment_id=self.environment_id, public_keys=demo_keys)["state"],
+            "valid",
+        )
+        missing_scope = self._document_for_key(v2_private, key_id=license_service.DEMO_QA_KEY_ID)
+        with self.assertRaises(ValueError):
+            validate_document(missing_scope, expected_environment_id=self.environment_id, public_keys=demo_keys)
+        altered_scope = json.loads(json.dumps(valid))
+        altered_scope["payload"]["deployment_scope"] = "production"
+        with self.assertRaises(ValueError):
+            validate_document(altered_scope, expected_environment_id=self.environment_id, public_keys=demo_keys)
+        invalid_limits = self._document_for_key(
+            v2_private,
+            key_id=license_service.DEMO_QA_KEY_ID,
+            deployment_scope="demo-qa",
+            site_limit=0,
+        )
+        with self.assertRaises(ValueError):
+            validate_document(invalid_limits, expected_environment_id=self.environment_id, public_keys=demo_keys)
+        with self.assertRaises(ValueError):
+            validate_document(valid, expected_environment_id="22222222-2222-4222-8222-222222222222", public_keys=demo_keys)
+        altered_signature = json.loads(json.dumps(valid))
+        altered_signature["signature"] = base64.b64encode(b"x" * 64).decode()
+        with self.assertRaises(ValueError):
+            validate_document(altered_signature, expected_environment_id=self.environment_id, public_keys=demo_keys)
+        with self.assertRaises(ValueError):
+            validate_document(valid, expected_environment_id=self.environment_id, public_keys={"unknown": demo_keys[license_service.DEMO_QA_KEY_ID]})
 
     def test_revision_replacement_and_older_revision_rejection(self):
         self._import()
