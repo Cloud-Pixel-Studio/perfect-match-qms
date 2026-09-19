@@ -96,14 +96,6 @@ if [[ "${1:-}" == compose ]]; then
   command_line="$*"
   if [[ "$command_line" == *" exec "* && "$command_line" == *" pg_dump "* ]]; then
     if [[ "${PMQMS_TEST_BACKUP_TIER:-}" == daily && -e "${PMQMS_TEST_DAILY_HOLD_REQUEST:-}" ]]; then
-      signal_tmp="${PMQMS_TEST_DAILY_LOCK_ACQUIRED_SIGNAL}.$$"
-      {
-        printf 'lock_acquired=1\n'
-        printf 'tier=daily\n'
-        printf 'backup_pid=%s\n' "$$"
-        printf 'observed_at_ns=%s\n' "$(date +%s%N)"
-      } > "${signal_tmp}"
-      mv "${signal_tmp}" "${PMQMS_TEST_DAILY_LOCK_ACQUIRED_SIGNAL}"
       while [[ ! -e "${PMQMS_TEST_DAILY_LOCK_RELEASE:-}" ]]; do
         sleep 0.1
       done
@@ -163,6 +155,19 @@ scheduler_pid=\$!
 if [[ "${tier}" == daily && -e "${DAILY_MONTHLY_HOLD_REQUEST}" ]]; then
   lock_deadline=\$((SECONDS + 30))
   while (( SECONDS < lock_deadline )) && [[ ! -e "${DAILY_LOCK_ACQUIRED_SIGNAL}" ]] && kill -0 "\${scheduler_pid}" 2>/dev/null; do
+    # The scheduler owns the real instance lock while its backup is running.
+    # Probe that lock from this wrapper and publish the barrier immediately
+    # after ownership is observable; do not use a timing-based sleep.
+    if ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
+      signal_tmp="${DAILY_LOCK_ACQUIRED_SIGNAL}.\$$"
+      {
+        printf 'lock_acquired=1\n'
+        printf 'tier=daily\n'
+        printf 'scheduler_pid=%s\n' "\${scheduler_pid}"
+        printf 'observed_at_ns=%s\n' "\$(date +%s%N)"
+      } > "\${signal_tmp}"
+      mv "\${signal_tmp}" "${DAILY_LOCK_ACQUIRED_SIGNAL}"
+    fi
     sleep 0.05
   done
   if [[ ! -e "${DAILY_LOCK_ACQUIRED_SIGNAL}" ]]; then
