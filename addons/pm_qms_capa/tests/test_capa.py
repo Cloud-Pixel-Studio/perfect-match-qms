@@ -19,6 +19,7 @@ class TestPmQmsCapa(TransactionCase):
         cls.base_user_group = cls.env.ref("base.group_user")
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
+        cls.management_group = cls.env.ref("pm_qms_core.group_qms_management_user")
         cls.organization = cls.env["pm.qms.organization"].create(
             {"name": "CAPA Organization", "code": "PM-CAPA-ORG", "company_id": cls.company.id}
         )
@@ -166,6 +167,19 @@ class TestPmQmsCapa(TransactionCase):
         self.assertEqual(legacy.prompt, WHY_PROMPTS[1])
         self.assertEqual(capa.why_ids.mapped("prompt"), [WHY_PROMPTS[i] for i in range(1, 6)])
         self.assertTrue(self.env["pm.qms.capa.why"]._fields["prompt"].readonly)
+
+    def test_management_user_is_read_only_for_capa(self):
+        management = self._create_test_user("pmqms.capa.management", self.management_group)
+        capa = self.env["pm.qms.capa"].create(self._capa_values(name="Management read-only CAPA"))
+
+        self.assertEqual(self.env["pm.qms.capa"].with_user(management).search_count([("id", "=", capa.id)]), 1)
+        self.assertEqual(self.env["pm.qms.capa"].with_user(management).browse(capa.id).name, capa.name)
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.capa"].with_user(management).create(self._capa_values(name="Forbidden management CAPA"))
+        with self.assertRaises(AccessError):
+            capa.with_user(management).write({"problem_statement": "Forbidden management update"})
+        with self.assertRaises(AccessError):
+            capa.with_user(management).unlink()
 
     def test_rca_methodology_views_expose_specific_guidance(self):
         view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")

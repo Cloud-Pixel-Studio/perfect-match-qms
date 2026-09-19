@@ -15,6 +15,7 @@ class TestPmQmsRisk(TransactionCase):
         cls.base_user_group = cls.env.ref("base.group_user")
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
+        cls.management_group = cls.env.ref("pm_qms_core.group_qms_management_user")
         cls.organization = cls.env["pm.qms.organization"].create(
             {"name": "Risk Organization", "code": "PM-RISK-ORG", "company_id": cls.company.id}
         )
@@ -162,6 +163,19 @@ class TestPmQmsRisk(TransactionCase):
             risk.with_user(qms_user).action_close()
         with self.assertRaises(AccessError):
             risk.with_user(qms_user).write({"state": "closed"})
+
+    def test_management_user_is_read_only_for_risks(self):
+        management = self._create_test_user("pmqms.risk.management", self.management_group)
+        risk = self.env["pm.qms.risk"].create(self._risk_values(name="Management read-only risk"))
+
+        self.assertEqual(self.env["pm.qms.risk"].with_user(management).search_count([("id", "=", risk.id)]), 1)
+        self.assertEqual(self.env["pm.qms.risk"].with_user(management).browse(risk.id).name, risk.name)
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.risk"].with_user(management).create(self._risk_values(name="Forbidden management risk"))
+        with self.assertRaises(AccessError):
+            risk.with_user(management).write({"description": "Forbidden management update"})
+        with self.assertRaises(AccessError):
+            risk.with_user(management).unlink()
 
     def test_closure_requires_notes_and_attachment_access_is_protected(self):
         manager = self._create_test_user("pmqms.risk.manager2", self.qms_manager_group)
