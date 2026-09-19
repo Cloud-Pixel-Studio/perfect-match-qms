@@ -2,11 +2,11 @@
 
 ## Unreleased
 
-- Added the scoped `pmqms-demo-2026-v2` Demo/QA license authority while
-  preserving `pmqms-demo-2026` and `pmqms-license-2026` for historical and
-  general issuance compatibility.
-- Added coexistence, fingerprint, invalid-signature, wrong-environment, and
-  unknown-authority coverage for the three-key registry.
+- Prepared the external `pmqms-demo-2026-v2` Demo/QA authority, but blocked
+  registry publication until a trusted runtime deployment identity exists.
+- Preserved `pmqms-demo-2026` and `pmqms-license-2026` and retained
+  coexistence, fingerprint, invalid-signature, wrong-environment, and
+  unknown-authority coverage for the shipped two-key registry.
 
 ## 1.0.0 - 2026-09-18
 

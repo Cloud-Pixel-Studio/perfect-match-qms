@@ -33,9 +33,10 @@ python3 deployment/scripts/issue-license.py \
   --revision 1 --company-limit 1 --site-limit 3 --named-user-limit 8
 ```
 
-The issuer defaults to `key_id=pmqms-license-2026`. For the isolated Demo/QA
-rotation, pass `--key-id pmqms-demo-2026-v2` explicitly. Do not reuse either
-historical key ID for new Demo/QA issuance. The historical
+The issuer defaults to `key_id=pmqms-license-2026`. The planned
+`pmqms-demo-2026-v2` authority is currently blocked: do not issue with it or
+add it to a customer/Demo bundle until the runtime has a trusted Demo/QA
+deployment identity and verifies a signed scope field. The historical
 `pmqms-demo-2026` and active general `pmqms-license-2026` public verifiers
 remain registered so previously issued licenses continue to validate.
 
@@ -55,11 +56,10 @@ Internet connection is required by the runtime.
 
 ## Rotation and migration
 
-Add the new public key under a new `key_id` before issuing with it. The Demo/QA
-rotation uses `pmqms-demo-2026-v2`; the private key is generated directly in
-the external authority store with mode `0600`, with an encrypted backup and
-tested recovery procedure. Never copy it to Git, a bundle, a Docker image, a
-CI runner, or a customer/Demo instance. Retain all prior public keys while
-valid licenses remain in circulation. A server migration keeps the identity
-and license; a deliberately new installation gets a new identity and a newly
-issued license.
+Add the new public key under a new `key_id` before issuing with it. The planned
+Demo/QA rotation uses `pmqms-demo-2026-v2`; its private key is generated
+directly in the external authority store with restricted access and an
+encrypted backup. It is not currently issuable because the runtime has no
+trusted deployment-type identity. Never copy it to Git, a bundle, a Docker
+image, a CI runner, or a customer/Demo instance. Retain all prior public keys
+while valid licenses remain in circulation.

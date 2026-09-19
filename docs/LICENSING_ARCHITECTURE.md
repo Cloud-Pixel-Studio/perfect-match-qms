@@ -34,11 +34,13 @@ limits, dates, perpetual flag, and `key_id`.
 Only public verification keys are shipped in `data/public_keys.json`.
 `pmqms-demo-2026` remains registered as a historical verifier,
 `pmqms-license-2026` remains the active general issuance authority, and
-`pmqms-demo-2026-v2` is the explicitly scoped Demo/QA issuance authority. The
-private signing keys live outside Git, Docker images, CI, and customer/Demo
-instances in restricted external authority storage. `key_id` and public-key
-fingerprints allow rotation while all historical signed licenses remain
-verifiable without changing the license format. Verification is entirely
+`pmqms-demo-2026-v2` is reserved for a future Demo/QA authority rotation but
+is not shipped in the public verifier registry. The runtime currently has no
+trusted deployment-type identity, so a signed `deployment_scope` field could
+not be enforced safely. The private signing keys live outside Git, Docker
+images, CI, and customer/Demo instances in restricted external authority
+storage. `key_id` and public-key fingerprints preserve historical validation.
+Verification is entirely
 local: the product has no phone-home call, license cloud dependency, or
 continuous Internet requirement.
 
