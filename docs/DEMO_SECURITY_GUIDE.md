@@ -16,6 +16,11 @@ stored in this document or in Git.
 | Michael Stone | Management User | Apex organization, read-oriented management visibility |
 | Victor Lee | QMS Viewer | Apex organization, read-only visibility |
 
+The Demo functional validation covers role and site boundaries. Cross-company
+isolation remains **NOT TESTED** in the single-company Demo database; proving
+that boundary requires a separate disposable company fixture and is not inferred
+from the company record rule alone.
+
 The seed is idempotent and is restricted to `pmqms_demo`. It must not be used
 against the retired `pmqms_oliva_pilot` database name or any non-Demo database.
 
