@@ -678,9 +678,9 @@ def ensure_cost_event(code, name, source_model, source_record, lines):
             if ctype:
                 env["pm.qms.cost.line"].create(filtered("pm.qms.cost.line", {"event_id": event.id, "cost_type_id": ctype.id, "description": desc, "amount": amount, "recovery_amount": recovery, "is_estimated": True, "notes": "Fictional amount for demo analytics."}))
         try:
-            event.action_confirm()
+            event.with_user(demo_user).action_confirm()
         except Exception as exc:
-            warnings.append(f"cost_confirm:{code}:{exc.__class__.__name__}:{exc}")
+            raise RuntimeError(f"Cost event confirmation failed for {code}: {exc}") from exc
     return event
 
 ensure_cost_event("APEX-CQ-001", "Dimensional complaint quality cost story", "pm.qms.customer.complaint", complaint, [("external_failure", "Replacement shipment and customer response", 1850.0, 250.0), ("internal_failure", "Reinspection and rework of retained inventory", 1250.0, 0.0), ("appraisal", "Additional dimensional verification", 640.0, 0.0), ("prevention", "Inspector refresher training", 420.0, 0.0)])

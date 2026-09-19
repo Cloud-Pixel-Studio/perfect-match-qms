@@ -135,6 +135,11 @@ render_service() {
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\\n' "\$(date +%s)" >> "${WORK}/${tier}.invocations"
+lock_state=free
+if [[ -e "${SCHEDULER_LOCK}" ]] && ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
+  lock_state=held
+fi
+printf '%s|%s\\n' "\$(date +%s%N)" "\${lock_state}" >> "${WORK}/${tier}.lock-observations"
 exec /usr/bin/env bash "${ROOT}/deployment/scripts/customer-backup-scheduler.sh" run --tier "${tier}" --config "${WORK}/config.json"
 EOF
   chmod 755 "$wrapper"
@@ -158,7 +163,7 @@ EOF
 }
 
 render_timer() {
-  local source="$1" output="$2" unit="$3" mode="$4"
+  local source="$1" output="$2" unit="$3" mode="$4" delay="${5:-2s}"
   if [[ "$mode" == calendar ]]; then
     sed \
       -e '/^OnCalendar=/d' \
@@ -172,19 +177,19 @@ render_timer() {
       -e '/^Persistent=/d' \
       -e '/^RandomizedDelaySec=/d' \
       -e "s#^Unit=.*#Unit=${unit}#" \
-      -e "/^\[Timer\]/a OnActiveSec=2s\\nRandomizedDelaySec=0" \
+      -e "/^\[Timer\]/a OnActiveSec=${delay}\\nRandomizedDelaySec=0" \
       "$source" > "$output"
   fi
 }
 
 render_service "$ROOT/deployment/systemd/pmqms-customer-backup@.service" "$WORK/unit/$RUNTIME_SERVICE" intraday 4
 render_service "$ROOT/deployment/systemd/pmqms-customer-backup@.service" "$WORK/unit/$COLLISION_RUNTIME_SERVICE" intraday 4
-render_service "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.service" "$WORK/unit/$DAILY_SERVICE" daily 4
+render_service "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.service" "$WORK/unit/$DAILY_SERVICE" daily 10
 render_service "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.service" "$WORK/unit/$MONTHLY_SERVICE" monthly 4
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$RUNTIME_TIMER" "$RUNTIME_INSTANCE_SERVICE" calendar
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$COLLISION_RUNTIME_TIMER" "$COLLISION_RUNTIME_INSTANCE_SERVICE" monotonic
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.timer" "$WORK/unit/$DAILY_TIMER" "$DAILY_INSTANCE_SERVICE" monotonic
-render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.timer" "$WORK/unit/$MONTHLY_TIMER" "$MONTHLY_INSTANCE_SERVICE" monotonic
+render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.timer" "$WORK/unit/$MONTHLY_TIMER" "$MONTHLY_INSTANCE_SERVICE" monotonic 500ms
 for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$COLLISION_RUNTIME_SERVICE" "$COLLISION_RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
   as_root install -m 0644 "$WORK/unit/$unit" "$UNIT_DIR/$unit"
 done
@@ -203,6 +208,39 @@ fi
 count_invocations() {
   local tier="$1"
   [[ -f "$WORK/${tier}.invocations" ]] && wc -l < "$WORK/${tier}.invocations" || echo 0
+}
+wait_for_lock_observation() {
+  local tier="$1" ordinal="$2" expected="$3" deadline=$((SECONDS + 30)) observations=""
+  while (( SECONDS < deadline )); do
+    observations="${WORK}/${tier}.lock-observations"
+    if [[ -f "$observations" ]] && awk -F'|' -v n="$ordinal" -v state="$expected" 'NR == n && $2 == state { found = 1 } END { exit(found ? 0 : 1) }' "$observations"; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  cat "$observations" >&2 2>/dev/null || true
+  echo "timed out waiting for ${tier} invocation ${ordinal} to observe scheduler lock ${expected}" >&2
+  return 1
+}
+wait_for_retry() {
+  local service="$1" deadline=$((SECONDS + 30)) restarts="" result=""
+  while (( SECONDS < deadline )); do
+    restarts="$(as_root "$SYSTEMCTL" show -p NRestarts --value "$service" 2>/dev/null || true)"
+    result="$(as_root "$SYSTEMCTL" show -p ExecMainStatus --value "$service" 2>/dev/null || true)"
+    # NRestarts is the systemd-observable retry event.  ExecMainStatus may
+    # already be 0 when the retry has completed, so do not race that status
+    # transition; the first attempt's lock-held observation proves that the
+    # restart was caused by scheduler contention (exit 3).
+    if [[ "$restarts" =~ ^[1-9][0-9]*$ ]]; then
+      echo "systemd_runtime_retry_observed service=${service} restarts=${restarts} exit_status=${result}"
+      return 0
+    fi
+    sleep 0.2
+  done
+  as_root "$SYSTEMCTL" status "$service" --no-pager || true
+  as_root journalctl -u "$service" -n 50 --no-pager || true
+  echo "timed out waiting for ${service} retry after contention (restarts=${restarts:-unknown} exit_status=${result:-unknown})" >&2
+  return 1
 }
 wait_for_count() {
   local tier="$1" minimum="$2" deadline=$((SECONDS + 30))
@@ -412,6 +450,11 @@ echo "systemd_runtime_phase=daily_service_active"
 start_timer "$MONTHLY_INSTANCE_TIMER"
 echo "systemd_runtime_phase=daily_monthly_timers_started"
 echo "systemd_runtime_phase=monthly_daily_observed"
+monthly_first_attempt=$((monthly_before_collision + 1))
+wait_for_count monthly "$monthly_first_attempt"
+wait_for_lock_observation monthly "$((monthly_first_attempt))" held
+echo "systemd_runtime_phase=monthly_contention_observed"
+wait_for_retry "$MONTHLY_INSTANCE_SERVICE"
 wait_for_count monthly "$(( monthly_before_collision + 2 ))"
 echo "systemd_runtime_phase=monthly_retries_observed"
 stop_timer "$DAILY_INSTANCE_TIMER"
