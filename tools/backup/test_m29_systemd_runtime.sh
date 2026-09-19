@@ -42,6 +42,9 @@ DAILY_INSTANCE_SERVICE="${PREFIX}-daily@${SLUG}.service"
 DAILY_INSTANCE_TIMER="${PREFIX}-daily@${SLUG}.timer"
 MONTHLY_INSTANCE_SERVICE="${PREFIX}-monthly@${SLUG}.service"
 MONTHLY_INSTANCE_TIMER="${PREFIX}-monthly@${SLUG}.timer"
+DAILY_MONTHLY_HOLD_REQUEST="${WORK}/daily-monthly-hold.request"
+DAILY_LOCK_ACQUIRED_SIGNAL="${WORK}/daily-lock-acquired.signal"
+DAILY_LOCK_RELEASE="${WORK}/daily-lock.release"
 
 cleanup() {
   set +e
@@ -91,8 +94,19 @@ set -euo pipefail
 if [[ "${1:-}" == compose ]]; then
   shift
   command_line="$*"
+  if [[ "${PMQMS_TEST_BACKUP_TIER:-}" == daily && -e "${PMQMS_TEST_DAILY_HOLD_REQUEST:-}" && ! -e "${PMQMS_TEST_DAILY_LOCK_RELEASE:-}" ]]; then
+    # Keep the real scheduler lock held from the first fixture operation until
+    # the harness explicitly releases it. This is an event gate, not a timing
+    # assumption, and prevents post-acquisition work from ending the collision
+    # before the monthly first attempt is observed.
+    while [[ ! -e "${PMQMS_TEST_DAILY_LOCK_RELEASE:-}" ]]; do
+      sleep 0.1
+    done
+  fi
   if [[ "$command_line" == *" exec "* && "$command_line" == *" pg_dump "* ]]; then
-    sleep "${PMQMS_TEST_BACKUP_SLEEP:-0}"
+    if [[ "${PMQMS_TEST_BACKUP_TIER:-}" != daily || ! -e "${PMQMS_TEST_DAILY_HOLD_REQUEST:-}" ]]; then
+      sleep "${PMQMS_TEST_BACKUP_SLEEP:-0}"
+    fi
     printf 'fictional database snapshot\n'
   fi
   exit 0
@@ -140,7 +154,39 @@ if [[ -e "${SCHEDULER_LOCK}" ]] && ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/
   lock_state=held
 fi
 printf '%s|%s\\n' "\$(date +%s%N)" "\${lock_state}" >> "${WORK}/${tier}.lock-observations"
-exec /usr/bin/env bash "${ROOT}/deployment/scripts/customer-backup-scheduler.sh" run --tier "${tier}" --config "${WORK}/config.json"
+scheduler_pid=""
+/usr/bin/env bash "${ROOT}/deployment/scripts/customer-backup-scheduler.sh" run --tier "${tier}" --config "${WORK}/config.json" &
+scheduler_pid=\$!
+if [[ "${tier}" == daily && -e "${DAILY_MONTHLY_HOLD_REQUEST}" ]]; then
+  lock_deadline=\$((SECONDS + 30))
+  while (( SECONDS < lock_deadline )) && [[ ! -e "${DAILY_LOCK_ACQUIRED_SIGNAL}" ]] && kill -0 "\${scheduler_pid}" 2>/dev/null; do
+    # The scheduler owns the real instance lock while its backup is running.
+    # Probe that lock from this wrapper and publish the barrier immediately
+    # after ownership is observable; do not use a timing-based sleep.
+    if ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
+      signal_tmp="${DAILY_LOCK_ACQUIRED_SIGNAL}.\$$"
+      {
+        printf 'lock_acquired=1\n'
+        printf 'tier=daily\n'
+        printf 'scheduler_pid=%s\n' "\${scheduler_pid}"
+        printf 'observed_at_ns=%s\n' "\$(date +%s%N)"
+      } > "\${signal_tmp}"
+      mv "\${signal_tmp}" "${DAILY_LOCK_ACQUIRED_SIGNAL}"
+    fi
+    sleep 0.05
+  done
+  if [[ ! -e "${DAILY_LOCK_ACQUIRED_SIGNAL}" ]]; then
+    printf 'daily lock acquisition signal was not published\\n' >&2
+    wait "\${scheduler_pid}" || true
+    exit 1
+  fi
+fi
+set +e
+wait "\${scheduler_pid}"
+scheduler_status=\$?
+set -e
+printf '%s|%s\\n' "\$(date +%s%N)" "\${scheduler_status}" >> "${WORK}/${tier}.results"
+exit "\${scheduler_status}"
 EOF
   chmod 755 "$wrapper"
   # The hosted runner's containerized systemd cannot create the namespaces
@@ -158,7 +204,7 @@ EOF
     -e 's/^ProtectHome=.*/ProtectHome=off/' \
     -e 's/^PrivateTmp=.*/PrivateTmp=false/' \
     -e '/^ReadWritePaths=/d' \
-    -e "/^\[Service\]/a Environment=PMQMS_CUSTOMER_INSTANCE_ROOT=${INSTANCE_BASE}\\nEnvironment=PMQMS_AGE_BIN=${AGE_BIN}\\nEnvironment=PMQMS_AGE_VERSION=${AGE_VERSION}\\nEnvironment=PATH=${WORK}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\\nEnvironment=PMQMS_TEST_BACKUP_SLEEP=${sleep_seconds}" \
+    -e "/^\[Service\]/a Environment=PMQMS_CUSTOMER_INSTANCE_ROOT=${INSTANCE_BASE}\\nEnvironment=PMQMS_AGE_BIN=${AGE_BIN}\\nEnvironment=PMQMS_AGE_VERSION=${AGE_VERSION}\\nEnvironment=PATH=${WORK}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\\nEnvironment=PMQMS_TEST_BACKUP_SLEEP=${sleep_seconds}\\nEnvironment=PMQMS_TEST_BACKUP_TIER=${tier}\\nEnvironment=PMQMS_TEST_DAILY_HOLD_REQUEST=${DAILY_MONTHLY_HOLD_REQUEST}\\nEnvironment=PMQMS_TEST_DAILY_LOCK_ACQUIRED_SIGNAL=${DAILY_LOCK_ACQUIRED_SIGNAL}\\nEnvironment=PMQMS_TEST_DAILY_LOCK_RELEASE=${DAILY_LOCK_RELEASE}" \
     "$source" > "$output"
 }
 
@@ -213,13 +259,55 @@ wait_for_lock_observation() {
   local tier="$1" ordinal="$2" expected="$3" deadline=$((SECONDS + 30)) observations=""
   while (( SECONDS < deadline )); do
     observations="${WORK}/${tier}.lock-observations"
-    if [[ -f "$observations" ]] && awk -F'|' -v n="$ordinal" -v state="$expected" 'NR == n && $2 == state { found = 1 } END { exit(found ? 0 : 1) }' "$observations"; then
-      return 0
+    if [[ -f "$observations" ]]; then
+      observed_state="$(awk -F'|' -v n="$ordinal" 'NR == n { print $2; exit }' "$observations")"
+      if [[ "$observed_state" == "$expected" ]]; then
+        echo "systemd_runtime_lock_observation tier=${tier} attempt=${ordinal} state=${observed_state}"
+        return 0
+      fi
+      if [[ -n "$observed_state" ]]; then
+        echo "systemd_runtime_lock_observation tier=${tier} attempt=${ordinal} state=${observed_state} expected=${expected}" >&2
+        return 1
+      fi
     fi
     sleep 0.2
   done
   cat "$observations" >&2 2>/dev/null || true
   echo "timed out waiting for ${tier} invocation ${ordinal} to observe scheduler lock ${expected}" >&2
+  return 1
+}
+wait_for_lock_signal() {
+  local signal="$1" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    if [[ -f "$signal" ]] && grep -Fxq 'lock_acquired=1' "$signal"; then
+      cat "$signal"
+      return 0
+    fi
+    sleep 0.2
+  done
+  cat "$signal" >&2 2>/dev/null || true
+  echo "timed out waiting for daily lock acquisition signal" >&2
+  return 1
+}
+wait_for_exit_code() {
+  local tier="$1" ordinal="$2" expected="$3" deadline=$((SECONDS + 30)) results="" observed_status=""
+  while (( SECONDS < deadline )); do
+    results="${WORK}/${tier}.results"
+    if [[ -f "$results" ]]; then
+      observed_status="$(awk -F'|' -v n="$ordinal" 'NR == n { print $2; exit }' "$results")"
+      if [[ "$observed_status" == "$expected" ]]; then
+        echo "systemd_runtime_exit_code_observed tier=${tier} attempt=${ordinal} exit_status=${observed_status}"
+        return 0
+      fi
+      if [[ -n "$observed_status" ]]; then
+        echo "systemd_runtime_exit_code_observed tier=${tier} attempt=${ordinal} exit_status=${observed_status} expected=${expected}" >&2
+        return 1
+      fi
+    fi
+    sleep 0.2
+  done
+  cat "$results" >&2 2>/dev/null || true
+  echo "timed out waiting for ${tier} attempt ${ordinal} exit status ${expected}" >&2
   return 1
 }
 wait_for_retry() {
@@ -240,6 +328,18 @@ wait_for_retry() {
   as_root "$SYSTEMCTL" status "$service" --no-pager || true
   as_root journalctl -u "$service" -n 50 --no-pager || true
   echo "timed out waiting for ${service} retry after contention (restarts=${restarts:-unknown} exit_status=${result:-unknown})" >&2
+  return 1
+}
+wait_for_lock_free() {
+  local lock_path="$1" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    if flock -n "$lock_path" -c ':' 2>/dev/null; then
+      echo "systemd_runtime_lock_release_observed lock_path=${lock_path} state=free"
+      return 0
+    fi
+    sleep 0.2
+  done
+  echo "timed out waiting for scheduler lock release: ${lock_path}" >&2
   return 1
 }
 wait_for_count() {
@@ -441,22 +541,38 @@ daily_collision_attempts="$(count_invocations daily)"
 (( daily_collision_attempts >= daily_before_collision + 2 ))
 
 # Timer-triggered daily/monthly overlap: monthly also retries after exit 3.
+# The daily fixture publishes a lock-acquired signal and holds the schedule
+# lock until the harness explicitly releases it. This is the barrier: monthly
+# cannot begin before daily owns the lock, and daily cannot finish before the
+# monthly first attempt has been observed.
 daily_before_monthly="$(count_invocations daily)"
 monthly_before_collision="$(count_invocations monthly)"
+rm -f "$DAILY_MONTHLY_HOLD_REQUEST" "$DAILY_LOCK_ACQUIRED_SIGNAL" "$DAILY_LOCK_RELEASE"
+touch "$DAILY_MONTHLY_HOLD_REQUEST"
 echo "systemd_runtime_phase=start_daily_monthly_timers"
 start_timer "$DAILY_INSTANCE_TIMER"
-wait_for_scheduler_lock "$DAILY_INSTANCE_SERVICE"
-echo "systemd_runtime_phase=daily_service_active"
+wait_for_lock_signal "$DAILY_LOCK_ACQUIRED_SIGNAL"
+echo "systemd_runtime_phase=daily_lock_acquired"
 start_timer "$MONTHLY_INSTANCE_TIMER"
-echo "systemd_runtime_phase=daily_monthly_timers_started"
-echo "systemd_runtime_phase=monthly_daily_observed"
+echo "systemd_runtime_phase=monthly_timer_started"
 monthly_first_attempt=$((monthly_before_collision + 1))
 wait_for_count monthly "$monthly_first_attempt"
 wait_for_lock_observation monthly "$((monthly_first_attempt))" held
-echo "systemd_runtime_phase=monthly_contention_observed"
+echo "systemd_runtime_phase=monthly_found_lock_occupied"
+wait_for_exit_code monthly "$monthly_first_attempt" 3
+echo "systemd_runtime_phase=monthly_exit_code_3_observed"
+# Release before systemd's RestartSec window elapses. NRestarts remains the
+# observable proof that the exit-3 attempt caused a retry, while the retry
+# itself is guaranteed to exercise the successful recovery path.
+touch "$DAILY_LOCK_RELEASE"
+echo "systemd_runtime_phase=daily_lock_release_requested"
+wait_for_lock_free "$SCHEDULER_LOCK"
+echo "systemd_runtime_phase=daily_lock_released"
 wait_for_retry "$MONTHLY_INSTANCE_SERVICE"
+echo "systemd_runtime_phase=monthly_retry_observed"
 wait_for_count monthly "$(( monthly_before_collision + 2 ))"
-echo "systemd_runtime_phase=monthly_retries_observed"
+wait_for_exit_code monthly "$((monthly_before_collision + 2))" 0
+echo "systemd_runtime_phase=monthly_recovery_successful"
 stop_timer "$DAILY_INSTANCE_TIMER"
 stop_timer "$MONTHLY_INSTANCE_TIMER"
 echo "systemd_runtime_phase=daily_monthly_timers_stopped"
