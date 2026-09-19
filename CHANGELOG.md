@@ -2,8 +2,12 @@
 
 ## Unreleased
 
-- Prepared the external `pmqms-demo-2026-v2` Demo/QA authority, but blocked
-  registry publication until a trusted runtime deployment identity exists.
+- Added a separate Demo/QA-only verifier bundle for `pmqms-demo-2026-v2`.
+  Standard customer/production bundles continue to ship only the two
+  historical/general authorities; v2 requires a signed `demo-qa` scope and is
+  not issued by this change.
+- Prepared the external `pmqms-demo-2026-v2` Demo/QA authority; it remains
+  unavailable to standard customer/production bundles.
 - Preserved `pmqms-demo-2026` and `pmqms-license-2026` and retained
   coexistence, fingerprint, invalid-signature, wrong-environment, and
   unknown-authority coverage for the shipped two-key registry.

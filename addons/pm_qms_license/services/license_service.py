@@ -10,6 +10,7 @@ from .environment import read_environment_id
 
 CANONICALIZATION = "UTF-8 JSON with sorted keys, compact separators, no ASCII escaping"
 DEFAULT_ISSUANCE_KEY_ID = "pmqms-license-2026"
+DEMO_QA_KEY_ID = "pmqms-demo-2026-v2"
 REQUIRED_PAYLOAD_FIELDS = {
     "schema_version",
     "license_id",
@@ -88,6 +89,20 @@ def public_keys_path():
     return Path(__file__).resolve().parent.parent / "data" / "public_keys.json"
 
 
+def demo_qa_public_keys_path():
+    return Path("/run/pmqms-demo-qa-public-keys.json")
+
+
+def load_demo_qa_public_keys():
+    """Load the Demo/QA-only registry from the Demo bundle path.
+
+    The standard verifier intentionally never falls back to this registry.
+    The Demo importer is the only supported caller, and the customer bundle
+    removes deployment/demo before packaging.
+    """
+    return load_public_keys(demo_qa_public_keys_path())
+
+
 def load_public_keys(path=None):
     key_path = Path(path) if path else public_keys_path()
     try:
@@ -147,6 +162,11 @@ def validate_document(document, expected_environment_id=None, public_keys=None, 
     key_value = keys.get(payload["key_id"])
     if not key_value:
         raise LicenseValidationError("License key_id is not approved.")
+    deployment_scope = payload.get("deployment_scope")
+    if payload["key_id"] == DEMO_QA_KEY_ID and deployment_scope != "demo-qa":
+        raise LicenseValidationError("Demo/QA authority requires a signed demo-qa deployment scope.")
+    if payload["key_id"] != DEMO_QA_KEY_ID and deployment_scope is not None:
+        raise LicenseValidationError("Deployment scope is reserved for the Demo/QA authority.")
     public_key, public_key_bytes = _public_key_from_b64(key_value)
     try:
         public_key.verify(signature, canonical_payload(payload))
@@ -178,6 +198,33 @@ def validate_document(document, expected_environment_id=None, public_keys=None, 
         "not_before": not_before,
         "expires_at": expires_at,
     }
+
+
+def validate_runtime_document(document, expected_environment_id=None, now=None):
+    """Validate using only registries selected by the server runtime.
+
+    The standard registry is always tried first. The fixed Demo/QA registry
+    is considered only for the v2 key and only when its read-only bundle path
+    is present; callers cannot supply trust roots through the ORM/RPC API.
+    """
+    try:
+        return validate_document(document, expected_environment_id=expected_environment_id, now=now)
+    except LicenseValidationError as exc:
+        if "License key_id is not approved." not in str(exc):
+            raise
+        if isinstance(document, bytes):
+            document = document.decode("utf-8")
+        if isinstance(document, str):
+            document = json.loads(document)
+        payload = document.get("payload", {}) if isinstance(document, dict) else {}
+        if payload.get("key_id") != DEMO_QA_KEY_ID:
+            raise
+        return validate_document(
+            document,
+            expected_environment_id=expected_environment_id,
+            public_keys=load_demo_qa_public_keys(),
+            now=now,
+        )
 
 
 def sign_payload(payload, private_key_path):

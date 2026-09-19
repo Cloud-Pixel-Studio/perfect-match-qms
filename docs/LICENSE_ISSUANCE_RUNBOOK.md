@@ -33,12 +33,13 @@ python3 deployment/scripts/issue-license.py \
   --revision 1 --company-limit 1 --site-limit 3 --named-user-limit 8
 ```
 
-The issuer defaults to `key_id=pmqms-license-2026`. The planned
-`pmqms-demo-2026-v2` authority is currently blocked: do not issue with it or
-add it to a customer/Demo bundle until the runtime has a trusted Demo/QA
-deployment identity and verifies a signed scope field. The historical
-`pmqms-demo-2026` and active general `pmqms-license-2026` public verifiers
-remain registered so previously issued licenses continue to validate.
+The issuer defaults to `key_id=pmqms-license-2026`. The separate Demo/QA
+bundle may issue with `--key-id pmqms-demo-2026-v2 --deployment-scope demo-qa`
+only after Product Owner approval. The signed scope is required, and the
+Demo/QA importer uses a dedicated read-only registry mounted at
+`/run/pmqms-demo-qa-public-keys.json`. The standard customer bundle removes
+the Demo/QA importer and registry, so it rejects v2. Never copy the v2 private
+key to Git, Docker, CI, or a target VM.
 
 ## Import and replacement
 
@@ -56,10 +57,7 @@ Internet connection is required by the runtime.
 
 ## Rotation and migration
 
-Add the new public key under a new `key_id` before issuing with it. The planned
-Demo/QA rotation uses `pmqms-demo-2026-v2`; its private key is generated
-directly in the external authority store with restricted access and an
-encrypted backup. It is not currently issuable because the runtime has no
-trusted deployment-type identity. Never copy it to Git, a bundle, a Docker
-image, a CI runner, or a customer/Demo instance. Retain all prior public keys
-while valid licenses remain in circulation.
+The v2 private key is generated directly in the external authority store with
+restricted access and an encrypted backup. Only its public key is carried by
+the Demo/QA bundle. Retain all prior public keys while valid licenses remain
+in circulation.

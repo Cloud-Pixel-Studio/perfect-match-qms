@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 
 
+
 license_path = Path("/run/pmqms-demo-license.pmql")
 if not license_path.exists():
     raise RuntimeError("Demo license mount is missing.")

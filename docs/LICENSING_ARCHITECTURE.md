@@ -31,15 +31,15 @@ Required payload fields include `schema_version`, `license_id`,
 `license_revision`, customer/edition, environment UUID, company/site/named-user
 limits, dates, perpetual flag, and `key_id`.
 
-Only public verification keys are shipped in `data/public_keys.json`.
-`pmqms-demo-2026` remains registered as a historical verifier,
-`pmqms-license-2026` remains the active general issuance authority, and
-`pmqms-demo-2026-v2` is reserved for a future Demo/QA authority rotation but
-is not shipped in the public verifier registry. The runtime currently has no
-trusted deployment-type identity, so a signed `deployment_scope` field could
-not be enforced safely. The private signing keys live outside Git, Docker
-images, CI, and customer/Demo instances in restricted external authority
-storage. `key_id` and public-key fingerprints preserve historical validation.
+The standard customer/production verifier ships only the public keys in
+`data/public_keys.json`: `pmqms-demo-2026` remains a historical verifier and
+`pmqms-license-2026` remains the active general issuance authority. The
+separate Demo/QA bundle carries `deployment/demo/public_keys_demo_qa.json` via
+a fixed read-only mount and removes that path from customer bundles. v2 also
+requires the signed `deployment_scope=demo-qa` field. Therefore the Demo/QA
+bundle boundary and signed scope are both checked; `key_id` or a mutable local
+environment field alone is insufficient. Private signing keys remain outside
+Git, Docker images, CI, and target instances.
 Verification is entirely
 local: the product has no phone-home call, license cloud dependency, or
 continuous Internet requirement.
