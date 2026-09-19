@@ -94,12 +94,17 @@ set -euo pipefail
 if [[ "${1:-}" == compose ]]; then
   shift
   command_line="$*"
+  if [[ "${PMQMS_TEST_BACKUP_TIER:-}" == daily && -e "${PMQMS_TEST_DAILY_HOLD_REQUEST:-}" && ! -e "${PMQMS_TEST_DAILY_LOCK_RELEASE:-}" ]]; then
+    # Keep the real scheduler lock held from the first fixture operation until
+    # the harness explicitly releases it. This is an event gate, not a timing
+    # assumption, and prevents post-acquisition work from ending the collision
+    # before the monthly first attempt is observed.
+    while [[ ! -e "${PMQMS_TEST_DAILY_LOCK_RELEASE:-}" ]]; do
+      sleep 0.1
+    done
+  fi
   if [[ "$command_line" == *" exec "* && "$command_line" == *" pg_dump "* ]]; then
-    if [[ "${PMQMS_TEST_BACKUP_TIER:-}" == daily && -e "${PMQMS_TEST_DAILY_HOLD_REQUEST:-}" ]]; then
-      while [[ ! -e "${PMQMS_TEST_DAILY_LOCK_RELEASE:-}" ]]; do
-        sleep 0.1
-      done
-    else
+    if [[ "${PMQMS_TEST_BACKUP_TIER:-}" != daily || ! -e "${PMQMS_TEST_DAILY_HOLD_REQUEST:-}" ]]; then
       sleep "${PMQMS_TEST_BACKUP_SLEEP:-0}"
     fi
     printf 'fictional database snapshot\n'
