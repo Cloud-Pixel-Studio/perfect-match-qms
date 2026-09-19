@@ -163,7 +163,7 @@ EOF
 }
 
 render_timer() {
-  local source="$1" output="$2" unit="$3" mode="$4"
+  local source="$1" output="$2" unit="$3" mode="$4" delay="${5:-2s}"
   if [[ "$mode" == calendar ]]; then
     sed \
       -e '/^OnCalendar=/d' \
@@ -177,7 +177,7 @@ render_timer() {
       -e '/^Persistent=/d' \
       -e '/^RandomizedDelaySec=/d' \
       -e "s#^Unit=.*#Unit=${unit}#" \
-      -e "/^\[Timer\]/a OnActiveSec=2s\\nRandomizedDelaySec=0" \
+      -e "/^\[Timer\]/a OnActiveSec=${delay}\\nRandomizedDelaySec=0" \
       "$source" > "$output"
   fi
 }
@@ -189,7 +189,7 @@ render_service "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.service"
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$RUNTIME_TIMER" "$RUNTIME_INSTANCE_SERVICE" calendar
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup@.timer" "$WORK/unit/$COLLISION_RUNTIME_TIMER" "$COLLISION_RUNTIME_INSTANCE_SERVICE" monotonic
 render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-daily@.timer" "$WORK/unit/$DAILY_TIMER" "$DAILY_INSTANCE_SERVICE" monotonic
-render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.timer" "$WORK/unit/$MONTHLY_TIMER" "$MONTHLY_INSTANCE_SERVICE" monotonic
+render_timer "$ROOT/deployment/systemd/pmqms-customer-backup-monthly@.timer" "$WORK/unit/$MONTHLY_TIMER" "$MONTHLY_INSTANCE_SERVICE" monotonic 500ms
 for unit in "$RUNTIME_SERVICE" "$RUNTIME_TIMER" "$COLLISION_RUNTIME_SERVICE" "$COLLISION_RUNTIME_TIMER" "$DAILY_SERVICE" "$DAILY_TIMER" "$MONTHLY_SERVICE" "$MONTHLY_TIMER"; do
   as_root install -m 0644 "$WORK/unit/$unit" "$UNIT_DIR/$unit"
 done
