@@ -181,6 +181,52 @@ class TestPmQmsCapa(TransactionCase):
         with self.assertRaises(AccessError):
             capa.with_user(management).unlink()
 
+    def test_management_user_is_read_only_for_all_capa_child_models(self):
+        manager = self._create_test_user("pmqms.capa.child.manager", self.qms_manager_group)
+        management = self._create_test_user("pmqms.capa.child.management", self.management_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values(name="Management child CAPA"))
+        capa.with_user(manager).action_start_analysis()
+        action = self.env["pm.qms.capa.action"].with_user(manager).create(
+            {"capa_id": capa.id, "name": "Management child action"}
+        )
+        fishbone = self.env["pm.qms.capa.fishbone"].with_user(manager).create(
+            {
+                "capa_id": capa.id,
+                "category": "people",
+                "potential_cause": "Training gap",
+            }
+        )
+        why = capa.why_ids[0]
+        is_is_not = capa.is_is_not_ids[0]
+
+        child_cases = (
+            ("pm.qms.capa.action", action, {"name": "Management changed action"}, {"name": "Forbidden action"}),
+            (
+                "pm.qms.capa.fishbone",
+                fishbone,
+                {"potential_cause": "Updated training gap"},
+                {"potential_cause": "Forbidden cause"},
+            ),
+            ("pm.qms.capa.why", why, {"answer": "Manager analysis"}, {"answer": "Forbidden answer"}),
+            (
+                "pm.qms.capa.is.is.not",
+                is_is_not,
+                {"is_value": "Manager observation"},
+                {"is_value": "Forbidden observation"},
+            ),
+        )
+        for model_name, record, manager_values, management_values in child_cases:
+            model = self.env[model_name]
+            self.assertEqual(model.with_user(management).browse(record.id).id, record.id)
+            self.assertTrue(model.with_user(management).search_count([("id", "=", record.id)]))
+            record.with_user(manager).write(manager_values)
+            with self.assertRaises(AccessError):
+                model.with_user(management).create({"capa_id": capa.id})
+            with self.assertRaises(AccessError):
+                record.with_user(management).write(management_values)
+            with self.assertRaises(AccessError):
+                record.with_user(management).unlink()
+
     def test_rca_methodology_views_expose_specific_guidance(self):
         view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
         arch = etree.fromstring(view.arch_db.encode())

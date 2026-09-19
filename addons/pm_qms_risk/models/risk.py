@@ -5,7 +5,12 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 class PmQmsRisk(models.Model):
     _name = "pm.qms.risk"
     _description = "Perfect Match QMS Risk or Opportunity"
-    _inherit = ["mail.thread", "mail.activity.mixin", "pm.qms.event.mixin"]
+    _inherit = [
+        "mail.thread",
+        "mail.activity.mixin",
+        "pm.qms.event.mixin",
+        "pm.qms.management.read.only.mixin",
+    ]
     _order = "code desc, id desc"
     _rec_name = "code"
 

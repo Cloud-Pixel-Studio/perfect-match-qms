@@ -8,7 +8,12 @@ from .capa_why import WHY_PROMPTS
 class PmQmsCapa(models.Model):
     _name = "pm.qms.capa"
     _description = "Perfect Match QMS CAPA"
-    _inherit = ["mail.thread", "mail.activity.mixin", "pm.qms.event.mixin"]
+    _inherit = [
+        "mail.thread",
+        "mail.activity.mixin",
+        "pm.qms.event.mixin",
+        "pm.qms.management.read.only.mixin",
+    ]
     _order = "code desc, id desc"
     _rec_name = "code"
 
