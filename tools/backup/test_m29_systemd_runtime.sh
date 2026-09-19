@@ -217,6 +217,18 @@ wait_for_count() {
   echo "timed out waiting for ${tier} invocation count ${minimum}" >&2
   return 1
 }
+wait_for_active_service() {
+  local service="$1" deadline=$((SECONDS + 30))
+  while (( SECONDS < deadline )); do
+    local state
+    state="$(as_root "$SYSTEMCTL" show -p ActiveState --value "$service" 2>/dev/null || true)"
+    [[ "$state" == active || "$state" == activating ]] && return 0
+    sleep 0.2
+  done
+  as_root "$SYSTEMCTL" status "$service" --no-pager || true
+  echo "timed out waiting for ${service} to start" >&2
+  return 1
+}
 start_timer() {
   local timer="$1" service="${1%.timer}.service" start_output
   as_root "$SYSTEMCTL" reset-failed "$service" >/dev/null 2>&1 || true
@@ -282,18 +294,6 @@ wait_for_inactive_service() {
   done
   as_root "$SYSTEMCTL" status "$service" --no-pager || true
   echo "timed out waiting for ${service} to finish" >&2
-  return 1
-}
-wait_for_active_service() {
-  local service="$1" deadline=$((SECONDS + 30))
-  while (( SECONDS < deadline )); do
-    local state
-    state="$(as_root "$SYSTEMCTL" show -p ActiveState --value "$service" 2>/dev/null || true)"
-    [[ "$state" == active || "$state" == activating ]] && return 0
-    sleep 0.2
-  done
-  as_root "$SYSTEMCTL" status "$service" --no-pager || true
-  echo "timed out waiting for ${service} to start" >&2
   return 1
 }
 wait_for_successful_status() {
@@ -369,7 +369,13 @@ echo "systemd_runtime_phase=start_collision_timer"
 start_timer "$COLLISION_RUNTIME_INSTANCE_TIMER"
 echo "systemd_runtime_phase=collision_timer_started"
 wait_for_count intraday "$(( intraday_before_collision + 1 ))"
-sleep 1
+# The wrapper records its invocation before entering the scheduler.  Waiting
+# only for that counter is racy: the daily timer can start after the wrapper
+# has recorded the line but before the intraday oneshot has acquired the
+# scheduler lock.  Synchronize on the actual systemd service state so the
+# collision is guaranteed to overlap the running backup, while retaining the
+# two-attempt retry expectation below.
+wait_for_active_service "$COLLISION_RUNTIME_INSTANCE_SERVICE"
 start_timer "$DAILY_INSTANCE_TIMER"
 echo "systemd_runtime_phase=daily_collision_timer_started"
 echo "systemd_runtime_phase=collision_intraday_observed"
