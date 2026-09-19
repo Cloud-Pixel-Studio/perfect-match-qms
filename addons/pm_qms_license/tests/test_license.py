@@ -184,8 +184,12 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         registry_path = Path(__file__).resolve().parents[1] / "data" / "public_keys.json"
         registry_text = registry_path.read_text(encoding="utf-8")
         registry = json.loads(registry_text)["keys"]
-        self.assertEqual(set(registry), {"pmqms-demo-2026", "pmqms-license-2026"})
+        self.assertEqual(
+            set(registry),
+            {"pmqms-demo-2026", "pmqms-license-2026"},
+        )
         self.assertNotIn("PRIVATE KEY", registry_text)
+        self.assertNotIn("pmqms-demo-2026-v2", registry)
         for encoded_key in registry.values():
             self.assertEqual(len(base64.b64decode(encoded_key, validate=True)), 32)
         self.assertEqual(license_service.DEFAULT_ISSUANCE_KEY_ID, "pmqms-license-2026")
