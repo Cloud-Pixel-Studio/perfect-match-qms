@@ -127,10 +127,14 @@ class TestPmQmsCommercialLicensing(TransactionCase):
     def test_old_and_new_authorities_coexist_during_rotation(self):
         old_private = Ed25519PrivateKey.generate()
         new_private = Ed25519PrivateKey.generate()
+        demo_qa_private = Ed25519PrivateKey.generate()
         old_public = old_private.public_key().public_bytes(
             serialization.Encoding.Raw, serialization.PublicFormat.Raw
         )
         new_public = new_private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        demo_qa_public = demo_qa_private.public_key().public_bytes(
             serialization.Encoding.Raw, serialization.PublicFormat.Raw
         )
         old_document = self._document_for_key(
@@ -139,20 +143,33 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         new_document = self._document_for_key(
             new_private, key_id="pmqms-license-2026", license_id="PMQMS-NEW-AUTHORITY"
         )
+        demo_qa_document = self._document_for_key(
+            demo_qa_private,
+            key_id="pmqms-demo-2026-v2",
+            license_id="PMQMS-DEMO-QA-V2",
+        )
         with patch.object(
             license_service,
             "load_public_keys",
             return_value={
                 "pmqms-demo-2026": base64.b64encode(old_public).decode(),
                 "pmqms-license-2026": base64.b64encode(new_public).decode(),
+                "pmqms-demo-2026-v2": base64.b64encode(demo_qa_public).decode(),
             },
         ):
             old_result = validate_document(old_document, expected_environment_id=self.environment_id)
             new_result = validate_document(new_document, expected_environment_id=self.environment_id)
+            demo_qa_result = validate_document(
+                demo_qa_document, expected_environment_id=self.environment_id
+            )
         self.assertEqual(old_result["state"], "valid")
         self.assertEqual(new_result["state"], "valid")
+        self.assertEqual(demo_qa_result["state"], "valid")
         self.assertEqual(old_result["public_key_fingerprint"], hashlib.sha256(old_public).hexdigest())
         self.assertEqual(new_result["public_key_fingerprint"], hashlib.sha256(new_public).hexdigest())
+        self.assertEqual(
+            demo_qa_result["public_key_fingerprint"], hashlib.sha256(demo_qa_public).hexdigest()
+        )
 
     def test_unknown_authority_is_rejected(self):
         document = self._document(key_id="unknown-authority")
@@ -184,11 +201,18 @@ class TestPmQmsCommercialLicensing(TransactionCase):
         registry_path = Path(__file__).resolve().parents[1] / "data" / "public_keys.json"
         registry_text = registry_path.read_text(encoding="utf-8")
         registry = json.loads(registry_text)["keys"]
-        self.assertEqual(set(registry), {"pmqms-demo-2026", "pmqms-license-2026"})
+        self.assertEqual(
+            set(registry),
+            {"pmqms-demo-2026", "pmqms-license-2026", "pmqms-demo-2026-v2"},
+        )
         self.assertNotIn("PRIVATE KEY", registry_text)
         for encoded_key in registry.values():
             self.assertEqual(len(base64.b64decode(encoded_key, validate=True)), 32)
         self.assertEqual(license_service.DEFAULT_ISSUANCE_KEY_ID, "pmqms-license-2026")
+        self.assertEqual(
+            hashlib.sha256(base64.b64decode(registry["pmqms-demo-2026-v2"])).hexdigest(),
+            "b8377c5779425917c3b9db97d1fd19c1877a8572fa447f67b0395e69e480ac6b",
+        )
 
     def test_revision_replacement_and_older_revision_rejection(self):
         self._import()

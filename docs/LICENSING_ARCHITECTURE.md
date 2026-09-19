@@ -32,14 +32,15 @@ Required payload fields include `schema_version`, `license_id`,
 limits, dates, perpetual flag, and `key_id`.
 
 Only public verification keys are shipped in `data/public_keys.json`.
-`pmqms-demo-2026` remains registered as a historical verifier, while
-`pmqms-license-2026` is the active issuance authority. The corresponding
-private signing key lives outside Git, Docker images, and customer instances
-at `/opt/perfect-match/secrets/license-authority/pmqms-license-2026.pem`,
-owner-readable only. `key_id` and public-key fingerprints allow rotation while
-old and new signed licenses remain verifiable without changing the license
-format. Verification is entirely local: the product has no phone-home call,
-license cloud dependency, or continuous Internet requirement.
+`pmqms-demo-2026` remains registered as a historical verifier,
+`pmqms-license-2026` remains the active general issuance authority, and
+`pmqms-demo-2026-v2` is the explicitly scoped Demo/QA issuance authority. The
+private signing keys live outside Git, Docker images, CI, and customer/Demo
+instances in restricted external authority storage. `key_id` and public-key
+fingerprints allow rotation while all historical signed licenses remain
+verifiable without changing the license format. Verification is entirely
+local: the product has no phone-home call, license cloud dependency, or
+continuous Internet requirement.
 
 Supported states are missing, valid, expiring, expired, not-yet-valid,
 invalid-signature, wrong-environment, and invalid-format. Perpetual licenses

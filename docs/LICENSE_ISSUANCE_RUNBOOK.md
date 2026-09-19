@@ -33,10 +33,11 @@ python3 deployment/scripts/issue-license.py \
   --revision 1 --company-limit 1 --site-limit 3 --named-user-limit 8
 ```
 
-The issuer defaults to `key_id=pmqms-license-2026`. Use an explicit historical
-key ID only for approved compatibility or verification work. The historical
-`pmqms-demo-2026` public verifier remains registered so previously issued
-licenses continue to validate.
+The issuer defaults to `key_id=pmqms-license-2026`. For the isolated Demo/QA
+rotation, pass `--key-id pmqms-demo-2026-v2` explicitly. Do not reuse either
+historical key ID for new Demo/QA issuance. The historical
+`pmqms-demo-2026` and active general `pmqms-license-2026` public verifiers
+remain registered so previously issued licenses continue to validate.
 
 ## Import and replacement
 
@@ -54,10 +55,11 @@ Internet connection is required by the runtime.
 
 ## Rotation and migration
 
-Add the new public key under a new `key_id` before issuing with it. Generate
-the private key directly in the external operator secret store with mode
-`0600`; never copy it to Git, a bundle, a Docker image, or a customer
-instance. Retain old public keys while valid customer licenses remain in
-circulation. Back up the external environment identity together with the
-deployment secrets. A server migration keeps the identity and license; a
-deliberately new installation gets a new identity and a newly issued license.
+Add the new public key under a new `key_id` before issuing with it. The Demo/QA
+rotation uses `pmqms-demo-2026-v2`; the private key is generated directly in
+the external authority store with mode `0600`, with an encrypted backup and
+tested recovery procedure. Never copy it to Git, a bundle, a Docker image, a
+CI runner, or a customer/Demo instance. Retain all prior public keys while
+valid licenses remain in circulation. A server migration keeps the identity
+and license; a deliberately new installation gets a new identity and a newly
+issued license.
