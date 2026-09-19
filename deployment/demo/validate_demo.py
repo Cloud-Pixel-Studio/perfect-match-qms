@@ -199,12 +199,14 @@ else:
 if "pm.qms.cost.line" in env:
     lines = env["pm.qms.cost.line"].search_count(org_domain)
     summary["pm.qms.cost.line"] = lines
-    require(lines >= 4, "expected Cost of Quality lines")
+    require(lines >= 6, "expected six Cost of Quality lines")
 else:
     errors.append("missing model: pm.qms.cost.line")
 
 if "pm.qms.action.center.line" in env and organization:
-    demo_user = env["res.users"].search([("login", "=", EXPECTED_ADMIN_LOGIN)], limit=1)
+    demo_user = env["res.users"].search(
+        [("login", "=", EXPECTED_QMS_PERSONAS["Quality Manager"])], limit=1
+    )
     values = env["pm.qms.action.center.line"].with_user(demo_user or env.user)._collect_action_values(organization)
     summary["pm.qms.action.center.source_values"] = len(values)
     require(len(values) >= 8, "expected source-driven Action Center values")

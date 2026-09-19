@@ -272,6 +272,35 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertNotIn("organization_id", source)
         self.assertNotIn("company_id", source)
 
+    def test_cost_events_use_quality_manager_and_fail_loudly(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+        event_calls = [
+            node
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "ensure_cost_event"
+        ]
+        self.assertEqual({call.args[0].value for call in event_calls}, {"APEX-CQ-001", "APEX-CQ-002"})
+        self.assertEqual(sum(len(call.args[4].elts) for call in event_calls), 6)
+        self.assertIn("event.with_user(demo_user).action_confirm()", source)
+        self.assertIn("raise RuntimeError(f\"Cost event confirmation failed for {code}: {exc}\")", source)
+        self.assertNotIn("warnings.append(f\"cost_confirm:", source)
+
+    def test_demo_validation_uses_quality_manager_for_action_center(self):
+        source = VALIDATE_PATH.read_text(encoding="utf-8")
+        self.assertIn('EXPECTED_QMS_PERSONAS["Quality Manager"]', source)
+        self.assertNotIn('EXPECTED_ADMIN_LOGIN)], limit=1)', source)
+        self.assertIn('require(len(values) >= 8, "expected source-driven Action Center values")', source)
+        self.assertIn('require(len(source_types) >= 6, "expected multiple Action Center source types")', source)
+
+    def test_demo_validation_requires_confirmed_cost_event_and_six_lines(self):
+        source = VALIDATE_PATH.read_text(encoding="utf-8")
+        self.assertIn('[("state", "=", "confirmed")]', source)
+        self.assertIn('require(confirmed_events >= 1, "expected confirmed Cost of Quality events")', source)
+        self.assertIn('require(lines >= 6, "expected six Cost of Quality lines")', source)
+
     def test_generic_upsert_skips_unchanged_values(self):
         namespace = load_seed_helpers("upsert", "field_value_equal")
         writes = []
