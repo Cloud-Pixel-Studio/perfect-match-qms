@@ -4,7 +4,7 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
 
 from ..services.environment import read_environment_id, short_environment_id
-from ..services.license_service import LicenseValidationError, effective_temporal_state, validate_document
+from ..services.license_service import LicenseValidationError, effective_temporal_state, validate_runtime_document
 
 
 LICENSE_STATE_SELECTION = [
@@ -149,14 +149,10 @@ class PmQmsLicense(models.Model):
         return super().write(vals)
 
     @api.model
-    def import_document(self, document, expected_environment_id=None, public_keys=None):
+    def import_document(self, document, expected_environment_id=None):
         expected_environment_id = expected_environment_id or read_environment_id()
         try:
-            result = validate_document(
-                document,
-                expected_environment_id=expected_environment_id,
-                public_keys=public_keys,
-            )
+            result = validate_runtime_document(document, expected_environment_id=expected_environment_id)
         except LicenseValidationError as exc:
             raise UserError(str(exc)) from exc
         payload = result["payload"]

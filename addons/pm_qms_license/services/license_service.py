@@ -200,6 +200,33 @@ def validate_document(document, expected_environment_id=None, public_keys=None, 
     }
 
 
+def validate_runtime_document(document, expected_environment_id=None, now=None):
+    """Validate using only registries selected by the server runtime.
+
+    The standard registry is always tried first. The fixed Demo/QA registry
+    is considered only for the v2 key and only when its read-only bundle path
+    is present; callers cannot supply trust roots through the ORM/RPC API.
+    """
+    try:
+        return validate_document(document, expected_environment_id=expected_environment_id, now=now)
+    except LicenseValidationError as exc:
+        if "License key_id is not approved." not in str(exc):
+            raise
+        if isinstance(document, bytes):
+            document = document.decode("utf-8")
+        if isinstance(document, str):
+            document = json.loads(document)
+        payload = document.get("payload", {}) if isinstance(document, dict) else {}
+        if payload.get("key_id") != DEMO_QA_KEY_ID:
+            raise
+        return validate_document(
+            document,
+            expected_environment_id=expected_environment_id,
+            public_keys=load_demo_qa_public_keys(),
+            now=now,
+        )
+
+
 def sign_payload(payload, private_key_path):
     try:
         from cryptography.hazmat.primitives import serialization
