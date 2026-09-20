@@ -19,6 +19,7 @@ class TestPmQmsCapa(TransactionCase):
         cls.base_user_group = cls.env.ref("base.group_user")
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
+        cls.management_group = cls.env.ref("pm_qms_core.group_qms_management_user")
         cls.organization = cls.env["pm.qms.organization"].create(
             {"name": "CAPA Organization", "code": "PM-CAPA-ORG", "company_id": cls.company.id}
         )
@@ -166,6 +167,108 @@ class TestPmQmsCapa(TransactionCase):
         self.assertEqual(legacy.prompt, WHY_PROMPTS[1])
         self.assertEqual(capa.why_ids.mapped("prompt"), [WHY_PROMPTS[i] for i in range(1, 6)])
         self.assertTrue(self.env["pm.qms.capa.why"]._fields["prompt"].readonly)
+
+    def test_management_user_is_read_only_for_capa(self):
+        management = self._create_test_user("pmqms.capa.management", self.management_group)
+        capa = self.env["pm.qms.capa"].create(self._capa_values(name="Management read-only CAPA"))
+
+        self.assertEqual(self.env["pm.qms.capa"].with_user(management).search_count([("id", "=", capa.id)]), 1)
+        self.assertEqual(self.env["pm.qms.capa"].with_user(management).browse(capa.id).name, capa.name)
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.capa"].with_user(management).create(self._capa_values(name="Forbidden management CAPA"))
+        with self.assertRaises(AccessError):
+            capa.with_user(management).write({"problem_statement": "Forbidden management update"})
+        with self.assertRaises(AccessError):
+            capa.with_user(management).unlink()
+
+    def test_management_company_rules_are_global_after_module_update(self):
+        for xml_id in ("pm_qms_capa.rule_pm_qms_capa_company", "pm_qms_risk.rule_pm_qms_risk_company"):
+            self.assertFalse(self.env.ref(xml_id).groups, xml_id)
+
+    def test_management_user_is_read_only_for_all_capa_child_models(self):
+        manager = self._create_test_user("pmqms.capa.child.manager", self.qms_manager_group)
+        management = self._create_test_user("pmqms.capa.child.management", self.management_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(self._capa_values(name="Management child CAPA"))
+        capa.with_user(manager).action_start_analysis()
+        action = self.env["pm.qms.capa.action"].with_user(manager).create(
+            {"capa_id": capa.id, "name": "Management child action"}
+        )
+        fishbone = self.env["pm.qms.capa.fishbone"].with_user(manager).create(
+            {
+                "capa_id": capa.id,
+                "category": "people",
+                "potential_cause": "Training gap",
+            }
+        )
+        is_is_not_capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(
+                name="Management child Is Is Not CAPA",
+                root_cause_method="is_is_not",
+            )
+        )
+        is_is_not_capa.action_start_analysis()
+        why = capa.why_ids[0]
+        is_is_not = is_is_not_capa.is_is_not_ids[0]
+
+        child_cases = (
+            (
+                "pm.qms.capa.action",
+                action,
+                {"name": "Management changed action"},
+                {"name": "Forbidden action"},
+                {"capa_id": capa.id, "name": "Forbidden action"},
+            ),
+            (
+                "pm.qms.capa.fishbone",
+                fishbone,
+                {"potential_cause": "Updated training gap"},
+                {"potential_cause": "Forbidden cause"},
+                {
+                    "capa_id": capa.id,
+                    "category": "people",
+                    "potential_cause": "Forbidden cause",
+                },
+            ),
+            (
+                "pm.qms.capa.why",
+                why,
+                {"answer": "Manager analysis"},
+                {"answer": "Forbidden answer"},
+                {
+                    "capa_id": is_is_not_capa.id,
+                    "sequence": 1,
+                    "question": "Why did the problem occur?",
+                },
+            ),
+            (
+                "pm.qms.capa.is.is.not",
+                is_is_not,
+                {"is_value": "Manager observation"},
+                {"is_value": "Forbidden observation"},
+                [
+                    {"capa_id": capa.id, "dimension": "what", "sequence": 1},
+                    {"capa_id": capa.id, "dimension": "where", "sequence": 2},
+                    {"capa_id": capa.id, "dimension": "when", "sequence": 3},
+                    {"capa_id": capa.id, "dimension": "extent", "sequence": 4},
+                ],
+            ),
+        )
+        for model_name, record, manager_values, management_values, create_values in child_cases:
+            model = self.env[model_name]
+            self.assertEqual(model.with_user(management).browse(record.id).id, record.id)
+            self.assertTrue(model.with_user(management).search_count([("id", "=", record.id)]))
+            record.with_user(manager).write(manager_values)
+            with self.assertRaises(AccessError):
+                model.with_user(management).with_context(pm_qms_capa_initialize=True).create(create_values)
+            with self.assertRaises(AccessError):
+                record.with_user(management).write(management_values)
+            with self.assertRaises(AccessError):
+                record.with_user(management).unlink()
+
+        with self.assertRaises(AccessError):
+            action.with_user(management).action_start()
+        with self.assertRaises(AccessError):
+            action.with_user(management).action_complete()
 
     def test_rca_methodology_views_expose_specific_guidance(self):
         view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")

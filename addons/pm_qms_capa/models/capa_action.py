@@ -5,7 +5,12 @@ from odoo.exceptions import AccessError, UserError
 class PmQmsCapaAction(models.Model):
     _name = "pm.qms.capa.action"
     _description = "Perfect Match QMS CAPA Action"
-    _inherit = ["mail.thread", "mail.activity.mixin", "pm.qms.event.mixin"]
+    _inherit = [
+        "mail.thread",
+        "mail.activity.mixin",
+        "pm.qms.event.mixin",
+        "pm.qms.management.read.only.mixin",
+    ]
     _order = "target_date, id"
 
     capa_id = fields.Many2one("pm.qms.capa", required=True, ondelete="cascade", index=True)

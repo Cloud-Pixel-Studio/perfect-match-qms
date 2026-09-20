@@ -40,6 +40,7 @@ IS_IS_NOT_SEQUENCE = {dimension: index for index, dimension in enumerate(IS_IS_N
 class PmQmsCapaIsIsNot(models.Model):
     _name = "pm.qms.capa.is.is.not"
     _description = "Perfect Match QMS CAPA Is Is Not Analysis"
+    _inherit = ["pm.qms.management.read.only.mixin"]
     _order = "capa_id, sequence, id"
 
     capa_id = fields.Many2one("pm.qms.capa", required=True, ondelete="cascade", index=True)

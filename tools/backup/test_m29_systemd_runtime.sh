@@ -313,10 +313,12 @@ wait_for_lock_observation() {
   return 1
 }
 wait_for_lock_signal() {
-  local signal="$1" deadline=$((SECONDS + 30))
+  local signal="$1" lock_path="$2" deadline=$((SECONDS + 30))
   while (( SECONDS < deadline )); do
-    if [[ -f "$signal" ]] && grep -Fxq 'lock_acquired=1' "$signal"; then
+    if [[ -f "$signal" ]] && grep -Fxq 'lock_acquired=1' "$signal" \
+      && ! flock -n "$lock_path" -c ':' 2>/dev/null; then
       cat "$signal"
+      echo "systemd_runtime_lock_signal_verified lock_path=${lock_path} state=held"
       return 0
     fi
     sleep 0.2
@@ -587,7 +589,9 @@ rm -f "$DAILY_MONTHLY_HOLD_REQUEST" "$DAILY_LOCK_ACQUIRED_SIGNAL" "$DAILY_LOCK_R
 touch "$DAILY_MONTHLY_HOLD_REQUEST"
 echo "systemd_runtime_phase=start_daily_monthly_timers"
 start_timer "$DAILY_INSTANCE_TIMER"
-wait_for_lock_signal "$DAILY_LOCK_ACQUIRED_SIGNAL"
+wait_for_active_service "$DAILY_INSTANCE_SERVICE"
+echo "systemd_runtime_phase=daily_service_active"
+wait_for_lock_signal "$DAILY_LOCK_ACQUIRED_SIGNAL" "$SCHEDULER_LOCK"
 echo "systemd_runtime_phase=daily_lock_acquired"
 start_timer "$MONTHLY_INSTANCE_TIMER"
 echo "systemd_runtime_phase=monthly_timer_started"

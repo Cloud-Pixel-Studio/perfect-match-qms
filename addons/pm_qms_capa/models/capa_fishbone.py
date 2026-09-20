@@ -24,6 +24,7 @@ EDITABLE_STATES = ("analysis", "action_planned")
 class PmQmsCapaFishbone(models.Model):
     _name = "pm.qms.capa.fishbone"
     _description = "Perfect Match QMS CAPA Fishbone Cause"
+    _inherit = ["pm.qms.management.read.only.mixin"]
     _order = "capa_id, category, id"
 
     capa_id = fields.Many2one("pm.qms.capa", required=True, ondelete="cascade", index=True)

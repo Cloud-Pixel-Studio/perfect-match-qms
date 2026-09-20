@@ -4,6 +4,18 @@
         <field name="name">Perfect Match QMS risk company boundary</field>
         <field name="model_id" ref="model_pm_qms_risk"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
-        <field name="groups" eval="[(4, ref('pm_qms_core.group_pm_qms_user'))]"/>
+        <!-- Clear the inherited QMS-user group relation on module update. -->
+        <field name="groups" eval="[(5, 0, 0)]"/>
+    </record>
+
+    <record id="rule_pm_qms_risk_management_read_only" model="ir.rule">
+        <field name="name">Perfect Match QMS management risk read-only boundary</field>
+        <field name="model_id" ref="model_pm_qms_risk"/>
+        <field name="domain_force">[('id', '=', 0)]</field>
+        <field name="groups" eval="[(4, ref('pm_qms_core.group_qms_management_user'))]"/>
+        <field name="perm_read">0</field>
+        <field name="perm_write">1</field>
+        <field name="perm_create">1</field>
+        <field name="perm_unlink">1</field>
     </record>
 </odoo>

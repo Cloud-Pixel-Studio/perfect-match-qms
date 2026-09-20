@@ -14,6 +14,7 @@ WHY_PROMPTS = {
 class PmQmsCapaWhy(models.Model):
     _name = "pm.qms.capa.why"
     _description = "Perfect Match QMS CAPA 5 Why Entry"
+    _inherit = ["pm.qms.management.read.only.mixin"]
     _order = "capa_id, sequence, id"
 
     capa_id = fields.Many2one("pm.qms.capa", required=True, ondelete="cascade", index=True)
