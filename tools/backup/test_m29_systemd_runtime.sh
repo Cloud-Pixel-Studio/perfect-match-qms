@@ -169,7 +169,7 @@ if [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" && ! -e "${DAIL
     exit 1
   fi
   : > "${DAILY_MONTHLY_BARRIER_DONE}"
-elif [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" && -e "${DAILY_MONTHLY_BARRIER_DONE}" ]]; then
+elif [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_BARRIER_DONE}" ]]; then
   # A systemd retry must observe the released real lock before recovery.
   lock_deadline=\$((SECONDS + 30))
   while (( SECONDS < lock_deadline )); do
