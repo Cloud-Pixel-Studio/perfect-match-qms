@@ -350,6 +350,7 @@ run_odoo_tests() {
   postgres_exec psql -h 127.0.0.1 -U odoo -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pmqms_test' AND pid <> pg_backend_pid();" >/dev/null || true
   postgres_exec dropdb -h 127.0.0.1 -U odoo --maintenance-db=postgres --if-exists pmqms_test
   local test_log
+  local external_runtime_error=0
   test_log="$(mktemp)"
   set +e
   compose run --rm odoo-dev odoo -d pmqms_test --init "$modules" --test-enable --test-tags "$tags" --stop-after-init --without-demo=all --log-level=test 2>&1 | tee "$test_log"
@@ -372,8 +373,12 @@ run_odoo_tests() {
       exit 1
     fi
     echo "$label tests: ignored external Odoo mail Docutils diagnostic." >&2
+    external_runtime_error=1
   fi
   rm -f "$test_log"
+  if (( external_runtime_error )); then
+    exit 0
+  fi
   exit "$odoo_rc"
 }
 
