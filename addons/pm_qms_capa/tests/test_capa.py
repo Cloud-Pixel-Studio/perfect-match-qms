@@ -200,8 +200,15 @@ class TestPmQmsCapa(TransactionCase):
                 "potential_cause": "Training gap",
             }
         )
+        is_is_not_capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(
+                name="Management child Is Is Not CAPA",
+                root_cause_method="is_is_not",
+            )
+        )
+        is_is_not_capa.action_start_analysis()
         why = capa.why_ids[0]
-        is_is_not = capa.is_is_not_ids[0]
+        is_is_not = is_is_not_capa.is_is_not_ids[0]
 
         child_cases = (
             ("pm.qms.capa.action", action, {"name": "Management changed action"}, {"name": "Forbidden action"}),
