@@ -386,7 +386,15 @@ class PmQmsImplementationProject(models.Model):
                 raise
             process = processes[0]
         if process_created:
-            self.env.user.invalidate_recordset(["qms_effective_process_ids"])
+            # ``pm_qms_app`` owns this computed field, but it depends on this
+            # module through the application bundle. During an incremental
+            # registry load the implementation model can therefore materialize
+            # a process before the application extension of ``res.users`` is
+            # registered. Keep the cache refresh compatible with that valid
+            # load phase; the app's own scope invalidation handles it once the
+            # field exists.
+            if "qms_effective_process_ids" in self.env.user._fields:
+                self.env.user.invalidate_recordset(["qms_effective_process_ids"])
             # ir.rule._compute_domain is an Odoo 19 ormcache in the default
             # registry cache. User-field invalidation does not evict its
             # process-dependent domain, so refresh it only after a new
