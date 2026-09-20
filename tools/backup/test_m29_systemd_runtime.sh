@@ -150,8 +150,27 @@ render_service() {
 set -euo pipefail
 printf '%s\\n' "\$(date +%s)" >> "${WORK}/${tier}.invocations"
 lock_state=free
-if [[ -e "${SCHEDULER_LOCK}" ]] && ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
-  lock_state=held
+if [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" ]]; then
+  # The monthly service must not publish its first observation until the
+  # daily barrier and the real scheduler lock agree. This prevents a service
+  # start race from recording a free lock before the daily owner is visible.
+  lock_deadline=\$((SECONDS + 30))
+  while (( SECONDS < lock_deadline )); do
+    if [[ -e "${DAILY_LOCK_ACQUIRED_SIGNAL}" ]] && ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
+      lock_state=held
+      break
+    fi
+    sleep 0.05
+  done
+  if [[ "\${lock_state}" != held ]]; then
+    printf '%s|%s\\n' "\$(date +%s%N)" "\${lock_state}" >> "${WORK}/${tier}.lock-observations"
+    printf 'monthly lock barrier was not held before scheduler start\\n' >&2
+    exit 1
+  fi
+else
+  if [[ -e "${SCHEDULER_LOCK}" ]] && ! flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
+    lock_state=held
+  fi
 fi
 printf '%s|%s\\n' "\$(date +%s%N)" "\${lock_state}" >> "${WORK}/${tier}.lock-observations"
 scheduler_pid=""
