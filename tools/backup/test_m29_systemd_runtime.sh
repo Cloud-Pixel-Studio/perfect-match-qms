@@ -45,6 +45,7 @@ MONTHLY_INSTANCE_TIMER="${PREFIX}-monthly@${SLUG}.timer"
 DAILY_MONTHLY_HOLD_REQUEST="${WORK}/daily-monthly-hold.request"
 DAILY_LOCK_ACQUIRED_SIGNAL="${WORK}/daily-lock-acquired.signal"
 DAILY_LOCK_RELEASE="${WORK}/daily-lock.release"
+DAILY_MONTHLY_BARRIER_DONE="${WORK}/daily-monthly-barrier.done"
 
 cleanup() {
   set +e
@@ -150,7 +151,7 @@ render_service() {
 set -euo pipefail
 printf '%s\\n' "\$(date +%s)" >> "${WORK}/${tier}.invocations"
 lock_state=free
-if [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" ]]; then
+if [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" && ! -e "${DAILY_MONTHLY_BARRIER_DONE}" ]]; then
   # The monthly service must not publish its first observation until the
   # daily barrier and the real scheduler lock agree. This prevents a service
   # start race from recording a free lock before the daily owner is visible.
@@ -165,6 +166,22 @@ if [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" ]]; then
   if [[ "\${lock_state}" != held ]]; then
     printf '%s|%s\\n' "\$(date +%s%N)" "\${lock_state}" >> "${WORK}/${tier}.lock-observations"
     printf 'monthly lock barrier was not held before scheduler start\\n' >&2
+    exit 1
+  fi
+  : > "${DAILY_MONTHLY_BARRIER_DONE}"
+elif [[ "${tier}" == monthly && -e "${DAILY_MONTHLY_HOLD_REQUEST}" && -e "${DAILY_MONTHLY_BARRIER_DONE}" ]]; then
+  # A systemd retry must observe the released real lock before recovery.
+  lock_deadline=\$((SECONDS + 30))
+  while (( SECONDS < lock_deadline )); do
+    if flock -n "${SCHEDULER_LOCK}" -c ':' 2>/dev/null; then
+      lock_state=free
+      break
+    fi
+    sleep 0.05
+  done
+  if [[ "\${lock_state}" != free ]]; then
+    printf '%s|%s\\n' "\$(date +%s%N)" "\${lock_state}" >> "${WORK}/${tier}.lock-observations"
+    printf 'monthly retry lock was not free before scheduler start\\n' >&2
     exit 1
   fi
 else
@@ -566,7 +583,7 @@ daily_collision_attempts="$(count_invocations daily)"
 # monthly first attempt has been observed.
 daily_before_monthly="$(count_invocations daily)"
 monthly_before_collision="$(count_invocations monthly)"
-rm -f "$DAILY_MONTHLY_HOLD_REQUEST" "$DAILY_LOCK_ACQUIRED_SIGNAL" "$DAILY_LOCK_RELEASE"
+rm -f "$DAILY_MONTHLY_HOLD_REQUEST" "$DAILY_LOCK_ACQUIRED_SIGNAL" "$DAILY_LOCK_RELEASE" "$DAILY_MONTHLY_BARRIER_DONE"
 touch "$DAILY_MONTHLY_HOLD_REQUEST"
 echo "systemd_runtime_phase=start_daily_monthly_timers"
 start_timer "$DAILY_INSTANCE_TIMER"
