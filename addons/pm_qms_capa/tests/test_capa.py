@@ -211,28 +211,55 @@ class TestPmQmsCapa(TransactionCase):
         is_is_not = is_is_not_capa.is_is_not_ids[0]
 
         child_cases = (
-            ("pm.qms.capa.action", action, {"name": "Management changed action"}, {"name": "Forbidden action"}),
+            (
+                "pm.qms.capa.action",
+                action,
+                {"name": "Management changed action"},
+                {"name": "Forbidden action"},
+                {"capa_id": capa.id, "name": "Forbidden action"},
+            ),
             (
                 "pm.qms.capa.fishbone",
                 fishbone,
                 {"potential_cause": "Updated training gap"},
                 {"potential_cause": "Forbidden cause"},
+                {
+                    "capa_id": capa.id,
+                    "category": "people",
+                    "potential_cause": "Forbidden cause",
+                },
             ),
-            ("pm.qms.capa.why", why, {"answer": "Manager analysis"}, {"answer": "Forbidden answer"}),
+            (
+                "pm.qms.capa.why",
+                why,
+                {"answer": "Manager analysis"},
+                {"answer": "Forbidden answer"},
+                {
+                    "capa_id": is_is_not_capa.id,
+                    "sequence": 1,
+                    "question": "Why did the problem occur?",
+                },
+            ),
             (
                 "pm.qms.capa.is.is.not",
                 is_is_not,
                 {"is_value": "Manager observation"},
                 {"is_value": "Forbidden observation"},
+                [
+                    {"capa_id": capa.id, "dimension": "what", "sequence": 1},
+                    {"capa_id": capa.id, "dimension": "where", "sequence": 2},
+                    {"capa_id": capa.id, "dimension": "when", "sequence": 3},
+                    {"capa_id": capa.id, "dimension": "extent", "sequence": 4},
+                ],
             ),
         )
-        for model_name, record, manager_values, management_values in child_cases:
+        for model_name, record, manager_values, management_values, create_values in child_cases:
             model = self.env[model_name]
             self.assertEqual(model.with_user(management).browse(record.id).id, record.id)
             self.assertTrue(model.with_user(management).search_count([("id", "=", record.id)]))
             record.with_user(manager).write(manager_values)
             with self.assertRaises(AccessError):
-                model.with_user(management).create({"capa_id": capa.id})
+                model.with_user(management).with_context(pm_qms_capa_initialize=True).create(create_values)
             with self.assertRaises(AccessError):
                 record.with_user(management).write(management_values)
             with self.assertRaises(AccessError):
