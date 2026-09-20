@@ -4,6 +4,8 @@
         <field name="name">Perfect Match QMS CAPA company boundary</field>
         <field name="model_id" ref="model_pm_qms_capa"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <!-- Clear the inherited QMS-user group relation on module update. -->
+        <field name="groups" eval="[(5, 0, 0)]"/>
     </record>
 
     <record id="rule_pm_qms_capa_management_read_only" model="ir.rule">

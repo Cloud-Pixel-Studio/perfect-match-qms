@@ -181,6 +181,10 @@ class TestPmQmsCapa(TransactionCase):
         with self.assertRaises(AccessError):
             capa.with_user(management).unlink()
 
+    def test_management_company_rules_are_global_after_module_update(self):
+        for xml_id in ("pm_qms_capa.rule_pm_qms_capa_company", "pm_qms_risk.rule_pm_qms_risk_company"):
+            self.assertFalse(self.env.ref(xml_id).groups, xml_id)
+
     def test_management_user_is_read_only_for_all_capa_child_models(self):
         manager = self._create_test_user("pmqms.capa.child.manager", self.qms_manager_group)
         management = self._create_test_user("pmqms.capa.child.management", self.management_group)
@@ -226,6 +230,11 @@ class TestPmQmsCapa(TransactionCase):
                 record.with_user(management).write(management_values)
             with self.assertRaises(AccessError):
                 record.with_user(management).unlink()
+
+        with self.assertRaises(AccessError):
+            action.with_user(management).action_start()
+        with self.assertRaises(AccessError):
+            action.with_user(management).action_complete()
 
     def test_rca_methodology_views_expose_specific_guidance(self):
         view = self.env.ref("pm_qms_capa.view_pm_qms_capa_form")
