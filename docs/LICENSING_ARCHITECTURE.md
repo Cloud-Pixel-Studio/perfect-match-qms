@@ -75,3 +75,30 @@ database remains backupable and records/attachments remain readable and
 exportable. Mission 20 enforces capacity for new activation; it deliberately
 does not add an unsafe global expired-license write lock or a BaseModel
 monkey-patch. A future restricted operational mode needs a separate design.
+
+## External authority boundary (preparatory)
+
+The signing authority is external to PMQMS runtime environments. The target
+Demo/QA design is:
+
+```text
+AWS administrator -> KMS CMK -> Secrets Manager (Ed25519 PEM)
+       |                         |
+       +-> S3 Object Lock backup +-> controlled issuer role
+       +-> CloudTrail audit      +-> recovery role (dual approval)
+```
+
+The issuer may read the exact authority secret only for an approved issuance
+operation. Customer VMs receive only the resulting `.pmql`; they never receive
+the private key or AWS credentials. The recovery role is separate from the
+issuer role and is not available to customer operators.
+
+The design requires a dedicated secret, CMK, private versioned S3 bucket with
+Object Lock, CloudTrail, MFA, and two-person approval. Exact IAM permissions
+and the administrator checklist are documented in
+`docs/security/PMQMS_AWS_IAM_LICENSE_AUTHORITY.md` and
+`docs/PMQMS_AWS_AUTHORITY_APPROVAL_CHECKLIST.md`.
+
+`pmqms-demo-2026-v3` remains proposed only. Its key, fingerprint, public-key
+registration, and license issuance are blocked until the external store is
+approved and recovery has been tested.
