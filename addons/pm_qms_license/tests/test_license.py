@@ -273,6 +273,98 @@ class TestPmQmsCommercialLicensing(TransactionCase):
             result = validate_runtime_document(document, expected_environment_id=self.environment_id)
         self.assertEqual(result["payload"]["key_id"], license_service.DEMO_QA_KEY_ID)
 
+    def test_future_v3_issuance_and_registered_demo_qa_validation(self):
+        """v3 is issuable by the external tool, but trust is registry-gated."""
+        v3_private = Ed25519PrivateKey.generate()
+        v3_public = v3_private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        v3_document = self._document_for_key(
+            v3_private,
+            key_id="pmqms-demo-2026-v3",
+            deployment_scope="demo-qa",
+            company_limit=1,
+            site_limit=3,
+            named_user_limit=7,
+        )
+        registered_demo_keys = {
+            "pmqms-demo-2026-v3": base64.b64encode(v3_public).decode(),
+        }
+        result = validate_document(
+            v3_document,
+            expected_environment_id=self.environment_id,
+            public_keys=registered_demo_keys,
+        )
+        self.assertEqual(result["payload"]["deployment_scope"], "demo-qa")
+        self.assertEqual(
+            (result["payload"]["company_limit"], result["payload"]["site_limit"], result["payload"]["named_user_limit"]),
+            (1, 3, 7),
+        )
+        self.assertEqual(result["public_key_fingerprint"], hashlib.sha256(v3_public).hexdigest())
+
+    def test_future_v3_is_rejected_until_registered_and_negative_cases(self):
+        v3_private = Ed25519PrivateKey.generate()
+        v3_public = v3_private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        standard_keys = {
+            "pmqms-demo-2026": self.public_key_b64,
+            "pmqms-license-2026": self.public_key_b64,
+        }
+        registered_demo_keys = dict(standard_keys, **{
+            "pmqms-demo-2026-v3": base64.b64encode(v3_public).decode(),
+        })
+        valid = self._document_for_key(
+            v3_private, key_id="pmqms-demo-2026-v3", deployment_scope="demo-qa",
+            company_limit=1, site_limit=3, named_user_limit=7,
+        )
+        with self.assertRaises(ValueError):
+            validate_document(valid, expected_environment_id=self.environment_id, public_keys=standard_keys)
+        with self.assertRaises(ValueError):
+            validate_document(valid, expected_environment_id=self.environment_id, public_keys={})
+        for overrides in (
+            {"deployment_scope": None},
+            {"deployment_scope": "production"},
+            {"company_limit": 0},
+            {"site_limit": 0},
+            {"named_user_limit": 0},
+            {"environment_id": "22222222-2222-4222-8222-222222222222"},
+        ):
+            invalid = self._document_for_key(v3_private, key_id="pmqms-demo-2026-v3", **overrides)
+            with self.assertRaises(ValueError):
+                validate_document(invalid, expected_environment_id=self.environment_id, public_keys=registered_demo_keys)
+        altered_signature = json.loads(json.dumps(valid))
+        altered_signature["signature"] = base64.b64encode(b"x" * 64).decode()
+        with self.assertRaises(ValueError):
+            validate_document(altered_signature, expected_environment_id=self.environment_id, public_keys=registered_demo_keys)
+        unknown = json.loads(json.dumps(valid))
+        unknown["payload"]["key_id"] = "pmqms-demo-2026-v3-unknown"
+        with self.assertRaises(ValueError):
+            validate_document(unknown, expected_environment_id=self.environment_id, public_keys=registered_demo_keys)
+
+    def test_future_v3_runtime_registry_is_server_selected(self):
+        v3_private = Ed25519PrivateKey.generate()
+        v3_public = v3_private.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw
+        )
+        document = self._document_for_key(
+            v3_private, key_id="pmqms-demo-2026-v3", deployment_scope="demo-qa",
+        )
+        standard_keys = {"pmqms-license-2026": self.public_key_b64}
+        with patch.object(license_service, "load_public_keys", return_value=standard_keys), patch.object(
+            license_service, "load_demo_qa_public_keys", return_value=standard_keys
+        ):
+            with self.assertRaises(ValueError):
+                validate_runtime_document(document, expected_environment_id=self.environment_id)
+        demo_keys = dict(standard_keys, **{
+            "pmqms-demo-2026-v3": base64.b64encode(v3_public).decode(),
+        })
+        with patch.object(license_service, "load_public_keys", return_value=standard_keys), patch.object(
+            license_service, "load_demo_qa_public_keys", return_value=demo_keys
+        ):
+            result = validate_runtime_document(document, expected_environment_id=self.environment_id)
+        self.assertEqual(result["payload"]["key_id"], "pmqms-demo-2026-v3")
+
     def test_revision_replacement_and_older_revision_rejection(self):
         self._import()
         with self.assertRaises(UserError):

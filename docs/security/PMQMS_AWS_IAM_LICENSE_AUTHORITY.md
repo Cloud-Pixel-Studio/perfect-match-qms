@@ -9,7 +9,8 @@ credentials.
 - Secrets Manager secret for the Ed25519 PEM, one secret per authority.
 - Private S3 bucket for encrypted recovery artifacts, with versioning and
   Object Lock.
-- CloudTrail data events for Secrets Manager, KMS, and the backup prefix.
+- CloudTrail management events for Secrets Manager and KMS, plus S3 data
+  events for backup objects under the exact recovery prefix.
 
 Suggested secret name:
 
@@ -40,10 +41,24 @@ access customer databases, or connect to customer VMs.
 
 Allow only:
 
-- `s3:GetObject` and `s3:HeadObject` on the exact locked backup prefix;
-- `kms:Decrypt` on the backup CMK;
+- `s3:GetObjectVersion` on the exact locked backup prefix for versioned
+  recovery;
+- `s3:GetObject` on the exact locked backup prefix. The S3 `HeadObject` API is
+  authorized by `s3:GetObject`; `s3:HeadObject` is not an IAM action;
+- `kms:Decrypt` on the exact backup CMK;
 - `secretsmanager:PutSecretValue` on the exact authority secret only during an
   approved recovery procedure.
+
+The recovery role also needs the following narrowly scoped permissions on the
+authority CMK that encrypts that exact secret, conditioned on the Secrets
+Manager service and the exact secret ARN encryption context:
+
+- `kms:GenerateDataKey`;
+- `kms:Decrypt`.
+
+These permissions are for restoring the secret value only. The recovery role
+must not have issuance automation, `secretsmanager:DeleteSecret`,
+`kms:ScheduleKeyDeletion`, or `kms:RotateKey`.
 
 Recovery must require MFA and two-person approval. It must not automatically
 issue a license.
@@ -67,6 +82,7 @@ the private secret or decrypt backup contents.
 - CMK key policy review;
 - secret resource policy review;
 - S3 bucket policy, versioning, and Object Lock evidence;
-- CloudTrail event evidence;
+- CloudTrail management-event evidence for Secrets Manager/KMS calls and data-
+  event evidence for S3 backup object operations;
 - successful denied-access tests for issuer and audit roles;
 - MFA and dual-approval evidence.

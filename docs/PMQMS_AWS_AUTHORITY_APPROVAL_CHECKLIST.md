@@ -11,7 +11,8 @@ The checklist must be completed by an AWS administrator before generating
 - [ ] S3 versioning enabled.
 - [ ] S3 Object Lock and retention policy enabled.
 - [ ] Public access blocked.
-- [ ] CloudTrail enabled for secret, KMS, and backup events.
+- [ ] CloudTrail management events enabled for Secrets Manager/KMS and data
+      events enabled for S3 backup objects under the exact recovery prefix.
 
 ## Access
 

@@ -37,11 +37,12 @@ python3 deployment/scripts/issue-license.py \
   --revision 1 --company-limit 1 --site-limit 3 --named-user-limit 8
 ```
 
-The issuer defaults to `key_id=pmqms-license-2026`. A future Demo/QA v3
-authority may issue with `--key-id pmqms-demo-2026-v3
+The issuer defaults to `key_id=pmqms-license-2026`. The preparatory issuer
+accepts the reserved future Demo/QA v3 identifier with `--key-id pmqms-demo-2026-v3
 --deployment-scope demo-qa` only after the external store, fingerprint,
 backup recovery, and Product Owner approval are complete. The signed scope is
-required, and the Demo/QA importer uses a dedicated read-only registry mounted at
+required. Issuance support does not register or trust v3: the Demo/QA importer
+uses a dedicated read-only registry mounted at
 `/run/pmqms-demo-qa-public-keys.json`. The standard customer bundle removes
 the Demo/QA importer and registry, so it rejects Demo/QA-only authorities.
 Never copy a Demo/QA private key to Git, Docker, CI, or a target VM.
