@@ -11,6 +11,7 @@ from .environment import read_environment_id
 CANONICALIZATION = "UTF-8 JSON with sorted keys, compact separators, no ASCII escaping"
 DEFAULT_ISSUANCE_KEY_ID = "pmqms-license-2026"
 DEMO_QA_KEY_ID = "pmqms-demo-2026-v2"
+DEMO_QA_KEY_IDS = frozenset({"pmqms-demo-2026-v2", "pmqms-demo-2026-v3"})
 REQUIRED_PAYLOAD_FIELDS = {
     "schema_version",
     "license_id",
@@ -31,6 +32,10 @@ REQUIRED_PAYLOAD_FIELDS = {
 
 class LicenseValidationError(ValueError):
     pass
+
+
+def is_demo_qa_key_id(key_id):
+    return key_id in DEMO_QA_KEY_IDS
 
 
 TEMPORAL_STATES = {"valid", "expiring", "expired", "not_yet_valid"}
@@ -163,9 +168,9 @@ def validate_document(document, expected_environment_id=None, public_keys=None, 
     if not key_value:
         raise LicenseValidationError("License key_id is not approved.")
     deployment_scope = payload.get("deployment_scope")
-    if payload["key_id"] == DEMO_QA_KEY_ID and deployment_scope != "demo-qa":
+    if is_demo_qa_key_id(payload["key_id"]) and deployment_scope != "demo-qa":
         raise LicenseValidationError("Demo/QA authority requires a signed demo-qa deployment scope.")
-    if payload["key_id"] != DEMO_QA_KEY_ID and deployment_scope is not None:
+    if not is_demo_qa_key_id(payload["key_id"]) and deployment_scope is not None:
         raise LicenseValidationError("Deployment scope is reserved for the Demo/QA authority.")
     public_key, public_key_bytes = _public_key_from_b64(key_value)
     try:
@@ -204,8 +209,10 @@ def validate_runtime_document(document, expected_environment_id=None, now=None):
     """Validate using only registries selected by the server runtime.
 
     The standard registry is always tried first. The fixed Demo/QA registry
-    is considered only for the v2 key and only when its read-only bundle path
-    is present; callers cannot supply trust roots through the ORM/RPC API.
+    is considered only for an approved Demo/QA key and only when its read-only
+    bundle path is present; callers cannot supply trust roots through the
+    ORM/RPC API. A future v3 document remains rejected until v3 is explicitly
+    registered in that server-selected bundle.
     """
     try:
         return validate_document(document, expected_environment_id=expected_environment_id, now=now)
@@ -217,7 +224,7 @@ def validate_runtime_document(document, expected_environment_id=None, now=None):
         if isinstance(document, str):
             document = json.loads(document)
         payload = document.get("payload", {}) if isinstance(document, dict) else {}
-        if payload.get("key_id") != DEMO_QA_KEY_ID:
+        if not is_demo_qa_key_id(payload.get("key_id")):
             raise
         return validate_document(
             document,

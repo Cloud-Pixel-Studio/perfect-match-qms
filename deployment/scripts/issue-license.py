@@ -47,10 +47,10 @@ def parse_args():
 def main():
     args = parse_args()
     now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    if args.key_id == license_service.DEMO_QA_KEY_ID and args.deployment_scope != "demo-qa":
-        raise SystemExit("--key-id pmqms-demo-2026-v2 requires --deployment-scope demo-qa")
-    if args.key_id != license_service.DEMO_QA_KEY_ID and args.deployment_scope is not None:
-        raise SystemExit("--deployment-scope is only valid with --key-id pmqms-demo-2026-v2")
+    if license_service.is_demo_qa_key_id(args.key_id) and args.deployment_scope != "demo-qa":
+        raise SystemExit("Demo/QA authorities require --deployment-scope demo-qa")
+    if not license_service.is_demo_qa_key_id(args.key_id) and args.deployment_scope is not None:
+        raise SystemExit("--deployment-scope is only valid with a registered Demo/QA authority")
     payload = {
         "schema_version": 1,
         "license_id": args.license_id or f"PMQMS-{uuid.uuid4().hex[:12].upper()}",

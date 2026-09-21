@@ -2,8 +2,9 @@
 
 ## Status
 
-Implemented for the separate Demo/QA bundle; not enabled in the standard
-customer/production bundle.
+Implemented for the separate Demo/QA bundle. External authority provisioning
+for a future `pmqms-demo-2026-v3` is preparatory only and requires AWS
+administrator execution and Product Owner approval.
 
 ## Context
 
@@ -47,7 +48,21 @@ or copy private material anywhere.
 
 ## Consequences
 
-The v2 private key is preserved externally and is not distributable. Standard
-customer/production verification rejects v2; the Demo/QA importer accepts it
-only with the signed scope and dedicated bundle registry. Historical licenses
-remain valid until retired through the normal lifecycle.
+The v2 private key is considered irrecoverable. No v3 key has been generated
+and no v3 public key is registered. Standard customer/production verification
+continues to reject Demo/QA-only authorities; the Demo/QA importer accepts a
+future authority only with the signed scope and dedicated bundle registry.
+Historical licenses remain valid until retired through the normal lifecycle.
+
+## Preparatory external authority
+
+The approved target design uses a dedicated AWS Secrets Manager secret
+encrypted by a dedicated KMS CMK, a private S3 bucket with versioning and
+Object Lock for encrypted recovery material, CloudTrail, and separate issuer
+and recovery roles. The private key must be generated and stored by an AWS
+administrator in that external boundary; it must never be generated in a VM,
+Git, Docker, CI, or a customer instance.
+
+This repository change adds only documentation and blocked-state evidence. It
+does not create AWS resources, generate keys, register
+`pmqms-demo-2026-v3`, or issue a `.pmql`.
