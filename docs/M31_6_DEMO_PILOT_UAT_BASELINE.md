@@ -96,3 +96,33 @@ only: `runtime-verify`, `ps`, `health`, `validate-demo`, and the existing
 credential mechanism. Create a Demo-only backup before any update. Do not use
 `reset-demo`, remove volumes, reissue the license, or expose credential
 contents.
+
+### Role-check sequence
+
+The role evidence is an authenticated ORM check, not an inference from
+startup, login, or `validate-demo`. Repeat it with one fresh session per
+persona, obtaining the persona names and login identifiers only from
+`./deployment/scripts/odoo-demo.sh credentials` or the ORM. Never print the
+password files.
+
+For each persona, the check sequence is:
+
+1. Authenticate with that persona's existing credential file.
+2. In that authenticated user context (without `sudo`), read each of
+   `pm.qms.organization`, `pm.qms.site`, `pm.qms.process`,
+   `pm.qms.document`, `pm.qms.risk`, `pm.qms.capa`, `pm.qms.audit`, and
+   `pm.qms.action.center.line`; record only boolean success and sanitized
+   record counts.
+3. For Management User, read risks, CAPA, and CAPA actions, then execute
+   `check_access` for `create`, `write`, and `unlink`, and call
+   `action_start` and `action_complete` inside rolled-back savepoints. The
+   expected result for each mutation/action is `AccessError`; the read result
+   must remain successful.
+4. Run `./deployment/scripts/odoo-demo.sh validate-demo` again and compare
+   canonical counts to the pre-check snapshot. Any count change is a failed
+   cleanup/mutation result, not a PASS.
+
+The recorded run used seven separate authenticated contexts and produced the
+role matrix above. This repository does not contain a checked-in credential
+or raw-trace harness; the sequence above is the exact sanitized operator
+procedure used for this baseline.
