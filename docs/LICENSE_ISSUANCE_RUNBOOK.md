@@ -37,15 +37,24 @@ python3 deployment/scripts/issue-license.py \
   --revision 1 --company-limit 1 --site-limit 3 --named-user-limit 8
 ```
 
-The issuer defaults to `key_id=pmqms-license-2026`. The preparatory issuer
-accepts the reserved future Demo/QA v3 identifier with `--key-id pmqms-demo-2026-v3
---deployment-scope demo-qa` only after the external store, fingerprint,
-backup recovery, and Product Owner approval are complete. The signed scope is
-required. Issuance support does not register or trust v3: the Demo/QA importer
-uses a dedicated read-only registry mounted at
-`/run/pmqms-demo-qa-public-keys.json`. The standard customer bundle removes
+The issuer defaults to `key_id=pmqms-license-2026`. An approved Demo/QA
+issuance may use `--key-id pmqms-demo-2026-v3 --deployment-scope demo-qa` only
+after the external authority, canonical fingerprint, backup recovery, and
+Product Owner approval are verified. PMQMS's canonical v3 fingerprint is
+SHA-256 over the raw 32-byte Ed25519 public key:
+`2b9b1f747ffa21e0aed00e461f661ca81536689a842566263ac96948e65d6ee7`. SHA-256
+over its SPKI DER encoding is `34263f9060419a073fcd32f1cc956d6535092dfd1f16cbea2b28a9cc4c0db083`;
+it is an alternate encoding fingerprint for the same key. The signed scope
+is required. The Demo/QA importer uses a dedicated read-only registry mounted
+at `/run/pmqms-demo-qa-public-keys.json`. The standard customer bundle removes
 the Demo/QA importer and registry, so it rejects Demo/QA-only authorities.
 Never copy a Demo/QA private key to Git, Docker, CI, or a target VM.
+
+The v3 recovery archive is age-encrypted with verified local and S3 copies;
+the age identity backup is KMS-encrypted in the private authority backup
+bucket. S3 Object Lock is not enabled. The private signing key and age identity
+are never stored in this repository or in a customer environment. This PR only
+registers the v3 public key for Demo/QA and does not issue a `.pmql`.
 
 ## Blocked state
 
@@ -76,11 +85,11 @@ Internet connection is required by the runtime.
 
 ## Rotation and migration
 
-Rotation is additive. After approval, generate v3 directly in the external
-authority store, verify the public fingerprint, create and restore an encrypted
-backup, and then submit a separate PR containing only the public key and
-documentation. Retain all prior public keys while valid licenses remain in
-circulation. Do not issue a v3 `.pmql` before that PR is reviewed and merged.
+Rotation is additive. v3 is registered only in the Demo/QA bundle after its
+public-key fingerprint and encrypted backup restoration were verified. Retain
+all prior public keys while valid licenses remain in circulation. Do not issue
+a v3 `.pmql` until this PR is reviewed and merged and issuance is separately
+approved.
 
 See `docs/PMQMS_LICENSE_BACKUP_RECOVERY.md` for recovery evidence and
 `docs/PMQMS_CLIENT_INSTALL_LICENSE_CHECKLIST.md` for target installation.

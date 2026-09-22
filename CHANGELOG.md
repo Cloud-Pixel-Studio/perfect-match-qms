@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Registered `pmqms-demo-2026-v3` only in the Demo/QA public-key bundle after
+  verifying backup recovery. The canonical PMQMS raw-key SHA-256 is
+  `2b9b1f747ffa21e0aed00e461f661ca81536689a842566263ac96948e65d6ee7`; the
+  SPKI DER SHA-256 `34263f9060419a073fcd32f1cc956d6535092dfd1f16cbea2b28a9cc4c0db083`
+  is an alternate fingerprint format for the same key. The standard bundle
+  is unchanged; no `.pmql` was issued.
 - Added a separate Demo/QA-only verifier bundle for `pmqms-demo-2026-v2`.
   Standard customer/production bundles continue to ship only the two
   historical/general authorities; v2 requires a signed `demo-qa` scope and is

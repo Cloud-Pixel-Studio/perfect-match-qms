@@ -35,14 +35,31 @@ The standard customer/production verifier ships only the public keys in
 `data/public_keys.json`: `pmqms-demo-2026` remains a historical verifier and
 `pmqms-license-2026` remains the active general issuance authority. The
 separate Demo/QA bundle carries `deployment/demo/public_keys_demo_qa.json` via
-a fixed read-only mount and removes that path from customer bundles. v2 also
-requires the signed `deployment_scope=demo-qa` field. Therefore the Demo/QA
-bundle boundary and signed scope are both checked; `key_id` or a mutable local
-environment field alone is insufficient. Private signing keys remain outside
-Git, Docker images, CI, and target instances.
-Verification is entirely
+a fixed read-only mount and removes that path from customer bundles. v2 and v3
+require the signed `deployment_scope=demo-qa` field. The Demo/QA bundle
+preserves `pmqms-demo-2026`, `pmqms-license-2026`, and v2, and adds v3; the
+standard bundle remains unchanged and does not trust either Demo/QA-only key.
+The bundle boundary and signed scope are both checked; `key_id` or a mutable
+local environment field alone is insufficient. Private signing keys remain
+outside Git, Docker images, CI, and target instances. Verification is entirely
 local: the product has no phone-home call, license cloud dependency, or
 continuous Internet requirement.
+
+### v3 public-key fingerprints and custody
+
+The v3 public key is registered only in `deployment/demo/public_keys_demo_qa.json`.
+The canonical PMQMS fingerprint is SHA-256 over its raw 32-byte Ed25519 public
+key: `2b9b1f747ffa21e0aed00e461f661ca81536689a842566263ac96948e65d6ee7`.
+SHA-256 over the same key's SPKI DER encoding is
+`34263f9060419a073fcd32f1cc956d6535092dfd1f16cbea2b28a9cc4c0db083`.
+Both identify the same key; product validation and authority records use the
+raw-key fingerprint.
+
+The external v3 authority archive is age-encrypted, with local and S3 restore
+checks verified. The age identity backup is encrypted with the dedicated AWS
+KMS CMK and stored in the private S3 custody bucket. S3 Object Lock is not
+enabled and remains a documented limitation. Private signing material stays
+outside Git, Docker, CI, and customer installations.
 
 Supported states are missing, valid, expiring, expired, not-yet-valid,
 invalid-signature, wrong-environment, and invalid-format. Perpetual licenses
@@ -99,6 +116,6 @@ and the administrator checklist are documented in
 `docs/security/PMQMS_AWS_IAM_LICENSE_AUTHORITY.md` and
 `docs/PMQMS_AWS_AUTHORITY_APPROVAL_CHECKLIST.md`.
 
-`pmqms-demo-2026-v3` remains proposed only. Its key, fingerprint, public-key
-registration, and license issuance are blocked until the external store is
-approved and recovery has been tested.
+The verified public key for `pmqms-demo-2026-v3` is now registered only in the
+Demo/QA bundle. This registration does not issue a license or enable trust in
+the standard customer/production bundle. No `.pmql` is issued by this change.
