@@ -56,10 +56,16 @@ Both identify the same key; product validation and authority records use the
 raw-key fingerprint.
 
 The external v3 authority archive is age-encrypted, with local and S3 restore
-checks verified. The age identity backup is encrypted with the dedicated AWS
-KMS CMK and stored in the private S3 custody bucket. S3 Object Lock is not
-enabled and remains a documented limitation. Private signing material stays
-outside Git, Docker, CI, and customer installations.
+checks verified. The age identity backup is encrypted with the dedicated PMQMS
+backup CMK and stored in the private S3 custody bucket. Object Lock is not
+enabled for this Demo/QA bucket. The Product Owner approved a Demo/QA-only
+compensating control set: S3 versioning, public-access blocking, SSE-KMS,
+age-encryption before upload, issuer access without delete permission,
+separate recovery access, CloudTrail auditing, registered backup object/version
+metadata, periodic restore tests, dual recovery approval, and quarterly
+integrity review. This exception is not valid for production. Object Lock is
+mandatory before issuing any production customer license. Private signing
+material stays outside Git, Docker, CI, and customer installations.
 
 Supported states are missing, valid, expiring, expired, not-yet-valid,
 invalid-signature, wrong-environment, and invalid-format. Perpetual licenses
@@ -110,9 +116,11 @@ operation. Customer VMs receive only the resulting `.pmql`; they never receive
 the private key or AWS credentials. The recovery role is separate from the
 issuer role and is not available to customer operators.
 
-The design requires a dedicated secret, CMK, private versioned S3 bucket with
-Object Lock, CloudTrail, MFA, and two-person approval. Exact IAM permissions
-and the administrator checklist are documented in
+The production design requires a dedicated secret, CMK, private versioned S3
+bucket with Object Lock, CloudTrail, MFA, and two-person approval. The approved
+Demo/QA exception and its compensating controls are documented in ADR-077 and
+the backup/recovery runbook. Exact IAM permissions and the administrator
+checklist are documented in
 `docs/security/PMQMS_AWS_IAM_LICENSE_AUTHORITY.md` and
 `docs/PMQMS_AWS_AUTHORITY_APPROVAL_CHECKLIST.md`.
 

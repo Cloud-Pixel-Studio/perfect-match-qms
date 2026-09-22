@@ -23,12 +23,8 @@ the bundle-specific registry and signed scope are required; `key_id` alone is
 not an environment authorization mechanism. The Demo/QA bundle now contains
 v3; the standard bundle remains unchanged and rejects both Demo/QA-only keys.
 
-The original active authority remains at:
-
-`/opt/perfect-match/secrets/license-authority/pmqms-license-2026.pem`
-
-The file is owner-readable (`0600`) and the directory is restricted. Only
-public keys are committed to the appropriate bundle registry. The general
+The original active authority remains in its approved external secret store.
+Only public keys are committed to the appropriate bundle registry. The general
 issuer default remains `pmqms-license-2026`; this PR does not issue a `.pmql`
 or copy private material anywhere.
 
@@ -67,11 +63,16 @@ retired through the normal lifecycle. No `.pmql` is issued by this change.
 The v3 authority is kept outside the repository on the controlled authority
 host. Its recovery archive is age-encrypted and has verified local and S3
 copies. The age identity backup is KMS-encrypted and stored in the private S3
-custody bucket. The configured CMK is
-`arn:aws:kms:us-east-1:753974168396:key/64c2761e-111b-4a44-95e0-1db7aa06e1fa`.
-Object Lock is not enabled; this remains a recovery-control limitation. The
-private key and age identity are never committed, bundled, or copied to
-customer instances, Docker, or CI.
+custody bucket using the PMQMS backup CMK. S3 Object Lock is not enabled for
+this Demo/QA bucket. The Product Owner has approved a Demo/QA-only compensating
+control set: S3 versioning, public-access blocking, SSE-KMS, age encryption
+before upload, an issuer identity without object-delete permission, a separate
+recovery identity, CloudTrail auditing, registered backup object/version
+metadata, periodic restore tests, dual approval for recovery, and quarterly
+integrity review. This exception applies only to Demo/QA. Object Lock remains
+mandatory for production, and no production customer license may be issued
+until a bucket with Object Lock is available. The private key and age identity
+are never committed, bundled, or copied to customer instances, Docker, or CI.
 
 This change registers only the verified v3 public key in the Demo/QA bundle
 and documents custody and fingerprint formats. It does not change the standard

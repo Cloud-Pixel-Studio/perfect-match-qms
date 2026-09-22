@@ -12,12 +12,8 @@ does not generate a key.
 
 1. Read the target environment UUID from its external secret/configuration
    file. Do not copy the database UUID because it is not authoritative.
-2. Use the active Ed25519 private PEM key stored outside the repository and
-customer instances:
-
-```text
-/opt/perfect-match/secrets/license-authority/pmqms-license-2026.pem
-```
+2. Use the active Ed25519 private PEM key from the approved external authority
+secret store. Never place it in the repository or a customer instance.
 
 3. Run `deployment/scripts/issue-license.py` with the environment UUID,
    customer, edition, revision, and limits. The command writes a `.pmql` file
@@ -29,7 +25,7 @@ Example shape (use the real target identity and values at run time):
 
 ```bash
 python3 deployment/scripts/issue-license.py \
-  --private-key /opt/perfect-match/secrets/license-authority/pmqms-license-2026.pem \
+  --private-key "<protected-key-path-provided-by-approved-store>" \
   --output /opt/perfect-match/operator-licenses/customer.pmql \
   --environment-id "<target-environment-uuid>" \
   --customer-name "Fictional Customer Organization" \
@@ -52,9 +48,17 @@ Never copy a Demo/QA private key to Git, Docker, CI, or a target VM.
 
 The v3 recovery archive is age-encrypted with verified local and S3 copies;
 the age identity backup is KMS-encrypted in the private authority backup
-bucket. S3 Object Lock is not enabled. The private signing key and age identity
-are never stored in this repository or in a customer environment. This PR only
-registers the v3 public key for Demo/QA and does not issue a `.pmql`.
+bucket. Object Lock is not enabled for the Demo/QA bucket. The Product Owner
+approved a Demo/QA-only compensating control set: versioning, public-access
+blocking, SSE-KMS, age encryption before upload, issuer access without delete
+permission, separate recovery access, CloudTrail auditing, registered backup
+object/version metadata, periodic restore tests, dual approval for recovery,
+and quarterly integrity review. This exception applies only to Demo/QA.
+Object Lock remains mandatory for production, and no production customer
+license may be issued before a bucket with Object Lock is in place. The private
+signing key and age identity are never stored in this repository or in a
+customer environment. This PR only registers the v3 public key for Demo/QA and
+does not issue a `.pmql`.
 
 ## Blocked state
 

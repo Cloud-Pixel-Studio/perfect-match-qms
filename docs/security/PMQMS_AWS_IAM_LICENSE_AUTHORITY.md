@@ -21,6 +21,12 @@ pmqms/license-authority/demo-qa/pmqms-demo-2026-v3
 The actual ARN and account are administrator-owned configuration and must not
 be committed here.
 
+This Object Lock requirement is mandatory for production customer issuance.
+The Product Owner-approved Demo/QA exception and its compensating controls are
+specific to the existing Demo/QA authority and are documented in ADR-077 and
+`docs/PMQMS_LICENSE_BACKUP_RECOVERY.md`; they do not relax the production
+requirement.
+
 ## Roles
 
 ### `PMQMSLicenseIssuer`
