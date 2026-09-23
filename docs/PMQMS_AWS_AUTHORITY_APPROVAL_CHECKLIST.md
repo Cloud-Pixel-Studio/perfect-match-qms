@@ -1,7 +1,8 @@
 # PMQMS AWS Authority Approval Checklist
 
-The checklist must be completed by an AWS administrator before generating
-`pmqms-demo-2026-v3`. No key generation is authorized by this document.
+This checklist records administrator-owned infrastructure controls and
+production gates. It does not authorize new key generation. The current v3
+Demo/QA exception status is recorded below.
 
 ## Infrastructure
 
@@ -9,7 +10,11 @@ The checklist must be completed by an AWS administrator before generating
 - [ ] Secrets Manager secret created with the exact authority scope.
 - [ ] Private S3 backup bucket created in the approved account and region.
 - [ ] S3 versioning enabled.
-- [ ] S3 Object Lock and retention policy enabled.
+- [ ] Production: S3 Object Lock and retention policy enabled before issuing
+      any production customer license.
+- [x] Demo/QA-only exception approved by the Product Owner. Object Lock is
+      not enabled for the Demo/QA bucket; the compensating controls are
+      documented in ADR-077 and `docs/PMQMS_LICENSE_BACKUP_RECOVERY.md`.
 - [ ] Public access blocked.
 - [ ] CloudTrail management events enabled for Secrets Manager/KMS and data
       events enabled for S3 backup objects under the exact recovery prefix.
@@ -45,5 +50,6 @@ The checklist must be completed by an AWS administrator before generating
 
 ## Current status
 
-`pmqms-demo-2026-v3` is **NOT GENERATED**. The project remains blocked until
-all administrator-only items above are evidenced.
+`pmqms-demo-2026-v3` is generated and backed up for Demo/QA. Its public key is
+proposed only in the Demo/QA bundle through a reviewed PR. The approved
+Demo/QA retention exception does not satisfy the production Object Lock gate.
