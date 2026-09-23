@@ -167,6 +167,27 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertIn('-e PMQMS_DEMO_INSTANCE="$PMQMS_DEMO_INSTANCE"', validate_block)
         self.assertIn('-e PMQMS_DEMO_DB="$DB_NAME"', validate_block)
 
+    def test_seed_launcher_normalizes_database_filestore_for_odoo_runtime(self):
+        launcher = (SEED_PATH.parents[1] / "scripts" / "odoo-demo.sh").read_text(encoding="utf-8")
+        seed_start = launcher.index("seed_demo() {")
+        seed_end = launcher.index("\n}\n", seed_start)
+        seed_block = launcher[seed_start:seed_end]
+        seed_run = seed_block.index("compose run --rm --user root")
+        filestore_normalization = seed_block.index(
+            'compose exec --user root odoo-demo \\\n    chown -R odoo:odoo "/var/lib/odoo/filestore/$DB_NAME"'
+        )
+        self.assertLess(seed_run, filestore_normalization)
+        self.assertIn('chown -R odoo:odoo "/var/lib/odoo/filestore/$DB_NAME"', seed_block)
+
+    def test_initial_install_uses_seed_filestore_normalization(self):
+        launcher = (SEED_PATH.parents[1] / "scripts" / "odoo-demo.sh").read_text(encoding="utf-8")
+        install_start = launcher.index("install_or_update() {")
+        install_end = launcher.index("\n}\n", install_start)
+        self.assertIn("seed_demo", launcher[install_start:install_end])
+        seed_start = launcher.index("seed_demo() {")
+        seed_end = launcher.index("\n}\n", seed_start)
+        self.assertIn('chown -R odoo:odoo "/var/lib/odoo/filestore/$DB_NAME"', launcher[seed_start:seed_end])
+
     def test_capa_why_helper_updates_only_answer_for_existing_slot(self):
         writes = []
 

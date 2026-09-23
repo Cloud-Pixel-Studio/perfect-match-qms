@@ -328,8 +328,9 @@ seed_demo() {
   compose up -d postgres-demo >/dev/null
   wait_postgres
   # Persona files remain operator-owned (0700/0600). The one-shot seed runs
-  # as container root only to read the read-only secret mount; Odoo itself
-  # continues to run as its normal unprivileged container user.
+  # as container root only to read the read-only secret mount. Normalize the
+  # selected database filestore afterward so the long-running Odoo user can
+  # write generated assets and future attachments.
   compose run --rm --user root \
     -e PMQMS_DEMO_INSTANCE="$PMQMS_DEMO_INSTANCE" \
     -e PMQMS_DEMO_DB="$DB_NAME" \
@@ -340,6 +341,8 @@ seed_demo() {
     -v "$PERSONA_PASSWORD_DIR:/run/pmqms-demo-persona-passwords:ro" \
     -e PMQMS_DEMO_ADMIN_PASSWORD="$password" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/seed_demo.py"
+  compose exec --user root odoo-demo \
+    chown -R odoo:odoo "/var/lib/odoo/filestore/$DB_NAME"
 }
 
 provision_license() {
