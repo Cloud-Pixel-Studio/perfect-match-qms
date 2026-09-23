@@ -331,6 +331,7 @@ seed_demo() {
   # as container root only to read the read-only secret mount; Odoo itself
   # continues to run as its normal unprivileged container user.
   compose run --rm --user root \
+    -e PMQMS_DEMO_INSTANCE="$PMQMS_DEMO_INSTANCE" \
     -e PMQMS_DEMO_DB="$DB_NAME" \
     -e PMQMS_DEMO_COMPANY_NAME="$DEMO_COMPANY_NAME" \
     -e PMQMS_DEMO_ADMIN_LOGIN="$DEMO_ADMIN_LOGIN" \

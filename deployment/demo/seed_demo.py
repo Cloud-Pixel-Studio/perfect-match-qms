@@ -6,7 +6,9 @@ from dateutil.relativedelta import relativedelta
 from odoo import Command, fields
 from odoo.addons.pm_qms_app.hooks import restrict_optional_platform_menus
 
-EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
+DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")
+APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}
+EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", APPROVED_DEMO_DATABASES.get(DEMO_INSTANCE, ""))
 COMPANY_NAME = os.getenv("PMQMS_DEMO_COMPANY_NAME", "Apex Precision Systems, Inc.")
 ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 ADMIN_PASSWORD = os.getenv("PMQMS_DEMO_ADMIN_PASSWORD")
@@ -14,8 +16,18 @@ QUALITY_MANAGER_LOGIN = os.getenv("PMQMS_DEMO_QUALITY_MANAGER_LOGIN", "olivia.pa
 PERSONA_PASSWORD_DIR = Path(os.getenv("PMQMS_DEMO_PERSONA_PASSWORD_DIR", "/run/pmqms-demo-persona-passwords"))
 ORG_CODE = "APEX"
 
-if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
-    raise RuntimeError(f"Demo seed refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")
+def validate_seed_database(instance_name, configured_db, actual_db):
+    """Allow only the explicitly approved Demo instance/database pairs."""
+    expected_db = APPROVED_DEMO_DATABASES.get(instance_name)
+    if not expected_db or configured_db != expected_db or actual_db != expected_db:
+        raise RuntimeError(
+            f"Demo seed refused for instance {instance_name!r} and database {actual_db!r}; "
+            "only approved Demo instance/database pairs are allowed."
+        )
+    return expected_db
+
+
+validate_seed_database(DEMO_INSTANCE, EXPECTED_DB, env.cr.dbname)
 
 restrict_optional_platform_menus(env)
 

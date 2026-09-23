@@ -44,6 +44,25 @@ def load_seed_helpers(*names):
     return namespace
 
 
+def load_seed_database_guard():
+    tree = ast.parse(SEED_PATH.read_text(encoding="utf-8"))
+    nodes = [
+        item
+        for item in tree.body
+        if (
+            isinstance(item, ast.Assign)
+            and any(
+                isinstance(target, ast.Name) and target.id == "APPROVED_DEMO_DATABASES"
+                for target in item.targets
+            )
+        )
+        or (isinstance(item, ast.FunctionDef) and item.name == "validate_seed_database")
+    ]
+    namespace = {}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SEED_PATH), "exec"), namespace)
+    return namespace["validate_seed_database"]
+
+
 def reconcile(rows, identity, values):
     matches = [
         row
@@ -63,6 +82,46 @@ def reconcile(rows, identity, values):
 class SeedIdentityTests(unittest.TestCase):
     def setUp(self):
         self.helpers = load_identity_helpers()
+
+    def test_seed_database_guard_accepts_original_demo_pair(self):
+        guard = load_seed_database_guard()
+        self.assertEqual(guard("demo", "pmqms_demo", "pmqms_demo"), "pmqms_demo")
+
+    def test_seed_database_guard_accepts_demo2_only_for_demo2_instance(self):
+        guard = load_seed_database_guard()
+        self.assertEqual(guard("demo2", "pmqms_demo2", "pmqms_demo2"), "pmqms_demo2")
+        with self.assertRaises(RuntimeError):
+            guard("demo", "pmqms_demo2", "pmqms_demo2")
+
+    def test_seed_database_guard_rejects_arbitrary_or_production_databases(self):
+        guard = load_seed_database_guard()
+        for instance, configured, actual in (
+            ("demo2", "pmqms_production", "pmqms_production"),
+            ("demo2", "production", "production"),
+            ("production", "pmqms_production", "pmqms_production"),
+        ):
+            with self.subTest(instance=instance, database=actual):
+                with self.assertRaises(RuntimeError):
+                    guard(instance, configured, actual)
+
+    def test_seed_database_guard_rejects_inconsistent_instance_and_database(self):
+        guard = load_seed_database_guard()
+        with self.assertRaises(RuntimeError):
+            guard("demo2", "pmqms_demo2", "pmqms_demo")
+        with self.assertRaises(RuntimeError):
+            guard("demo2", "pmqms_demo", "pmqms_demo")
+
+    def test_seed_launcher_passes_instance_and_keeps_demo2_paths_isolated(self):
+        launcher = (SEED_PATH.parents[1] / "scripts" / "odoo-demo.sh").read_text(encoding="utf-8")
+        seed_start = launcher.index("seed_demo() {")
+        seed_end = launcher.index("\n}\n", seed_start)
+        seed_block = launcher[seed_start:seed_end]
+        self.assertIn('-e PMQMS_DEMO_INSTANCE="$PMQMS_DEMO_INSTANCE"', seed_block)
+        self.assertIn('-e PMQMS_DEMO_DB="$DB_NAME"', seed_block)
+        self.assertIn('DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-demo-isolated"', launcher)
+        self.assertIn('DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-demo-isolated"', launcher)
+        self.assertIn('PMQMS_DEMO_INSTANCE" == demo2', launcher)
+        self.assertIn('EXPECTED_DB_NAME="pmqms_${INSTANCE_SUFFIX}"', launcher)
 
     def test_capa_why_helper_updates_only_answer_for_existing_slot(self):
         writes = []
