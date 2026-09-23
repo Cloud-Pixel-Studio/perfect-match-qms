@@ -57,6 +57,13 @@ making any filesystem changes. A non-default instance stores its own copy of
 the tracked runtime lock under its secrets root. The Compose project derives
 container names automatically; no fixed `container_name` is used.
 
+On initialization the launcher claims each secrets and backup root with a
+non-secret `.pmqms-demo-instance-owner` marker. Existing markers must match the
+selected instance. A custom non-empty root without a marker is refused; the
+historical default Demo roots may be adopted once for backward compatibility.
+This prevents two instances from sharing relocated roots even when paths are
+outside the standard `/opt` locations.
+
 Every instance must have its own environment UUID, activation request, signed
 `.pmql`, secrets directory, database, Compose project, network, volumes,
 runtime-lock copy, and backup directory. Never share a database, volume,

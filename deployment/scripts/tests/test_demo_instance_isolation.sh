@@ -84,6 +84,26 @@ grep -Fq -- '--project-name pmqms-demo2' "$TEST_DOCKER_LOG"
 [[ "$(realpath "$demo2_secrets/runtime/runtime-lock.json")" != "$(realpath "$REPO_ROOT/deployment/runtime/runtime-lock.json")" ]]
 cmp -s "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$demo2_secrets/runtime/runtime-lock.json"
 
+# Even caller-supplied relocated roots cannot be silently shared. The first
+# instance claims both roots; a second instance must fail before chmod or
+# creation of any nested instance files.
+shared_secrets="$WORK/relocated/shared-secrets"
+shared_backups="$WORK/relocated/shared-backups"
+PMQMS_DEMO_INSTANCE=demo PMQMS_DEMO_SECRETS_DIR="$shared_secrets" PMQMS_DEMO_BACKUP_DIR="$shared_backups" \
+  "$LAUNCHER" config > "$WORK/relocated-demo-config"
+[[ "$(<"$shared_secrets/.pmqms-demo-instance-owner")" == demo ]]
+[[ "$(<"$shared_backups/.pmqms-demo-instance-owner")" == demo ]]
+: > "$shared_secrets/demo1-sentinel"
+chmod 711 "$shared_secrets" "$shared_backups"
+if PMQMS_DEMO_INSTANCE=demo2 PMQMS_DEMO_SECRETS_DIR="$shared_secrets" PMQMS_DEMO_BACKUP_DIR="$shared_backups" \
+  "$LAUNCHER" config > "$WORK/shared-root-rejection" 2>&1; then
+  echo "A relocated secrets/backup root was shared across instances." >&2
+  exit 1
+fi
+[[ "$(stat -c '%a' "$shared_secrets")" == 711 ]]
+[[ "$(stat -c '%a' "$shared_backups")" == 711 ]]
+[[ -f "$shared_secrets/demo1-sentinel" ]]
+
 expect_rejected() {
   local label="$1"; shift
   if "$@" >"$WORK/reject.out" 2>&1; then

@@ -162,6 +162,35 @@ show_effective_configuration() {
     "$PMQMS_DEMO_INSTANCE" "$DB_NAME" "$COMPOSE_PROJECT_NAME" "$SECRETS_DIR" "$ACTIVATION_DIR" "$DEMO_LICENSE_FILE" "$BACKUP_DIR" "$RUNTIME_LOCK_FILE" "$POSTGRES_VOLUME" "$ODOO_DATA_VOLUME" "$DEMO_NETWORK" "$ODOO_DEMO_HTTP_PORT" "$ODOO_DEMO_LONGPOLLING_PORT"
 }
 
+validate_instance_root_owner() {
+  local root="$1" default_root="$2" label="$3" marker="$1/.pmqms-demo-instance-owner" owner
+  if [[ -e "$marker" || -L "$marker" ]]; then
+    [[ -f "$marker" && ! -L "$marker" ]] || { echo "$label ownership marker is not a regular file." >&2; return 2; }
+    IFS= read -r owner < "$marker" || owner=""
+    [[ "$owner" == "$PMQMS_DEMO_INSTANCE" ]] || {
+      echo "$label path is already owned by a different Demo instance." >&2; return 2;
+    }
+    return 0
+  fi
+  if [[ "$(realpath -m -- "$root")" != "$(realpath -m -- "$default_root")" ]] &&
+      find "$root" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+    echo "$label custom path is non-empty and has no PMQMS instance ownership marker." >&2
+    return 2
+  fi
+}
+
+claim_instance_root() {
+  local root="$1" label="$2" marker="$1/.pmqms-demo-instance-owner" owner
+  if [[ ! -e "$marker" ]]; then
+    if ! (set -o noclobber; printf '%s\n' "$PMQMS_DEMO_INSTANCE" > "$marker") 2>/dev/null; then
+      [[ -f "$marker" && ! -L "$marker" ]] || { echo "Could not atomically claim $label path." >&2; return 2; }
+      IFS= read -r owner < "$marker" || owner=""
+      [[ "$owner" == "$PMQMS_DEMO_INSTANCE" ]] || { echo "$label path was concurrently claimed by another instance." >&2; return 2; }
+    fi
+    chmod 600 "$marker"
+  fi
+}
+
 random_secret() {
   python3 - <<'PY'
 import secrets
@@ -176,7 +205,12 @@ assert_demo_database() {
 init_secrets() {
   assert_demo_database
   show_effective_configuration
-  mkdir -p "$SECRETS_DIR" "$CONFIG_DIR" "$BACKUP_DIR" "$ACTIVATION_DIR"
+  mkdir -p "$SECRETS_DIR" "$BACKUP_DIR"
+  validate_instance_root_owner "$SECRETS_DIR" "$DEFAULT_SECRETS_DIR" "Secrets"
+  validate_instance_root_owner "$BACKUP_DIR" "$DEFAULT_BACKUP_DIR" "Backup"
+  claim_instance_root "$SECRETS_DIR" "secrets"
+  claim_instance_root "$BACKUP_DIR" "backup"
+  mkdir -p "$CONFIG_DIR" "$ACTIVATION_DIR"
   if [[ "$PMQMS_DEMO_INSTANCE" != demo && ! -f "$RUNTIME_LOCK_FILE" ]]; then
     mkdir -p "$(dirname "$RUNTIME_LOCK_FILE")"
     cp "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$RUNTIME_LOCK_FILE"
