@@ -1,10 +1,9 @@
-name: pmqms-demo
+name: ${COMPOSE_PROJECT_NAME:-pmqms-demo}
 
 services:
   postgres-demo:
     image: "${PMQMS_POSTGRES_IMAGE:?runtime lock was not loaded}"
     pull_policy: never
-    container_name: pmqms-postgres-demo
     restart: unless-stopped
     environment:
       POSTGRES_DB: postgres
@@ -17,16 +16,15 @@ services:
       timeout: 5s
       retries: 10
     volumes:
-      - pmqms_demo_postgres:/var/lib/postgresql/data/pgdata
+      - postgres_data:/var/lib/postgresql/data/pgdata
     secrets:
       - odoo_pg_password
     networks:
-      - pmqms_demo_network
+      - demo_network
 
   odoo-demo:
     image: "${PMQMS_ODOO_IMAGE:?runtime lock was not loaded}"
     pull_policy: never
-    container_name: pmqms-odoo-demo
     restart: unless-stopped
     depends_on:
       postgres-demo:
@@ -45,23 +43,23 @@ services:
       - ../../../addons:/mnt/extra-addons:rw
       - ../../../deployment/demo/public_keys_demo_qa.json:/run/pmqms-demo-qa-public-keys.json:ro
       - ${ODOO_DEMO_CONFIG_DIR:-/opt/perfect-match/secrets/odoo-demo/config}:/etc/odoo:ro
-      - pmqms_demo_odoo_data:/var/lib/odoo
+      - odoo_data:/var/lib/odoo
     secrets:
       - odoo_pg_password
     networks:
-      - pmqms_demo_network
+      - demo_network
 
 secrets:
   odoo_pg_password:
     file: ${ODOO_DEMO_PG_PASSWORD_FILE:-/opt/perfect-match/secrets/odoo-demo/odoo_pg_password}
 
 volumes:
-  pmqms_demo_postgres:
-    name: pmqms_demo_postgres
-  pmqms_demo_odoo_data:
-    name: pmqms_demo_odoo_data
+  postgres_data:
+    name: ${PMQMS_DEMO_POSTGRES_VOLUME:-pmqms_demo_postgres}
+  odoo_data:
+    name: ${PMQMS_DEMO_ODOO_VOLUME:-pmqms_demo_odoo_data}
 
 networks:
-  pmqms_demo_network:
-    name: pmqms_demo_network
+  demo_network:
+    name: ${PMQMS_DEMO_NETWORK:-pmqms_demo_network}
     driver: bridge
