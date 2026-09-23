@@ -471,6 +471,9 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn("Perfect Match QMS", login.arch)
         self.assertNotIn("pm_qms_login_logo", login.arch)
         self.assertNotIn("Your logo", login.arch)
+        self.assertIn("contains(@href, 'odoo.com')", login.arch)
+        self.assertIn("not disable_footer and not disable_database_manager", login.arch)
+        self.assertNotIn("Powered by Odoo", login.arch)
 
     def test_product_shell_asset_bundles_compile_without_css_fallback(self):
         for bundle_name in ("web.assets_frontend", "web.assets_backend"):
