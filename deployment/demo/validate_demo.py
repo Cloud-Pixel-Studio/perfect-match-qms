@@ -1,6 +1,8 @@
 import os
 
-EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", "pmqms_demo")
+DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")
+APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}
+EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", APPROVED_DEMO_DATABASES.get(DEMO_INSTANCE, ""))
 EXPECTED_ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 EXPECTED_QMS_PERSONAS = {
     "Quality Manager": os.getenv("PMQMS_DEMO_QUALITY_MANAGER_LOGIN", "olivia.parker.demo@perfectmatch.local"),
@@ -24,8 +26,18 @@ CANONICAL_APEX_PROCESS_CODES = (
     "APEX-TRN",
     "APEX-CAL",
 )
-if EXPECTED_DB != "pmqms_demo" or env.cr.dbname != "pmqms_demo":
-    raise RuntimeError(f"Demo validation refused for database {env.cr.dbname!r}; only pmqms_demo is allowed.")
+def validate_demo_database(instance_name, configured_db, actual_db):
+    """Allow validation only for explicitly approved Demo instance/database pairs."""
+    expected_db = APPROVED_DEMO_DATABASES.get(instance_name)
+    if not expected_db or configured_db != expected_db or actual_db != expected_db:
+        raise RuntimeError(
+            f"Demo validation refused for instance {instance_name!r} and database {actual_db!r}; "
+            "only approved Demo instance/database pairs are allowed."
+        )
+    return expected_db
+
+
+validate_demo_database(DEMO_INSTANCE, EXPECTED_DB, env.cr.dbname)
 
 errors = []
 summary = {}
