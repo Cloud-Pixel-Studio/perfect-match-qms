@@ -289,23 +289,36 @@ def upsert_capa_why(capa, sequence, answer):
         return model.browse()
 
 
-def ensure_capa_is_is_not_dimension(capa, manager_user, sequence, dimension, values):
-    """Reconcile one protected fixed CAPA slot as the authorized manager."""
+def ensure_capa_is_is_not_dimensions(capa, manager_user, specifications):
+    """Reconcile fixed CAPA slots and create all missing siblings atomically."""
     model_name = "pm.qms.capa.is.is.not"
     if not model_exists(model_name):
         raise RuntimeError("Required CAPA Is / Is Not model is missing")
     model = env[model_name].with_user(manager_user).with_context(pm_qms_capa_initialize=True)
-    identity = [("capa_id", "=", capa.id), ("dimension", "=", dimension)]
-    payload = {
-        "capa_id": capa.id,
-        "dimension": dimension,
-        "sequence": sequence,
-        **values,
-    }
-    record = model.search(identity, limit=1)
+    expected = {dimension: (sequence, values) for sequence, dimension, values in specifications}
+    if len(expected) != len(specifications):
+        raise RuntimeError("Duplicate CAPA Is / Is Not dimensions in seed specification")
     try:
         with env.cr.savepoint():
-            if record:
+            rows = model.search([("capa_id", "=", capa.id)], order="sequence,id")
+            existing_by_dimension = {}
+            for row in rows:
+                if row.dimension not in expected or row.dimension in existing_by_dimension:
+                    raise RuntimeError("Unexpected or duplicate CAPA Is / Is Not dimension")
+                existing_by_dimension[row.dimension] = row
+
+            missing_payloads = []
+            for sequence, dimension, values in specifications:
+                payload = {
+                    "capa_id": capa.id,
+                    "dimension": dimension,
+                    "sequence": sequence,
+                    **values,
+                }
+                record = existing_by_dimension.get(dimension)
+                if not record:
+                    missing_payloads.append(payload)
+                    continue
                 writable = {
                     key: value
                     for key, value in payload.items()
@@ -315,14 +328,24 @@ def ensure_capa_is_is_not_dimension(capa, manager_user, sequence, dimension, val
                 }
                 if writable:
                     record.write(writable)
-            else:
-                record = model.create(payload)
+
+            if missing_payloads:
+                model.create(missing_payloads)
+
+            reconciled = model.search([("capa_id", "=", capa.id)], order="sequence,id")
+            if (
+                len(reconciled) != len(expected)
+                or set(reconciled.mapped("dimension")) != set(expected)
+                or {
+                    row.dimension: row.sequence for row in reconciled
+                } != {dimension: sequence for dimension, (sequence, _values) in expected.items()}
+            ):
+                raise RuntimeError("CAPA Is / Is Not dimensions do not match the fixed seed structure")
     except Exception as exc:
         raise RuntimeError(
-            f"Required CAPA Is / Is Not dimension failed: {capa.code}/{dimension}"
+            f"Required CAPA Is / Is Not dimensions failed: {capa.code}"
         ) from exc
-    return record
-
+    return reconciled
 
 def generate_required_management_review_snapshot(review, manager_user):
     """Create the canonical snapshot without the technical shell identity."""
@@ -814,10 +837,8 @@ if capa_solder:
         "when": ("After the profile adjustment on the current shift", "Lots built before the adjustment", "Failure reports begin with the new lot", "Profile and first-piece review sequence changed"),
         "extent": ("A sample of boards from one production lot", "Other released lots under prior profile", "Failures cluster by lot and joint location", "Sampling did not include a profile-change trigger"),
     }
-    for sequence, (dimension, values) in enumerate(fixed_is_is_not.items(), start=1):
-        ensure_capa_is_is_not_dimension(
-            capa_solder,
-            demo_user,
+    specifications = [
+        (
             sequence,
             dimension,
             {
@@ -827,11 +848,9 @@ if capa_solder:
                 "change_value": values[3],
             },
         )
-    dimensions = env["pm.qms.capa.is.is.not"].with_user(demo_user).search(
-        [("capa_id", "=", capa_solder.id)]
-    )
-    if len(dimensions) != 4 or set(dimensions.mapped("dimension")) != set(fixed_is_is_not):
-        raise RuntimeError("Required CAPA APEX-CAPA-002 must have exactly four fixed Is / Is Not dimensions")
+        for sequence, (dimension, values) in enumerate(fixed_is_is_not.items(), start=1)
+    ]
+    dimensions = ensure_capa_is_is_not_dimensions(capa_solder, demo_user, specifications)
     if capa_solder.root_cause_method != "fishbone":
         capa_solder.with_user(demo_user).write({"root_cause_method": "fishbone"})
     if capa_solder.state == "analysis" and not capa_solder.root_cause:
