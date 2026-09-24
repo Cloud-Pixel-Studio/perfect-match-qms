@@ -206,6 +206,175 @@ class SeedIdentityTests(unittest.TestCase):
 
         self.assertIs(helper(ProjectModel(), object(), existing_project, {}), existing_project)
 
+    def test_capa_fixed_dimensions_are_created_in_one_authorized_batch_idempotently(self):
+        helper = load_seed_helpers("ensure_capa_is_is_not_dimensions")["ensure_capa_is_is_not_dimensions"]
+        manager = object()
+        rows = []
+        batch_creates = []
+
+        class Field:
+            readonly = False
+            type = "char"
+
+        class Record(dict):
+            __getattr__ = dict.__getitem__
+
+            def write(self, values):
+                self.update(values)
+
+        class RecordSet(list):
+            def mapped(self, field):
+                return [getattr(record, field) for record in self]
+
+        class Model:
+            _fields = {name: Field() for name in (
+                "capa_id", "dimension", "sequence", "is_value", "is_not_value", "distinction", "change_value"
+            )}
+
+            def with_user(self, user):
+                self.user = user
+                return self
+
+            def with_context(self, **context):
+                self.context = context
+                return self
+
+            def search(self, domain, order=None):
+                identity = {field: value for field, _operator, value in domain}
+                return RecordSet(
+                    row for row in rows
+                    if all(row.get(key) == value for key, value in identity.items())
+                )
+
+            def create(self, values):
+                if self.user is not manager:
+                    raise PermissionError("QMS Manager required")
+                if self.context != {"pm_qms_capa_initialize": True}:
+                    raise PermissionError("Fixed CAPA initialization context required")
+                if not isinstance(values, list):
+                    raise AssertionError("all missing fixed dimensions must be multi-created")
+                if {value["sequence"] for value in values} != {1, 2, 3, 4}:
+                    raise ValueError("CAPA fixed dimensions must exist as a complete sequence")
+                batch_creates.append(values)
+                created = [Record(value) for value in values]
+                rows.extend(created)
+                return RecordSet(created)
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        class Cursor:
+            def savepoint(self):
+                return Savepoint()
+
+        model = Model()
+        helper.__globals__.update(
+            env=type("Env", (), {"cr": Cursor(), "__getitem__": lambda self, _name: model})(),
+            model_exists=lambda _name: True,
+            field_value_equal=lambda current, _field, incoming: current == incoming,
+        )
+        capa = type("Capa", (), {"id": 17, "code": "APEX-CAPA-002"})()
+        dims = ("what", "where", "when", "extent")
+        specifications = [
+            (sequence, dimension, {"is_value": f"is {dimension}"})
+            for sequence, dimension in enumerate(dims, start=1)
+        ]
+
+        result = helper(capa, manager, specifications)
+        original_rows = [dict(row) for row in rows]
+        helper(capa, manager, specifications)
+
+        self.assertEqual(len(batch_creates), 1)
+        self.assertEqual(len(batch_creates[0]), 4)
+        self.assertEqual(len(result), 4)
+        self.assertEqual({row["dimension"] for row in rows}, set(dims))
+        self.assertEqual(rows, original_rows)
+
+    def test_capa_dimension_batch_creation_failure_is_fatal_not_a_warning(self):
+        helper = load_seed_helpers("ensure_capa_is_is_not_dimensions")["ensure_capa_is_is_not_dimensions"]
+
+        class RecordSet(list):
+            def mapped(self, field):
+                return [getattr(record, field) for record in self]
+
+        class Model:
+            _fields = {}
+
+            def with_user(self, _user):
+                return self
+
+            def with_context(self, **_context):
+                return self
+
+            def search(self, _domain, order=None):
+                return RecordSet()
+
+            def create(self, _values):
+                raise PermissionError("No CAPA create permission")
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        class Env:
+            cr = type("Cursor", (), {"savepoint": lambda _self: Savepoint()})()
+
+            def __getitem__(self, _name):
+                return Model()
+
+        helper.__globals__["env"] = Env()
+        helper.__globals__["model_exists"] = lambda _name: True
+        helper.__globals__["field_value_equal"] = lambda *_args: False
+        specifications = [
+            (sequence, dimension, {})
+            for sequence, dimension in enumerate(("what", "where", "when", "extent"), start=1)
+        ]
+        with self.assertRaisesRegex(RuntimeError, "Required CAPA Is / Is Not dimensions failed"):
+            helper(type("Capa", (), {"id": 1, "code": "APEX-CAPA-002"})(), object(), specifications)
+
+    def test_management_review_snapshot_uses_manager_and_propagates_failure(self):
+        helper = load_seed_helpers("generate_required_management_review_snapshot")[
+            "generate_required_management_review_snapshot"
+        ]
+        manager = object()
+
+        class Review:
+            def with_user(self, user):
+                self.user = user
+                return self
+
+            def action_generate_snapshot(self):
+                if self.user is not manager:
+                    raise PermissionError("Only QMS Managers can generate snapshots")
+                self.generated = True
+
+        review = Review()
+        self.assertTrue(helper(review, manager))
+        self.assertTrue(review.generated)
+        with self.assertRaisesRegex(RuntimeError, "snapshot generation failed"):
+            helper(review, object())
+
+    def test_canonical_seed_workflows_are_fatal_and_do_not_touch_demo1(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        validator = VALIDATE_PATH.read_text(encoding="utf-8")
+        database_guard = load_validation_database_guard()
+        self.assertEqual(database_guard("demo2", "pmqms_demo2", "pmqms_demo2"), "pmqms_demo2")
+        self.assertIn("ensure_capa_is_is_not_dimensions", source)
+        self.assertIn('("capa_id", "=", capa_solder.id)', source)
+        self.assertIn('"CAPA Is / Is Not dimensions do not match the fixed seed structure"', source)
+        self.assertIn("generate_required_management_review_snapshot(review, demo_user)", source)
+        self.assertIn('raise RuntimeError("Required Demo Management Review APEX-MR-001 could not be prepared")', source)
+        self.assertIn('require(count("pm.qms.capa.is.is.not", org_domain) >= 4, "expected the four fixed CAPA Is/Is Not dimensions")', validator)
+        self.assertNotIn("/opt/perfect-match/secrets/odoo-demo\"", source)
+        self.assertNotIn("/opt/perfect-match/backups/odoo-demo\"", source)
+
     def test_guided_project_seed_keeps_existing_project_idempotent_and_uses_no_sudo(self):
         source = SEED_PATH.read_text(encoding="utf-8")
         block = source[source.index("if pack:"):source.index("if not project:", source.index("if pack:"))]

@@ -19,6 +19,7 @@ class TestPmQmsCapa(TransactionCase):
         cls.base_user_group = cls.env.ref("base.group_user")
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
+        cls.qms_quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
         cls.management_group = cls.env.ref("pm_qms_core.group_qms_management_user")
         cls.organization = cls.env["pm.qms.organization"].create(
             {"name": "CAPA Organization", "code": "PM-CAPA-ORG", "company_id": cls.company.id}
@@ -762,6 +763,29 @@ class TestPmQmsCapa(TransactionCase):
         self.assertEqual(capa.state, "action_planned")
         with self.assertRaises(UserError):
             capa.is_is_not_ids[0].with_user(manager).unlink()
+
+    def test_quality_manager_can_initialize_exactly_four_fixed_is_is_not_dimensions(self):
+        manager = self._create_test_user("pmqms.capa.seed.quality.manager", self.qms_quality_manager_group)
+        no_qms_access = self._create_test_user("pmqms.capa.seed.no.access", self.base_user_group)
+        capa = self.env["pm.qms.capa"].with_user(manager).create(
+            self._capa_values(name="Seeded Is Is Not", root_cause_method="is_is_not")
+        )
+        values = [
+            {"capa_id": capa.id, "dimension": dimension, "sequence": sequence}
+            for sequence, dimension in enumerate(("what", "where", "when", "extent"), start=1)
+        ]
+        with self.assertRaises(AccessError), self.env.cr.savepoint():
+            self.env["pm.qms.capa.is.is.not"].with_user(no_qms_access).with_context(
+                pm_qms_capa_initialize=True
+            ).create(values)
+
+        rows = self.env["pm.qms.capa.is.is.not"].with_user(manager).with_context(
+            pm_qms_capa_initialize=True
+        ).create(values)
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(set(rows.mapped("dimension")), {"what", "where", "when", "extent"})
+        self.assertEqual(set(rows.mapped("sequence")), {1, 2, 3, 4})
+        self.assertTrue(manager.has_group("pm_qms_core.group_pm_qms_manager"))
 
     def test_other_method_requires_named_tool_and_method_lock(self):
         manager = self._create_test_user("pmqms.capa.other", self.qms_manager_group)

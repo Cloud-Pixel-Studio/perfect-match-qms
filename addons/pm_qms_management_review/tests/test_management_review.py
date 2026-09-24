@@ -13,6 +13,7 @@ class TestPmQmsManagementReview(TransactionCase):
         cls.base_user_group = cls.env.ref("base.group_user")
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
+        cls.qms_quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
         cls.qms_admin_group = cls.env.ref("pm_qms_core.group_pm_qms_administrator")
 
         cls.organization = cls.env["pm.qms.organization"].create(
@@ -682,3 +683,28 @@ class TestPmQmsManagementReview(TransactionCase):
             new_messages.with_user(manager).write({"body": "History rewrite attempt."})
         with self.assertRaises(AccessError):
             tracking.with_user(manager).unlink()
+
+    def test_quality_manager_authorization_and_idempotent_snapshot_generation(self):
+        quality_manager = self._create_test_user("pmqms.mr.seed.quality.manager", self.qms_quality_manager_group)
+        user_without_manager_role = self._create_test_user("pmqms.mr.seed.user", self.qms_user_group)
+        self._create_kpi_with_measurement(quality_manager)
+        review = self._create_review(quality_manager)
+
+        with self.assertRaises(AccessError):
+            review.with_user(user_without_manager_role).action_generate_snapshot()
+        self.assertFalse(review.snapshot_date)
+
+        review.with_user(quality_manager).action_generate_snapshot()
+        first_snapshot = review.with_context(active_test=False).input_ids.filtered(
+            lambda item: item.is_system_generated
+        )
+        first_ids = set(first_snapshot.ids)
+        self.assertTrue(review.snapshot_date)
+        self.assertTrue(first_ids)
+        self.assertTrue(quality_manager.has_group("pm_qms_core.group_pm_qms_manager"))
+
+        review.with_user(quality_manager).action_generate_snapshot()
+        second_snapshot = review.with_context(active_test=False).input_ids.filtered(
+            lambda item: item.is_system_generated
+        )
+        self.assertEqual(set(second_snapshot.ids), first_ids)

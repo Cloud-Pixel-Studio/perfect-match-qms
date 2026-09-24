@@ -288,6 +288,76 @@ def upsert_capa_why(capa, sequence, answer):
         warnings.append(f"pm.qms.capa.why:{capa.id}:{sequence}:{exc.__class__.__name__}:{exc}")
         return model.browse()
 
+
+def ensure_capa_is_is_not_dimensions(capa, manager_user, specifications):
+    """Reconcile fixed CAPA slots and create all missing siblings atomically."""
+    model_name = "pm.qms.capa.is.is.not"
+    if not model_exists(model_name):
+        raise RuntimeError("Required CAPA Is / Is Not model is missing")
+    model = env[model_name].with_user(manager_user).with_context(pm_qms_capa_initialize=True)
+    expected = {dimension: (sequence, values) for sequence, dimension, values in specifications}
+    if len(expected) != len(specifications):
+        raise RuntimeError("Duplicate CAPA Is / Is Not dimensions in seed specification")
+    try:
+        with env.cr.savepoint():
+            rows = model.search([("capa_id", "=", capa.id)], order="sequence,id")
+            existing_by_dimension = {}
+            for row in rows:
+                if row.dimension not in expected or row.dimension in existing_by_dimension:
+                    raise RuntimeError("Unexpected or duplicate CAPA Is / Is Not dimension")
+                existing_by_dimension[row.dimension] = row
+
+            missing_payloads = []
+            for sequence, dimension, values in specifications:
+                payload = {
+                    "capa_id": capa.id,
+                    "dimension": dimension,
+                    "sequence": sequence,
+                    **values,
+                }
+                record = existing_by_dimension.get(dimension)
+                if not record:
+                    missing_payloads.append(payload)
+                    continue
+                writable = {
+                    key: value
+                    for key, value in payload.items()
+                    if key in model._fields
+                    and not model._fields[key].readonly
+                    and not field_value_equal(record[key], model._fields[key], value)
+                }
+                if writable:
+                    record.write(writable)
+
+            if missing_payloads:
+                model.create(missing_payloads)
+
+            reconciled = model.search([("capa_id", "=", capa.id)], order="sequence,id")
+            if (
+                len(reconciled) != len(expected)
+                or set(reconciled.mapped("dimension")) != set(expected)
+                or {
+                    row.dimension: row.sequence for row in reconciled
+                } != {dimension: sequence for dimension, (sequence, _values) in expected.items()}
+            ):
+                raise RuntimeError("CAPA Is / Is Not dimensions do not match the fixed seed structure")
+    except Exception as exc:
+        raise RuntimeError(
+            f"Required CAPA Is / Is Not dimensions failed: {capa.code}"
+        ) from exc
+    return reconciled
+
+def generate_required_management_review_snapshot(review, manager_user):
+    """Create the canonical snapshot without the technical shell identity."""
+    if not review:
+        raise RuntimeError("Required Demo Management Review is missing")
+    try:
+        review.with_user(manager_user).action_generate_snapshot()
+    except Exception as exc:
+        raise RuntimeError("Required Demo Management Review snapshot generation failed") from exc
+    return True
+
+
 def call(record, *names):
     if not record:
         return False
@@ -758,15 +828,29 @@ if capa_solder and model_exists("pm.qms.capa.fishbone"):
         ("measurement_data", "The inspection sample may not have represented the intermittent failure mode."),
     ]:
         upsert_by_identity("pm.qms.capa.fishbone", [("capa_id", "=", capa_solder.id), ("category", "=", category)], {"capa_id": capa_solder.id, "category": category, "potential_cause": cause, "evidence_basis": "Fictional investigation lead linked to the lot, reflow record, or inspection sample; not a real customer record.", "investigation_status": "confirmed" if category == "machine_equipment" else "investigating", "rationale_finding": "Synthetic reflow trend and lot sample indicate a profile shift immediately preceded the solder-wetting finding." if category == "machine_equipment" else False})
-if capa_solder and model_exists("pm.qms.capa.is.is.not") and capa_solder.state == "analysis":
+if not capa_solder:
+    raise RuntimeError("Required guided CAPA APEX-CAPA-002 is missing")
+if capa_solder:
     fixed_is_is_not = {
         "what": ("Solder wetting on controller boards", "Other joints on unaffected board families", "Affected boards share Lot SMT-2609", "The reflow profile changed before the lot"),
         "where": ("SMT line 1 reflow output", "Hand-solder repair bench", "Only the reflowed joint family is affected", "Oven zone verification was deferred"),
         "when": ("After the profile adjustment on the current shift", "Lots built before the adjustment", "Failure reports begin with the new lot", "Profile and first-piece review sequence changed"),
         "extent": ("A sample of boards from one production lot", "Other released lots under prior profile", "Failures cluster by lot and joint location", "Sampling did not include a profile-change trigger"),
     }
-    for sequence, (dimension, values) in enumerate(fixed_is_is_not.items(), start=1):
-        upsert_by_identity("pm.qms.capa.is.is.not", [("capa_id", "=", capa_solder.id), ("dimension", "=", dimension)], {"capa_id": capa_solder.id, "dimension": dimension, "sequence": sequence, "is_value": values[0], "is_not_value": values[1], "distinction": values[2], "change_value": values[3]})
+    specifications = [
+        (
+            sequence,
+            dimension,
+            {
+                "is_value": values[0],
+                "is_not_value": values[1],
+                "distinction": values[2],
+                "change_value": values[3],
+            },
+        )
+        for sequence, (dimension, values) in enumerate(fixed_is_is_not.items(), start=1)
+    ]
+    dimensions = ensure_capa_is_is_not_dimensions(capa_solder, demo_user, specifications)
     if capa_solder.root_cause_method != "fishbone":
         capa_solder.with_user(demo_user).write({"root_cause_method": "fishbone"})
     if capa_solder.state == "analysis" and not capa_solder.root_cause:
@@ -1011,8 +1095,10 @@ review = upsert(
         "conclusion": "Continue the fictional readiness program and rebalance effort toward prevention.",
         "next_review_date": next_month,
     },
-    required=False,
+    required=True,
 )
+if not review:
+    raise RuntimeError("Required Demo Management Review APEX-MR-001 could not be prepared")
 review_input_specs = [
     ("kpi", "Electrical test pass rate", "kpi_measurement", "APEX-KPI-004", 97.9, "%", "Synthetic current-period test yield below target; review retest trend."),
     ("customer_performance", "Customer complaint response", "customer_performance", "APEX-CC-001", 91.5, "score", "Review the intermittent power-module complaint and containment effectiveness."),
@@ -1043,7 +1129,7 @@ upsert(
     required=False,
 )
 upsert("pm.qms.management.review.action", code="APEX-MRA-001", name="Review COPQ trend with leadership", vals={"review_id": review.id if review else False, "organization_id": organization.id, "company_id": company.id, "owner_id": demo_user.id, "target_date": due_soon, "description": "Fictional management review action to review quality cost trends and prevention spend."}, required=False)
-call(review, "action_generate_snapshot", "action_snapshot")
+generate_required_management_review_snapshot(review, demo_user)
 
 # Refresh Action Center from authoritative source records only.
 action_count = 0
