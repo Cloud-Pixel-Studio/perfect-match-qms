@@ -1,10 +1,28 @@
 import ast
 import unittest
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 
 SEED_PATH = Path(__file__).parents[1] / "seed_demo.py"
 VALIDATE_PATH = Path(__file__).parents[1] / "validate_demo.py"
+DEMO_PATH = Path(__file__).parents[1]
+REPO_ROOT = Path(__file__).parents[3]
+
+
+def load_guided_coverage_contract():
+    tree = ast.parse(VALIDATE_PATH.read_text(encoding="utf-8"))
+    names = {"GUIDED_EXCLUDED_MENU_IDS", "GUIDED_MODEL_EXAMPLES"}
+    nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign)) and any(
+        isinstance(target, ast.Name) and target.id in names
+        for target in (node.targets if isinstance(node, ast.Assign) else [node.target])
+    )]
+    namespace = {}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(VALIDATE_PATH), "exec"), namespace)
+    return namespace["GUIDED_EXCLUDED_MENU_IDS"], namespace["GUIDED_MODEL_EXAMPLES"]
+
+
+GUIDED_EXCLUDED_MENU_IDS, GUIDED_MODEL_EXAMPLES = load_guided_coverage_contract()
 
 
 def load_identity_helpers():
@@ -572,6 +590,92 @@ class SeedIdentityTests(unittest.TestCase):
             self.assertIn(code, source)
         self.assertIn("duplicate canonical Demo training records detected", source)
         self.assertIn("duplicate canonical Demo qualification records detected", source)
+
+
+class GuidedCoverageContractTests(unittest.TestCase):
+    def test_every_functional_window_menu_has_a_fixture_and_matrix_row(self):
+        actions = {}
+        menu_models = {}
+        for xml_path in (REPO_ROOT / "addons").glob("pm_qms_*/**/*.xml"):
+            try:
+                tree = ET.parse(xml_path)
+            except ET.ParseError:
+                continue
+            for record in tree.findall(".//record"):
+                if record.get("model") != "ir.actions.act_window":
+                    continue
+                res_model = record.find("field[@name='res_model']")
+                if record.get("id") and res_model is not None:
+                    actions[record.get("id")] = res_model.text or ""
+        for xml_path in (REPO_ROOT / "addons").glob("pm_qms_*/**/*.xml"):
+            try:
+                tree = ET.parse(xml_path)
+            except ET.ParseError:
+                continue
+            for menu in tree.findall(".//menuitem"):
+                if not menu.get("action"):
+                    continue
+                menu_id = menu.get("id")
+                action_id = menu.get("action").split(".")[-1]
+                if menu_id and action_id in actions:
+                    menu_models[menu_id] = actions[action_id]
+
+        functional_menus = set(menu_models) - GUIDED_EXCLUDED_MENU_IDS
+        self.assertTrue(functional_menus)
+        self.assertFalse(GUIDED_EXCLUDED_MENU_IDS - set(menu_models))
+        self.assertEqual(set(menu_models.values()) - {menu_models[item] for item in GUIDED_EXCLUDED_MENU_IDS}, set(GUIDED_MODEL_EXAMPLES))
+        matrix = (DEMO_PATH / "DEMO_COVERAGE_MATRIX.md").read_text(encoding="utf-8")
+        missing_rows = sorted(menu_id for menu_id in functional_menus if f"`{menu_id}`" not in matrix)
+        self.assertEqual(missing_rows, [])
+
+    def test_guided_examples_are_explained_with_state_and_relationships(self):
+        matrix = (DEMO_PATH / "DEMO_COVERAGE_MATRIX.md").read_text(encoding="utf-8")
+        for required in ("Quality Manager", "Quality Supervisor", "Document Controller", "Internal Auditor", "Process Owner", "Management User", "QMS Viewer", "state", "Relationships", "APEX-CQ-001", "APEX-CQ-002"):
+            with self.subTest(required=required):
+                self.assertIn(required, matrix)
+        for model_name, anchor in GUIDED_MODEL_EXAMPLES.items():
+            with self.subTest(model=model_name):
+                self.assertIn(model_name, matrix)
+                self.assertIn(anchor.split()[0].lower(), matrix.lower())
+
+    def test_capa_state_variants_use_official_workflow_actions(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        for action_name in (
+            "action_start_analysis",
+            "action_plan_actions",
+            "action_start_implementation",
+            "action_complete_implementation",
+            "action_mark_effective",
+            "action_close",
+        ):
+            self.assertIn(f".{action_name}()", source)
+        self.assertIn('code="APEX-CAPA-003"', source)
+        self.assertNotIn('"state": "closed"', source)
+
+    def test_validator_checks_full_menu_example_and_site_scope_visibility(self):
+        source = VALIDATE_PATH.read_text(encoding="utf-8")
+        self.assertIn("for model_name, fixture_anchor in GUIDED_MODEL_EXAMPLES.items()", source)
+        self.assertIn("visible_site_ids <= effective_site_ids", source)
+        self.assertIn('"pm.qms.equipment"', source)
+
+    def test_management_user_read_only_contract_has_positive_and_negative_qms_coverage(self):
+        capa_tests = (REPO_ROOT / "addons/pm_qms_capa/tests/test_capa.py").read_text(encoding="utf-8")
+        risk_tests = (REPO_ROOT / "addons/pm_qms_risk/tests/test_risk.py").read_text(encoding="utf-8")
+        for test_name in (
+            "test_management_user_is_read_only_for_capa",
+            "test_management_user_is_read_only_for_all_capa_child_models",
+        ):
+            self.assertIn(f"def {test_name}(", capa_tests)
+        self.assertIn("self.assertEqual(model.with_user(management).browse(record.id).id, record.id)", capa_tests)
+        self.assertIn("self.assertTrue(model.with_user(management).search_count", capa_tests)
+        self.assertIn("action.with_user(management).action_start()", capa_tests)
+        self.assertIn("action.with_user(management).action_complete()", capa_tests)
+        self.assertGreaterEqual(capa_tests.count("with self.assertRaises(AccessError):"), 4)
+        self.assertIn("test_management_user_is_read_only", risk_tests)
+        self.assertIn("action_start_monitoring", risk_tests)
+        self.assertIn('with self.assertRaises(AccessError):\n            self.env["pm.qms.risk"].with_user(management).create', risk_tests)
+        self.assertIn('with self.assertRaises(AccessError):\n            risk.with_user(management).write', risk_tests)
+        self.assertIn('with self.assertRaises(AccessError):\n            risk.with_user(management).unlink()', risk_tests)
 
 
 if __name__ == "__main__":

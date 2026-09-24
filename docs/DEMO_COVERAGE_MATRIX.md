@@ -1,5 +1,10 @@
 # Demo Coverage Matrix
 
+> Historical high-level baseline retained for traceability. The complete Demo2
+> electronics scenario inventory, generated from all QMS window-action menus,
+> is maintained in [`../deployment/demo/DEMO_COVERAGE_MATRIX.md`](../deployment/demo/DEMO_COVERAGE_MATRIX.md)
+> and is the authoritative menu-by-menu coverage contract for the guided seed.
+
 | Product Area | Feature | Menu Path | Demo Record | Scenario | Status |
 | --- | --- | --- | --- | --- | --- |
 | App Shell | QMS navigation | Perfect Match QMS | Apex menu set | Full QMS surface visible from one app | COVERED |
