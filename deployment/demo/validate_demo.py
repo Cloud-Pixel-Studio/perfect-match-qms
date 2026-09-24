@@ -1,4 +1,82 @@
+import json
 import os
+from odoo.addons.pm_qms_license.services.environment import read_environment_id
+
+GUIDED_EXCLUDED_MENU_IDS = {
+    "menu_pm_qms_users_access",
+    "menu_pm_qms_license",
+    "menu_pm_qms_activation_requests",
+    "menu_pm_qms_project_generator",
+    "menu_pm_qms_document_import",
+    "menu_pm_qms_evidence_import",
+    "menu_pm_qms_quality_mapping_import",
+}
+GUIDED_TRANSIENT_MODEL_EXAMPLES = {
+    "pm.qms.dashboard": "computed dashboard over seeded KPI, risk, CAPA, audit, equipment and Action Center sources",
+}
+GUIDED_MODEL_EXAMPLES = {
+    "pm.qms.site": "APEX-HQ / APEX-MFG / APEX-INS",
+    "pm.qms.audit.program": "APEX-AUD-PROG-2026",
+    "pm.qms.audit": "APEX-AUD-001",
+    "pm.qms.audit.finding": "findings linked to APEX-AUD-001",
+    "pm.qms.audit.evidence": "synthetic reflow sample linked to audit criterion",
+    "pm.qms.equipment": "EQ-0001 through EQ-0005 with lifecycle states",
+    "pm.qms.calibration.event": "APEX-CAL-EVT-001 through APEX-CAL-EVT-005",
+    "pm.qms.calibration.impact.assessment": "APEX-OOT-001",
+    "pm.qms.equipment.type": "APEX-EQTYPE-001",
+    "pm.qms.calibration.provider": "APEX-CAL-PROV-001",
+    "pm.qms.capa": "APEX-CAPA-001 through APEX-CAPA-003",
+    "pm.qms.capa.action": "actions linked to all three CAPA cases",
+    "pm.qms.control.instance": "APEX-CI-001 through APEX-CI-006",
+    "pm.qms.control": "APEX-CTRL-001 through APEX-CTRL-006",
+    "pm.qms.activity": "APEX-ACT-001 through APEX-ACT-006",
+    "pm.qms.evidence.requirement": "APEX-REQ-001 through APEX-REQ-013",
+    "pm.qms.organization": "APEX",
+    "pm.qms.process": "APEX-ESD / SMT / ASM / ETEST / CAL / NC / CAPA / TRACE / RECV / DISP",
+    "pm.qms.external.mapping": "CUST-DWG-EL-014",
+    "pm.qms.event": "workflow history from audited QMS transitions",
+    "pm.qms.cost.event": "APEX-CQ-001 and APEX-CQ-002",
+    "pm.qms.cost.type": "APEX-CQT-PREV / APP / INT / EXT",
+    "pm.qms.customer.complaint": "APEX-CC-001",
+    "pm.qms.quality.alert": "APEX-QA-001",
+    "pm.qms.root.cause.analysis": "APEX-RCA-001 linked to APEX-NCR-002",
+    "pm.qms.eight.d": "APEX-8D-001 linked to APEX-CC-001",
+    "pm.qms.supplier.issue": "APEX-SI-001 and APEX-SI-002",
+    "pm.qms.scar": "APEX-SCAR-001 and APEX-SCAR-002",
+    "pm.qms.document": "APEX-DOC-001 through APEX-DOC-013",
+    "pm.qms.document.revision": "controlled revisions for APEX-DOC-001 through APEX-DOC-013",
+    "pm.qms.evidence": "synthetic evidence linked to canonical controlled documents",
+    "pm.qms.framework.pack": "PM-QMS-QUALITY",
+    "pm.qms.implementation.project": "Apex Precision Electronics QMS Guided Implementation",
+    "pm.qms.implementation.control": "controls synchronized from PM-QMS-QUALITY",
+    "project.task": "implementation activities synchronized to the guided project",
+    "pm.qms.readiness.assessment": "Apex guided implementation readiness snapshot",
+    "pm.qms.mapping.profile": "active PM-QMS mapping profile",
+    "pm.qms.objective": "APEX-OBJ-001",
+    "pm.qms.kpi": "APEX yield, supplier, NCR/CAPA, calibration and customer indicators",
+    "pm.qms.kpi.measurement": "four measurements for each of eight KPIs",
+    "pm.qms.customer.performance": "fictional Nova Aero scorecard",
+    "pm.qms.customer.satisfaction": "fictional Nova Aero survey aggregate",
+    "pm.qms.supplier.performance": "Orion and Beacon scorecards",
+    "pm.qms.supplier.evaluation": "completed Orion and monitored Beacon evaluations",
+    "pm.qms.management.review": "APEX management review snapshot",
+    "pm.qms.management.review.action": "APEX-MRA-001",
+    "pm.qms.management.review.decision": "alternate supplier qualification decision",
+    "pm.qms.management.review.input": "eight cross-functional snapshot inputs",
+    "pm.qms.nonconformity": "APEX-NCR-001 and APEX-NCR-002",
+    "pm.qms.person": "seven official Demo personas",
+    "pm.qms.role": "QMS role definitions used by the seven personas",
+    "pm.qms.competency": "APEX electrical inspection competency",
+    "pm.qms.competency.matrix.line": "role-linked competency requirements",
+    "pm.qms.competency.assessment": "assessments for the seven personas",
+    "pm.qms.training.course": "APEX-TRN-001",
+    "pm.qms.training.event": "APEX electrical test and ESD refresher",
+    "pm.qms.training.record": "one record per persona with varied due states",
+    "pm.qms.qualification.record": "one qualification record per persona",
+    "pm.qms.qualification.type": "APEX-QUAL-001",
+    "pm.qms.document.acknowledgment": "required acknowledgment for assigned operator",
+    "pm.qms.risk": "APEX-RISK-001 through APEX-RISK-008",
+}
 
 DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")
 APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}
@@ -7,10 +85,29 @@ EXPECTED_ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 EXPECTED_QMS_PERSONAS = {
     "Quality Manager": os.getenv("PMQMS_DEMO_QUALITY_MANAGER_LOGIN", "olivia.parker.demo@perfectmatch.local"),
     "Quality Supervisor": "daniel.brooks.demo@perfectmatch.local",
+    "Document Controller": "maria.lewis.demo@perfectmatch.local",
     "Internal Auditor": "james.carter.demo@perfectmatch.local",
     "Process Owner": "emma.reed.demo@perfectmatch.local",
     "Management User": "michael.stone.demo@perfectmatch.local",
     "QMS Viewer": "qms.viewer.demo@perfectmatch.local",
+}
+ROLE_DEMO_READ_CHECKS = {
+    "Quality Manager": ("pm.qms.document", "pm.qms.risk", "pm.qms.capa", "pm.qms.audit", "pm.qms.kpi", "pm.qms.management.review"),
+    "Quality Supervisor": ("pm.qms.process", "pm.qms.risk", "pm.qms.capa", "pm.qms.nonconformity", "pm.qms.equipment"),
+    "Document Controller": ("pm.qms.document", "pm.qms.document.revision", "pm.qms.evidence", "pm.qms.document.acknowledgment"),
+    "Internal Auditor": ("pm.qms.audit", "pm.qms.audit.finding", "pm.qms.audit.evidence", "pm.qms.document", "pm.qms.risk"),
+    "Process Owner": ("pm.qms.process", "pm.qms.activity", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.equipment"),
+    "Management User": ("pm.qms.kpi", "pm.qms.management.review", "pm.qms.risk", "pm.qms.capa"),
+    "QMS Viewer": ("pm.qms.document", "pm.qms.risk", "pm.qms.capa", "pm.qms.audit"),
+}
+EXPECTED_PERSONA_SITE_CODES = {
+    "Quality Manager": {"APEX-HQ", "APEX-MFG", "APEX-INS"},
+    "Quality Supervisor": {"APEX-HQ"},
+    "Document Controller": {"APEX-HQ", "APEX-MFG", "APEX-INS"},
+    "Internal Auditor": {"APEX-HQ", "APEX-MFG", "APEX-INS"},
+    "Process Owner": {"APEX-HQ", "APEX-MFG"},
+    "Management User": {"APEX-HQ", "APEX-MFG", "APEX-INS"},
+    "QMS Viewer": {"APEX-HQ", "APEX-MFG", "APEX-INS"},
 }
 CANONICAL_APEX_PROCESS_CODES = (
     "APEX-LEAD",
@@ -25,6 +122,15 @@ CANONICAL_APEX_PROCESS_CODES = (
     "APEX-AUD",
     "APEX-TRN",
     "APEX-CAL",
+    "APEX-ESD",
+    "APEX-SMT",
+    "APEX-ASM",
+    "APEX-ETEST",
+    "APEX-NC",
+    "APEX-CAPA",
+    "APEX-TRACE",
+    "APEX-RECV",
+    "APEX-DISP",
 )
 def validate_demo_database(instance_name, configured_db, actual_db):
     """Allow validation only for explicitly approved Demo instance/database pairs."""
@@ -69,16 +175,16 @@ def duplicate_groups(records, field_name):
 organization = env["pm.qms.organization"].search([("code", "=", "APEX")], limit=1) if "pm.qms.organization" in env else False
 require(bool(organization), "APEX organization missing")
 if organization:
-    require("Apex Precision Systems" in organization.name, "APEX organization does not use fictional demo company name")
+    require("Apex Precision Electronics" in organization.name, "APEX organization does not use the guided fictional electronics company name")
     require(not env["pm.qms.organization"].search_count([("name", "ilike", "Oliva Torras"), ("company_id", "=", organization.company_id.id)]), "Oliva name found inside demo company organizations")
 
 if "pm.qms.site" in env and organization:
     sites = env["pm.qms.site"].search([("organization_id", "=", organization.id)])
     summary["pm.qms.site"] = len(sites)
     expected_sites = {
-        "APEX-HQ": "Headquarters & Quality Center",
-        "APEX-MFG": "Manufacturing Plant",
-        "APEX-INS": "Inspection & Distribution Center",
+        "APEX-HQ": "Manufacturing Plant",
+        "APEX-MFG": "Electrical Test Laboratory",
+        "APEX-INS": "Warehouse & Receiving",
     }
     require(len(sites) == 3, f"expected exactly 3 Apex demo sites, found {len(sites)}")
     require(
@@ -112,25 +218,78 @@ if "pm.qms.process" in env and organization:
             org_domain + [("code", "in", list(CANONICAL_APEX_PROCESS_CODES))]
         )
     )
-require(count("pm.qms.document", org_domain) >= 5, "expected demo documents")
-require(count("pm.qms.evidence", org_domain) >= 3, "expected demo evidence")
-require(count("pm.qms.risk", org_domain) >= 2, "expected demo risks")
-require(count("pm.qms.nonconformity", org_domain) >= 1, "expected demo NCR")
-require(count("pm.qms.capa", org_domain) >= 1, "expected demo CAPA")
+require(count("pm.qms.document", org_domain) >= 13, "expected guided examples for all canonical controlled documents")
+require(count("pm.qms.evidence", org_domain) >= 13, "expected linked synthetic evidence references for every canonical document")
+require(count("pm.qms.risk", org_domain) >= 8, "expected guided electrical, supplier, ESD, calibration, and traceability risks")
+require(count("pm.qms.nonconformity", org_domain) >= 2, "expected dimensional/electrical and SMT nonconformity examples")
+require(count("pm.qms.capa", org_domain) >= 3, "expected draft, in-progress, and closed linked CAPA examples")
+if "pm.qms.capa" in env and organization:
+    capa_states = set(env["pm.qms.capa"].search(org_domain).mapped("state"))
+    summary["guided_capa_states"] = ",".join(sorted(capa_states))
+    require({"draft", "implementation", "closed"} <= capa_states, "expected draft, implementation, and closed CAPA workflow states")
 require(count("pm.qms.audit", org_domain) >= 1, "expected demo audit")
+require(count("pm.qms.audit.program", org_domain) >= 1, "expected an annual audit program")
 require(count("pm.qms.audit.finding", org_domain) >= 1, "expected demo audit findings")
+require(count("pm.qms.audit.scope", org_domain) >= 1, "expected an audit scope example")
+require(count("pm.qms.audit.plan.line", org_domain) >= 1, "expected an audit plan example")
+require(count("pm.qms.audit.criterion", org_domain) >= 1, "expected an audit criterion example")
+require(count("pm.qms.audit.evidence", org_domain) >= 1, "expected linked audit evidence")
+require(count("pm.qms.capa.fishbone", org_domain) >= 1, "expected CAPA fishbone analysis example")
+require(count("pm.qms.capa.is.is.not", org_domain) >= 4, "expected the four fixed CAPA Is/Is Not dimensions")
+require(count("pm.qms.capa.action", org_domain) >= 3, "expected multiple linked CAPA actions")
 require(count("pm.qms.objective", org_domain) >= 1, "expected demo objective")
-require(count("pm.qms.kpi.measurement", company_domain) >= 3, "expected demo KPI measurements")
+require(count("pm.qms.kpi", company_domain) >= 8, "expected KPI examples for yield, suppliers, NCR/CAPA, and customer satisfaction")
+require(count("pm.qms.kpi.measurement", company_domain) >= 32, "expected four synthetic historical/current measurements for eight KPIs")
 require(count("pm.qms.person", org_domain) >= 4, "expected demo people")
-require(count("pm.qms.training.record", org_domain) >= 3, "expected demo training records")
-require(count("pm.qms.qualification.record", org_domain) >= 3, "expected demo qualification records")
-require(count("pm.qms.equipment", org_domain) >= 4, "expected demo equipment")
+require(count("pm.qms.training.record", org_domain) >= 7, "expected training status for all seven demo personas")
+require(count("pm.qms.training.event", org_domain) >= 1, "expected a training event")
+require(count("pm.qms.training.requirement", company_domain) >= 1, "expected a role-linked training requirement")
+require(count("pm.qms.competency.matrix.line", org_domain) >= 1, "expected role competency matrix lines")
+require(count("pm.qms.qualification.record", org_domain) >= 7, "expected qualification status for all seven demo personas")
+require(count("pm.qms.equipment", org_domain) >= 5, "expected analyzer, multimeter, ESD meter, torque driver, and oscilloscope examples")
+require(count("pm.qms.calibration.event", org_domain) >= 5, "expected failed, overdue, due-soon, current, and in-progress calibration events")
+require(count("pm.qms.calibration.impact.assessment", org_domain) >= 1, "expected an out-of-tolerance impact assessment")
+require(count("pm.qms.calibration.measurement.line", org_domain) >= 3, "expected calibration measurement evidence lines")
 require(count("pm.qms.customer.complaint", org_domain) >= 1, "expected demo customer complaint")
 require(count("pm.qms.quality.alert", org_domain) >= 1, "expected demo quality alert")
 require(count("pm.qms.eight.d", org_domain) >= 1, "expected demo 8D")
-require(count("pm.qms.supplier.issue", org_domain) >= 1, "expected demo supplier issue")
-require(count("pm.qms.scar", org_domain) >= 1, "expected demo SCAR")
+require(count("pm.qms.supplier.issue", org_domain) >= 2, "expected multiple supplier quality scenarios")
+require(count("pm.qms.scar", org_domain) >= 2, "expected linked supplier corrective action requests")
+require(count("pm.qms.supplier.evaluation", org_domain) >= 2, "expected supplier evaluation records")
+require(count("pm.qms.customer.satisfaction", org_domain) >= 1, "expected customer satisfaction measurement")
+require(count("pm.qms.customer.performance", org_domain) >= 1, "expected customer performance scorecard")
+require(count("pm.qms.supplier.performance", org_domain) >= 2, "expected supplier performance scorecards")
+require(count("pm.qms.equipment.type", company_domain) >= 1, "expected a monitoring resource type")
+require(count("pm.qms.calibration.provider", company_domain) >= 1, "expected a calibration provider")
+if "pm.qms.equipment" in env and organization:
+    equipment_states = set(env["pm.qms.equipment"].search(org_domain).mapped("calibration_status"))
+    summary["guided_equipment_states"] = ",".join(sorted(equipment_states))
+    require({"overdue", "due_soon", "current", "quarantined", "out_for_calibration"} <= equipment_states, "expected overdue, due-soon, current, quarantined, and in-calibration equipment examples")
+require(count("pm.qms.root.cause.analysis", org_domain) >= 1, "expected a linked root-cause analysis")
+require(count("pm.qms.root.cause.line", org_domain) >= 5, "expected five linked root-cause analysis lines")
 require(count("pm.qms.management.review", org_domain) >= 1, "expected demo management review")
+require(count("pm.qms.management.review.input", org_domain) >= 8, "expected cross-functional Management Review inputs")
+
+# Keep the static menu inventory and runtime fixture contract in lockstep.
+for model_name, fixture_anchor in GUIDED_MODEL_EXAMPLES.items():
+    if model_name in env:
+        total = env[model_name].search_count([])
+        summary[f"guided_menu_example.{model_name}"] = total
+        require(total > 0, f"functional menu has no demo example: {model_name} ({fixture_anchor})")
+    else:
+        errors.append(f"functional menu model is not installed: {model_name}")
+
+# Dashboard screens are transient/computed; validate their persistent source
+# records rather than expecting a database row that Odoo may vacuum.
+for transient_model, fixture_anchor in GUIDED_TRANSIENT_MODEL_EXAMPLES.items():
+    if transient_model == "pm.qms.dashboard":
+        for source_model in ("pm.qms.kpi", "pm.qms.risk", "pm.qms.capa", "pm.qms.audit", "pm.qms.equipment", "pm.qms.action.center.line"):
+            if source_model not in env:
+                errors.append(f"dashboard source model is not installed: {source_model}")
+                continue
+            source_count = env[source_model].search_count([])
+            summary[f"dashboard_source.{source_model}"] = source_count
+            require(source_count > 0, f"computed dashboard source is empty: {source_model} ({fixture_anchor})")
 
 if "pm.qms.license" in env:
     license_record = env["pm.qms.license"].search([("is_current", "=", True)], order="id desc", limit=1)
@@ -144,8 +303,19 @@ if "pm.qms.license" in env:
         require(license_record.state in ("valid", "expiring"), f"Demo commercial license is not usable: {license_record.state}")
         require(license_record.company_usage == 1, "Demo license usage must report one operational company")
         require(license_record.site_usage == 3, "Demo license usage must report three active sites")
+        require((license_record.company_limit, license_record.site_limit, license_record.named_user_limit) == (1, 3, 7), "Demo license limits must be exactly 1/3/7")
         require(license_record.site_usage <= license_record.site_limit, "Demo site entitlement is exceeded")
         require(license_record.named_user_usage <= license_record.named_user_limit, "Demo named-user entitlement is exceeded")
+        try:
+            signed_payload = json.loads(license_record.payload_json or "{}")
+        except (TypeError, ValueError):
+            signed_payload = {}
+            errors.append("current license signed payload is not valid JSON")
+        environment_id = read_environment_id()
+        require(bool(environment_id) and license_record.environment_id == environment_id, "Demo license UUID does not match this instance")
+        if DEMO_INSTANCE == "demo2":
+            require(license_record.key_id == "pmqms-demo-2026-v3", "Demo2 must use the approved v3 Demo/QA authority")
+            require(signed_payload.get("deployment_scope") == "demo-qa", "Demo2 license scope must be demo-qa")
 else:
     errors.append("missing model: pm.qms.license")
 
@@ -201,6 +371,35 @@ for role, login in EXPECTED_QMS_PERSONAS.items():
     require(bool(persona), f"Demo persona missing: {role}")
     if persona:
         require(not persona.has_group("base.group_system"), f"QMS persona is System Administrator: {role}")
+        for model_name in ROLE_DEMO_READ_CHECKS.get(role, ()):
+            if model_name not in env:
+                errors.append(f"missing role-visible model for {role}: {model_name}")
+                continue
+            try:
+                visible_count = env[model_name].with_user(persona).search_count([])
+            except Exception as exc:
+                visible_count = 0
+                errors.append(f"role read failed for {role} on {model_name}: {exc.__class__.__name__}")
+            summary[f"role_visible.{role}.{model_name}"] = visible_count
+            require(visible_count > 0, f"expected a visible guided example for {role} in {model_name}")
+        if role == "Quality Manager":
+            for model_name in GUIDED_MODEL_EXAMPLES:
+                try:
+                    visible_count = env[model_name].with_user(persona).search_count([])
+                except Exception as exc:
+                    visible_count = 0
+                    errors.append(f"full organization read failed for Quality Manager on {model_name}: {exc.__class__.__name__}")
+                require(visible_count > 0, f"Quality Manager must see a guided example in {model_name}")
+        if "qms_effective_site_ids" in persona._fields and "pm.qms.equipment" in env:
+            effective_site_ids = set(persona.qms_effective_site_ids.ids)
+            effective_site_codes = set(persona.qms_effective_site_ids.mapped("code"))
+            visible_equipment = env["pm.qms.equipment"].with_user(persona).search([])
+            visible_site_ids = {record.site_id.id for record in visible_equipment if record.site_id}
+            summary[f"site_scope.{role}.assigned"] = len(effective_site_ids)
+            summary[f"site_scope.{role}.visible_equipment_sites"] = len(visible_site_ids)
+            require(bool(visible_equipment), f"expected in-scope equipment examples for {role}")
+            require(visible_site_ids <= effective_site_ids, f"equipment site isolation failed for {role}")
+            require(effective_site_codes == EXPECTED_PERSONA_SITE_CODES[role], f"configured site scope mismatch for {role}")
 
 canonical_cost_lines = 0
 if "pm.qms.cost.event" in env:

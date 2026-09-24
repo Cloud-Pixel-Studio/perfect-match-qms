@@ -5,10 +5,11 @@ use a persona credential supplied through the Demo secret mechanism. The
 technical administrator credential is kept outside Git; retrieve only its
 path with `./deployment/scripts/odoo-demo.sh credentials` on the Demo VM.
 
-The fictional company is `Apex Precision Systems, Inc.`. The demo contains one
-organization and exactly three operational Sites: `APEX-HQ` Headquarters &
-Quality Center, `APEX-MFG` Manufacturing Plant, and `APEX-INS` Inspection &
-Distribution Center.
+The guided Demo2 company is `Apex Precision Electronics, Inc.`. It contains one
+organization and exactly three operational sites: `APEX-HQ` Manufacturing
+Plant, `APEX-MFG` Electrical Test Laboratory, and `APEX-INS` Warehouse &
+Receiving. The complete menu-by-menu fixture contract is in
+[`DEMO_COVERAGE_MATRIX.md`](../deployment/demo/DEMO_COVERAGE_MATRIX.md).
 
 The Demo also carries a signed offline commercial license. Open **Perfect Match
 QMS > Configuration > Commercial License** as an administrator to see customer, edition,
@@ -25,29 +26,29 @@ any other management-system standard.
 | Product Area | Menu Path | Demo Record | What To Show |
 | --- | --- | --- | --- |
 | Dashboard | Perfect Match QMS > Dashboard | Apex metrics | Readiness, actions, customer quality, calibration, and quality cost indicators populated from source records. |
-| Company Profile | Perfect Match QMS > Configuration > Company Profile | APEX - Apex Precision Systems, Inc. | QMS scope, primary quality contact, technical company context, and linked Sites. |
-| Sites | Perfect Match QMS > Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Primary headquarters, manufacturing, inspection/distribution, archive state, and operational relationships. |
-| Guided Implementation | Perfect Match QMS > Implementation | Apex Precision QMS Demo Implementation | Generated areas, controls, activities, evidence requirements, gaps, and readiness. |
-| Documents | Perfect Match QMS > Assurance > Documents | APEX-DOC-003 - SOP - Control of Nonconforming Outputs | Controlled document metadata and revision context using original fictional content. |
-| Evidence | Perfect Match QMS > Implementation > Evidence | APEX-EV-003 - Evidence - SOP - Control of Nonconforming Outputs | Evidence linked to a control instance and requirement. |
+| Company Profile | Perfect Match QMS > Configuration > Company Profile | APEX - Apex Precision Electronics, Inc. | QMS scope, primary quality contact, technical company context, and linked sites. |
+| Sites | Perfect Match QMS > Configuration > Sites | APEX-HQ / APEX-MFG / APEX-INS | Manufacturing plant, electrical test laboratory, warehouse/receiving, and assigned processes. |
+| Guided Implementation | Perfect Match QMS > Implementation | Apex Precision Electronics QMS Guided Implementation | Quality Pack controls, synchronized activities, evidence requirements, gaps, and a readiness snapshot. |
+| Documents | Perfect Match QMS > Assurance > Documents | APEX-DOC-001 through APEX-DOC-013 | Quality manual, ESD, receiving, SMT, electrical test, calibration, traceability, NCR/CAPA and audit instructions with controlled revisions. |
+| Evidence | Perfect Match QMS > Implementation > Evidence | synthetic inspection, test and certificate references | Evidence linked to documents, audit criteria, controls and related quality records. |
 | Document Acknowledgments | Perfect Match QMS > Assurance > People & Competency > Acknowledgments | Maria pending SOP acknowledgment | Revision-specific acknowledgment status and Action Center follow-up. |
-| Risk | Perfect Match QMS > Quality Operations > Risk & Improvement > Risks | APEX-RISK-001 - Single-source supplier continuity risk | Owner, mitigation plan, target/review dates, and Action Center visibility. |
-| NCR | Perfect Match QMS > Quality Operations > Risk & Improvement > NCR | APEX-NCR-001 - Incorrect hole diameter on Lot L-24017 | Detection, containment, investigation summary, severity, disposition, and CAPA relationship. |
-| CAPA | Perfect Match QMS > Quality Operations > Risk & Improvement > CAPA | APEX-CAPA-001 - Repeated inspection escape from outdated setup instruction | Root cause, 5 Why, CAPA actions, target dates, and effectiveness review date. |
+| Risk | Perfect Match QMS > Quality Operations > Risk & Improvement > Risks | APEX-RISK-001 through APEX-RISK-008 | Supplier continuity, ESD, counterfeit, solder, calibration, traceability and test escape risks with owners and mitigation. |
+| NCR | Perfect Match QMS > Quality Operations > Risk & Improvement > NCR | APEX-NCR-001 / APEX-NCR-002 | Electrical-test escape and SMT solder-wetting nonconformities with containment and source links. |
+| CAPA | Perfect Match QMS > Quality Operations > Risk & Improvement > CAPA | APEX-CAPA-001 through APEX-CAPA-003 | Draft, implementation and closed workflows with 5 Why/Fishbone, actions, effectiveness and linked sources. |
 | Audit | Perfect Match QMS > Audit | APEX-AUD-001 - Document control and final inspection audit | Program/audit context, scope, criteria, and findings. |
 | Performance | Perfect Match QMS > Performance | APEX-KPI-001 - First-pass final inspection yield | Objective, KPI, and monthly measurement trend. |
 | People | Perfect Match QMS > Assurance > People & Competency > People | Olivia Parker / Daniel Brooks / Maria Lewis / James Carter / Emma Reed / Michael Stone / Victor Lee | Fictional personas, QMS responsibilities, and linked user/person records. |
 | Training | Perfect Match QMS > Assurance > People & Competency > Training | APEX-TRN-001 - Revised setup instruction refresher | Due, overdue, and completed training examples. |
 | Qualifications | Perfect Match QMS > Assurance > People & Competency > Qualifications | APEX-QUAL-001 - Final Inspection Authorization | Expired, expiring, and current qualification examples. |
-| Calibration | Perfect Match QMS > Equipment & Calibration > Equipment | EQ-0001 - Digital Caliper | Current, due soon, overdue, OOT scenario context, and Site assignment. |
-| OOT Impact Assessment | Perfect Match QMS > Equipment & Calibration > Impact Assessments | APEX-OOT-001 - Digital caliper impact | Quarantine, exposure window, affected evidence, and NCR/CAPA traceability. |
-| Customer Complaints | Perfect Match QMS > Customer Quality > Complaints | APEX-CC-001 - Nova Aero dimensional nonconformance complaint | Response due date, containment, related NCR, and 8D relationship. |
-| Quality Alerts | Perfect Match QMS > Customer Quality > Quality Alerts | APEX-QA-001 - Dimensional verification alert for Lot L-24017 | Internal alert tied to the customer/NCR scenario. |
-| 8D | Perfect Match QMS > Customer Quality > 8D | APEX-8D-001 - Nova Aero dimensional complaint | End-to-end 8D problem, containment, root cause, and corrective action. |
+| Calibration | Perfect Match QMS > Equipment & Calibration > Equipment | EQ-0001 through EQ-0004 | Current, due-soon, overdue, quarantined and out-for-calibration states by site. |
+| OOT Impact Assessment | Perfect Match QMS > Equipment & Calibration > Impact Assessments | APEX-OOT-001 - electrical safety analyzer impact | Quarantine, affected test lot, measurement lines, and NCR/CAPA traceability. |
+| Customer Complaints | Perfect Match QMS > Customer Quality > Complaints | APEX-CC-001 - Nova Aero electrical-performance complaint | Response due date, containment, related NCR, alert, costs and 8D. |
+| Quality Alerts | Perfect Match QMS > Customer Quality > Quality Alerts | APEX-QA-001 - electrical retest alert | Preserve test logs and verify current test configuration. |
+| 8D | Perfect Match QMS > Customer Quality > 8D | APEX-8D-001 - Nova Aero electrical complaint | End-to-end 8D problem, containment, root cause, and corrective action. |
 | Supplier Issues | Perfect Match QMS > Supplier Quality > Supplier Issues | APEX-SI-001 - Orion Metals certificate discrepancy | Supplier containment need and source for SCAR. |
 | SCAR | Perfect Match QMS > Supplier Quality > SCAR | APEX-SCAR-001 - Orion Metals certificate discrepancy | Supplier response, root cause, corrective action, and response due date. |
 | Action Center | Perfect Match QMS > Dashboard or Action Center | My Actions | Multiple source-driven actions: risk, NCR, CAPA, audit, training, qualification, calibration, complaint, 8D, supplier issue, SCAR, and management review. |
-| Cost Events | Perfect Match QMS > Performance > Cost of Quality > Cost Events | APEX-CQ-001 - Dimensional complaint quality cost story | Confirmed cost event with prevention, appraisal, internal failure, external failure, and recovery lines. |
+| Cost Events | Perfect Match QMS > Performance > Cost of Quality > Cost Events | APEX-CQ-001 / APEX-CQ-002 | Confirmed canonical cost events, exactly 4 and 2 lines respectively. |
 | Cost Analytics | Perfect Match QMS > Performance > Cost of Quality > Analytics | Apex quality cost analytics | Gross quality cost, COPQ, recoveries, net cost, category breakdown, and source breakdown. |
 | Management Review | Perfect Match QMS > Performance > Management Review | APEX-MR-001 - Apex QMS Management Review - Demo | Inputs, snapshot behavior where supported, decisions, and review actions. |
 
@@ -61,10 +62,10 @@ record rules, so a bookmarked URL or RPC call cannot bypass the same boundary.
 | Persona | Role and scope | Expected walkthrough |
 | --- | --- | --- |
 | Olivia Parker | Quality Manager, all Apex Sites and Processes | Full QMS navigation, Users & Access, Action Center, and Cost Analytics. |
-| Daniel Brooks | Quality Supervisor, `APEX-MFG` | Manufacturing records and actions; `APEX-INS` records are denied. |
+| Daniel Brooks | Quality Supervisor, `APEX-HQ` | Manufacturing plant records and actions; `APEX-MFG` laboratory and `APEX-INS` warehouse records are denied. |
 | Maria Lewis | Document Controller, organization-wide | Documents, revisions, and acknowledgments; unrelated operational administration is denied. |
 | James Carter | Internal Auditor, all Apex Sites and Processes | Audit programs, audits, findings, and evidence with independence controls. |
-| Emma Reed | Process Owner, selected Manufacturing and Inspection processes | Assigned process obligations only; unrelated process records are denied. |
+| Emma Reed | Process Owner, selected plant and electrical-laboratory processes (`APEX-HQ` / `APEX-MFG`) | Assigned process obligations only; unrelated process records are denied. |
 | Michael Stone | Management User, organization-wide | Dashboards, KPI, Management Review, and approved read-only Cost Analytics. |
 
 For negative validation, sign in as Daniel or Emma, open an allowed record,
