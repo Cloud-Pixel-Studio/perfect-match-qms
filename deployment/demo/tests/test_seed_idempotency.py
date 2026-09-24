@@ -56,11 +56,20 @@ def load_capa_why_helper():
 
 def load_seed_helpers(*names):
     tree = ast.parse(SEED_PATH.read_text(encoding="utf-8"))
-    nodes = [
-        node
-        for node in tree.body
-        if isinstance(node, ast.FunctionDef) and node.name in names
-    ]
+    constants = {
+        "DEMO_EQUIPMENT_STATUS_EXPECTATIONS",
+        "DEMO_EQUIPMENT_SITE_CODES",
+        "DEMO_EQUIPMENT_PROCESS_CODES",
+        "DEMO_CALIBRATION_EVENT_EQUIPMENT",
+    } if {"ensure_demo_equipment_statuses", "validate_demo_calibration_relations"} & set(names) else set()
+    nodes = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name in names:
+            nodes.append(node)
+        elif isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id in constants for target in node.targets
+        ):
+            nodes.append(node)
     namespace = {}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(SEED_PATH), "exec"), namespace)
     return namespace
@@ -908,6 +917,220 @@ class GuidedCoverageContractTests(unittest.TestCase):
         self.assertIn("for model_name, fixture_anchor in GUIDED_MODEL_EXAMPLES.items()", source)
         self.assertIn("visible_site_ids <= effective_site_ids", source)
         self.assertIn('"pm.qms.equipment"', source)
+
+    def test_calibration_seed_reconciles_exactly_the_five_computed_model_states_idempotently(self):
+        helpers = load_seed_helpers(
+            "ensure_equipment_calibration_status",
+            "ensure_demo_equipment_statuses",
+        )
+        manager = object()
+
+        class Equipment:
+            def __init__(self, code, status):
+                self.code = code
+                self.lifecycle_state = "in_service"
+                self.calibration_status = status
+                self.transition_calls = []
+
+            def with_user(self, user):
+                if user is not manager:
+                    raise PermissionError("Equipment workflow requires the authorized QMS Manager")
+                return self
+
+            def action_quarantine(self):
+                self.transition_calls.append("quarantined")
+                self.lifecycle_state = "quarantined"
+                self.calibration_status = "quarantined"
+
+            def action_mark_out_for_calibration(self):
+                self.transition_calls.append("out_for_calibration")
+                self.lifecycle_state = "out_for_calibration"
+                self.calibration_status = "out_for_calibration"
+
+        equipment_by_code = {
+            "EQ-0001": Equipment("EQ-0001", "current"),
+            "EQ-0002": Equipment("EQ-0002", "due_soon"),
+            "EQ-0003": Equipment("EQ-0003", "overdue"),
+            "EQ-0004": Equipment("EQ-0004", "current"),
+            "EQ-0005": Equipment("EQ-0005", "current"),
+        }
+        original_ids = {code: id(equipment) for code, equipment in equipment_by_code.items()}
+
+        first = helpers["ensure_demo_equipment_statuses"](equipment_by_code, manager)
+        first_transitions = {
+            code: list(equipment.transition_calls) for code, equipment in equipment_by_code.items()
+        }
+        second = helpers["ensure_demo_equipment_statuses"](equipment_by_code, manager)
+
+        expected = {
+            "EQ-0001": "quarantined",
+            "EQ-0002": "due_soon",
+            "EQ-0003": "overdue",
+            "EQ-0004": "out_for_calibration",
+            "EQ-0005": "current",
+        }
+        self.assertEqual({code: row.calibration_status for code, row in first.items()}, expected)
+        self.assertEqual(set(row.calibration_status for row in second.values()), set(expected.values()))
+        self.assertEqual({code: id(equipment) for code, equipment in equipment_by_code.items()}, original_ids)
+        self.assertEqual(
+            {code: list(equipment.transition_calls) for code, equipment in equipment_by_code.items()},
+            first_transitions,
+            "a repeated seed must not repeat lifecycle transitions or create replacement equipment",
+        )
+        self.assertEqual(len(equipment_by_code), 5)
+
+    def test_calibration_event_workflow_resumes_partial_state_and_is_idempotent(self):
+        helper = load_seed_helpers("ensure_calibration_event_state")[
+            "ensure_calibration_event_state"
+        ]
+        manager = object()
+
+        class Event:
+            code = "APEX-CAL-EVT-002"
+
+            def __init__(self, state):
+                self.state = state
+                self.user = None
+                self.transitions = []
+
+            def with_user(self, user):
+                self.user = user
+                return self
+
+            def action_start(self):
+                self._require_manager()
+                self.transitions.append("start")
+                self.state = "in_progress"
+
+            def action_submit_review(self):
+                self._require_manager()
+                self.transitions.append("submit")
+                self.state = "awaiting_review"
+
+            def action_accept(self):
+                self._require_manager()
+                self.transitions.append("accept")
+                self.state = "accepted"
+
+            def _require_manager(self):
+                if self.user is not manager:
+                    raise PermissionError("Only Quality Manager can progress calibration events")
+
+        event = Event("in_progress")
+        helper(event, manager, "accepted")
+        self.assertEqual(event.state, "accepted")
+        self.assertEqual(event.transitions, ["submit", "accept"])
+        helper(event, manager, "accepted")
+        self.assertEqual(event.transitions, ["submit", "accept"])
+
+        with self.assertRaises(PermissionError):
+            helper(Event("draft"), object(), "accepted")
+        with self.assertRaisesRegex(RuntimeError, "cannot satisfy"):
+            helper(Event("cancelled"), manager, "in_progress")
+
+    def test_calibration_fixture_keeps_site_provider_company_and_event_links_aligned(self):
+        helper = load_seed_helpers("validate_demo_calibration_relations")[
+            "validate_demo_calibration_relations"
+        ]
+
+        class Record:
+            def __init__(self, record_id, **relations):
+                self.id = record_id
+                self.__dict__.update(relations)
+
+        company = Record(1)
+        organization = Record(2)
+        provider = Record(3, company_id=company)
+        site_by_code = {
+            code: Record(index + 10, organization_id=organization, company_id=company)
+            for index, code in enumerate(("APEX-HQ", "APEX-MFG"))
+        }
+        equipment_by_code = {}
+        process_by_code = {
+            code: Record(index + 100)
+            for index, code in enumerate(("APEX-ETEST", "APEX-CAL", "APEX-ESD", "APEX-SMT"))
+        }
+        equipment_type = Record(4, company_id=company)
+        for index, code in enumerate(("EQ-0001", "EQ-0002", "EQ-0003", "EQ-0004", "EQ-0005"), start=20):
+            site_code = "APEX-HQ" if code in ("EQ-0003", "EQ-0004") else "APEX-MFG"
+            equipment_by_code[code] = Record(
+                index,
+                organization_id=organization,
+                company_id=company,
+                site_id=site_by_code[site_code],
+                process_id=process_by_code[
+                    {"EQ-0001": "APEX-ETEST", "EQ-0002": "APEX-CAL", "EQ-0003": "APEX-ESD", "EQ-0004": "APEX-SMT", "EQ-0005": "APEX-ETEST"}[code]
+                ],
+                type_id=equipment_type,
+                default_provider_id=provider,
+            )
+        event_by_code = {
+            event_code: Record(
+                index + 40,
+                equipment_id=equipment_by_code[equipment_code],
+                organization_id=organization,
+                company_id=company,
+                provider_id=provider,
+            )
+            for index, (event_code, equipment_code) in enumerate(
+                (
+                    ("APEX-CAL-EVT-001", "EQ-0001"),
+                    ("APEX-CAL-EVT-002", "EQ-0002"),
+                    ("APEX-CAL-EVT-003", "EQ-0003"),
+                    ("APEX-CAL-EVT-004", "EQ-0004"),
+                    ("APEX-CAL-EVT-005", "EQ-0005"),
+                )
+            )
+        }
+        impact_assessment = Record(
+            70,
+            event_id=event_by_code["APEX-CAL-EVT-001"],
+            equipment_id=equipment_by_code["EQ-0001"],
+        )
+        affected_reference = Record(71, assessment_id=impact_assessment)
+        self.assertTrue(
+            helper(
+                equipment_by_code,
+                event_by_code,
+                provider,
+                equipment_type,
+                impact_assessment,
+                affected_reference,
+                organization,
+                company,
+                site_by_code,
+                process_by_code,
+            )
+        )
+        event_by_code["APEX-CAL-EVT-004"].provider_id = Record(99)
+        with self.assertRaisesRegex(RuntimeError, "alignment failed"):
+            helper(
+                equipment_by_code,
+                event_by_code,
+                provider,
+                equipment_type,
+                impact_assessment,
+                affected_reference,
+                organization,
+                company,
+                site_by_code,
+                process_by_code,
+            )
+
+    def test_seed_equipment_contract_matches_validator_and_preserves_demo1(self):
+        seed = SEED_PATH.read_text(encoding="utf-8")
+        validator = VALIDATE_PATH.read_text(encoding="utf-8")
+        assignments = load_seed_helpers("ensure_demo_equipment_statuses")
+        self.assertIn('env["pm.qms.equipment"].search(org_domain).mapped("calibration_status")', validator)
+        expected = assignments["DEMO_EQUIPMENT_STATUS_EXPECTATIONS"]
+        self.assertEqual(set(expected.values()), {
+            "overdue", "due_soon", "current", "quarantined", "out_for_calibration"
+        })
+        self.assertIn('APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}', seed)
+        self.assertIn('DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")', seed)
+        self.assertIn('"EQ-0001": "quarantined"', seed)
+        self.assertIn('"APEX-CAL-EVT-004": "EQ-0004"', seed)
+        self.assertIn("ensure_demo_equipment_statuses(equipment_by_code, demo_user)", seed)
 
     def test_management_user_read_only_contract_has_positive_and_negative_qms_coverage(self):
         capa_tests = (REPO_ROOT / "addons/pm_qms_capa/tests/test_capa.py").read_text(encoding="utf-8")
