@@ -727,6 +727,88 @@ class SeedIdentityTests(unittest.TestCase):
 
         self.assertEqual(writes, [])
 
+    def test_generic_upsert_propagates_required_create_and_write_failures(self):
+        class Field:
+            readonly = False
+            type = "char"
+
+        class Record:
+            def __getitem__(self, key):
+                return "before"
+
+            def write(self, _values):
+                raise ValueError("synthetic write failure")
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        class Cursor:
+            def savepoint(self):
+                return Savepoint()
+
+        class EmptyRecordset:
+            pass
+
+        class Model:
+            _fields = {"name": Field()}
+
+            def __init__(self, existing):
+                self.existing = existing
+                self.created = 0
+                self.empty = EmptyRecordset()
+
+            def search(self, _domain, limit=1):
+                return self.existing
+
+            def create(self, _values):
+                self.created += 1
+                raise ValueError("synthetic create failure")
+
+            def browse(self):
+                return self.empty
+
+        class Env:
+            cr = Cursor()
+
+            def __init__(self, model):
+                self.model = model
+
+            def __getitem__(self, _key):
+                return self.model
+
+        for operation in ("create", "write"):
+            for required in (True, False):
+                with self.subTest(operation=operation, required=required):
+                    model = Model(existing=None if operation == "create" else Record())
+                    warnings = []
+                    namespace = load_seed_helpers("upsert", "field_value_equal")
+                    namespace["model_exists"] = lambda _model_name: True
+                    namespace["domain_for"] = lambda _model_name, **_kwargs: [("name", "=", "fixture")]
+                    namespace["filtered"] = lambda _model_name, values: dict(values)
+                    namespace["env"] = Env(model)
+                    namespace["warnings"] = warnings
+
+                    if required:
+                        with self.assertRaisesRegex(RuntimeError, "Required Demo record failed") as raised:
+                            namespace["upsert"]("demo.model", name="fixture", vals={"name": "after"}, required=True)
+                        self.assertIsInstance(raised.exception.__cause__, ValueError)
+                    else:
+                        result = namespace["upsert"](
+                            "demo.model", name="fixture", vals={"name": "after"}, required=False
+                        )
+                        self.assertIs(result, model.empty)
+
+                    self.assertEqual(len(warnings), 1)
+
+                    if operation == "create":
+                        self.assertEqual(model.created, 1)
+                    else:
+                        self.assertEqual(model.created, 0)
+
     def test_many2many_commands_follow_odoo_semantics(self):
         namespace = load_seed_helpers("field_value_equal")
         equal = namespace["field_value_equal"]
