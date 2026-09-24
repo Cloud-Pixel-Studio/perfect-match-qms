@@ -368,7 +368,7 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertEqual(database_guard("demo2", "pmqms_demo2", "pmqms_demo2"), "pmqms_demo2")
         self.assertIn("ensure_capa_is_is_not_dimensions", source)
         self.assertIn('("capa_id", "=", capa_solder.id)', source)
-        self.assertIn('"Required CAPA APEX-CAPA-002 must have exactly four fixed Is / Is Not dimensions"', source)
+        self.assertIn('"CAPA Is / Is Not dimensions do not match the fixed seed structure"', source)
         self.assertIn("generate_required_management_review_snapshot(review, demo_user)", source)
         self.assertIn('raise RuntimeError("Required Demo Management Review APEX-MR-001 could not be prepared")', source)
         self.assertIn('require(count("pm.qms.capa.is.is.not", org_domain) >= 4, "expected the four fixed CAPA Is/Is Not dimensions")', validator)
