@@ -207,7 +207,7 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertIs(helper(ProjectModel(), object(), existing_project, {}), existing_project)
 
     def test_capa_fixed_dimensions_are_created_in_one_authorized_batch_idempotently(self):
-        helper = load_seed_helpers("ensure_capa_is_is_not_dimensionss")["ensure_capa_is_is_not_dimensionss"]
+        helper = load_seed_helpers("ensure_capa_is_is_not_dimensions")["ensure_capa_is_is_not_dimensions"]
         manager = object()
         rows = []
         batch_creates = []
@@ -295,7 +295,7 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertEqual(rows, original_rows)
 
     def test_capa_dimension_batch_creation_failure_is_fatal_not_a_warning(self):
-        helper = load_seed_helpers("ensure_capa_is_is_not_dimensionss")["ensure_capa_is_is_not_dimensionss"]
+        helper = load_seed_helpers("ensure_capa_is_is_not_dimensions")["ensure_capa_is_is_not_dimensions"]
 
         class RecordSet(list):
             def mapped(self, field):
