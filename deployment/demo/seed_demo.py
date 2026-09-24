@@ -27,6 +27,13 @@ def validate_seed_database(instance_name, configured_db, actual_db):
     return expected_db
 
 
+def ensure_guided_implementation_project(project_model, manager_user, existing_project, values):
+    """Keep the seed idempotent and run generation as its authorized QMS manager."""
+    if existing_project:
+        return existing_project
+    return project_model.with_user(manager_user).generate_from_wizard(values)
+
+
 validate_seed_database(DEMO_INSTANCE, EXPECTED_DB, env.cr.dbname)
 
 restrict_optional_platform_menus(env)
@@ -610,9 +617,12 @@ pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("s
 if not pack and model_exists("pm.qms.framework.pack"):
     pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active")], limit=1)
 project = env["pm.qms.implementation.project"].search([("name", "in", ["Apex Precision QMS Demo Implementation", "Apex Precision Electronics QMS Guided Implementation"]), ("organization_id", "=", organization.id)], limit=1) if model_exists("pm.qms.implementation.project") else False
-if pack and not project:
+if pack:
     try:
-        project = env["pm.qms.implementation.project"].generate_from_wizard({
+        # The Odoo shell's env.user is a technical execution identity, not the
+        # authorized persona. Keep model ACLs and manager checks active by
+        # running this bootstrap workflow as the seeded Quality Manager.
+        project = ensure_guided_implementation_project(env["pm.qms.implementation.project"], demo_user, project, {
             "name": "Apex Precision Electronics QMS Guided Implementation",
             "company_id": company.id,
             "organization_id": organization.id,
