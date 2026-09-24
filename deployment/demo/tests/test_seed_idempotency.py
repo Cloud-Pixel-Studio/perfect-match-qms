@@ -12,17 +12,21 @@ REPO_ROOT = Path(__file__).parents[3]
 
 def load_guided_coverage_contract():
     tree = ast.parse(VALIDATE_PATH.read_text(encoding="utf-8"))
-    names = {"GUIDED_EXCLUDED_MENU_IDS", "GUIDED_MODEL_EXAMPLES"}
+    names = {"GUIDED_EXCLUDED_MENU_IDS", "GUIDED_MODEL_EXAMPLES", "GUIDED_TRANSIENT_MODEL_EXAMPLES"}
     nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign)) and any(
         isinstance(target, ast.Name) and target.id in names
         for target in (node.targets if isinstance(node, ast.Assign) else [node.target])
     )]
     namespace = {}
     exec(compile(ast.Module(body=nodes, type_ignores=[]), str(VALIDATE_PATH), "exec"), namespace)
-    return namespace["GUIDED_EXCLUDED_MENU_IDS"], namespace["GUIDED_MODEL_EXAMPLES"]
+    return (
+        namespace["GUIDED_EXCLUDED_MENU_IDS"],
+        namespace["GUIDED_MODEL_EXAMPLES"],
+        namespace["GUIDED_TRANSIENT_MODEL_EXAMPLES"],
+    )
 
 
-GUIDED_EXCLUDED_MENU_IDS, GUIDED_MODEL_EXAMPLES = load_guided_coverage_contract()
+GUIDED_EXCLUDED_MENU_IDS, GUIDED_MODEL_EXAMPLES, GUIDED_TRANSIENT_MODEL_EXAMPLES = load_guided_coverage_contract()
 
 
 def load_identity_helpers():
@@ -623,7 +627,10 @@ class GuidedCoverageContractTests(unittest.TestCase):
         functional_menus = set(menu_models) - GUIDED_EXCLUDED_MENU_IDS
         self.assertTrue(functional_menus)
         self.assertFalse(GUIDED_EXCLUDED_MENU_IDS - set(menu_models))
-        self.assertEqual(set(menu_models.values()) - {menu_models[item] for item in GUIDED_EXCLUDED_MENU_IDS}, set(GUIDED_MODEL_EXAMPLES))
+        self.assertEqual(
+            set(menu_models.values()) - {menu_models[item] for item in GUIDED_EXCLUDED_MENU_IDS},
+            set(GUIDED_MODEL_EXAMPLES) | set(GUIDED_TRANSIENT_MODEL_EXAMPLES),
+        )
         matrix = (DEMO_PATH / "DEMO_COVERAGE_MATRIX.md").read_text(encoding="utf-8")
         missing_rows = sorted(menu_id for menu_id in functional_menus if f"`{menu_id}`" not in matrix)
         self.assertEqual(missing_rows, [])
@@ -635,6 +642,10 @@ class GuidedCoverageContractTests(unittest.TestCase):
                 self.assertIn(required, matrix)
         for model_name, anchor in GUIDED_MODEL_EXAMPLES.items():
             with self.subTest(model=model_name):
+                self.assertIn(model_name, matrix)
+                self.assertIn(anchor.split()[0].lower(), matrix.lower())
+        for model_name, anchor in GUIDED_TRANSIENT_MODEL_EXAMPLES.items():
+            with self.subTest(transient_model=model_name):
                 self.assertIn(model_name, matrix)
                 self.assertIn(anchor.split()[0].lower(), matrix.lower())
 
@@ -651,6 +662,7 @@ class GuidedCoverageContractTests(unittest.TestCase):
             self.assertIn(f".{action_name}()", source)
         self.assertIn('code="APEX-CAPA-003"', source)
         self.assertNotIn('"state": "closed"', source)
+        self.assertNotIn('"root_cause": ""', source)
 
     def test_validator_checks_full_menu_example_and_site_scope_visibility(self):
         source = VALIDATE_PATH.read_text(encoding="utf-8")

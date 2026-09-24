@@ -8,7 +8,7 @@ Roles in the table means the roles granted access by the installed menu groups, 
 
 | Menu / sub-menu action | Model | Demonstration record / state | Relationships | Authorized role scope | Validation |
 |---|---|---|---|---|---|
-| `menu_pm_qms_dashboard` — Dashboard | `pm.qms.dashboard` | generated dashboard over APEX records | KPI, risks, CAPA, audits, sites | roles with dashboard ACL | seed + role visibility |
+| `menu_pm_qms_dashboard` — Dashboard | `pm.qms.dashboard` | computed dashboard over APEX records (transient, no stored row) | KPI, risks, CAPA, audits, sites | roles with dashboard ACL | source records + Action Center validation |
 | `menu_pm_qms_sites` — Sites | `pm.qms.site` | APEX-HQ / APEX-MFG / APEX-INS | APEX organization; named process/person/equipment assignments | Quality Manager; operational roles read per ACL | seed + site-scope check |
 | `menu_pm_qms_audit_programs` — Audit Programs | `pm.qms.audit.program` | APEX-AUD-PROG-2026; current-year plan | audit APEX-AUD-001 | Internal Auditor / Quality Manager per ACL | count + role visibility |
 | `menu_pm_qms_audits` — Audits | `pm.qms.audit` | APEX-AUD-001; planned/current follow-up | program, scope, plan, criteria, findings, evidence | Internal Auditor / Quality Manager per ACL | count + role visibility |

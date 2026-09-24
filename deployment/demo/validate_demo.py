@@ -11,8 +11,10 @@ GUIDED_EXCLUDED_MENU_IDS = {
     "menu_pm_qms_evidence_import",
     "menu_pm_qms_quality_mapping_import",
 }
+GUIDED_TRANSIENT_MODEL_EXAMPLES = {
+    "pm.qms.dashboard": "computed dashboard over seeded KPI, risk, CAPA, audit, equipment and Action Center sources",
+}
 GUIDED_MODEL_EXAMPLES = {
-    "pm.qms.dashboard": "generated dashboard over APEX records",
     "pm.qms.site": "APEX-HQ / APEX-MFG / APEX-INS",
     "pm.qms.audit.program": "APEX-AUD-PROG-2026",
     "pm.qms.audit": "APEX-AUD-001",
@@ -95,8 +97,8 @@ ROLE_DEMO_READ_CHECKS = {
     "Document Controller": ("pm.qms.document", "pm.qms.document.revision", "pm.qms.evidence", "pm.qms.document.acknowledgment"),
     "Internal Auditor": ("pm.qms.audit", "pm.qms.audit.finding", "pm.qms.audit.evidence", "pm.qms.document", "pm.qms.risk"),
     "Process Owner": ("pm.qms.process", "pm.qms.activity", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.equipment"),
-    "Management User": ("pm.qms.dashboard", "pm.qms.kpi", "pm.qms.management.review", "pm.qms.risk", "pm.qms.capa"),
-    "QMS Viewer": ("pm.qms.dashboard", "pm.qms.document", "pm.qms.risk", "pm.qms.capa", "pm.qms.audit"),
+    "Management User": ("pm.qms.kpi", "pm.qms.management.review", "pm.qms.risk", "pm.qms.capa"),
+    "QMS Viewer": ("pm.qms.document", "pm.qms.risk", "pm.qms.capa", "pm.qms.audit"),
 }
 EXPECTED_PERSONA_SITE_CODES = {
     "Quality Manager": {"APEX-HQ", "APEX-MFG", "APEX-INS"},
@@ -276,6 +278,18 @@ for model_name, fixture_anchor in GUIDED_MODEL_EXAMPLES.items():
         require(total > 0, f"functional menu has no demo example: {model_name} ({fixture_anchor})")
     else:
         errors.append(f"functional menu model is not installed: {model_name}")
+
+# Dashboard screens are transient/computed; validate their persistent source
+# records rather than expecting a database row that Odoo may vacuum.
+for transient_model, fixture_anchor in GUIDED_TRANSIENT_MODEL_EXAMPLES.items():
+    if transient_model == "pm.qms.dashboard":
+        for source_model in ("pm.qms.kpi", "pm.qms.risk", "pm.qms.capa", "pm.qms.audit", "pm.qms.equipment", "pm.qms.action.center.line"):
+            if source_model not in env:
+                errors.append(f"dashboard source model is not installed: {source_model}")
+                continue
+            source_count = env[source_model].search_count([])
+            summary[f"dashboard_source.{source_model}"] = source_count
+            require(source_count > 0, f"computed dashboard source is empty: {source_model} ({fixture_anchor})")
 
 if "pm.qms.license" in env:
     license_record = env["pm.qms.license"].search([("is_current", "=", True)], order="id desc", limit=1)
