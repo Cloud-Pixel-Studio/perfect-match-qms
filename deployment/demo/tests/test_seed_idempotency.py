@@ -152,6 +152,69 @@ class SeedIdentityTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             guard("demo2", "pmqms_demo", "pmqms_demo")
 
+    def test_guided_project_generation_uses_the_authorized_manager_identity(self):
+        helper = load_seed_helpers("ensure_guided_implementation_project")[
+            "ensure_guided_implementation_project"
+        ]
+        manager = object()
+
+        class ProjectModel:
+            def with_user(self, user):
+                self.user = user
+                return self
+
+            def generate_from_wizard(self, values):
+                if self.user is not manager:
+                    raise PermissionError("Only QMS Managers or Administrators can manage implementation projects.")
+                self.values = values
+                return "generated-project"
+
+        model = ProjectModel()
+        values = {"name": "Guided Demo project"}
+        self.assertEqual(helper(model, manager, False, values), "generated-project")
+        self.assertIs(model.user, manager)
+        self.assertEqual(model.values, values)
+
+    def test_guided_project_generation_does_not_escalate_an_unauthorized_user(self):
+        helper = load_seed_helpers("ensure_guided_implementation_project")[
+            "ensure_guided_implementation_project"
+        ]
+        unauthorized_user = object()
+
+        class ProjectModel:
+            def with_user(self, user):
+                self.user = user
+                return self
+
+            def generate_from_wizard(self, _values):
+                if self.user is unauthorized_user:
+                    raise PermissionError("Only QMS Managers or Administrators can manage implementation projects.")
+                raise AssertionError("Unexpected identity")
+
+        with self.assertRaisesRegex(PermissionError, "Only QMS Managers"):
+            helper(ProjectModel(), unauthorized_user, False, {"name": "Unauthorized"})
+
+    def test_existing_guided_project_is_returned_without_a_second_generation(self):
+        helper = load_seed_helpers("ensure_guided_implementation_project")[
+            "ensure_guided_implementation_project"
+        ]
+        existing_project = object()
+
+        class ProjectModel:
+            def with_user(self, _user):
+                raise AssertionError("Existing project must not invoke the generator")
+
+        self.assertIs(helper(ProjectModel(), object(), existing_project, {}), existing_project)
+
+    def test_guided_project_seed_keeps_existing_project_idempotent_and_uses_no_sudo(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        block = source[source.index("if pack:"):source.index("if not project:", source.index("if pack:"))]
+        self.assertIn("if existing_project:", source)
+        self.assertIn("ensure_guided_implementation_project", block)
+        self.assertIn('users["Quality Manager"]', source)
+        self.assertNotIn("sudo(", block)
+        self.assertNotIn("group_ids", block)
+
     def test_validation_guard_accepts_original_demo_database(self):
         guard = load_validation_database_guard()
         self.assertEqual(guard("demo", "pmqms_demo", "pmqms_demo"), "pmqms_demo")

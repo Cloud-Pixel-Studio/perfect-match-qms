@@ -20,6 +20,7 @@ class TestPmQmsImplementation(TransactionCase):
         cls.base_user_group = cls.env.ref("base.group_user")
         cls.qms_user_group = cls.env.ref("pm_qms_core.group_pm_qms_user")
         cls.qms_manager_group = cls.env.ref("pm_qms_core.group_pm_qms_manager")
+        cls.qms_quality_manager_group = cls.env.ref("pm_qms_core.group_qms_quality_manager")
         cls.qms_admin_group = cls.env.ref("pm_qms_core.group_pm_qms_administrator")
 
         cls.user = cls._create_test_user("impl_user", cls.qms_user_group)
@@ -157,6 +158,33 @@ class TestPmQmsImplementation(TransactionCase):
         )
         action = wizard.action_generate_implementation()
         return self.env["pm.qms.implementation.project"].browse(action["res_id"])
+
+    def test_guided_project_generation_requires_and_accepts_quality_manager(self):
+        quality_manager = self._create_test_user("impl_quality_manager_seed", self.qms_quality_manager_group)
+        pack = self._create_pack("PM-TST-SEED-MANAGER", [self.controls[0]])
+        values = {
+            "name": "Authorized guided seed project",
+            "company_id": self.company.id,
+            "organization_id": self.organization.id,
+            "project_manager_id": quality_manager.id,
+            "date_start": "2026-08-15",
+            "target_date": "2026-09-30",
+            "implementation_type": "migration",
+            "pack_ids": pack.ids,
+            "create_odoo_project": True,
+        }
+        original_groups = set(quality_manager.group_ids.ids)
+        self.assertTrue(quality_manager.has_group("pm_qms_core.group_pm_qms_manager"))
+
+        with self.assertRaises(AccessError), self.env.cr.savepoint():
+            self.env["pm.qms.implementation.project"].with_user(self.user).generate_from_wizard(values)
+
+        project = self.env["pm.qms.implementation.project"].with_user(quality_manager).generate_from_wizard(values)
+        self.assertEqual(project.state, "generated")
+        self.assertEqual(project.project_manager_id, quality_manager)
+        self.assertTrue(project.implementation_control_ids)
+        self.assertEqual(set(quality_manager.group_ids.ids), original_groups)
+        self.assertFalse(self.user.has_group("pm_qms_core.group_pm_qms_manager"))
 
     def _accept_evidence(self, line):
         evidence = self.env["pm.qms.evidence"].with_user(self.manager).create(
