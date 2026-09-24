@@ -189,6 +189,13 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertIn('-e PMQMS_DEMO_INSTANCE="$PMQMS_DEMO_INSTANCE"', validate_block)
         self.assertIn('-e PMQMS_DEMO_DB="$DB_NAME"', validate_block)
 
+    def test_launcher_uses_instance_specific_company_defaults_and_override(self):
+        launcher = (SEED_PATH.parents[1] / "scripts" / "odoo-demo.sh").read_text(encoding="utf-8")
+        self.assertIn('if [[ "$PMQMS_DEMO_INSTANCE" == demo2 ]]; then', launcher)
+        self.assertIn('DEFAULT_DEMO_COMPANY_NAME="Apex Precision Electronics, Inc."', launcher)
+        self.assertIn('DEFAULT_DEMO_COMPANY_NAME="Apex Precision Systems, Inc."', launcher)
+        self.assertIn('DEMO_COMPANY_NAME="${PMQMS_DEMO_COMPANY_NAME:-$DEFAULT_DEMO_COMPANY_NAME}"', launcher)
+
     def test_capa_why_helper_updates_only_answer_for_existing_slot(self):
         writes = []
 
