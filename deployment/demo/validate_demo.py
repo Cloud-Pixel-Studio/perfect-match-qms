@@ -52,6 +52,7 @@ GUIDED_MODEL_EXAMPLES = {
     "project.task": "implementation activities synchronized to the guided project",
     "pm.qms.readiness.assessment": "Apex guided implementation readiness snapshot",
     "pm.qms.mapping.profile": "active PM-QMS mapping profile",
+    "pm.qms.iso9001.transition.scenario": "ISO9001-2026-TRANSITION-2015",
     "pm.qms.objective": "APEX-OBJ-001",
     "pm.qms.kpi": "APEX yield, supplier, NCR/CAPA, calibration and customer indicators",
     "pm.qms.kpi.measurement": "four measurements for each of eight KPIs",

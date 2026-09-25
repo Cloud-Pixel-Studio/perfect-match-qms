@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_pm_qms_iso9001_transition_scenario_company" model="ir.rule">
+        <field name="name">ISO 9001 transition scenarios: company isolation</field>
+        <field name="model_id" ref="model_pm_qms_iso9001_transition_scenario"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+</odoo>

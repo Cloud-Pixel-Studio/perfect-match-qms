@@ -8,6 +8,7 @@
 - [Branding Architecture](BRANDING_ARCHITECTURE.md)
 - [Standard Add-on Architecture](STANDARD_ADDON_ARCHITECTURE.md)
 - [ISO 9001 Add-on](ISO9001_ADDON.md)
+- [ISO 9001:2026 Scenario Catalog](ISO9001_2026_SCENARIO_CATALOG.md)
 - [ISO 9001:2026 Transition Architecture](ISO9001_2026_TRANSITION_ARCHITECTURE.md)
 - [ISO 9001 Implementation and Migration Scenarios](ISO9001_IMPLEMENTATION_MIGRATION_SCENARIOS.md)
 - [Framework Architecture](FRAMEWORK_ARCHITECTURE.md)
