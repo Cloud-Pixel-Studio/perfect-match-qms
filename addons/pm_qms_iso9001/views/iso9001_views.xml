@@ -30,6 +30,7 @@
                             <field name="edition"/>
                             <field name="publisher"/>
                             <field name="state"/>
+                            <field name="active" invisible="1"/>
                         </group>
                         <group string="Coverage">
                             <field name="total_control_count"/>
@@ -84,7 +85,7 @@
         <field name="arch" type="xml">
             <form create="0" edit="0" delete="0">
                 <header>
-                    <button name="action_create_gap_assessment" type="object" string="Start Gap Assessment" class="btn-primary" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_create_gap_assessment" type="object" string="Start Gap Assessment" class="btn-primary" invisible="state != 'active' or not active" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                 </header>
                 <sheet>
                     <group>
@@ -188,6 +189,7 @@
                                     <field name="status"/>
                                     <field name="evidence_summary"/>
                                     <field name="gap_description"/>
+                                    <field name="disposition_rationale"/>
                                     <field name="action_plan"/>
                                     <field name="responsible_id"/>
                                     <field name="target_date"/>
