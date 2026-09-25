@@ -33,6 +33,14 @@ Scenario definitions describe entry conditions, expected outputs, migration
 policy, and historical-record protection. They do not create client projects
 or migrate client data automatically.
 
+## Controlled gap assessments
+
+QMS Managers and Administrators can start a company-scoped assessment from any
+transition scenario. The assessment snapshots source and target editions,
+initializes six Perfect Match-authored focus areas, requires owned remediation
+for partial or gap results, and becomes immutable when completed. It neither
+copies ISO requirement text nor infers certification.
+
 ## Initial implementation foundation
 
 The add-on owns two selectable versions of the PM-QMS-ISO9001-INITIAL

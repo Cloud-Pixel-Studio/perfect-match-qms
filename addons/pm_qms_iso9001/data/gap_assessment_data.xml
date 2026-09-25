@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="sequence_pm_qms_iso9001_gap_assessment" model="ir.sequence">
+        <field name="name">ISO 9001 Gap Assessment</field>
+        <field name="code">pm.qms.iso9001.gap.assessment</field>
+        <field name="prefix">ISO-GAP-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>
