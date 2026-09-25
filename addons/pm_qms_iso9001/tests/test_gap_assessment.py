@@ -80,7 +80,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
             {
                 "action_plan": "Approve and implement a controlled remediation plan.",
                 "responsible_id": self.env.user.id,
-                "target_date": fields.Date.context_today(self),
+                "target_date": fields.Date.today(),
             }
         )
         assessment.action_complete()
