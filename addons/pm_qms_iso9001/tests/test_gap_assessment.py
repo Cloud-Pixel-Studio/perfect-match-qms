@@ -1,5 +1,5 @@
 from odoo import fields
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -108,13 +108,16 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
 
     def test_area_initialization_cannot_be_called_directly(self):
         assessment = self._assessment()
+        code, name, purpose = GAP_FOCUS_DEFINITIONS[0]
         with self.assertRaises(AccessError):
-            self.env["pm.qms.iso9001.gap.assessment.line"].create(
+            self.env["pm.qms.iso9001.gap.assessment.line"].with_context(
+                pm_qms_gap_initialize=True
+            ).create(
                 {
                     "assessment_id": assessment.id,
-                    "focus_code": "uncontrolled",
-                    "focus_name_snapshot": "Uncontrolled",
-                    "purpose_snapshot": "This row must never be accepted.",
+                    "focus_code": code,
+                    "focus_name_snapshot": name,
+                    "purpose_snapshot": purpose,
                 }
             )
 
@@ -124,3 +127,61 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
 
         with self.assertRaises(AccessError):
             assessment.write({"assessment_date": fields.Date.today()})
+
+    def test_workflow_context_cannot_forge_completion(self):
+        assessment = self._assessment()
+
+        with self.assertRaises(AccessError):
+            assessment.with_context(pm_qms_gap_workflow=True).write(
+                {
+                    "state": "completed",
+                    "completed_by_id": self.env.user.id,
+                    "completed_date": fields.Datetime.now(),
+                }
+            )
+
+        self.assertEqual(assessment.state, "draft")
+        self.assertFalse(assessment.completed_by_id)
+        self.assertFalse(assessment.completed_date)
+
+    def test_not_applicable_area_requires_rationale(self):
+        assessment = self._assessment()
+        assessment.action_start()
+        assessment.line_ids.write({"status": "conforming"})
+        excluded_line = assessment.line_ids[:1]
+        excluded_line.write({"status": "not_applicable"})
+
+        with self.assertRaises(UserError):
+            assessment.action_complete()
+
+        excluded_line.write(
+            {"disposition_rationale": "This area is outside the approved transition scope."}
+        )
+        assessment.action_complete()
+
+        self.assertEqual(assessment.state, "completed")
+        self.assertEqual(assessment.not_applicable_area_count, 1)
+
+    def test_assessment_company_is_server_owned_and_scenario_company_is_frozen(self):
+        other_company = self.env["res.company"].create(
+            {"name": "Independent ISO Assessment Company"}
+        )
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Company snapshot assessment",
+                "scenario_id": self.scenario.id,
+                "source_profile_id": self.source_profile.id,
+                "company_id": other_company.id,
+            }
+        )
+
+        self.assertEqual(assessment.company_id, self.scenario.company_id)
+        with self.assertRaises(AccessError):
+            self.scenario.write({"company_id": other_company.id})
+        self.assertEqual(assessment.company_id, self.env.company)
+
+    def test_retired_or_archived_scenario_cannot_start_assessment(self):
+        self.scenario.write({"state": "retired", "active": False})
+
+        with self.assertRaises(ValidationError):
+            self.scenario.action_create_gap_assessment()
