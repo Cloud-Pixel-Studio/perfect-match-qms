@@ -389,7 +389,7 @@ repair_odoo_filestore_permissions() {
         echo "Refusing filestore containing symlinks." >&2
         exit 2
       fi
-      find "$filestore" -xdev \( -type d -o -type f \) \( ! -uid 100 -o ! -gid 101 \) -exec chown 100:101 {} +
+      chown -R 100:101 "$filestore"
     '
   echo "demo_filestore_permissions=PASS instance=$PMQMS_DEMO_INSTANCE database=$DB_NAME"
 }
