@@ -54,6 +54,12 @@ class PmQmsIso9001TransitionScenario(models.Model):
         tracking=True,
     )
     active = fields.Boolean(default=True)
+    assessment_ids = fields.One2many(
+        "pm.qms.iso9001.gap.assessment",
+        "scenario_id",
+        string="Gap Assessments",
+        readonly=True,
+    )
 
     _code_company_uniq = models.Constraint(
         "UNIQUE(code, company_id)",
@@ -93,6 +99,43 @@ class PmQmsIso9001TransitionScenario(models.Model):
         if protected.intersection(vals):
             self._check_admin()
         return super().write(vals)
+
+    def action_create_gap_assessment(self):
+        self.ensure_one()
+        source_profile = self.env["pm.qms.mapping.profile"]
+        if self.source_edition not in (False, "legacy"):
+            source_profile = source_profile.search(
+                [
+                    ("standard_name", "=", "ISO 9001"),
+                    ("edition", "=", self.source_edition),
+                    ("company_id", "=", self.company_id.id),
+                    ("state", "=", "active"),
+                ],
+                limit=1,
+            )
+            if not source_profile:
+                raise ValidationError(
+                    f"An active ISO 9001:{self.source_edition} source profile is required."
+                )
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": f"{self.name} gap assessment",
+                "scenario_id": self.id,
+                "source_profile_id": source_profile.id,
+            }
+        )
+        assessment.action_start()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "ISO 9001 Gap Assessment",
+            "res_model": "pm.qms.iso9001.gap.assessment",
+            "res_id": assessment.id,
+            "view_mode": "form",
+            "view_id": self.env.ref(
+                "pm_qms_iso9001.view_pm_qms_iso9001_gap_assessment_form"
+            ).id,
+            "target": "current",
+        }
 
     def unlink(self):
         self._check_admin()
