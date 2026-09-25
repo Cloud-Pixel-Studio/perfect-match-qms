@@ -105,3 +105,22 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
 
         with self.assertRaises(UserError):
             assessment.action_start()
+
+    def test_area_initialization_cannot_be_called_directly(self):
+        assessment = self._assessment()
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.iso9001.gap.assessment.line"].create(
+                {
+                    "assessment_id": assessment.id,
+                    "focus_code": "uncontrolled",
+                    "focus_name_snapshot": "Uncontrolled",
+                    "purpose_snapshot": "This row must never be accepted.",
+                }
+            )
+
+    def test_assessment_identity_is_locked_after_start(self):
+        assessment = self._assessment()
+        assessment.action_start()
+
+        with self.assertRaises(AccessError):
+            assessment.write({"assessment_date": fields.Date.today()})
