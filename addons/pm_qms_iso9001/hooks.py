@@ -16,7 +16,18 @@ PROFILE_NOTES = (
 )
 
 
-def _ensure_iso9001_profile(env):
+PROFILE_2026_CODE = "PM-QMS-QUALITY-ISO9001-2026"
+PROFILE_2026_EDITION = "2026"
+PROFILE_2026_NAME = "ISO 9001:2026 Mapping"
+PROFILE_2026_NOTES = (
+    "This profile records the ISO 9001:2026 edition boundary using metadata and "
+    "Perfect Match-authored controls only. The licensed ISO publication remains "
+    "the source for external requirements; no official requirement text is stored "
+    "in the product. Mapping approval requires competent human review."
+)
+
+
+def _quality_pack(env):
     company = env.ref("base.main_company")
     pack = env["pm.qms.framework.pack"].search(
         [
@@ -28,53 +39,200 @@ def _ensure_iso9001_profile(env):
     )
     if not pack:
         raise UserError("The PM-QMS-QUALITY framework pack is required before ISO 9001 can be installed.")
+    return company, pack
 
+
+def _ensure_iso9001_profile_definition(env, code, edition, name, notes):
+    company, pack = _quality_pack(env)
     profiles = env["pm.qms.mapping.profile"].search(
-        [("code", "=", PROFILE_CODE), ("company_id", "=", company.id)]
+        [("code", "=", code), ("company_id", "=", company.id)]
     )
-    matching_profiles = profiles.filtered(lambda item: item.edition == PROFILE_EDITION)
+    matching_profiles = profiles.filtered(lambda item: item.edition == edition)
     if len(matching_profiles) > 1:
-        raise UserError("Duplicate ISO 9001 mapping profiles exist for the published edition.")
+        raise UserError(f"Duplicate ISO 9001 mapping profiles exist for edition {edition}.")
     profile = matching_profiles[:1]
+    definition = {
+        "code": code,
+        "company_id": company.id,
+        "pack_id": pack.id,
+        "standard_name": "ISO 9001",
+        "edition": edition,
+        "publisher": "ISO",
+    }
     if not profile:
         if profiles:
             raise UserError(
-                "An ISO 9001 mapping profile already uses this code with another edition; "
+                f"An ISO 9001 mapping profile already uses {code} with another edition; "
                 "refusing to overwrite or invent a replacement."
             )
         profile = env["pm.qms.mapping.profile"].with_context(module=True).create(
             {
-                "name": PROFILE_NAME,
-                "code": PROFILE_CODE,
-                "company_id": company.id,
-                "pack_id": pack.id,
-                "standard_name": "ISO 9001",
-                "edition": PROFILE_EDITION,
-                "publisher": "ISO",
-                "notes": PROFILE_NOTES,
+                **definition,
+                "name": name,
+                "notes": notes,
             }
         )
     else:
-        _assert_definition(
-            profile,
-            {
-                "code": PROFILE_CODE,
-                "company_id": company.id,
-                "pack_id": pack.id,
-                "standard_name": "ISO 9001",
-                "edition": PROFILE_EDITION,
-                "publisher": "ISO",
-            },
-            "ISO 9001 mapping profile",
-        )
-        profile.with_context(module=True).write({"name": PROFILE_NAME, "notes": PROFILE_NOTES})
+        _assert_definition(profile, definition, f"ISO 9001 {edition} mapping profile")
+        profile.with_context(module=True).write({"name": name, "notes": notes})
     if profile.state == "draft":
         profile.with_context(module=True).action_activate()
     return profile
 
 
+def _ensure_iso9001_profile(env):
+    return _ensure_iso9001_profile_definition(
+        env, PROFILE_CODE, PROFILE_EDITION, PROFILE_NAME, PROFILE_NOTES
+    )
+
+
+def _ensure_iso9001_2026_profile(env):
+    return _ensure_iso9001_profile_definition(
+        env,
+        PROFILE_2026_CODE,
+        PROFILE_2026_EDITION,
+        PROFILE_2026_NAME,
+        PROFILE_2026_NOTES,
+    )
+
+
+ISO9001_TRANSITION_SCENARIOS = (
+    (
+        "ISO9001-2026-INITIAL",
+        "New ISO 9001:2026 implementation",
+        "initial",
+        False,
+        "2026",
+        "Establish a new QMS implementation baseline for an organization without an existing certified ISO 9001 system.",
+        "No approved ISO 9001 implementation baseline is available.",
+        "Implementation project, scoped processes, owners, objectives, controls, evidence plan, and readiness assessment.",
+        "Do not infer conformity from the scenario catalog; require organization-specific evidence and review.",
+    ),
+    (
+        "ISO9001-2026-TRANSITION-2015",
+        "ISO 9001:2015 to 2026 transition",
+        "transition",
+        "2015",
+        "2026",
+        "Assess the impact of the 2026 edition while preserving the historical 2015 implementation record.",
+        "An active or historical 2015 profile and implementation records exist.",
+        "Gap inventory, transition plan, affected controls, revised evidence, approvals, and readiness decision.",
+        "Never rewrite completed 2015 tasks, evidence, assessments, or audit history.",
+    ),
+    (
+        "ISO9001-2026-LEGACY",
+        "Legacy or incomplete system migration",
+        "legacy",
+        "legacy",
+        "2026",
+        "Convert a legacy or partially documented QMS into a controlled PMQMS implementation.",
+        "Source records require inventory and quality classification before migration.",
+        "Migration inventory, data-quality decisions, ownership assignments, missing-evidence actions, and review trail.",
+        "Unverified or incomplete source data remains unverified until accepted through QMS workflow.",
+    ),
+    (
+        "ISO9001-2026-RECERTIFICATION",
+        "ISO 9001:2026 recertification",
+        "recertification",
+        "2015",
+        "2026",
+        "Prepare continuity and transition evidence for a recertification or certification-cycle decision.",
+        "The organization has prior audit, management review, and performance history.",
+        "Change assessment, audit evidence plan, management review inputs, open-action review, and decision record.",
+        "The product reports implementation readiness only and does not claim certification.",
+    ),
+    (
+        "ISO9001-2026-SCOPE-EXPANSION",
+        "ISO 9001:2026 scope expansion",
+        "scope_expansion",
+        False,
+        "2026",
+        "Extend the QMS to new products, services, processes, sites, or organizational boundaries.",
+        "A current scope and the proposed additions are identified.",
+        "Scope change record, affected-process analysis, controls, risks, resources, and effectiveness review.",
+        "Existing approved records remain historical; new scope receives its own applicability decision.",
+    ),
+    (
+        "ISO9001-2026-MULTI-SITE",
+        "ISO 9001:2026 multi-site rollout",
+        "multi_site",
+        False,
+        "2026",
+        "Deploy one controlled QMS approach across multiple sites with local responsibilities and evidence.",
+        "Corporate and site boundaries, responsibilities, and shared processes are known.",
+        "Site applicability matrix, local evidence ownership, consolidated readiness, and site-level actions.",
+        "Do not collapse site-specific evidence into a single untraceable record.",
+    ),
+    (
+        "ISO9001-2026-INTEGRATED",
+        "ISO 9001:2026 integrated management system",
+        "integrated",
+        False,
+        "2026",
+        "Coordinate ISO 9001 implementation with other management-system work while keeping profiles independent.",
+        "The additional management-system profiles and ownership boundaries are explicitly identified.",
+        "Shared-process inventory, profile-specific controls, dependency review, and separate evidence traceability.",
+        "Do not invent requirements from another standard or merge unrelated profile obligations.",
+    ),
+    (
+        "ISO9001-2026-PARTIAL",
+        "ISO 9001:2026 partial implementation",
+        "partial",
+        False,
+        "2026",
+        "Manage a deliberately limited implementation scope with explicit exclusions and dependencies.",
+        "The organization documents the selected scope, exclusions, assumptions, and target outcome.",
+        "Partial-scope project, exclusions, risks, dependencies, open gaps, and management acceptance.",
+        "A partial implementation must never be presented as complete certification readiness.",
+    ),
+)
+
+
+def seed_iso9001_transition_scenarios(env):
+    company = env.ref("base.main_company")
+    profile = _ensure_iso9001_2026_profile(env)
+    Scenario = env["pm.qms.iso9001.transition.scenario"]
+    for (
+        code,
+        name,
+        scenario_type,
+        source_edition,
+        target_edition,
+        objective,
+        entry_conditions,
+        required_outputs,
+        migration_policy,
+    ) in ISO9001_TRANSITION_SCENARIOS:
+        values = {
+            "name": name,
+            "code": code,
+            "scenario_type": scenario_type,
+            "source_edition": source_edition,
+            "target_edition": target_edition,
+            "sequence": list(item[0] for item in ISO9001_TRANSITION_SCENARIOS).index(code) + 10,
+            "profile_id": profile.id,
+            "company_id": company.id,
+            "objective": objective,
+            "entry_conditions": entry_conditions,
+            "required_outputs": required_outputs,
+            "migration_policy": migration_policy,
+            "state": "active",
+            "active": True,
+        }
+        existing = Scenario.search(
+            [("code", "=", code), ("company_id", "=", company.id)]
+        )
+        if len(existing) > 1:
+            raise UserError(f"Duplicate ISO 9001 transition scenario {code} exists.")
+        if existing:
+            _assert_definition(existing, values, f"ISO 9001 transition scenario {code}")
+        else:
+            Scenario.with_context(module=True).create(values)
+
+
 def post_init_hook(env):
     seed_iso9001_initial_implementation(env)
+    seed_iso9001_transition_scenarios(env)
 
 
 INITIAL_PACK_CODE = "PM-QMS-ISO9001-INITIAL"
