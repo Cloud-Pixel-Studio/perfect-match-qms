@@ -1,9 +1,10 @@
+import re
 from pathlib import Path
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError
 from odoo.tests import tagged
-from odoo.tests.common import TransactionCase
+from odoo.tests.common import HttpCase, TransactionCase
 from odoo.tools.safe_eval import safe_eval
 
 
@@ -469,6 +470,7 @@ class TestPmQmsAppShell(TransactionCase):
         login = self.env.ref("pm_qms_app.pm_qms_login_branding")
         self.assertIn("Perfect Match QMS", layout.arch)
         self.assertIn("Perfect Match QMS", login.arch)
+        self.assertIn("utm_medium=auth", login.arch)
         self.assertNotIn("pm_qms_login_logo", login.arch)
         self.assertNotIn("Your logo", login.arch)
 
@@ -689,3 +691,29 @@ class TestPmQmsAppShell(TransactionCase):
         self.assertIn(".pm_qms_dashboard_stat_menu", source)
         self.assertNotIn(".o_dropdown_more .o_button_icon", source)
         self.assertNotIn("oe_stat_button .o_button_icon", source)
+
+
+@tagged("-at_install", "post_install")
+class TestPmQmsLoginHttp(HttpCase):
+    def test_login_branding_and_frontend_assets_are_served(self):
+        response = self.url_open("/web/login")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Perfect Match QMS", response.text)
+        self.assertNotIn("Powered by Odoo", response.text)
+
+        asset_urls = re.findall(
+            r'''(?:href|src)=["']([^"']*/web/assets/[^"']+)["']''',
+            response.text,
+        )
+        css_urls = [url for url in asset_urls if ".css" in url]
+        js_urls = [url for url in asset_urls if ".js" in url]
+        self.assertTrue(css_urls, "Login HTML must reference a CSS asset bundle.")
+        self.assertTrue(js_urls, "Login HTML must reference a JavaScript asset bundle.")
+
+        for url in css_urls + js_urls:
+            with self.subTest(asset=url):
+                asset_response = self.url_open(url)
+                self.assertEqual(asset_response.status_code, 200, url)
+                content_type = asset_response.headers.get("Content-Type", "")
+                expected_type = "text/css" if url in css_urls else "javascript"
+                self.assertIn(expected_type, content_type, url)

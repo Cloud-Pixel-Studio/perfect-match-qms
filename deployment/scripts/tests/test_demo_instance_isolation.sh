@@ -84,6 +84,21 @@ grep -Fq -- '--project-name pmqms-demo2' "$TEST_DOCKER_LOG"
 [[ "$(realpath "$demo2_secrets/runtime/runtime-lock.json")" != "$(realpath "$REPO_ROOT/deployment/runtime/runtime-lock.json")" ]]
 cmp -s "$REPO_ROOT/deployment/runtime/runtime-lock.json" "$demo2_secrets/runtime/runtime-lock.json"
 
+# The filestore repair command must mount only the selected instance volume.
+repair_output="$(PMQMS_DEMO_INSTANCE=demo2 \
+  PMQMS_DEMO_SECRETS_DIR="$demo2_secrets" \
+  PMQMS_DEMO_BACKUP_DIR="$demo2_backups" \
+  "$LAUNCHER" repair-filestore)"
+grep -Fq 'demo_filestore_permissions=PASS instance=demo2 database=pmqms_demo2' <<<"$repair_output"
+grep -Fq -- '-v pmqms_demo2_odoo_data:/odoo-data' "$TEST_DOCKER_LOG"
+! grep -Fq -- '-v pmqms_demo_odoo_data:/odoo-data' "$TEST_DOCKER_LOG"
+grep -Fq 'DB_NAME" == "$EXPECTED_DB_NAME" && "$ODOO_DATA_VOLUME" == "$EXPECTED_ODOO_VOLUME' "$LAUNCHER"
+grep -Fq 'chown -R 100:101 "$filestore"' "$LAUNCHER"
+! grep -Eq 'find .*-(uid|gid)' "$LAUNCHER"
+grep -Fq 'Refusing filestore containing symlinks.' "$LAUNCHER"
+grep -Fq 'run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init' "$LAUNCHER"
+grep -Fq 'update-app-shell) update_app_shell ;;' "$LAUNCHER"
+
 # Even caller-supplied relocated roots cannot be silently shared. The first
 # instance claims both roots; a second instance must fail before chmod or
 # creation of any nested instance files.

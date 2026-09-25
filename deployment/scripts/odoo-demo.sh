@@ -325,6 +325,18 @@ install_or_update() {
   seed_demo
 }
 
+# Apply application-shell template/assets changes to an existing Demo database
+# without reseeding any Demo records.
+update_app_shell() {
+  assert_demo_database
+  prepare_runtime_permissions
+  database_exists || {
+    echo "Cannot update the application shell: selected Demo database does not exist." >&2
+    return 1
+  }
+  run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init
+}
+
 seed_demo() {
   assert_demo_database
   prepare_runtime_permissions
@@ -345,6 +357,41 @@ seed_demo() {
     -v "$PERSONA_PASSWORD_DIR:/run/pmqms-demo-persona-passwords:ro" \
     -e PMQMS_DEMO_ADMIN_PASSWORD="$password" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/seed_demo.py"
+  repair_odoo_filestore_permissions
+}
+
+# The seed's one-shot Odoo shell runs as root so it can read the mounted
+# persona-secret directory. Ensure any filestore entries it creates are
+# writable by Odoo's normal runtime uid/gid before HTTP asset requests use them.
+repair_odoo_filestore_permissions() {
+  assert_demo_database
+  [[ "$DB_NAME" == "$EXPECTED_DB_NAME" && "$ODOO_DATA_VOLUME" == "$EXPECTED_ODOO_VOLUME" ]] || {
+    echo "Refusing filestore permission repair for an unapproved instance/database/volume combination." >&2
+    return 2
+  }
+  load_runtime_lock
+  docker run --rm --user 0:0 \
+    -e PMQMS_DEMO_DATABASE="$DB_NAME" \
+    -v "$ODOO_DATA_VOLUME:/odoo-data" \
+    "$PMQMS_ALPINE_IMAGE" sh -eu -c '
+      case "$PMQMS_DEMO_DATABASE" in
+        pmqms_*) ;;
+        *) echo "Refusing unapproved Demo filestore database." >&2; exit 2 ;;
+      esac
+      case "$PMQMS_DEMO_DATABASE" in
+        *[!a-z0-9_]*) echo "Refusing unsafe Demo filestore database name." >&2; exit 2 ;;
+      esac
+      [ ! -L /odoo-data/filestore ] || { echo "Refusing symlinked filestore root." >&2; exit 2; }
+      filestore="/odoo-data/filestore/$PMQMS_DEMO_DATABASE"
+      [ ! -L "$filestore" ] || { echo "Refusing symlinked database filestore." >&2; exit 2; }
+      [ -d "$filestore" ] || exit 0
+      if [ -n "$(find "$filestore" -xdev -type l -print -quit)" ]; then
+        echo "Refusing filestore containing symlinks." >&2
+        exit 2
+      fi
+      chown -R 100:101 "$filestore"
+    '
+  echo "demo_filestore_permissions=PASS instance=$PMQMS_DEMO_INSTANCE database=$DB_NAME"
 }
 
 provision_license() {
@@ -459,9 +506,11 @@ Commands:
   shell          Open a shell in the demo Odoo container.
   init-db        Initialize the selected instance database with base only.
   install        Install/update the full Perfect Match QMS demo stack and seed data.
+  update-app-shell Update only pm_qms_app in the existing database; does not seed.
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
+  repair-filestore Repair only the selected Demo filestore ownership for Odoo runtime.
   validate-demo  Validate expected fictional demo records and metrics.
   provision-license
                 Import the externally issued Demo license from the secrets directory.
@@ -487,9 +536,11 @@ case "${1:-}" in
   shell) prepare_runtime_permissions; compose run --rm odoo-demo bash ;;
   init-db) run_odoo -d "$DB_NAME" --init base --stop-after-init ;;
   install) install_or_update ;;
+  update-app-shell) update_app_shell ;;
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
+  repair-filestore) prepare_runtime_permissions; repair_odoo_filestore_permissions ;;
   provision-license) provision_license ;;
   validate-demo) validate_demo ;;
   backup) backup_demo ;;

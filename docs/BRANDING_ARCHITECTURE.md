@@ -27,7 +27,11 @@ are not globally recolored.
 - The backend brand includes the approved product icon in the application brand.
 - Customer navigation uses Perfect Match colors rather than default Odoo purple
   as the dominant treatment.
-- Odoo and third-party legal notices and attribution remain intact.
+- The PMQMS login omits only Odoo's promotional `Powered by Odoo` footer link,
+  as explicitly approved for the Demo/QA presentation. Odoo source/license
+  notices, copyright statements, and other third-party notices remain intact.
+- Legal review remains required before production customer rollout of the
+  white-label login treatment.
 - Technical Administrator surfaces remain maintainable and are not cosmetically
   hidden by broad webclient patches.
 
