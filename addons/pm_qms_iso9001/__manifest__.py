@@ -16,6 +16,7 @@ copied into the product.
     "depends": ["pm_qms_pack_quality"],
     "data": [
         "security/ir.model.access.csv",
+        "security/security.xml",
         "data/initial_implementation_data.xml",
         "views/iso9001_views.xml",
     ],
