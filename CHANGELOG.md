@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added a versioned ISO 9001:2026 profile beside the preserved 2015 + Amendment
+  1:2024 profile.
+- Added eight company-scoped implementation and transition scenario definitions
+  covering new implementation, transition, legacy migration, recertification,
+  scope expansion, multi-site, integrated systems, and partial implementation.
+- Preserved the external-standard boundary: no ISO publication text or automatic
+  client-data migration is included.
+
+
+## Unreleased
+
 - Registered `pmqms-demo-2026-v3` only in the Demo/QA public-key bundle after
   verifying backup recovery. The canonical PMQMS raw-key SHA-256 is
   `2b9b1f747ffa21e0aed00e461f661ca81536689a842566263ac96948e65d6ee7`; the
