@@ -9,6 +9,9 @@
   scope expansion, multi-site, integrated systems, and partial implementation.
 - Preserved the external-standard boundary: no ISO publication text or automatic
   client-data migration is included.
+- Added controlled, company-scoped ISO 9001 edition gap assessments with
+  transparent scoring, required remediation ownership, and immutable completion
+  snapshots.
 
 
 ## Unreleased
