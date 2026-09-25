@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pm_qms_iso9001_transition_scenario_user,pm.qms.iso9001.transition.scenario user,model_pm_qms_iso9001_transition_scenario,pm_qms_core.group_pm_qms_user,1,0,0,0
+access_pm_qms_iso9001_transition_scenario_viewer,pm.qms.iso9001.transition.scenario viewer,model_pm_qms_iso9001_transition_scenario,pm_qms_core.group_qms_viewer,1,0,0,0
+access_pm_qms_iso9001_transition_scenario_manager,pm.qms.iso9001.transition.scenario manager,model_pm_qms_iso9001_transition_scenario,pm_qms_core.group_qms_quality_manager,1,0,0,0
+access_pm_qms_iso9001_transition_scenario_admin,pm.qms.iso9001.transition.scenario administrator,model_pm_qms_iso9001_transition_scenario,pm_qms_core.group_pm_qms_administrator,1,1,1,1
