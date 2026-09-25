@@ -1,6 +1,7 @@
 import ast
 import unittest
 from pathlib import Path
+from datetime import date, timedelta
 import xml.etree.ElementTree as ET
 
 
@@ -1183,6 +1184,199 @@ class GuidedCoverageContractTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertEqual(calls[0][0][0], "pm.qms.calibration.event")
         self.assertEqual(calls[0][1]["code"], "APEX-CAL-EVT-004")
+
+    def test_relative_calibration_fixtures_roll_forward_after_due_windows_without_duplicates(self):
+        helpers = load_seed_helpers(
+            "ensure_relative_calibration_fixture", "calibration_fixture_period"
+        )
+        helpers["relativedelta"] = lambda **kwargs: timedelta(days=kwargs["days"])
+
+        class Event:
+            def __init__(
+                self, code, calibration_date, next_due_date, equipment, state="accepted",
+                organization_id="org", company_id="company", provider_id="provider",
+            ):
+                self.code = code
+                self.calibration_date = calibration_date
+                self.next_due_date = next_due_date
+                self.equipment_id = equipment
+                self.organization_id = organization_id
+                self.company_id = company_id
+                self.provider_id = provider_id
+                self.state = state
+                self.result = "pass"
+
+        class Equipment:
+            def __init__(self, today, code, next_due_date, due_soon_days=30):
+                self.id = code
+                self.today = today
+                self.due_soon_days = due_soon_days
+                self.lifecycle_state = "in_service"
+                self.events = [Event(f"{code}-initial", today, next_due_date, self)]
+
+            @property
+            def event_ids(self):
+                return self.events
+
+            @property
+            def last_event_id(self):
+                accepted = [event for event in self.events if event.state == "accepted"]
+                return max(accepted, key=lambda event: (event.calibration_date, event.code)) if accepted else None
+
+            @property
+            def calibration_status(self):
+                latest = self.last_event_id
+                if not latest:
+                    return "no_history"
+                if latest.next_due_date < self.today:
+                    return "overdue"
+                if latest.next_due_date <= self.today + timedelta(days=self.due_soon_days):
+                    return "due_soon"
+                return "current"
+
+            def invalidate_recordset(self, _fields):
+                return None
+
+        def make_namespace(equipment, manager):
+            def fake_upsert(code, name, vals, required=True):
+                existing = next((row for row in equipment.events if row.code == code), None)
+                if existing:
+                    return existing
+                event = Event(
+                    code, vals["calibration_date"], vals["next_due_date"], equipment, state="draft",
+                    organization_id=vals["organization_id"], company_id=vals["company_id"],
+                    provider_id=vals["provider_id"],
+                )
+                equipment.events.append(event)
+                return event
+
+            def fake_accept(event, user, expected_state):
+                if user is not manager or expected_state != "accepted":
+                    raise AssertionError("relative fixture must use the authorized accepted-event workflow")
+                event.state = "accepted"
+                return event
+
+            helpers["upsert_calibration_event"] = fake_upsert
+            helpers["ensure_calibration_event_state"] = fake_accept
+            return helpers
+
+        manager = object()
+        start = date(2026, 1, 1)
+        due_equipment = Equipment(start, "EQ-0002", start + timedelta(days=18))
+        current_equipment = Equipment(start, "EQ-0005", start + timedelta(days=180))
+        self.assertEqual(due_equipment.calibration_status, "due_soon")
+        self.assertEqual(current_equipment.calibration_status, "current")
+
+        for equipment, elapsed, base_code, expected, cadence, interval in (
+            (due_equipment, 19, "APEX-CAL-EVT-002", "due_soon", 14, 18),
+            (current_equipment, 181, "APEX-CAL-EVT-005", "current", 149, 180),
+        ):
+            original = equipment.last_event_id
+            original_dates = (original.calibration_date, original.next_due_date)
+            simulated_today = start + timedelta(days=elapsed)
+            equipment.today = simulated_today
+            namespace = make_namespace(equipment, manager)
+            vals = {
+                "equipment_id": equipment.id,
+                "organization_id": "org",
+                "company_id": "company",
+                "provider_id": "provider",
+                "result": "pass",
+            }
+
+            first = namespace["ensure_relative_calibration_fixture"](
+                equipment, original, manager, base_code, "rolling accepted fixture", vals,
+                expected, simulated_today, cadence, interval,
+            )
+            count_after_first = len(equipment.events)
+            second = namespace["ensure_relative_calibration_fixture"](
+                equipment, original, manager, base_code, "rolling accepted fixture", vals,
+                expected, simulated_today + timedelta(days=2), cadence, interval,
+            )
+
+            self.assertEqual(first.state, "accepted")
+            self.assertIs(first, second)
+            self.assertEqual(len(equipment.events), count_after_first, "same temporal window must not duplicate events")
+            self.assertEqual(equipment.calibration_status, expected)
+            self.assertEqual((original.calibration_date, original.next_due_date), original_dates)
+            self.assertEqual(
+                (first.equipment_id, first.organization_id, first.company_id, first.provider_id),
+                (equipment, "org", "company", "provider"),
+            )
+            self.assertEqual(sum(row.code == first.code for row in equipment.events), 1)
+
+    def test_oot_dates_are_derived_from_event_then_preserved_on_reseed(self):
+        helpers = load_seed_helpers("preserve_existing_seed_fields")
+        event_date = date(2026, 1, 10)
+        existing = {"exposure_end": date(2026, 1, 10), "reference_date": date(2026, 1, 10)}
+
+        class Model:
+            def search(self, _domain, limit=1):
+                return existing
+
+            def browse(self):
+                return {}
+
+        class Environment:
+            def __getitem__(self, _model_name):
+                return Model()
+
+        helpers["env"] = Environment()
+        helpers["model_exists"] = lambda _model_name: True
+        helpers["domain_for"] = lambda _model_name, **_kwargs: [("code", "=", "APEX-OOT-001")]
+        original_impact = {"exposure_end": date(2026, 1, 10), "reviewed_scope": "same"}
+        original_reference = {"reference_date": date(2026, 1, 10), "name": "Lot L-24017 / IR-0087"}
+
+        impact_vals = helpers["preserve_existing_seed_fields"](
+            "pm.qms.calibration.impact.assessment",
+            {"exposure_end": event_date + timedelta(days=5), "reviewed_scope": "same"},
+            ("exposure_end",), code="APEX-OOT-001",
+        )
+        reference_vals = helpers["preserve_existing_seed_fields"](
+            "pm.qms.calibration.affected.reference",
+            {"reference_date": event_date + timedelta(days=5), "name": "Lot L-24017 / IR-0087"},
+            ("reference_date",), name="Lot L-24017 / IR-0087",
+        )
+
+        self.assertEqual(impact_vals["exposure_end"], original_impact["exposure_end"])
+        self.assertEqual(reference_vals["reference_date"], original_reference["reference_date"])
+        self.assertEqual(impact_vals["reviewed_scope"], "same")
+
+        class EmptyModel(Model):
+            def search(self, _domain, limit=1):
+                return []
+
+        class EmptyEnvironment:
+            def __getitem__(self, _model_name):
+                return EmptyModel()
+
+        helpers["env"] = EmptyEnvironment()
+        new_impact = helpers["preserve_existing_seed_fields"](
+            "pm.qms.calibration.impact.assessment",
+            {"exposure_end": event_date},
+            ("exposure_end",),
+            code="APEX-OOT-001",
+        )
+        new_reference = helpers["preserve_existing_seed_fields"](
+            "pm.qms.calibration.affected.reference",
+            {"reference_date": event_date},
+            ("reference_date",),
+            name="Lot L-24017 / IR-0087",
+        )
+        self.assertEqual(new_impact["exposure_end"], event_date)
+        self.assertEqual(new_reference["reference_date"], event_date)
+
+    def test_demo_seed_routes_relative_examples_and_oot_dates_through_safe_helpers(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        self.assertIn("ensure_relative_calibration_fixture(\n    equipment_by_code[\"EQ-0002\"]", source)
+        self.assertIn("ensure_relative_calibration_fixture(\n    equipment_by_code[\"EQ-0005\"]", source)
+        self.assertIn('"exposure_end": cal_event.calibration_date', source)
+        self.assertIn('"reference_date": cal_event.calibration_date', source)
+        self.assertIn('("exposure_end",)', source)
+        self.assertIn('("reference_date",)', source)
+        self.assertIn("APEX-OOT-001", source)
+        self.assertIn("Lot L-24017 / IR-0087", source)
+        self.assertNotIn("sudo()", source)
 
     def test_calibration_fixture_keeps_site_provider_company_and_event_links_aligned(self):
         helper = load_seed_helpers("validate_demo_calibration_relations")[
