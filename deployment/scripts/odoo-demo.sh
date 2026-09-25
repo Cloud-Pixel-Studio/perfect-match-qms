@@ -325,6 +325,18 @@ install_or_update() {
   seed_demo
 }
 
+# Apply application-shell template/assets changes to an existing Demo database
+# without reseeding any Demo records.
+update_app_shell() {
+  assert_demo_database
+  prepare_runtime_permissions
+  database_exists || {
+    echo "Cannot update the application shell: selected Demo database does not exist." >&2
+    return 1
+  }
+  run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init
+}
+
 seed_demo() {
   assert_demo_database
   prepare_runtime_permissions
@@ -494,6 +506,7 @@ Commands:
   shell          Open a shell in the demo Odoo container.
   init-db        Initialize the selected instance database with base only.
   install        Install/update the full Perfect Match QMS demo stack and seed data.
+  update-app-shell Update only pm_qms_app in the existing database; does not seed.
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
@@ -523,6 +536,7 @@ case "${1:-}" in
   shell) prepare_runtime_permissions; compose run --rm odoo-demo bash ;;
   init-db) run_odoo -d "$DB_NAME" --init base --stop-after-init ;;
   install) install_or_update ;;
+  update-app-shell) update_app_shell ;;
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
