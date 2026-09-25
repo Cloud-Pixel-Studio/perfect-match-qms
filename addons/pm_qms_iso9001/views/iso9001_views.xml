@@ -30,7 +30,6 @@
                             <field name="edition"/>
                             <field name="publisher"/>
                             <field name="state"/>
-                            <field name="active" invisible="1"/>
                         </group>
                         <group string="Coverage">
                             <field name="total_control_count"/>
@@ -100,6 +99,7 @@
                             <field name="profile_id"/>
                             <field name="company_id"/>
                             <field name="state"/>
+                            <field name="active" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
