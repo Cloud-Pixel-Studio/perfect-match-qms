@@ -47,6 +47,12 @@ DEMO_CALIBRATION_EVENT_EQUIPMENT = {
     "APEX-CAL-EVT-004": "EQ-0004",
     "APEX-CAL-EVT-005": "EQ-0005",
 }
+DEMO_CALIBRATION_ACCEPTED_EVENT_CODES = {
+    "APEX-CAL-EVT-001",
+    "APEX-CAL-EVT-002",
+    "APEX-CAL-EVT-003",
+    "APEX-CAL-EVT-005",
+}
 
 def validate_seed_database(instance_name, configured_db, actual_db):
     """Allow only the explicitly approved Demo instance/database pairs."""
@@ -233,6 +239,68 @@ def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, requi
                 f"Required Demo record failed: {model_name}:{code or name}"
             ) from exc
         return model.browse()
+
+
+def upsert_calibration_event(code, name, vals, required=True):
+    """Reuse accepted history unchanged; reconcile only events not yet accepted."""
+    model_name = "pm.qms.calibration.event"
+    if model_exists(model_name):
+        model = env[model_name]
+        existing = model.search(domain_for(model_name, code=code), limit=1)
+        if existing and existing.state == "accepted":
+            return existing
+    return upsert(model_name, code=code, name=name, vals=vals, required=required)
+
+
+def calibration_fixture_period(base_code, today, cadence_days, due_after_days):
+    """Return a stable event identity/date window for rolling relative-state examples."""
+    if cadence_days < 1 or due_after_days < 1:
+        raise ValueError("Calibration fixture cadence and due interval must be positive")
+    period_start = today - relativedelta(days=today.toordinal() % cadence_days)
+    event_code = f"{base_code}-R{period_start:%Y%m%d}"
+    return event_code, period_start, period_start + relativedelta(days=due_after_days)
+
+
+def ensure_relative_calibration_fixture(
+    equipment, base_event, manager_user, base_code, name, vals,
+    expected_status, today, cadence_days, due_after_days,
+):
+    """Keep a computed relative status current by appending a deterministic accepted event."""
+    equipment.invalidate_recordset(
+        ["event_ids", "last_event_id", "last_calibration_date", "next_due_date", "calibration_status"]
+    )
+    if equipment.calibration_status == expected_status:
+        return equipment.last_event_id or base_event
+
+    event_code, calibration_date, next_due_date = calibration_fixture_period(
+        base_code, today, cadence_days, due_after_days
+    )
+    event_vals = dict(vals)
+    event_vals.update({"calibration_date": calibration_date, "next_due_date": next_due_date})
+    event = upsert_calibration_event(event_code, name, event_vals, required=True)
+    ensure_calibration_event_state(event, manager_user, "accepted")
+    equipment.invalidate_recordset(
+        ["event_ids", "last_event_id", "last_calibration_date", "next_due_date", "calibration_status"]
+    )
+    if equipment.calibration_status != expected_status:
+        raise RuntimeError(
+            f"Calibration fixture renewal {event_code} did not preserve expected state {expected_status!r}"
+        )
+    return equipment.last_event_id or event
+
+
+def preserve_existing_seed_fields(model_name, vals, fields_to_preserve, code=None, name=None):
+    """Keep nonempty historical date fields stable when reconciling linked Demo records."""
+    if not model_exists(model_name):
+        return vals
+    model = env[model_name]
+    domain = domain_for(model_name, code=code, name=name)
+    record = model.search(domain, limit=1) if domain else model.browse()
+    if record:
+        for field_name in fields_to_preserve:
+            if record[field_name]:
+                vals[field_name] = record[field_name]
+    return vals
 
 
 def upsert_by_identity(model_name, identity, vals, required=False):
@@ -503,6 +571,8 @@ def validate_demo_calibration_relations(
         equipment = equipment_by_code.get(equipment_code)
         if not event or not equipment:
             raise RuntimeError(f"Required calibration event relation is missing: {event_code}/{equipment_code}")
+        if event_code in DEMO_CALIBRATION_ACCEPTED_EVENT_CODES and event.state != "accepted":
+            raise RuntimeError(f"Required accepted calibration event state is missing: {event_code}")
         if (
             record_id(event.equipment_id) != equipment.id
             or record_id(event.organization_id) != organization.id
@@ -1142,26 +1212,49 @@ for code, name, eq_site, eq_process, frequency_days in equipment_specs:
     equipment_by_code[code] = eq
 equipment_records = [equipment_by_code[code] for code, _name, _site, _process, _days in equipment_specs]
 
-cal_event = upsert("pm.qms.calibration.event", code="APEX-CAL-EVT-001", name="Electrical safety analyzer failed calibration", vals={"equipment_id": equipment_by_code["EQ-0001"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today - relativedelta(days=2), "result": best_selection(env["pm.qms.calibration.event"], "result", ("out_of_tolerance", "fail", "failed")), "as_found_condition": "Insulation-resistance reference exceeded the fictional internal acceptance window.", "notes": "Fictional OOT scenario for Lot L-24017 and electrical test record ETR-0087."}, required=True)
+cal_event = upsert_calibration_event("APEX-CAL-EVT-001", "Electrical safety analyzer failed calibration", {"equipment_id": equipment_by_code["EQ-0001"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today - relativedelta(days=2), "result": best_selection(env["pm.qms.calibration.event"], "result", ("out_of_tolerance", "fail", "failed")), "as_found_condition": "Insulation-resistance reference exceeded the fictional internal acceptance window.", "notes": "Fictional OOT scenario for Lot L-24017 and electrical test record ETR-0087."}, required=True)
 for parameter, measured, lower, upper, result in [
     ("DC voltage reference", "5.12 V", "4.95 V", "5.05 V", "fail"),
     ("AC frequency reference", "60.01 Hz", "59.90 Hz", "60.10 Hz", "pass"),
     ("Resistance reference", "1.002 kOhm", "0.990 kOhm", "1.010 kOhm", "pass"),
 ]:
     upsert_by_identity("pm.qms.calibration.measurement.line", [("event_id", "=", cal_event.id), ("parameter", "=", parameter)], {"event_id": cal_event.id, "parameter": parameter, "nominal_value": "Traceable laboratory reference", "lower_limit": lower, "upper_limit": upper, "as_found_value": measured, "as_left_value": "Adjusted or quarantined per fictional procedure", "result": result, "notes": "Synthetic measurement values for the isolated Demo scenario."}, required=True)
-impact = upsert("pm.qms.calibration.impact.assessment", code="APEX-OOT-001", name="Electrical safety analyzer OOT impact assessment", vals={"equipment_id": equipment_by_code["EQ-0001"].id, "event_id": cal_event.id, "assessor_person_id": persons[0].id, "exposure_end": today - relativedelta(days=2), "used_during_exposure": "unknown", "impact_conclusion": "unknown", "reviewed_scope": "Lot L-24017 and electrical test record ETR-0087.", "evaluation_summary": "Review the affected lot and inspection record following the out-of-tolerance analyzer result.", "containment_action": "Keep the analyzer quarantined and preserve the affected electrical test records."}, required=True)
-affected_reference = upsert("pm.qms.calibration.affected.reference", name="Lot L-24017 / IR-0087", vals={"assessment_id": impact.id, "name": "Lot L-24017 / IR-0087", "reference_date": today - relativedelta(days=2), "description": "Fictional affected inspection record IR-0087.", "impact_notes": "Review measurements from the period since the last acceptable calibration."}, required=True)
+impact_vals = preserve_existing_seed_fields(
+    "pm.qms.calibration.impact.assessment",
+    {"equipment_id": equipment_by_code["EQ-0001"].id, "event_id": cal_event.id, "assessor_person_id": persons[0].id, "exposure_end": cal_event.calibration_date, "used_during_exposure": "unknown", "impact_conclusion": "unknown", "reviewed_scope": "Lot L-24017 and electrical test record ETR-0087.", "evaluation_summary": "Review the affected lot and inspection record following the out-of-tolerance analyzer result.", "containment_action": "Keep the analyzer quarantined and preserve the affected electrical test records."},
+    ("exposure_end",),
+    code="APEX-OOT-001",
+    name="Electrical safety analyzer OOT impact assessment",
+)
+impact = upsert("pm.qms.calibration.impact.assessment", code="APEX-OOT-001", name="Electrical safety analyzer OOT impact assessment", vals=impact_vals, required=True)
+affected_reference_vals = preserve_existing_seed_fields(
+    "pm.qms.calibration.affected.reference",
+    {"assessment_id": impact.id, "name": "Lot L-24017 / IR-0087", "reference_date": cal_event.calibration_date, "description": "Fictional affected inspection record IR-0087.", "impact_notes": "Review measurements from the period since the last acceptable calibration."},
+    ("reference_date",),
+    name="Lot L-24017 / IR-0087",
+)
+affected_reference = upsert("pm.qms.calibration.affected.reference", name="Lot L-24017 / IR-0087", vals=affected_reference_vals, required=True)
 
-passing_event = upsert("pm.qms.calibration.event", code="APEX-CAL-EVT-002", name="Bench multimeter periodic calibration", vals={"equipment_id": equipment_by_code["EQ-0002"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today, "next_due_date": today + relativedelta(days=18), "result": "pass", "notes": "Fictional accepted certificate; next calibration is due within the configured reminder window."}, required=True)
-overdue_event = upsert("pm.qms.calibration.event", code="APEX-CAL-EVT-003", name="ESD resistance meter overdue verification", vals={"equipment_id": equipment_by_code["EQ-0003"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today - relativedelta(days=100), "next_due_date": today - relativedelta(days=10), "result": "pass", "notes": "Fictional accepted verification with a lapsed next-due date; the instrument is overdue for review."}, required=True)
-in_calibration = upsert("pm.qms.calibration.event", code="APEX-CAL-EVT-004", name="SMT torque driver sent for calibration", vals={"equipment_id": equipment_by_code["EQ-0004"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "date_sent": today, "notes": "Fictional instrument is in transit to the calibration provider; service report is pending."}, required=True)
-current_event = upsert("pm.qms.calibration.event", code="APEX-CAL-EVT-005", name="Digital oscilloscope current calibration", vals={"equipment_id": equipment_by_code["EQ-0005"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today, "next_due_date": today + relativedelta(days=180), "result": "pass", "notes": "Fictional accepted certificate supports current electrical test monitoring."}, required=True)
+passing_event = upsert_calibration_event("APEX-CAL-EVT-002", "Bench multimeter periodic calibration", {"equipment_id": equipment_by_code["EQ-0002"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today, "next_due_date": today + relativedelta(days=18), "result": "pass", "notes": "Fictional accepted certificate; next calibration is due within the configured reminder window."}, required=True)
+overdue_event = upsert_calibration_event("APEX-CAL-EVT-003", "ESD resistance meter overdue verification", {"equipment_id": equipment_by_code["EQ-0003"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today - relativedelta(days=100), "next_due_date": today - relativedelta(days=10), "result": "pass", "notes": "Fictional accepted verification with a lapsed next-due date; the instrument is overdue for review."}, required=True)
+in_calibration = upsert_calibration_event("APEX-CAL-EVT-004", "SMT torque driver sent for calibration", {"equipment_id": equipment_by_code["EQ-0004"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "date_sent": today, "notes": "Fictional instrument is in transit to the calibration provider; service report is pending."}, required=True)
+current_event = upsert_calibration_event("APEX-CAL-EVT-005", "Digital oscilloscope current calibration", {"equipment_id": equipment_by_code["EQ-0005"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "calibration_date": today, "next_due_date": today + relativedelta(days=180), "result": "pass", "notes": "Fictional accepted certificate supports current electrical test monitoring."}, required=True)
 
 ensure_calibration_event_state(cal_event, demo_user, "accepted")
 ensure_calibration_event_state(passing_event, demo_user, "accepted")
 ensure_calibration_event_state(overdue_event, demo_user, "accepted")
 ensure_calibration_event_state(in_calibration, demo_user, "in_progress")
 ensure_calibration_event_state(current_event, demo_user, "accepted")
+passing_event = ensure_relative_calibration_fixture(
+    equipment_by_code["EQ-0002"], passing_event, demo_user, "APEX-CAL-EVT-002",
+    "Bench multimeter periodic calibration renewal", {"equipment_id": equipment_by_code["EQ-0002"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "result": "pass", "notes": "Fictional rolling accepted calibration fixture; prior certificates remain unchanged."},
+    "due_soon", today, 14, 18,
+)
+current_event = ensure_relative_calibration_fixture(
+    equipment_by_code["EQ-0005"], current_event, demo_user, "APEX-CAL-EVT-005",
+    "Digital oscilloscope current calibration renewal", {"equipment_id": equipment_by_code["EQ-0005"].id, "organization_id": organization.id, "company_id": company.id, "provider_id": provider.id, "result": "pass", "notes": "Fictional rolling accepted calibration fixture; prior certificates remain unchanged."},
+    "current", today, max(1, 180 - equipment_by_code["EQ-0005"].due_soon_days - 1), 180,
+)
 event_by_code = {
     "APEX-CAL-EVT-001": cal_event,
     "APEX-CAL-EVT-002": passing_event,
