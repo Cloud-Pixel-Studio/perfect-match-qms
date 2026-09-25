@@ -1,4 +1,4 @@
-# ADR-079: ISO 9001:2026 transition and implementation foundation
+# ADR-080: ISO 9001:2026 transition and implementation foundation
 
 - Status: Proposed
 - Date: 2026-09-25
