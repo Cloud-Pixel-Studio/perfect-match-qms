@@ -151,9 +151,9 @@
         <field name="arch" type="xml">
             <form create="0" delete="0">
                 <header>
-                    <button name="action_start" type="object" string="Start" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_complete" type="object" string="Complete" class="btn-primary" invisible="state != 'in_progress'"/>
-                    <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'in_progress')"/>
+                    <button name="action_start" type="object" string="Start" class="btn-primary" invisible="state != 'draft'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_complete" type="object" string="Complete" class="btn-primary" invisible="state != 'in_progress'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'in_progress')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,completed,cancelled"/>
                 </header>
                 <sheet>
