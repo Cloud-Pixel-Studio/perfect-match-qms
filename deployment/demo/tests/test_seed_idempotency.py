@@ -901,6 +901,200 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertEqual(run({1, 2}, [(4, 1, 0)]), [])
         self.assertEqual(run({1}, [(4, 2, 0)]), [{"company_ids": [(4, 2, 0)]}])
 
+    def test_completed_supplier_evaluation_is_reused_without_writes_on_reseed(self):
+        helpers = load_seed_helpers("upsert_by_identity", "field_value_equal")
+
+        class Field:
+            readonly = False
+            type = "char"
+
+        class Record:
+            def __init__(self, state, **values):
+                self.state = state
+                self.values = values
+                self.write_calls = []
+
+            def __getitem__(self, key):
+                return self.values.get(key)
+
+            def write(self, values):
+                self.write_calls.append(dict(values))
+                self.values.update(values)
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        class Cursor:
+            def savepoint(self):
+                return Savepoint()
+
+        record = Record(
+            "completed",
+            supplier_id=11,
+            organization_id=22,
+            company_id=33,
+            quality_score=88.0,
+        )
+
+        class Model:
+            _fields = {name: Field() for name in (*record.values, "state")}
+
+            def search(self, _identity, limit=1):
+                return record
+
+            def browse(self):
+                return None
+
+        class Environment:
+            cr = Cursor()
+
+            def __getitem__(self, _model_name):
+                return Model()
+
+        helpers["env"] = Environment()
+        helpers["model_exists"] = lambda _model_name: True
+        helpers["filtered"] = lambda _model_name, values: dict(values)
+        helpers["warnings"] = []
+        identity = [("supplier_id", "=", 11), ("organization_id", "=", 22)]
+        expected_values = {
+            "supplier_id": 11,
+            "organization_id": 22,
+            "company_id": 33,
+            "quality_score": 88.0,
+        }
+
+        first = helpers["upsert_by_identity"](
+            "pm.qms.supplier.evaluation",
+            identity,
+            {**expected_values, "quality_score": 99.0, "company_id": 44},
+            required=True,
+            preserve_states=("completed",),
+            modifiable_states=("draft",),
+        )
+        second = helpers["upsert_by_identity"](
+            "pm.qms.supplier.evaluation",
+            identity,
+            {**expected_values, "quality_score": 77.0, "company_id": 55},
+            required=True,
+            preserve_states=("completed",),
+            modifiable_states=("draft",),
+        )
+
+        self.assertIs(first, record)
+        self.assertIs(second, record)
+        self.assertEqual(record.write_calls, [])
+        self.assertEqual(record.values, expected_values)
+        self.assertEqual(helpers["warnings"], [])
+
+    def test_draft_supplier_evaluation_updates_then_completed_reseed_is_read_only(self):
+        helpers = load_seed_helpers("upsert_by_identity", "field_value_equal")
+
+        class Field:
+            readonly = False
+            type = "char"
+
+        class Record:
+            def __init__(self):
+                self.state = "draft"
+                self.values = {
+                    "supplier_id": 11,
+                    "organization_id": 22,
+                    "company_id": 33,
+                    "quality_score": 70.0,
+                }
+                self.write_calls = []
+
+            def __getitem__(self, key):
+                return self.values.get(key)
+
+            def write(self, values):
+                self.write_calls.append(dict(values))
+                self.values.update(values)
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        class Cursor:
+            def savepoint(self):
+                return Savepoint()
+
+        record = Record()
+
+        class Model:
+            _fields = {name: Field() for name in (*record.values, "state")}
+
+            def search(self, _identity, limit=1):
+                return record
+
+            def browse(self):
+                return None
+
+        class Environment:
+            cr = Cursor()
+
+            def __getitem__(self, _model_name):
+                return Model()
+
+        helpers["env"] = Environment()
+        helpers["model_exists"] = lambda _model_name: True
+        helpers["filtered"] = lambda _model_name, values: dict(values)
+        helpers["warnings"] = []
+        identity = [("supplier_id", "=", 11), ("organization_id", "=", 22)]
+        kwargs = {"required": True, "preserve_states": ("completed",), "modifiable_states": ("draft",)}
+        reconciled = helpers["upsert_by_identity"](
+            "pm.qms.supplier.evaluation",
+            identity,
+            {"supplier_id": 11, "organization_id": 22, "company_id": 33, "quality_score": 88.0},
+            **kwargs,
+        )
+        self.assertIs(reconciled, record)
+        self.assertEqual(record.values["quality_score"], 88.0)
+        self.assertEqual(len(record.write_calls), 1)
+
+        record.state = "completed"
+        completed_values = dict(record.values)
+        result = helpers["upsert_by_identity"](
+            "pm.qms.supplier.evaluation",
+            identity,
+            {**completed_values, "quality_score": 99.0},
+            **kwargs,
+        )
+        self.assertIs(result, record)
+        self.assertEqual(record.write_calls, [{"quality_score": 88.0}])
+        self.assertEqual(record.values, completed_values)
+
+        cancelled = Record()
+        cancelled.state = "cancelled"
+        record = cancelled
+        with self.assertRaisesRegex(RuntimeError, "Required Demo scenario row failed"):
+            helpers["upsert_by_identity"](
+                "pm.qms.supplier.evaluation",
+                identity,
+                {"supplier_id": 11, "organization_id": 22, "company_id": 33, "quality_score": 99.0},
+                **kwargs,
+            )
+        self.assertEqual(cancelled.write_calls, [])
+
+    def test_supplier_evaluation_seed_only_mutates_drafts_and_completes_with_manager(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        start = source.index('evaluation = upsert_by_identity(\n        "pm.qms.supplier.evaluation"')
+        end = source.index("    if evaluation and evaluation.state == \"draft\":", start)
+        block = source[start:end]
+        self.assertIn('preserve_states=("completed",)', block)
+        self.assertIn('modifiable_states=("draft",)', block)
+        self.assertIn('evaluation.with_user(demo_user).action_complete()', source[end:])
+        self.assertNotIn("sudo(", block)
+        self.assertIn('"supplier_id": partner.id', block)
+        self.assertIn('"organization_id": organization.id', block)
+
     def test_existing_persona_password_is_not_rewritten(self):
         seed = Path(__file__).parents[1] / "seed_demo.py"
         source = seed.read_text(encoding="utf-8")

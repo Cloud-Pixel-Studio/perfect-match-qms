@@ -303,8 +303,15 @@ def preserve_existing_seed_fields(model_name, vals, fields_to_preserve, code=Non
     return vals
 
 
-def upsert_by_identity(model_name, identity, vals, required=False):
-    """Idempotently reconcile a scenario row using an explicit stable domain."""
+def upsert_by_identity(
+    model_name,
+    identity,
+    vals,
+    required=False,
+    preserve_states=(),
+    modifiable_states=None,
+):
+    """Reconcile a row, optionally limiting writes to declared lifecycle states."""
     if not model_exists(model_name):
         if required:
             raise RuntimeError(f"Required Demo scenario model is missing: {model_name}")
@@ -315,6 +322,14 @@ def upsert_by_identity(model_name, identity, vals, required=False):
     try:
         with env.cr.savepoint():
             if record:
+                if modifiable_states is not None:
+                    current_state = record.state if "state" in model._fields else None
+                    if current_state in preserve_states:
+                        return record
+                    if current_state not in modifiable_states:
+                        raise ValueError(
+                            f"Cannot reconcile {model_name} in state {current_state!r}"
+                        )
                 writable = {
                     key: value
                     for key, value in payload.items()
@@ -1288,7 +1303,31 @@ scar_counterfeit = upsert("pm.qms.scar", code="APEX-SCAR-002", name="SCAR - Beac
 # Supplier/customer scorecards and cause-analysis screens are populated by linked records.
 upsert_by_identity("pm.qms.customer.satisfaction", [("customer_id", "=", customer.id), ("organization_id", "=", organization.id), ("measurement_method", "=", "survey")], {"customer_id": customer.id, "organization_id": organization.id, "measurement_date": today, "period_start": today - relativedelta(days=90), "period_end": today, "measurement_method": "survey", "score": 4.3, "score_scale_max": 5.0, "response_count": 3, "owner_id": users["Management User"].id, "notes": "Fictional survey aggregate linked to complaint response and delivery performance."}, required=True)
 for partner, quality, delivery in [(supplier, 88.0, 93.0), (supplier_alt, 72.0, 85.0)]:
-    evaluation = upsert_by_identity("pm.qms.supplier.evaluation", [("supplier_id", "=", partner.id), ("organization_id", "=", organization.id)], {"supplier_id": partner.id, "organization_id": organization.id, "evaluation_date": today, "period_start": today - relativedelta(days=30), "period_end": today, "evaluator_id": demo_user.id, "quality_score": quality, "delivery_score": delivery, "service_score": quality, "compliance_score": quality, "quality_weight": 40.0, "delivery_weight": 30.0, "service_weight": 20.0, "compliance_weight": 10.0, "status": "monitor" if quality < 80 else "approved", "notes": "Fictional supplier scorecard linked to incoming issue, SCAR, and follow-up."}, required=True)
+    evaluation = upsert_by_identity(
+        "pm.qms.supplier.evaluation",
+        [("supplier_id", "=", partner.id), ("organization_id", "=", organization.id)],
+        {
+            "supplier_id": partner.id,
+            "organization_id": organization.id,
+            "evaluation_date": today,
+            "period_start": today - relativedelta(days=30),
+            "period_end": today,
+            "evaluator_id": demo_user.id,
+            "quality_score": quality,
+            "delivery_score": delivery,
+            "service_score": quality,
+            "compliance_score": quality,
+            "quality_weight": 40.0,
+            "delivery_weight": 30.0,
+            "service_weight": 20.0,
+            "compliance_weight": 10.0,
+            "status": "monitor" if quality < 80 else "approved",
+            "notes": "Fictional supplier scorecard linked to incoming issue, SCAR, and follow-up.",
+        },
+        required=True,
+        preserve_states=("completed",),
+        modifiable_states=("draft",),
+    )
     if evaluation and evaluation.state == "draft":
         evaluation.with_user(demo_user).action_complete()
 
