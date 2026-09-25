@@ -51,9 +51,11 @@ class PmQmsIso9001GapAssessment(models.Model):
         index=True,
     )
     company_id = fields.Many2one(
-        related="scenario_id.company_id",
-        store=True,
+        "res.company",
+        required=True,
+        default=lambda self: self.env.company,
         readonly=True,
+        copy=False,
         index=True,
     )
     source_profile_id = fields.Many2one(
@@ -126,22 +128,37 @@ class PmQmsIso9001GapAssessment(models.Model):
         if not self.env.user.has_group("pm_qms_core.group_pm_qms_manager"):
             raise AccessError("Only QMS Managers or Administrators can manage ISO 9001 gap assessments.")
 
+    def _write_workflow(self, vals):
+        """Write workflow-owned fields from trusted server-side actions only."""
+        self.ensure_one()
+        return super().write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
         self._check_manager_permission()
-        for vals in vals_list:
+        scenario_model = self.env["pm.qms.iso9001.transition.scenario"]
+        prepared_vals_list = []
+        for incoming_vals in vals_list:
+            vals = dict(incoming_vals)
+            scenario = scenario_model.browse(vals.get("scenario_id")).exists()
+            if scenario:
+                scenario.ensure_one()
+                vals["company_id"] = scenario.company_id.id
             if not vals.get("code") or vals.get("code") == "New":
                 vals["code"] = (
                     self.env["ir.sequence"].next_by_code("pm.qms.iso9001.gap.assessment")
                     or "ISO-GAP-00000"
                 )
-        return super().create(vals_list)
+            prepared_vals_list.append(vals)
+        return super().create(prepared_vals_list)
 
-    @api.constrains("scenario_id", "source_profile_id")
+    @api.constrains("scenario_id", "company_id", "source_profile_id")
     def _check_profile_scope(self):
         for assessment in self:
             scenario = assessment.scenario_id
             source = assessment.source_profile_id
+            if scenario.company_id != assessment.company_id:
+                raise ValidationError("Scenario and assessment company must match.")
             if source:
                 if source.company_id != assessment.company_id:
                     raise ValidationError("Source profile and assessment company must match.")
@@ -159,23 +176,10 @@ class PmQmsIso9001GapAssessment(models.Model):
                 raise UserError("Only draft gap assessments can be started.")
             if assessment.line_ids:
                 raise UserError("Draft gap assessment areas already exist.")
-            self.env["pm.qms.iso9001.gap.assessment.line"].with_context(
-                pm_qms_gap_initialize=True
-            ).create(
-                [
-                    {
-                        "assessment_id": assessment.id,
-                        "sequence": sequence,
-                        "focus_code": code,
-                        "focus_name_snapshot": name,
-                        "purpose_snapshot": purpose,
-                    }
-                    for sequence, (code, name, purpose) in enumerate(
-                        GAP_FOCUS_DEFINITIONS, start=10
-                    )
-                ]
+            self.env["pm.qms.iso9001.gap.assessment.line"]._create_controlled_areas(
+                assessment
             )
-            assessment.with_context(pm_qms_gap_workflow=True).write(
+            assessment._write_workflow(
                 {
                     "source_edition_snapshot": assessment.source_profile_id.edition
                     if assessment.source_profile_id
@@ -214,7 +218,7 @@ class PmQmsIso9001GapAssessment(models.Model):
             )
             if unsupported_na:
                 raise UserError("Not-applicable areas require a documented rationale.")
-            assessment.with_context(pm_qms_gap_workflow=True).write(
+            assessment._write_workflow(
                 {
                     "state": "completed",
                     "completed_by_id": self.env.user.id,
@@ -228,19 +232,27 @@ class PmQmsIso9001GapAssessment(models.Model):
         for assessment in self:
             if assessment.state == "completed":
                 raise UserError("Completed gap assessments are immutable historical records.")
-        self.with_context(pm_qms_gap_workflow=True).write({"state": "cancelled"})
+            assessment._write_workflow({"state": "cancelled"})
         return True
 
     def write(self, vals):
         if any(record.state == "completed" for record in self):
             raise AccessError("Completed ISO 9001 gap assessments are immutable historical records.")
-        if "state" in vals and not self.env.context.get("pm_qms_gap_workflow"):
-            raise AccessError("Use the gap assessment workflow actions to change status.")
+        workflow_fields = {
+            "state",
+            "source_edition_snapshot",
+            "target_edition_snapshot",
+            "completed_by_id",
+            "completed_date",
+            "company_id",
+        }
+        if workflow_fields.intersection(vals):
+            raise AccessError("Workflow-owned assessment fields cannot be changed directly.")
         identity_fields = {"scenario_id", "source_profile_id", "assessment_date", "assessor_id"}
         if identity_fields.intersection(vals) and any(record.state != "draft" for record in self):
             raise AccessError("Assessment identity cannot change after the workflow starts.")
         protected = set(vals) - {"conclusion"}
-        if protected and not self.env.context.get("pm_qms_gap_workflow"):
+        if protected:
             self._check_manager_permission()
         return super().write(vals)
 
@@ -299,6 +311,28 @@ class PmQmsIso9001GapAssessmentLine(models.Model):
         "Each controlled focus area may appear only once per assessment.",
     )
 
+    @api.model
+    def _create_controlled_areas(self, assessment):
+        """Initialize the authored area set from the trusted assessment workflow."""
+        assessment.ensure_one()
+        assessment._check_manager_permission()
+        if assessment.state != "draft" or assessment.line_ids:
+            raise AccessError("Assessment areas can be initialized only once from a draft assessment.")
+        return super().create(
+            [
+                {
+                    "assessment_id": assessment.id,
+                    "sequence": sequence,
+                    "focus_code": code,
+                    "focus_name_snapshot": name,
+                    "purpose_snapshot": purpose,
+                }
+                for sequence, (code, name, purpose) in enumerate(
+                    GAP_FOCUS_DEFINITIONS, start=10
+                )
+            ]
+        )
+
     def _check_editable(self):
         if any(line.assessment_id.state != "in_progress" for line in self):
             raise AccessError("Gap assessment areas can be edited only while the assessment is in progress.")
@@ -306,15 +340,7 @@ class PmQmsIso9001GapAssessmentLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        if not self.env.context.get("pm_qms_gap_initialize"):
-            raise AccessError("Use the controlled gap assessment workflow to initialize areas.")
-        assessments = self.env["pm.qms.iso9001.gap.assessment"].browse(
-            [vals.get("assessment_id") for vals in vals_list if vals.get("assessment_id")]
-        )
-        assessments._check_manager_permission()
-        if any(assessment.state != "draft" for assessment in assessments):
-            raise AccessError("Assessment areas can be initialized only from a draft assessment.")
-        return super().create(vals_list)
+        raise AccessError("Use the controlled gap assessment workflow to initialize areas.")
 
     def write(self, vals):
         self._check_editable()
