@@ -1,4 +1,4 @@
-from odoo import Command, api, fields, models
+from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
@@ -159,25 +159,28 @@ class PmQmsIso9001GapAssessment(models.Model):
                 raise UserError("Only draft gap assessments can be started.")
             if assessment.line_ids:
                 raise UserError("Draft gap assessment areas already exist.")
+            self.env["pm.qms.iso9001.gap.assessment.line"].with_context(
+                pm_qms_gap_initialize=True
+            ).create(
+                [
+                    {
+                        "assessment_id": assessment.id,
+                        "sequence": sequence,
+                        "focus_code": code,
+                        "focus_name_snapshot": name,
+                        "purpose_snapshot": purpose,
+                    }
+                    for sequence, (code, name, purpose) in enumerate(
+                        GAP_FOCUS_DEFINITIONS, start=10
+                    )
+                ]
+            )
             assessment.with_context(pm_qms_gap_workflow=True).write(
                 {
                     "source_edition_snapshot": assessment.source_profile_id.edition
                     if assessment.source_profile_id
                     else assessment.scenario_id.source_edition,
                     "target_edition_snapshot": assessment.target_profile_id.edition,
-                    "line_ids": [
-                        Command.create(
-                            {
-                                "sequence": sequence,
-                                "focus_code": code,
-                                "focus_name_snapshot": name,
-                                "purpose_snapshot": purpose,
-                            }
-                        )
-                        for sequence, (code, name, purpose) in enumerate(
-                            GAP_FOCUS_DEFINITIONS, start=10
-                        )
-                    ],
                     "state": "in_progress",
                 }
             )
@@ -233,6 +236,9 @@ class PmQmsIso9001GapAssessment(models.Model):
             raise AccessError("Completed ISO 9001 gap assessments are immutable historical records.")
         if "state" in vals and not self.env.context.get("pm_qms_gap_workflow"):
             raise AccessError("Use the gap assessment workflow actions to change status.")
+        identity_fields = {"scenario_id", "source_profile_id", "assessment_date", "assessor_id"}
+        if identity_fields.intersection(vals) and any(record.state != "draft" for record in self):
+            raise AccessError("Assessment identity cannot change after the workflow starts.")
         protected = set(vals) - {"conclusion"}
         if protected and not self.env.context.get("pm_qms_gap_workflow"):
             self._check_manager_permission()
@@ -300,6 +306,8 @@ class PmQmsIso9001GapAssessmentLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if not self.env.context.get("pm_qms_gap_initialize"):
+            raise AccessError("Use the controlled gap assessment workflow to initialize areas.")
         assessments = self.env["pm.qms.iso9001.gap.assessment"].browse(
             [vals.get("assessment_id") for vals in vals_list if vals.get("assessment_id")]
         )
