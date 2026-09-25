@@ -61,6 +61,7 @@ def load_seed_helpers(*names):
         "DEMO_EQUIPMENT_SITE_CODES",
         "DEMO_EQUIPMENT_PROCESS_CODES",
         "DEMO_CALIBRATION_EVENT_EQUIPMENT",
+        "DEMO_CALIBRATION_ACCEPTED_EVENT_CODES",
     } if {"ensure_demo_equipment_statuses", "validate_demo_calibration_relations"} & set(names) else set()
     nodes = []
     for node in tree.body:
@@ -609,6 +610,8 @@ class SeedIdentityTests(unittest.TestCase):
             if isinstance(node, ast.Call)
             and isinstance(node.func, ast.Name)
             and node.func.id == "upsert"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
         ]
         target_models = {
             "pm.qms.training.record": "training_identity_domain",
@@ -1110,6 +1113,77 @@ class GuidedCoverageContractTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "cannot satisfy"):
             helper(Event("cancelled"), manager, "in_progress")
 
+    def test_seed_reuses_accepted_calibration_history_without_writing(self):
+        helpers = load_seed_helpers("upsert_calibration_event")
+        event = type("Event", (), {
+            "state": "accepted",
+            "equipment_id": 5,
+            "organization_id": 6,
+            "company_id": 7,
+            "provider_id": 8,
+        })()
+
+        class EventModel:
+            def search(self, domain, limit=1):
+                self.last_domain = domain
+                return event
+
+        class Environment:
+            def __init__(self):
+                self.model = EventModel()
+
+            def __getitem__(self, model_name):
+                self.assert_model = model_name
+                return self.model
+
+        env = Environment()
+        calls = []
+        helpers["env"] = env
+        helpers["model_exists"] = lambda model_name: model_name == "pm.qms.calibration.event"
+        helpers["domain_for"] = lambda model_name, **kwargs: [("code", "=", kwargs["code"])]
+        helpers["upsert"] = lambda *args, **kwargs: calls.append((args, kwargs))
+
+        first = helpers["upsert_calibration_event"](
+            "APEX-CAL-EVT-005", "oscilloscope", {"next_due_date": "new-date"}, required=True
+        )
+        second = helpers["upsert_calibration_event"](
+            "APEX-CAL-EVT-005", "oscilloscope", {"next_due_date": "new-date"}, required=True
+        )
+
+        self.assertIs(first, event)
+        self.assertIs(second, event)
+        self.assertEqual(event.state, "accepted")
+        self.assertEqual(
+            (event.equipment_id, event.organization_id, event.company_id, event.provider_id),
+            (5, 6, 7, 8),
+        )
+        self.assertEqual(calls, [], "accepted calibration history must not be updated on reseed")
+
+    def test_seed_only_upserts_calibration_events_before_acceptance(self):
+        helpers = load_seed_helpers("upsert_calibration_event")
+
+        class EventModel:
+            def search(self, domain, limit=1):
+                return type("Event", (), {"state": "in_progress"})()
+
+        class Environment:
+            def __getitem__(self, model_name):
+                return EventModel()
+
+        calls = []
+        helpers["env"] = Environment()
+        helpers["model_exists"] = lambda model_name: True
+        helpers["domain_for"] = lambda model_name, **kwargs: [("code", "=", kwargs["code"])]
+        expected = object()
+        helpers["upsert"] = lambda *args, **kwargs: calls.append((args, kwargs)) or expected
+
+        result = helpers["upsert_calibration_event"]("APEX-CAL-EVT-004", "torque driver", {"date_sent": "today"})
+
+        self.assertIs(result, expected)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0][0], "pm.qms.calibration.event")
+        self.assertEqual(calls[0][1]["code"], "APEX-CAL-EVT-004")
+
     def test_calibration_fixture_keeps_site_provider_company_and_event_links_aligned(self):
         helper = load_seed_helpers("validate_demo_calibration_relations")[
             "validate_demo_calibration_relations"
@@ -1153,6 +1227,7 @@ class GuidedCoverageContractTests(unittest.TestCase):
                 organization_id=organization,
                 company_id=company,
                 provider_id=provider,
+                state="in_progress" if event_code == "APEX-CAL-EVT-004" else "accepted",
             )
             for index, (event_code, equipment_code) in enumerate(
                 (
@@ -1184,6 +1259,21 @@ class GuidedCoverageContractTests(unittest.TestCase):
                 process_by_code,
             )
         )
+        event_by_code["APEX-CAL-EVT-005"].state = "draft"
+        with self.assertRaisesRegex(RuntimeError, "accepted calibration event state"):
+            helper(
+                equipment_by_code,
+                event_by_code,
+                provider,
+                equipment_type,
+                impact_assessment,
+                affected_reference,
+                organization,
+                company,
+                site_by_code,
+                process_by_code,
+            )
+        event_by_code["APEX-CAL-EVT-005"].state = "accepted"
         event_by_code["APEX-CAL-EVT-004"].provider_id = Record(99)
         with self.assertRaisesRegex(RuntimeError, "alignment failed"):
             helper(
