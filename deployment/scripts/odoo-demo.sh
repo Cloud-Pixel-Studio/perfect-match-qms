@@ -345,6 +345,41 @@ seed_demo() {
     -v "$PERSONA_PASSWORD_DIR:/run/pmqms-demo-persona-passwords:ro" \
     -e PMQMS_DEMO_ADMIN_PASSWORD="$password" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/seed_demo.py"
+  repair_odoo_filestore_permissions
+}
+
+# The seed's one-shot Odoo shell runs as root so it can read the mounted
+# persona-secret directory. Ensure any filestore entries it creates are
+# writable by Odoo's normal runtime uid/gid before HTTP asset requests use them.
+repair_odoo_filestore_permissions() {
+  assert_demo_database
+  [[ "$DB_NAME" == "$EXPECTED_DB_NAME" && "$ODOO_DATA_VOLUME" == "$EXPECTED_ODOO_VOLUME" ]] || {
+    echo "Refusing filestore permission repair for an unapproved instance/database/volume combination." >&2
+    return 2
+  }
+  load_runtime_lock
+  docker run --rm --user 0:0 \
+    -e PMQMS_DEMO_DATABASE="$DB_NAME" \
+    -v "$ODOO_DATA_VOLUME:/odoo-data" \
+    "$PMQMS_ALPINE_IMAGE" sh -eu -c '
+      case "$PMQMS_DEMO_DATABASE" in
+        pmqms_*) ;;
+        *) echo "Refusing unapproved Demo filestore database." >&2; exit 2 ;;
+      esac
+      case "$PMQMS_DEMO_DATABASE" in
+        *[!a-z0-9_]*) echo "Refusing unsafe Demo filestore database name." >&2; exit 2 ;;
+      esac
+      [ ! -L /odoo-data/filestore ] || { echo "Refusing symlinked filestore root." >&2; exit 2; }
+      filestore="/odoo-data/filestore/$PMQMS_DEMO_DATABASE"
+      [ ! -L "$filestore" ] || { echo "Refusing symlinked database filestore." >&2; exit 2; }
+      [ -d "$filestore" ] || exit 0
+      if [ -n "$(find "$filestore" -xdev -type l -print -quit)" ]; then
+        echo "Refusing filestore containing symlinks." >&2
+        exit 2
+      fi
+      find "$filestore" -xdev \( -type d -o -type f \) \( ! -uid 100 -o ! -gid 101 \) -exec chown 100:101 {} +
+    '
+  echo "demo_filestore_permissions=PASS instance=$PMQMS_DEMO_INSTANCE database=$DB_NAME"
 }
 
 provision_license() {
@@ -462,6 +497,7 @@ Commands:
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
+  repair-filestore Repair only the selected Demo filestore ownership for Odoo runtime.
   validate-demo  Validate expected fictional demo records and metrics.
   provision-license
                 Import the externally issued Demo license from the secrets directory.
@@ -490,6 +526,7 @@ case "${1:-}" in
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
+  repair-filestore) prepare_runtime_permissions; repair_odoo_filestore_permissions ;;
   provision-license) provision_license ;;
   validate-demo) validate_demo ;;
   backup) backup_demo ;;
