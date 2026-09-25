@@ -81,6 +81,10 @@ class PmQmsIso9001TransitionScenario(models.Model):
             raise AccessError("Only QMS Administrators can configure ISO 9001 transition scenarios.")
 
     def write(self, vals):
+        if "company_id" in vals and any(record.assessment_ids for record in self):
+            raise AccessError(
+                "Scenario company cannot change after a gap assessment has been created."
+            )
         protected = {
             "name",
             "code",
@@ -102,6 +106,8 @@ class PmQmsIso9001TransitionScenario(models.Model):
 
     def action_create_gap_assessment(self):
         self.ensure_one()
+        if self.state != "active" or not self.active:
+            raise ValidationError("Gap assessments can be created only from an active scenario.")
         source_profile = self.env["pm.qms.mapping.profile"]
         if self.source_edition not in (False, "legacy"):
             source_profile = source_profile.search(
