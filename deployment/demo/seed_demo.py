@@ -1068,6 +1068,21 @@ if model_exists("pm.qms.iso9001.gap.assessment") and model_exists("pm.qms.iso900
     if draft_action:
         draft_action.with_user(demo_user).action_start()
 
+    transition_review = env["pm.qms.iso9001.transition.review"].with_user(
+        demo_user
+    )._prepare_from_assessment(transition_assessment)
+    if transition_review.state == "draft":
+        transition_review.with_user(demo_user).write(
+            {
+                "reviewer_id": users["Quality Supervisor"].id,
+                "decision": "continue_actions",
+                "review_basis": "The fictional guided gap assessment and its controlled transition action plan were reviewed.",
+                "residual_risk_summary": "Two synthetic transition actions remain controlled by assigned owners and target dates.",
+                "decision_notes": "Continue controlled action execution before the internal transition review.",
+            }
+        )
+        transition_review.with_user(demo_user).action_submit()
+
 controls = env["pm.qms.control"].search([("company_id", "=", company.id)], limit=6) if model_exists("pm.qms.control") else env["ir.model"].browse()
 control_instances = []
 for index, proc in enumerate(processes[:6], start=1):
@@ -1549,7 +1564,7 @@ if model_exists("pm.qms.action.center.line"):
 env.cr.commit()
 
 summary_models = [
-    "pm.qms.iso9001.gap.assessment", "pm.qms.iso9001.transition.action", "pm.qms.organization", "pm.qms.site", "pm.qms.process", "pm.qms.document", "pm.qms.evidence", "pm.qms.risk", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.audit", "pm.qms.audit.finding", "pm.qms.objective", "pm.qms.kpi.measurement", "pm.qms.person", "pm.qms.training.record", "pm.qms.qualification.record", "pm.qms.equipment", "pm.qms.customer.complaint", "pm.qms.quality.alert", "pm.qms.eight.d", "pm.qms.supplier.issue", "pm.qms.scar", "pm.qms.cost.event", "pm.qms.cost.line", "pm.qms.management.review",
+    "pm.qms.iso9001.gap.assessment", "pm.qms.iso9001.transition.action", "pm.qms.iso9001.transition.review", "pm.qms.organization", "pm.qms.site", "pm.qms.process", "pm.qms.document", "pm.qms.evidence", "pm.qms.risk", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.audit", "pm.qms.audit.finding", "pm.qms.objective", "pm.qms.kpi.measurement", "pm.qms.person", "pm.qms.training.record", "pm.qms.qualification.record", "pm.qms.equipment", "pm.qms.customer.complaint", "pm.qms.quality.alert", "pm.qms.eight.d", "pm.qms.supplier.issue", "pm.qms.scar", "pm.qms.cost.event", "pm.qms.cost.line", "pm.qms.management.review",
 ]
 print("DEMO_SEED_SUMMARY")
 print(f"database={env.cr.dbname}")
