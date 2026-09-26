@@ -1,6 +1,6 @@
 {
     "name": "Perfect Match QMS ISO 9001 Standard Add-on",
-    "summary": "Versioned ISO 9001 profiles, scenarios, and controlled gap assessments",
+    "summary": "Versioned ISO 9001 profiles, scenarios, assessments, and transition actions",
     "description": """
 This add-on contains the ISO 9001 standard profile boundary for Perfect Match
 QMS. The generic QMS foundation and the proprietary PM-QMS-QUALITY framework
@@ -8,7 +8,7 @@ pack remain usable without this add-on. Only reference identifiers and
 Perfect Match-authored metadata belong here; official standard text is never
 copied into the product.
     """,
-    "version": "19.0.10.0.0",
+    "version": "19.0.11.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
