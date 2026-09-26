@@ -1,4 +1,6 @@
-import json\n\nfrom odoo import api, fields, models
+import json
+
+from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
@@ -103,7 +105,8 @@ class PmQmsIso9001TransitionReview(models.Model):
     target_edition_snapshot = fields.Char(required=True, readonly=True)
     total_action_count_snapshot = fields.Integer(readonly=True)
     completed_action_count_snapshot = fields.Integer(readonly=True)
-    open_action_count_snapshot = fields.Integer(readonly=True)\n    action_state_snapshot = fields.Text(readonly=True)
+    open_action_count_snapshot = fields.Integer(readonly=True)
+    action_state_snapshot = fields.Text(readonly=True)
     submitted_by_id = fields.Many2one("res.users", readonly=True)
     submitted_date = fields.Datetime(readonly=True)
     approved_by_id = fields.Many2one("res.users", readonly=True)
@@ -235,7 +238,8 @@ class PmQmsIso9001TransitionReview(models.Model):
                     "state": "submitted",
                     "total_action_count_snapshot": total,
                     "completed_action_count_snapshot": completed,
-                    "open_action_count_snapshot": open_count,\n                    "action_state_snapshot": review._action_snapshot(),
+                    "open_action_count_snapshot": open_count,
+                    "action_state_snapshot": review._action_snapshot(),
                     "submitted_by_id": self.env.user.id,
                     "submitted_date": fields.Datetime.now(),
                     "approved_by_id": False,
@@ -329,7 +333,8 @@ class PmQmsIso9001TransitionReview(models.Model):
             "target_edition_snapshot",
             "total_action_count_snapshot",
             "completed_action_count_snapshot",
-            "open_action_count_snapshot",\n            "action_state_snapshot",
+            "open_action_count_snapshot",
+            "action_state_snapshot",
             "submitted_by_id",
             "submitted_date",
             "approved_by_id",
