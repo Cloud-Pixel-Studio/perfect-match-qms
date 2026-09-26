@@ -54,6 +54,7 @@ GUIDED_MODEL_EXAMPLES = {
     "pm.qms.mapping.profile": "active PM-QMS mapping profile",
     "pm.qms.iso9001.transition.scenario": "ISO9001-2026-TRANSITION-2015",
     "pm.qms.iso9001.transition.action": "two controlled actions from the Apex guided 2015-to-2026 gap assessment",
+    "pm.qms.iso9001.transition.review": "submitted Apex transition readiness review with an independent reviewer",
     "pm.qms.objective": "APEX-OBJ-001",
     "pm.qms.kpi": "APEX yield, supplier, NCR/CAPA, calibration and customer indicators",
     "pm.qms.kpi.measurement": "four measurements for each of eight KPIs",
@@ -263,6 +264,28 @@ if "pm.qms.iso9001.gap.assessment" in env and organization:
             all(action.implementation_project_id for action in transition_actions),
             "guided ISO 9001 transition actions must link to the implementation project",
         )
+        transition_review = env["pm.qms.iso9001.transition.review"].search(
+            [("assessment_id", "=", guided_transition_assessment.id)], limit=1
+        )
+        summary["pm.qms.iso9001.transition.review"] = int(bool(transition_review))
+        require(bool(transition_review), "expected guided ISO 9001 transition readiness review")
+        if transition_review:
+            require(transition_review.state == "submitted", "guided transition readiness review must be submitted")
+            require(
+                transition_review.reviewer_id.login
+                == "daniel.brooks.demo@perfectmatch.local",
+                "guided transition readiness review must use the independent Quality Supervisor",
+            )
+            require(
+                transition_review.total_action_count_snapshot == 2
+                and transition_review.open_action_count_snapshot == 2,
+                "guided transition readiness review action snapshot is inconsistent",
+            )
+            require(
+                transition_review.implementation_project_id
+                == transition_actions.mapped("implementation_project_id"),
+                "guided transition readiness review project alignment failed",
+            )
 require(count("pm.qms.objective", org_domain) >= 1, "expected demo objective")
 require(count("pm.qms.kpi", company_domain) >= 8, "expected KPI examples for yield, suppliers, NCR/CAPA, and customer satisfaction")
 require(count("pm.qms.kpi.measurement", company_domain) >= 32, "expected four synthetic historical/current measurements for eight KPIs")
