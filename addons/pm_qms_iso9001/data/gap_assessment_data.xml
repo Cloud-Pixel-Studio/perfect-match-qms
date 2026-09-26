@@ -14,4 +14,11 @@
         <field name="padding">5</field>
         <field name="company_id" eval="False"/>
     </record>
+    <record id="sequence_pm_qms_iso9001_transition_review" model="ir.sequence">
+        <field name="name">ISO 9001 Transition Readiness Review</field>
+        <field name="code">pm.qms.iso9001.transition.review</field>
+        <field name="prefix">ISO-TRR-</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
 </odoo>
