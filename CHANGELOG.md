@@ -12,6 +12,9 @@
 - Added controlled, company-scoped ISO 9001 edition gap assessments with
   transparent scoring, required remediation ownership, and immutable completion
   snapshots.
+- Added idempotent ISO 9001 transition action plans generated from completed
+  partial/gap findings, with company isolation, controlled verification,
+  closure evidence, and immutable source snapshots.
 
 
 ## Unreleased

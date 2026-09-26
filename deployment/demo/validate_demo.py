@@ -53,6 +53,7 @@ GUIDED_MODEL_EXAMPLES = {
     "pm.qms.readiness.assessment": "Apex guided implementation readiness snapshot",
     "pm.qms.mapping.profile": "active PM-QMS mapping profile",
     "pm.qms.iso9001.transition.scenario": "ISO9001-2026-TRANSITION-2015",
+    "pm.qms.iso9001.transition.action": "two controlled actions from the Apex guided 2015-to-2026 gap assessment",
     "pm.qms.objective": "APEX-OBJ-001",
     "pm.qms.kpi": "APEX yield, supplier, NCR/CAPA, calibration and customer indicators",
     "pm.qms.kpi.measurement": "four measurements for each of eight KPIs",
@@ -238,6 +239,30 @@ require(count("pm.qms.audit.evidence", org_domain) >= 1, "expected linked audit 
 require(count("pm.qms.capa.fishbone", org_domain) >= 1, "expected CAPA fishbone analysis example")
 require(count("pm.qms.capa.is.is.not", org_domain) >= 4, "expected the four fixed CAPA Is/Is Not dimensions")
 require(count("pm.qms.capa.action", org_domain) >= 3, "expected multiple linked CAPA actions")
+if "pm.qms.iso9001.gap.assessment" in env and organization:
+    guided_transition_assessment = env["pm.qms.iso9001.gap.assessment"].search(
+        [
+            ("name", "=", "Apex ISO 9001:2015 to 2026 guided gap assessment"),
+            ("company_id", "=", organization.company_id.id),
+        ],
+        limit=1,
+    )
+    require(bool(guided_transition_assessment), "expected guided ISO 9001 transition gap assessment")
+    if guided_transition_assessment:
+        require(guided_transition_assessment.state == "completed", "guided ISO 9001 gap assessment must be completed")
+        transition_actions = env["pm.qms.iso9001.transition.action"].search(
+            [("assessment_id", "=", guided_transition_assessment.id)]
+        )
+        summary["pm.qms.iso9001.transition.action"] = len(transition_actions)
+        require(len(transition_actions) == 2, "expected exactly two guided ISO 9001 transition actions")
+        require(
+            set(transition_actions.mapped("source_status_snapshot")) == {"partial", "gap"},
+            "guided ISO 9001 transition actions must preserve partial and gap source snapshots",
+        )
+        require(
+            all(action.implementation_project_id for action in transition_actions),
+            "guided ISO 9001 transition actions must link to the implementation project",
+        )
 require(count("pm.qms.objective", org_domain) >= 1, "expected demo objective")
 require(count("pm.qms.kpi", company_domain) >= 8, "expected KPI examples for yield, suppliers, NCR/CAPA, and customer satisfaction")
 require(count("pm.qms.kpi.measurement", company_domain) >= 32, "expected four synthetic historical/current measurements for eight KPIs")

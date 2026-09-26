@@ -978,6 +978,96 @@ if project:
         except Exception as exc:
             raise RuntimeError("Guided implementation readiness assessment failed") from exc
 
+
+# Controlled ISO 9001:2015-to-2026 transition example. The seed uses only
+# Perfect Match-authored guidance and workflow actions; it does not reproduce
+# licensed ISO requirement text or infer certification/conformity.
+if model_exists("pm.qms.iso9001.gap.assessment") and model_exists("pm.qms.iso9001.transition.action"):
+    transition_scenario = env["pm.qms.iso9001.transition.scenario"].search(
+        [
+            ("code", "=", "ISO9001-2026-TRANSITION-2015"),
+            ("company_id", "=", company.id),
+            ("state", "=", "active"),
+        ],
+        limit=1,
+    )
+    source_profile = env["pm.qms.mapping.profile"].search(
+        [
+            ("code", "=", "PM-QMS-QUALITY-ISO9001"),
+            ("company_id", "=", company.id),
+            ("edition", "=", "2015"),
+        ],
+        limit=1,
+    )
+    if not transition_scenario or not source_profile:
+        raise RuntimeError("Required ISO 9001 transition scenario or source profile is missing")
+
+    transition_assessment = env["pm.qms.iso9001.gap.assessment"].search(
+        [
+            ("name", "=", "Apex ISO 9001:2015 to 2026 guided gap assessment"),
+            ("company_id", "=", company.id),
+        ],
+        limit=1,
+    )
+    if not transition_assessment:
+        transition_assessment = env["pm.qms.iso9001.gap.assessment"].with_user(demo_user).create(
+            {
+                "name": "Apex ISO 9001:2015 to 2026 guided gap assessment",
+                "scenario_id": transition_scenario.id,
+                "source_profile_id": source_profile.id,
+                "assessment_date": today,
+                "assessor_id": demo_user.id,
+            }
+        )
+    if transition_assessment.state == "draft":
+        transition_assessment.with_user(demo_user).action_start()
+    if transition_assessment.state == "in_progress":
+        transition_assessment.line_ids.with_user(demo_user).write(
+            {
+                "status": "conforming",
+                "evidence_summary": "Fictional guided evidence reviewed against the approved internal transition baseline.",
+            }
+        )
+        partial_line = transition_assessment.line_ids.sorted("sequence")[:1]
+        gap_line = transition_assessment.line_ids.sorted("sequence")[1:2]
+        partial_line.with_user(demo_user).write(
+            {
+                "status": "partial",
+                "gap_description": "Internal transition evidence exists but its review cadence is not yet consistently controlled.",
+                "action_plan": "Approve a recurring evidence review and record the first effectiveness check.",
+                "responsible_id": demo_user.id,
+                "target_date": today + relativedelta(days=30),
+            }
+        )
+        gap_line.with_user(demo_user).write(
+            {
+                "status": "gap",
+                "gap_description": "A formal cross-functional transition governance review has not yet been recorded.",
+                "action_plan": "Conduct and approve a transition governance review with owners, decisions, and retained evidence.",
+                "responsible_id": demo_user.id,
+                "target_date": today + relativedelta(days=21),
+            }
+        )
+        transition_assessment.with_user(demo_user).write(
+            {
+                "conclusion": "Fictional guided assessment: preserve the 2015 baseline and execute the two controlled transition actions."
+            }
+        )
+        transition_assessment.with_user(demo_user).action_complete()
+    if transition_assessment.state != "completed":
+        raise RuntimeError("Required guided ISO 9001 gap assessment is not completed")
+
+    transition_assessment.with_user(demo_user).action_generate_transition_plan()
+    transition_actions = transition_assessment.transition_action_ids
+    if len(transition_actions) != 2:
+        raise RuntimeError("Required guided ISO 9001 transition action set is incomplete")
+    unlinked_actions = transition_actions.filtered(lambda action: not action.implementation_project_id)
+    if unlinked_actions:
+        unlinked_actions.with_user(demo_user).write({"implementation_project_id": project.id})
+    draft_action = transition_actions.filtered(lambda action: action.state == "draft")[:1]
+    if draft_action:
+        draft_action.with_user(demo_user).action_start()
+
 controls = env["pm.qms.control"].search([("company_id", "=", company.id)], limit=6) if model_exists("pm.qms.control") else env["ir.model"].browse()
 control_instances = []
 for index, proc in enumerate(processes[:6], start=1):
@@ -1459,7 +1549,7 @@ if model_exists("pm.qms.action.center.line"):
 env.cr.commit()
 
 summary_models = [
-    "pm.qms.organization", "pm.qms.site", "pm.qms.process", "pm.qms.document", "pm.qms.evidence", "pm.qms.risk", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.audit", "pm.qms.audit.finding", "pm.qms.objective", "pm.qms.kpi.measurement", "pm.qms.person", "pm.qms.training.record", "pm.qms.qualification.record", "pm.qms.equipment", "pm.qms.customer.complaint", "pm.qms.quality.alert", "pm.qms.eight.d", "pm.qms.supplier.issue", "pm.qms.scar", "pm.qms.cost.event", "pm.qms.cost.line", "pm.qms.management.review",
+    "pm.qms.iso9001.gap.assessment", "pm.qms.iso9001.transition.action", "pm.qms.organization", "pm.qms.site", "pm.qms.process", "pm.qms.document", "pm.qms.evidence", "pm.qms.risk", "pm.qms.nonconformity", "pm.qms.capa", "pm.qms.audit", "pm.qms.audit.finding", "pm.qms.objective", "pm.qms.kpi.measurement", "pm.qms.person", "pm.qms.training.record", "pm.qms.qualification.record", "pm.qms.equipment", "pm.qms.customer.complaint", "pm.qms.quality.alert", "pm.qms.eight.d", "pm.qms.supplier.issue", "pm.qms.scar", "pm.qms.cost.event", "pm.qms.cost.line", "pm.qms.management.review",
 ]
 print("DEMO_SEED_SUMMARY")
 print(f"database={env.cr.dbname}")
