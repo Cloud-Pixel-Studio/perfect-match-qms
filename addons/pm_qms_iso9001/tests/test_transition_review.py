@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from odoo import Command, fields
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -14,6 +14,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         super().setUp()
         post_init_hook(self.env)
         manager_group = self.env.ref("pm_qms_core.group_pm_qms_manager")
+        self.manager_group = manager_group
         self.reviewer = self.env["res.users"].create(
             {
                 "name": "Independent Transition Reviewer",
@@ -95,7 +96,16 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 }
             )
             action.action_submit_verification()
-            action.action_complete()
+            action.with_user(self.reviewer).action_complete()
+
+    def _review_values(self, decision="continue_actions"):
+        return {
+            "reviewer_id": self.reviewer.id,
+            "decision": decision,
+            "review_basis": "The controlled gap assessment and transition actions were reviewed.",
+            "residual_risk_summary": "Open actions remain controlled under assigned owners.",
+            "decision_notes": "Continue controlled execution before internal review.",
+        }
 
     def test_review_preparation_is_controlled_and_idempotent(self):
         assessment = self._assessment_with_actions()
@@ -136,21 +146,14 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         with self.assertRaises(UserError):
             review.action_submit()
 
-        review.write(
-            {
-                "reviewer_id": self.reviewer.id,
-                "decision": "continue_actions",
-                "review_basis": "The controlled gap assessment and transition actions were reviewed.",
-                "residual_risk_summary": "Two actions remain open under assigned owners.",
-                "decision_notes": "Continue controlled execution before internal review.",
-            }
-        )
+        review.write(self._review_values())
         review.action_submit()
 
         self.assertEqual(review.state, "submitted")
         self.assertEqual(review.total_action_count_snapshot, 2)
         self.assertEqual(review.completed_action_count_snapshot, 0)
         self.assertEqual(review.open_action_count_snapshot, 2)
+        self.assertTrue(review.action_state_snapshot)
         review.with_user(self.reviewer).action_approve()
         self.assertEqual(review.state, "approved")
         self.assertEqual(review.approved_by_id, self.reviewer)
@@ -162,15 +165,15 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
             assessment
         )
-        review.write(
+        values = self._review_values("internal_review")
+        values.update(
             {
-                "reviewer_id": self.reviewer.id,
-                "decision": "internal_review",
                 "review_basis": "Transition evidence was evaluated.",
                 "residual_risk_summary": "No uncontrolled residual risks are accepted.",
                 "decision_notes": "Proceed only after every action is independently verified.",
             }
         )
+        review.write(values)
         review.action_submit()
         with self.assertRaises(UserError):
             review.with_user(self.reviewer).action_approve()
@@ -191,17 +194,59 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
             assessment
         )
-        review.write(
-            {
-                "reviewer_id": self.reviewer.id,
-                "decision": "continue_actions",
-                "review_basis": "Submitted action baseline.",
-                "residual_risk_summary": "Open actions remain controlled.",
-                "decision_notes": "Continue action execution.",
-            }
-        )
+        review.write(self._review_values())
         review.action_submit()
         assessment.transition_action_ids[:1].action_start()
 
-        with self.assertRaisesRegex(UserError, "status changed after submission"):
+        with self.assertRaisesRegex(
+            UserError, "status or relationships changed after submission"
+        ):
+            review.with_user(self.reviewer).action_approve()
+
+    def test_reviewer_must_have_access_to_review_company(self):
+        assessment = self._assessment_with_actions()
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        foreign_company = self.env["res.company"].create(
+            {"name": "Foreign Review Company"}
+        )
+        foreign_reviewer = self.env["res.users"].create(
+            {
+                "name": "Foreign Transition Reviewer",
+                "login": "iso.foreign.reviewer@example.invalid",
+                "company_id": foreign_company.id,
+                "company_ids": [Command.set(foreign_company.ids)],
+                "groups_id": [Command.set(self.manager_group.ids)],
+            }
+        )
+
+        with self.assertRaises(ValidationError):
+            review.write({"reviewer_id": foreign_reviewer.id})
+
+    def test_action_project_drift_after_submission_invalidates_review(self):
+        assessment = self._assessment_with_actions()
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        review.write(self._review_values())
+        review.action_submit()
+        alternate_project = self.env["pm.qms.implementation.project"].create(
+            {
+                "name": "Alternate ISO 9001 transition project",
+                "company_id": self.env.company.id,
+                "organization_id": self.organization.id,
+                "project_manager_id": self.env.user.id,
+                "date_start": fields.Date.today(),
+                "target_date": fields.Date.today() + timedelta(days=120),
+                "implementation_type": "migration",
+            }
+        )
+        assessment.transition_action_ids[:1].write(
+            {"implementation_project_id": alternate_project.id}
+        )
+
+        with self.assertRaisesRegex(
+            UserError, "status or relationships changed after submission"
+        ):
             review.with_user(self.reviewer).action_approve()
