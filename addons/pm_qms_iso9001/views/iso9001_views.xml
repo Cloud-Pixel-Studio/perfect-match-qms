@@ -156,6 +156,7 @@
                     <button name="action_complete" type="object" string="Complete" class="btn-primary" invisible="state != 'in_progress'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'in_progress')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_generate_transition_plan" type="object" string="Generate Transition Plan" class="btn-primary" invisible="state != 'completed' or (partial_area_count == 0 and gap_area_count == 0)" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_prepare_readiness_review" type="object" string="Prepare Readiness Review" class="btn-primary" invisible="state != 'completed' or transition_action_count == 0" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,completed,cancelled"/>
                 </header>
                 <sheet>
@@ -181,6 +182,7 @@
                         <field name="not_applicable_area_count"/>
                         <field name="readiness_percent"/>
                         <field name="transition_action_count"/>
+                        <field name="readiness_review_id" readonly="1"/>
                     </group>
                     <notebook>
                         <page string="Assessment Areas">
@@ -306,6 +308,86 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <record id="view_pm_qms_iso9001_transition_review_list" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.transition.review.list</field>
+        <field name="model">pm.qms.iso9001.transition.review</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="assessment_id"/>
+                <field name="implementation_project_id"/>
+                <field name="reviewer_id"/>
+                <field name="decision"/>
+                <field name="open_action_count_snapshot"/>
+                <field name="state"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_iso9001_transition_review_form" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.transition.review.form</field>
+        <field name="model">pm.qms.iso9001.transition.review</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state not in ('draft', 'returned')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_approve" type="object" string="Approve Decision" class="btn-primary" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_return" type="object" string="Return" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,returned,approved"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name" readonly="state == 'approved'"/>
+                            <field name="assessment_id"/>
+                            <field name="implementation_project_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="review_date" readonly="state in ('submitted', 'approved')"/>
+                            <field name="reviewer_id" readonly="state in ('submitted', 'approved')"/>
+                            <field name="decision" readonly="state in ('submitted', 'approved')"/>
+                            <field name="source_edition_snapshot"/>
+                            <field name="target_edition_snapshot"/>
+                        </group>
+                    </group>
+                    <group string="Submitted Action Snapshot" invisible="state == 'draft'">
+                        <field name="total_action_count_snapshot"/>
+                        <field name="completed_action_count_snapshot"/>
+                        <field name="open_action_count_snapshot"/>
+                    </group>
+                    <notebook>
+                        <page string="Review">
+                            <field name="review_basis" readonly="state in ('submitted', 'approved')"/>
+                            <field name="residual_risk_summary" readonly="state in ('submitted', 'approved')"/>
+                            <field name="decision_notes" readonly="state in ('submitted', 'approved')"/>
+                            <field name="return_reason" readonly="state != 'submitted'"/>
+                        </page>
+                        <page string="Approval History">
+                            <group>
+                                <field name="submitted_by_id"/>
+                                <field name="submitted_date"/>
+                                <field name="approved_by_id"/>
+                                <field name="approved_date"/>
+                                <field name="returned_by_id"/>
+                                <field name="returned_date"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_iso9001_transition_reviews" model="ir.actions.act_window">
+        <field name="name">Transition Readiness Reviews</field>
+        <field name="res_model">pm.qms.iso9001.transition.review</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
     <record id="action_pm_qms_iso9001_overview" model="ir.actions.act_window">
         <field name="name">ISO 9001 Profiles</field>
         <field name="res_model">pm.qms.mapping.profile</field>
@@ -327,4 +409,5 @@
     <menuitem id="menu_pm_qms_iso9001_overview" name="Profiles" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_overview" sequence="10" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
     <menuitem id="menu_pm_qms_iso9001_transition_scenarios" name="Implementation and Transition Scenarios" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_transition_scenarios" sequence="20" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
     <menuitem id="menu_pm_qms_iso9001_transition_actions" name="Transition Actions" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_transition_actions" sequence="30" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
+    <menuitem id="menu_pm_qms_iso9001_transition_reviews" name="Transition Readiness Reviews" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_transition_reviews" sequence="40" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
 </odoo>
