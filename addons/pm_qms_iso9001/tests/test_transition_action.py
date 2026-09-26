@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from odoo import fields
+from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -26,6 +26,16 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 ("company_id", "=", self.env.company.id),
             ],
             limit=1,
+        )
+        manager_group = self.env.ref("pm_qms_core.group_pm_qms_manager")
+        self.verifier = self.env["res.users"].create(
+            {
+                "name": "Independent Action Verifier",
+                "login": "iso.action.verifier@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "groups_id": [Command.set(manager_group.ids)],
+            }
         )
 
     def _completed_assessment(self):
@@ -149,9 +159,12 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
         self.assertEqual(action.state, "verification")
         self.assertEqual(action.submitted_by_id, self.env.user)
 
-        action.action_complete()
+        with self.assertRaises(AccessError):
+            action.action_complete()
+        action.with_user(self.verifier).action_complete()
         self.assertEqual(action.state, "completed")
-        self.assertEqual(action.verified_by_id, self.env.user)
+        self.assertEqual(action.verified_by_id, self.verifier)
+        self.assertNotEqual(action.submitted_by_id, action.verified_by_id)
         with self.assertRaises(AccessError):
             action.write({"progress_notes": "Historical rewrite"})
 

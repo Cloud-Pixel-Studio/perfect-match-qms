@@ -251,6 +251,10 @@ class PmQmsIso9001TransitionAction(models.Model):
                 raise UserError(
                     "Only transition actions awaiting verification can be completed."
                 )
+            if action.submitted_by_id == self.env.user:
+                raise AccessError(
+                    "The transition action submitter cannot verify their own action."
+                )
             action._write_workflow(
                 {
                     "state": "completed",

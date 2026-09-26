@@ -1,5 +1,12 @@
 # Changelog
 
+- Added controlled ISO 9001:2026 transition readiness reviews with
+  independent submitter/reviewer separation, immutable action-count snapshots,
+  company/project alignment, drift detection, and decision gates.
+- Proceeding to internal review now requires every controlled transition action
+  to be completed and independently verified; this does not claim
+  certification or execute customer-data migration.
+
 ## Unreleased
 
 - Added a versioned ISO 9001:2026 profile beside the preserved 2015 + Amendment

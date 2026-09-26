@@ -5,3 +5,4 @@ from . import test_amendment1
 from . import test_transition_scenarios
 from . import test_gap_assessment
 from . import test_transition_action
+from . import test_transition_review
