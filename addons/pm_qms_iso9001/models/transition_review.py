@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+import json\n\nfrom odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 
@@ -103,7 +103,7 @@ class PmQmsIso9001TransitionReview(models.Model):
     target_edition_snapshot = fields.Char(required=True, readonly=True)
     total_action_count_snapshot = fields.Integer(readonly=True)
     completed_action_count_snapshot = fields.Integer(readonly=True)
-    open_action_count_snapshot = fields.Integer(readonly=True)
+    open_action_count_snapshot = fields.Integer(readonly=True)\n    action_state_snapshot = fields.Text(readonly=True)
     submitted_by_id = fields.Many2one("res.users", readonly=True)
     submitted_date = fields.Datetime(readonly=True)
     approved_by_id = fields.Many2one("res.users", readonly=True)
@@ -187,6 +187,10 @@ class PmQmsIso9001TransitionReview(models.Model):
                 raise ValidationError(
                     "Readiness review project must match every transition action."
                 )
+            if review.company_id not in review.reviewer_id.company_ids:
+                raise ValidationError(
+                    "The assigned reviewer must have access to the review company."
+                )
             if not review.reviewer_id.has_group(
                 "pm_qms_core.group_pm_qms_manager"
             ):
@@ -197,6 +201,24 @@ class PmQmsIso9001TransitionReview(models.Model):
         actions = self.assessment_id.transition_action_ids
         completed = actions.filtered(lambda action: action.state == "completed")
         return len(actions), len(completed), len(actions - completed)
+
+    def _action_snapshot(self):
+        self.ensure_one()
+        actions = self.assessment_id.transition_action_ids.sorted("id")
+        return json.dumps(
+            [
+                {
+                    "id": action.id,
+                    "state": action.state,
+                    "project_id": action.implementation_project_id.id,
+                    "submitted_by_id": action.submitted_by_id.id,
+                    "verified_by_id": action.verified_by_id.id,
+                }
+                for action in actions
+            ],
+            sort_keys=True,
+            separators=(",", ":"),
+        )
 
     def action_submit(self):
         self._check_manager_permission()
@@ -213,7 +235,7 @@ class PmQmsIso9001TransitionReview(models.Model):
                     "state": "submitted",
                     "total_action_count_snapshot": total,
                     "completed_action_count_snapshot": completed,
-                    "open_action_count_snapshot": open_count,
+                    "open_action_count_snapshot": open_count,\n                    "action_state_snapshot": review._action_snapshot(),
                     "submitted_by_id": self.env.user.id,
                     "submitted_date": fields.Datetime.now(),
                     "approved_by_id": False,
@@ -239,9 +261,25 @@ class PmQmsIso9001TransitionReview(models.Model):
                 total != review.total_action_count_snapshot
                 or completed != review.completed_action_count_snapshot
                 or open_count != review.open_action_count_snapshot
+                or review._action_snapshot() != review.action_state_snapshot
             ):
                 raise UserError(
-                    "Transition action status changed after submission; return and resubmit the review."
+                    "Transition action status or relationships changed after submission; return and resubmit the review."
+                )
+            actions = review.assessment_id.transition_action_ids
+            if actions.mapped("implementation_project_id") != review.implementation_project_id:
+                raise UserError(
+                    "Transition action project alignment changed after submission; return and resubmit the review."
+                )
+            completed_actions = actions.filtered(lambda action: action.state == "completed")
+            if any(
+                not action.submitted_by_id
+                or not action.verified_by_id
+                or action.submitted_by_id == action.verified_by_id
+                for action in completed_actions
+            ):
+                raise UserError(
+                    "Every completed transition action requires an independent verifier."
                 )
             if review.decision == "internal_review" and open_count:
                 raise UserError(
@@ -291,7 +329,7 @@ class PmQmsIso9001TransitionReview(models.Model):
             "target_edition_snapshot",
             "total_action_count_snapshot",
             "completed_action_count_snapshot",
-            "open_action_count_snapshot",
+            "open_action_count_snapshot",\n            "action_state_snapshot",
             "submitted_by_id",
             "submitted_date",
             "approved_by_id",
