@@ -1,5 +1,9 @@
 import hashlib
 import json
+import re
+
+
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -78,6 +82,9 @@ class PmQmsIso9001MigrationExecution(models.Model):
     execution_log_reference = fields.Char(
         help="Non-secret reference to the immutable external execution log."
     )
+    execution_log_sha256 = fields.Char(
+        help="SHA-256 of the immutable external execution log."
+    )
     post_migration_checks = fields.Text()
     rollback_decision = fields.Selection(
         [
@@ -117,6 +124,8 @@ class PmQmsIso9001MigrationExecution(models.Model):
     )
     control_snapshot = fields.Text(readonly=True)
     control_sha256 = fields.Char(readonly=True)
+    report_snapshot = fields.Text(readonly=True)
+    report_sha256 = fields.Char(readonly=True)
     preflight_by_id = fields.Many2one("res.users", readonly=True)
     preflight_date = fields.Datetime(readonly=True)
     authorized_by_id = fields.Many2one("res.users", readonly=True)
@@ -196,6 +205,15 @@ class PmQmsIso9001MigrationExecution(models.Model):
                         "Execution participants must be QMS Managers or Administrators."
                     )
 
+    @api.constrains("execution_log_sha256")
+    def _check_execution_log_digest(self):
+        for record in self:
+            digest = (record.execution_log_sha256 or "").lower()
+            if digest and not SHA256_RE.fullmatch(digest):
+                raise ValidationError(
+                    "Execution log SHA-256 must contain exactly 64 lowercase hexadecimal characters."
+                )
+
     @api.constrains(
         "created_count",
         "reused_count",
@@ -237,6 +255,28 @@ class PmQmsIso9001MigrationExecution(models.Model):
         self.ensure_one()
         return json.dumps(
             self._control_values(), sort_keys=True, separators=(",", ":")
+        )
+
+    def _report_values(self):
+        self.ensure_one()
+        return {
+            "execution_log_reference": self.execution_log_reference,
+            "execution_log_sha256": self.execution_log_sha256,
+            "post_migration_checks": self.post_migration_checks,
+            "rollback_decision": self.rollback_decision,
+            "rollback_evidence": self.rollback_evidence or "",
+            "outcome": self.outcome,
+            "created_count": self.created_count,
+            "reused_count": self.reused_count,
+            "skipped_count": self.skipped_count,
+            "rejected_count": self.rejected_count,
+            "manual_review_count": self.manual_review_count,
+        }
+
+    def _render_report_snapshot(self):
+        self.ensure_one()
+        return json.dumps(
+            self._report_values(), sort_keys=True, separators=(",", ":")
         )
 
     def _assert_package_integrity(self):
@@ -317,6 +357,10 @@ class PmQmsIso9001MigrationExecution(models.Model):
             if record.operator_id != self.env.user:
                 raise AccessError("Only the assigned operator can record the start.")
             record._assert_package_integrity()
+            if record._render_report_snapshot() != record.report_snapshot:
+                raise UserError("Execution report changed after outcome recording.")
+            if hashlib.sha256(record.report_snapshot.encode()).hexdigest() != record.report_sha256:
+                raise UserError("Execution report integrity check failed.")
             record._write_workflow(
                 {
                     "state": "in_progress",
@@ -337,6 +381,7 @@ class PmQmsIso9001MigrationExecution(models.Model):
                 raise UserError("Select the controlled execution outcome.")
             required = {
                 "execution_log_reference": record.execution_log_reference,
+                "execution_log_sha256": record.execution_log_sha256,
                 "post_migration_checks": record.post_migration_checks,
                 "rollback_decision": record.rollback_decision,
             }
@@ -350,9 +395,12 @@ class PmQmsIso9001MigrationExecution(models.Model):
                 raise UserError("A rolled-back outcome requires an executed rollback decision.")
             if record.rollback_decision == "executed" and not record.rollback_evidence:
                 raise UserError("Document rollback evidence when rollback was executed.")
+            report = record._render_report_snapshot()
             record._write_workflow(
                 {
                     "state": "recorded",
+                    "report_snapshot": report,
+                    "report_sha256": hashlib.sha256(report.encode()).hexdigest(),
                     "finished_by_id": self.env.user.id,
                     "finished_date": fields.Datetime.now(),
                 }
@@ -366,6 +414,10 @@ class PmQmsIso9001MigrationExecution(models.Model):
                 raise UserError("Record the outcome before closeout submission.")
             if record.operator_id != self.env.user:
                 raise AccessError("Only the assigned operator can submit closeout.")
+            if record._render_report_snapshot() != record.report_snapshot:
+                raise UserError("Execution report changed after outcome recording.")
+            if hashlib.sha256(record.report_snapshot.encode()).hexdigest() != record.report_sha256:
+                raise UserError("Execution report integrity check failed.")
             record._write_workflow(
                 {
                     "state": "submitted",
@@ -384,7 +436,17 @@ class PmQmsIso9001MigrationExecution(models.Model):
                 raise AccessError("Only the assigned reviewer can return closeout.")
             if not record.return_reason:
                 raise UserError("Document a return reason.")
-            record._write_workflow({"state": "returned"})
+            record._write_workflow(
+                {
+                    "state": "in_progress",
+                    "report_snapshot": False,
+                    "report_sha256": False,
+                    "finished_by_id": False,
+                    "finished_date": False,
+                    "submitted_by_id": False,
+                    "submitted_date": False,
+                }
+            )
         return True
 
     def action_close(self):
@@ -413,7 +475,7 @@ class PmQmsIso9001MigrationExecution(models.Model):
             raise AccessError("Closed migration execution records are immutable.")
         workflow_fields = {
             "state", "code", "package_id", "package_manifest_sha256",
-            "control_snapshot", "control_sha256", "preflight_by_id",
+            "control_snapshot", "control_sha256", "report_snapshot", "report_sha256", "preflight_by_id",
             "preflight_date", "authorized_by_id", "authorized_date",
             "started_by_id", "started_date", "finished_by_id", "finished_date",
             "submitted_by_id", "submitted_date", "closed_by_id", "closed_date",
@@ -421,9 +483,21 @@ class PmQmsIso9001MigrationExecution(models.Model):
         if workflow_fields.intersection(vals):
             raise AccessError("Workflow and snapshot fields cannot be changed directly.")
         self._check_manager_permission()
-        control_fields = set(self._control_values().keys()) - {
-            "schema", "execution_code", "package_id", "package_manifest_sha256", "company_id"
+        control_fields = {
+            "operator_id", "reviewer_id", "environment_reference",
+            "fresh_preflight_evidence", "backup_access_evidence",
+            "restoration_test_evidence", "dry_run_evidence", "authorization_notes",
         }
+        report_fields = {
+            "execution_log_reference", "execution_log_sha256",
+            "post_migration_checks", "rollback_decision", "rollback_evidence",
+            "outcome", "created_count", "reused_count", "skipped_count",
+            "rejected_count", "manual_review_count",
+        }
+        if report_fields.intersection(vals) and any(
+            record.state != "in_progress" for record in self
+        ):
+            raise AccessError("Execution report fields are editable only while in progress.")
         if control_fields.intersection(vals) and any(
             record.state not in ("draft", "returned", "preflight_passed")
             for record in self
