@@ -1,5 +1,7 @@
 # Changelog
 
+- Added line-level ISO 9001 migration reconciliation with opaque source/target references, preserved-history attestation, per-line SHA-256, derived outcome counts, company isolation, and inclusion in the frozen execution report. It records external work only and does not read or migrate customer records.
+
 - Added controlled ISO 9001:2026 migration execution records with fresh
   preflight evidence, independent authorization, hashed execution-report
   snapshots, reconciliation counts, rollback evidence, and independent
