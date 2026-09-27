@@ -7,6 +7,15 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+PLACEHOLDER_INPUTS = {
+    "migration_scope": "Document the approved companies, sites, processes, records, and exclusions.",
+    "source_inventory": "Reference the controlled source inventory; do not embed credentials or raw backups.",
+    "compatibility_notes": "Document approved compatibility findings and unresolved exceptions.",
+    "dry_run_plan": "Document the isolated rehearsal, validation steps, and acceptance evidence.",
+    "backup_reference": "PENDING-CONTROLLED-BACKUP",
+    "rollback_plan": "Document restoration steps, owners, decision points, and maximum recovery window.",
+    "rollback_acceptance_criteria": "Document integrity, availability, relationship, and historical-record checks.",
+}
 
 
 class PmQmsIso9001TransitionReview(models.Model):
@@ -162,14 +171,16 @@ class PmQmsIso9001MigrationPackage(models.Model):
                 "readiness_review_id": review.id,
                 "source_edition_snapshot": review.source_edition_snapshot,
                 "target_edition_snapshot": review.target_edition_snapshot,
-                "migration_scope": "Document the approved companies, sites, processes, records, and exclusions.",
-                "source_inventory": "Reference the controlled source inventory; do not embed credentials or raw backups.",
-                "compatibility_notes": "Document approved compatibility findings and unresolved exceptions.",
-                "dry_run_plan": "Document the isolated rehearsal, validation steps, and acceptance evidence.",
-                "backup_reference": "PENDING-CONTROLLED-BACKUP",
+                "migration_scope": PLACEHOLDER_INPUTS["migration_scope"],
+                "source_inventory": PLACEHOLDER_INPUTS["source_inventory"],
+                "compatibility_notes": PLACEHOLDER_INPUTS["compatibility_notes"],
+                "dry_run_plan": PLACEHOLDER_INPUTS["dry_run_plan"],
+                "backup_reference": PLACEHOLDER_INPUTS["backup_reference"],
                 "backup_sha256": "0" * 64,
-                "rollback_plan": "Document restoration steps, owners, decision points, and maximum recovery window.",
-                "rollback_acceptance_criteria": "Document integrity, availability, relationship, and historical-record checks.",
+                "rollback_plan": PLACEHOLDER_INPUTS["rollback_plan"],
+                "rollback_acceptance_criteria": PLACEHOLDER_INPUTS[
+                    "rollback_acceptance_criteria"
+                ],
                 "reviewer_id": self.env.user.id,
             }
         )
@@ -274,10 +285,22 @@ class PmQmsIso9001MigrationPackage(models.Model):
                 raise UserError("Every transition action requires independent verification.")
             if actions.mapped("implementation_project_id") != package.implementation_project_id:
                 raise UserError("Transition actions no longer match the implementation project.")
+            incomplete_fields = [
+                field_name
+                for field_name, placeholder in PLACEHOLDER_INPUTS.items()
+                if package[field_name] == placeholder
+            ]
+            if incomplete_fields:
+                raise UserError(
+                    "Replace every generated planning placeholder before preflight: "
+                    + ", ".join(sorted(incomplete_fields))
+                )
+            if not package.execution_window:
+                raise UserError("Document the planned execution window before preflight.")
             if not package.backup_verified:
                 raise UserError("Verify the controlled backup before passing preflight.")
-            if package.backup_reference == "PENDING-CONTROLLED-BACKUP":
-                raise UserError("Replace the placeholder with the controlled backup reference.")
+            if package.backup_sha256 == "0" * 64:
+                raise UserError("Replace the placeholder backup SHA-256 before preflight.")
             manifest = package._render_manifest()
             package._write_workflow(
                 {
@@ -357,6 +380,10 @@ class PmQmsIso9001MigrationPackage(models.Model):
         for package in self:
             if package.state == "approved":
                 raise UserError("Approved migration packages are immutable and cannot be voided.")
+            if package.state == "submitted" and package.reviewer_id != self.env.user:
+                raise AccessError(
+                    "Only the assigned independent reviewer can void a submitted package."
+                )
             if not package.void_reason:
                 raise UserError("Document a void reason before voiding the package.")
             package._write_workflow({"state": "voided"})
@@ -385,12 +412,14 @@ class PmQmsIso9001MigrationPackage(models.Model):
         if workflow_fields.intersection(vals):
             raise AccessError("Workflow and snapshot fields cannot be changed directly.")
         if any(package.state == "submitted" for package in self):
-            allowed = {"return_reason"}
+            allowed = {"return_reason", "void_reason"}
             if set(vals) - allowed:
                 raise AccessError("Submitted migration packages are locked.")
         self._check_manager_permission()
         result = super().write(vals)
-        for package in self.filtered(lambda item: item.state == "preflight_passed"):
+        for package in self.filtered(
+            lambda item: item.state in ("preflight_passed", "returned")
+        ):
             package._write_workflow(
                 {
                     "state": "draft",
