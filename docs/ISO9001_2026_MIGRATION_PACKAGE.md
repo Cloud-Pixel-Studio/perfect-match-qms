@@ -66,9 +66,11 @@ No customer environment, Demo2 database, license, historical record, accepted
 evidence, completed review, or implementation result is changed by creating or
 approving this package.
 
-## Future execution gate
+## Controlled execution record
 
-Any later execution increment must require:
+The separately reviewed execution-record increment implements the following
+governance requirements without adding a migration engine or environment
+connection:
 
 - explicit operator authorization;
 - a fresh environment preflight;
@@ -79,3 +81,6 @@ Any later execution increment must require:
 - post-migration integrity checks;
 - rollback decision recording;
 - independent closeout approval.
+
+See `ISO9001_2026_MIGRATION_EXECUTION.md`. Actual migration commands remain an
+external, separately authorized runbook activity.

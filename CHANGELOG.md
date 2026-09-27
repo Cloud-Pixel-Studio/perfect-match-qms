@@ -1,5 +1,12 @@
 # Changelog
 
+- Added controlled ISO 9001:2026 migration execution records with fresh
+  preflight evidence, independent authorization, hashed execution-report
+  snapshots, reconciliation counts, rollback evidence, and independent
+  closeout. The workflow records externally operated activity and does not
+  execute migrations or connect to customer environments.
+
+
 - Added controlled, versioned ISO 9001:2026 migration package manifests with
   readiness gates, verified-backup references, deterministic SHA-256 snapshots,
   rollback planning, independent approval, company isolation, and immutability.
