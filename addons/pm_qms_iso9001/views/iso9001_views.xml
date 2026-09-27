@@ -156,7 +156,7 @@
                     <button name="action_complete" type="object" string="Complete" class="btn-primary" invisible="state != 'in_progress'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_cancel" type="object" string="Cancel" invisible="state not in ('draft', 'in_progress')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_generate_transition_plan" type="object" string="Generate Transition Plan" class="btn-primary" invisible="state != 'completed' or (partial_area_count == 0 and gap_area_count == 0)" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
-                    <button name="action_prepare_readiness_review" type="object" string="Prepare Readiness Review" class="btn-primary" invisible="state != 'completed' or transition_action_count == 0" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_prepare_readiness_review" type="object" string="Prepare Readiness Review" class="btn-primary" invisible="state != 'completed' or (transition_action_count == 0 and (partial_area_count > 0 or gap_area_count > 0 or not implementation_project_id))" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,completed,cancelled"/>
                 </header>
                 <sheet>
@@ -169,6 +169,7 @@
                         </group>
                         <group>
                             <field name="source_profile_id" readonly="state != 'draft'"/>
+                            <field name="implementation_project_id" readonly="state != 'draft'"/>
                             <field name="target_profile_id" readonly="1"/>
                             <field name="assessment_date" readonly="state == 'completed'"/>
                             <field name="assessor_id" readonly="state == 'completed'"/>
