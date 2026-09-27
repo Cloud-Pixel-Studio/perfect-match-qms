@@ -429,6 +429,10 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.assertNotEqual(line.item_snapshot_sha256, original_digest)
 
         with self.assertRaises(AccessError):
+            execution.with_user(self.reviewer).write(
+                {"execution_log_reference": "REVIEWER-ATTEMPT"}
+            )
+        with self.assertRaises(AccessError):
             execution.reconciliation_line_ids.with_user(self.reviewer).create(
                 {
                     "source_system_reference": "LEGACY-QMS-2015",
