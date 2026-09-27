@@ -42,4 +42,10 @@
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="global" eval="True"/>
     </record>
+    <record id="rule_pm_qms_iso9001_migration_reconciliation_company" model="ir.rule">
+        <field name="name">ISO 9001 migration reconciliation: company isolation</field>
+        <field name="model_id" ref="model_pm_qms_iso9001_migration_reconciliation"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
 </odoo>
