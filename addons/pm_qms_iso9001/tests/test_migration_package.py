@@ -214,6 +214,64 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         with self.assertRaises(ValidationError):
             package.write({"reviewer_id": foreign_reviewer.id})
 
+    def test_preflight_rejects_placeholders_and_zero_digest(self):
+        review = self._approved_readiness_review()
+        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            review
+        )
+        package.write(
+            {
+                "reviewer_id": self.reviewer.id,
+                "backup_reference": "BACKUP-2026-001",
+                "backup_verified": True,
+                "execution_window": "Controlled maintenance window.",
+            }
+        )
+        with self.assertRaisesRegex(UserError, "planning placeholder"):
+            package.action_run_preflight()
+
+        package.write(
+            {
+                "migration_scope": "Approved scope.",
+                "source_inventory": "INV-2026-001.",
+                "compatibility_notes": "No unresolved exceptions.",
+                "dry_run_plan": "Isolated rehearsal required.",
+                "rollback_plan": "Restore and verify.",
+                "rollback_acceptance_criteria": "Baseline integrity restored.",
+            }
+        )
+        with self.assertRaisesRegex(UserError, "placeholder backup SHA-256"):
+            package.action_run_preflight()
+
+    def test_returned_edit_clears_snapshot_and_submitted_void_is_reviewer_only(self):
+        review = self._approved_readiness_review()
+        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            review
+        )
+        self._complete_package_inputs(package)
+        package.action_run_preflight()
+        package.action_submit()
+        package.with_user(self.reviewer).write(
+            {"return_reason": "Clarify compatibility evidence."}
+        )
+        package.with_user(self.reviewer).action_return()
+        self.assertTrue(package.manifest_snapshot)
+
+        package.write({"compatibility_notes": "Clarified compatibility evidence."})
+        self.assertEqual(package.state, "draft")
+        self.assertFalse(package.manifest_snapshot)
+        self.assertFalse(package.manifest_sha256)
+
+        package.action_run_preflight()
+        package.action_submit()
+        with self.assertRaises(AccessError):
+            package.write({"void_reason": "Unauthorized void attempt."})
+        package.with_user(self.reviewer).write(
+            {"void_reason": "Package superseded before execution approval."}
+        )
+        package.with_user(self.reviewer).action_void()
+        self.assertEqual(package.state, "voided")
+
     def test_manifest_has_no_execution_operation(self):
         review = self._approved_readiness_review()
         package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
