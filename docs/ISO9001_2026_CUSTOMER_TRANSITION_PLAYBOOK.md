@@ -2,7 +2,7 @@
 
 ## Purpose and boundaries
 
-This playbook routes a customer through the existing ISO 9001:2026 scenario, gap-assessment, transition-action, readiness-review, migration-package, execution-record, and record-reconciliation workflows.
+This playbook documents the eight registered ISO 9001 implementation/transition scenario types and routes only those paths supported by the current product workflows. A scenario being listed does not mean its complete end-to-end workflow is implemented. Explicit hold points below identify unsupported routes.
 
 It is planning and governance guidance. It does not install or upgrade PMQMS, connect to a customer system, import or alter customer records, perform a migration, or determine conformity or certification. A licensed copy of the applicable standard must be reviewed by an authorized human. Do not reproduce its publication text in PMQMS records, source code, tests, or this playbook.
 
@@ -20,16 +20,16 @@ Record the applicable scenario in the ISO 9001 transition-scenario workflow befo
 
 | Scenario type | Use when | Route and boundary |
 | --- | --- | --- |
-| New implementation | The customer has no established QMS to transition. | Use the active 2026 target profile as the implementation baseline. Do not invent source records or migration counts. Plan initial records and processes through the implementation project. |
+| New implementation | The customer has no established QMS to transition. | The assessment/action-planning stage can use the active 2026 target profile, without inventing source records or migration counts. The current readiness-review workflow requires a source-edition snapshot, so a source-less implementation cannot proceed through readiness/package approval yet. Stop after assessment/action planning; do not enter a fictional source edition. |
 | 2015 to 2026 transition | The existing QMS is based on ISO 9001:2015. | Preserve the 2015 profile, evidence, and completed history. Assess against the approved 2026 profile; reconcile each migrated, reused, skipped, rejected, or manually reviewed source record. |
 | Legacy or incomplete system migration | The source is an older, non-standard, incomplete, or unverified QMS. | Inventory what can be evidenced, classify unknown provenance as manual review, and do not infer an ISO edition or claim prior conformity. Preserve the source system and its records. |
-| Recertification | The work is a recertification cycle without an edition or scope transition. | Keep the existing edition and scope explicit. Route any edition transition or scope change through a separate linked assessment and approval. Certification-body requirements remain outside this product workflow. |
+| Recertification | The work is a recertification cycle without an edition or scope transition. | The currently seeded recertification scenario is fixed to source 2015 and target 2026; it represents that edition transition, not same-edition recertification. Do not select it for same-edition recertification. That route needs a separately approved scenario/workflow before PMQMS can govern it. Certification-body requirements remain outside this product workflow. |
 | Scope expansion | Products, services, processes, locations, or organizational boundaries are changing. | Freeze the current approved scope as the baseline, document additions and exclusions, assess their impact, and verify affected actions before release. |
 | Multi-site rollout | An approved QMS is being extended across sites. | Define the company-wide scope and site-specific applicability, owners, evidence, and rollout sequence. Preserve company/site boundaries and verify each site before declaring the project complete. |
 | Integrated management system | The customer coordinates ISO 9001 with other management systems. | This workflow covers ISO 9001 only. Track interfaces and dependencies in the project; do not imply that other standards or their requirements are implemented by this ISO 9001 add-on. |
 | Partial implementation | The customer intentionally limits the initial rollout. | Record included sites/processes and exclusions, justify non-applicability, and report readiness only for the controlled scope. Do not present a partial rollout as organization-wide completion. |
 
-If the source edition, ownership, scope, or records cannot be established, pause at intake and resolve the uncertainty before approving a migration package.
+If the source edition, ownership, scope, or records cannot be established, pause at intake and resolve the uncertainty before approving a migration package. A source-less initial implementation, same-edition recertification, or completed assessment with no partial/gap actions currently lacks a full readiness-review path; do not bypass these holds or fabricate records/actions.
 
 ## Roles
 
@@ -37,7 +37,7 @@ Assign named people in the customer’s authorized company context. A person may
 
 - **Executive sponsor / customer process owner:** approves scope, risk tolerance, funding, and the maintenance window.
 - **QMS transition lead:** coordinates the assessment, action plan, inventory, and status review.
-- **Process owners:** provide source-system facts, complete assigned actions, and confirm operational readiness.
+- **Process owners:** provide source-system facts, complete assigned work assigned by the QMS lead, and confirm operational readiness. They supply progress and evidence to an authorized QMS Manager for entry in the transition-action workflow; ordinary QMS users are read-only there.
 - **Migration operator:** performs the separately authorized external activity and records its evidence and reconciliation.
 - **Independent reviewer:** approves the readiness/package gates and independently verifies closeout. The operator cannot approve or close their own work.
 - **Technical lead:** owns environment compatibility, backup, restore rehearsal, access, and technical post-checks.
@@ -75,15 +75,15 @@ Do not copy standard text into assessment fields. Cite controlled evidence by no
 
 ### Gate 3 — Transition actions and follow-up
 
-Generate actions only from partial/gap findings. Confirm each action has an accountable owner, target date, priority, project link, and progress plan. Owners record progress; completion requires a summary and evidence; a different authorized verifier closes the action.
+Generate actions only from partial/gap findings. Confirm each action has an accountable owner, target date, priority, project link, and progress plan. Under current access controls, an authorized QMS Manager or Administrator records progress and submits completion based on information from the action owner. A different authorized verifier closes the action.
 
 Review due, overdue, blocked, and returned actions on a regular project cadence. Escalate overdue critical actions to the sponsor and transition lead. Do not close an action solely because a target date passed or a software update completed.
 
-**Accept when:** all actions required to proceed are independently verified, or an authorized readiness review explicitly chooses to continue controlled actions with documented residual risk. The latter is not authorization to execute a migration package.
+**Accept when:** all actions required to proceed are independently verified, or an authorized readiness review explicitly chooses to continue controlled actions with documented residual risk. The latter is not authorization to execute a migration package. If the completed assessment has no partial/gap findings, the current workflow cannot generate an action or prepare a readiness review; hold at the completed assessment until a supported no-action review path exists.
 
 ### Gate 4 — Independent readiness decision
 
-Prepare the readiness review from the completed assessment. Snapshot the action state and counts. The submitter and reviewer must be different authorized users.
+Prepare the readiness review from the completed assessment only when at least one transition action exists. The current model requires an action to prepare a review and cannot complete a source-less readiness review. Snapshot the action state and counts. The submitter and reviewer must be different authorized users.
 
 The reviewer records one controlled decision:
 
@@ -133,7 +133,7 @@ Explicitly attest that each historical source remains preserved. Do not mark a r
 
 Compare approved source and target inventories at the agreed level. Verify record counts by category, required relationships, critical identifiers, access/role behavior, document/evidence references, site/process scope, and application health. Record exceptions and evidence references; do not paste source content into the execution record.
 
-The operator records the outcome, immutable-log reference and SHA-256, post-migration checks, reconciliation, and rollback decision. If rollback is executed, attach its controlled evidence. The operator submits closeout; the independent reviewer either returns it with a reason or verifies the frozen report and closes it.
+The operator records the outcome, immutable-log reference and SHA-256, post-migration checks, reconciliation, and rollback decision. If rollback is executed, attach its controlled evidence. The operator submits closeout; the independent reviewer either returns it with a reason or verifies the frozen report and closes it. The application permits outcome/closeout with nonzero manual-review or rejected counts, so the independent reviewer must enforce the acceptance criteria above and must not close unresolved exceptions. The current model has no in-product exception-approval workflow.
 
 ## Acceptance and stop criteria
 
@@ -143,7 +143,7 @@ A transition may be reported as operationally accepted only when all of the foll
 - all required transition actions are independently verified;
 - the approved backup is recoverable and the rollback decision is documented;
 - every in-scope source inventory item has a reconciliation disposition;
-- no unresolved manual-review item or rejected critical record is hidden in aggregate counts;
+- no unresolved manual-review item remains and no critical record remains rejected; any approved exception must have a controlled external approval/evidence reference reviewed by the independent closeout reviewer; the current execution model does not enforce this acceptance condition automatically;
 - target counts and relationships meet the package’s acceptance criteria;
 - post-migration access, site/process boundaries, and required QMS workflows pass;
 - the execution report and its evidence references pass independent closeout.
