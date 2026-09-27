@@ -69,8 +69,8 @@ During **In Progress**, the assigned operator records one line per source
 record using opaque, non-secret source and target references. Each line captures
 the source and target editions, disposition (created, reused, skipped,
 rejected, or manual review), rationale, optional controlled-evidence reference,
-optional SHA-256 values, and an attestation that the historical source remains
-preserved. Created and reused entries require a target reference. Duplicate
+optional SHA-256 values, and an explicit, initially unchecked attestation that
+the historical source remains preserved. Created and reused entries require a target reference. Duplicate
 source identifiers within one execution are rejected.
 
 The five summary counts are derived from line dispositions and cannot be edited
