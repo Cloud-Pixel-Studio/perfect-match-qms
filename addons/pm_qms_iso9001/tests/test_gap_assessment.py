@@ -89,15 +89,40 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         self.assertEqual(assessment.gap_area_count, 1)
         self.assertLess(assessment.readiness_percent, 100.0)
 
-    def test_scenario_action_creates_and_starts_assessment(self):
+    def test_scenario_action_leaves_assessment_draft_for_project_selection(self):
+        organization = self.env["pm.qms.organization"].create(
+            {
+                "name": "Gap Assessment Project Organization",
+                "code": "GAP-PROJECT-ORG",
+                "company_id": self.env.company.id,
+            }
+        )
+        project = self.env["pm.qms.implementation.project"].create(
+            {
+                "name": "Gap Assessment Transition Project",
+                "company_id": self.env.company.id,
+                "organization_id": organization.id,
+                "project_manager_id": self.env.user.id,
+                "date_start": fields.Date.today(),
+                "target_date": fields.Date.today(),
+                "implementation_type": "migration",
+            }
+        )
         before = len(self.scenario.assessment_ids)
         action = self.scenario.action_create_gap_assessment()
         assessment = self.env["pm.qms.iso9001.gap.assessment"].browse(action["res_id"])
 
         self.assertEqual(len(self.scenario.assessment_ids), before + 1)
-        self.assertEqual(assessment.state, "in_progress")
+        self.assertEqual(assessment.state, "draft")
+        self.assertFalse(assessment.line_ids)
         self.assertEqual(assessment.source_profile_id, self.source_profile)
         self.assertEqual(action["res_model"], "pm.qms.iso9001.gap.assessment")
+
+        assessment.write({"implementation_project_id": project.id})
+        assessment.action_start()
+        self.assertEqual(assessment.state, "in_progress")
+        with self.assertRaises(AccessError):
+            assessment.write({"implementation_project_id": False})
 
     def test_cancelled_or_completed_assessments_cannot_be_restarted(self):
         assessment = self._assessment()
