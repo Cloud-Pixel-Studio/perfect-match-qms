@@ -415,6 +415,13 @@ class PmQmsIso9001MigrationPackage(models.Model):
             allowed = {"return_reason", "void_reason"}
             if set(vals) - allowed:
                 raise AccessError("Submitted migration packages are locked.")
+            if "void_reason" in vals and any(
+                package.reviewer_id != self.env.user
+                for package in self.filtered(lambda item: item.state == "submitted")
+            ):
+                raise AccessError(
+                    "Only the assigned independent reviewer can document a submitted-package void."
+                )
         self._check_manager_permission()
         result = super().write(vals)
         for package in self.filtered(
