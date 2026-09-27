@@ -32,6 +32,9 @@ class PmQmsIso9001MigrationExecution(models.Model):
         string="Record Reconciliation",
         copy=False,
     )
+    reconciliation_ledger_started = fields.Boolean(
+        default=False, readonly=True, copy=False
+    )
     created_count = fields.Integer(
         compute="_compute_reconciliation_counts", store=True, readonly=True
     )
@@ -51,6 +54,7 @@ class PmQmsIso9001MigrationExecution(models.Model):
     @api.depends(
         "reconciliation_line_ids.disposition",
         "report_snapshot",
+        "reconciliation_ledger_started",
         "state",
     )
     def _compute_reconciliation_counts(self):
@@ -80,6 +84,8 @@ class PmQmsIso9001MigrationExecution(models.Model):
                         disposition: legacy_report.get(f"{disposition}_count", 0)
                         for disposition, _label in DISPOSITIONS
                     }
+            elif execution.reconciliation_ledger_started:
+                counts = {disposition: 0 for disposition, _label in DISPOSITIONS}
             else:
                 counts = {
                     disposition: execution[f"{disposition}_count"]
@@ -109,7 +115,21 @@ class PmQmsIso9001MigrationExecution(models.Model):
             ]
         return values
 
+    def action_record_start(self):
+        result = super().action_record_start()
+        for execution in self:
+            execution._write_workflow({"reconciliation_ledger_started": True})
+        return result
+
+    def action_return(self):
+        result = super().action_return()
+        for execution in self:
+            execution._write_workflow({"reconciliation_ledger_started": True})
+        return result
+
     def write(self, vals):
+        if "reconciliation_ledger_started" in vals:
+            raise AccessError("Reconciliation lifecycle is system controlled.")
         report_fields = {
             "execution_log_reference",
             "execution_log_sha256",
@@ -309,7 +329,11 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
                 raise ValidationError(
                     "Historical source records must remain preserved."
                 )
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        for execution in records.mapped("execution_id"):
+            if not execution.reconciliation_ledger_started:
+                execution._write_workflow({"reconciliation_ledger_started": True})
+        return records
 
     def write(self, vals):
         if "item_snapshot_sha256" in vals or "company_id" in vals:
