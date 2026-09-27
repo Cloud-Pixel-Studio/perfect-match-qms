@@ -335,6 +335,7 @@
                     <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state not in ('draft', 'returned')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_approve" type="object" string="Approve Decision" class="btn-primary" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_return" type="object" string="Return" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_prepare_migration_package" type="object" string="Prepare Migration Package" class="btn-primary" invisible="state != 'approved' or decision != 'internal_review'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,submitted,returned,approved"/>
                 </header>
                 <sheet>
@@ -352,6 +353,7 @@
                             <field name="decision" readonly="state in ('submitted', 'approved')"/>
                             <field name="source_edition_snapshot"/>
                             <field name="target_edition_snapshot"/>
+                            <field name="migration_package_id" readonly="1"/>
                         </group>
                     </group>
                     <group string="Submitted Action Snapshot" invisible="state == 'draft'">
@@ -382,6 +384,101 @@
         </field>
     </record>
 
+    <record id="view_pm_qms_iso9001_migration_package_list" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.migration.package.list</field>
+        <field name="model">pm.qms.iso9001.migration.package</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="package_version"/>
+                <field name="readiness_review_id"/>
+                <field name="implementation_project_id"/>
+                <field name="reviewer_id"/>
+                <field name="manifest_sha256"/>
+                <field name="state"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_iso9001_migration_package_form" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.migration.package.form</field>
+        <field name="model">pm.qms.iso9001.migration.package</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <button name="action_run_preflight" type="object" string="Run Preflight" class="btn-primary" invisible="state not in ('draft', 'returned')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state != 'preflight_passed'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_approve" type="object" string="Approve Package" class="btn-primary" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_return" type="object" string="Return" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_void" type="object" string="Void" invisible="state in ('approved', 'voided')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,preflight_passed,submitted,returned,approved,voided"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="package_version" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="readiness_review_id"/>
+                            <field name="assessment_id"/>
+                            <field name="implementation_project_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="source_edition_snapshot"/>
+                            <field name="target_edition_snapshot"/>
+                            <field name="reviewer_id" domain="[('company_ids', 'in', company_id)]" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="execution_window" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="manifest_sha256"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Scope and Compatibility">
+                            <field name="migration_scope" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="source_inventory" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="compatibility_notes" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="dry_run_plan" readonly="state in ('submitted', 'approved', 'voided')"/>
+                        </page>
+                        <page string="Backup and Rollback">
+                            <group>
+                                <field name="backup_reference" readonly="state in ('submitted', 'approved', 'voided')"/>
+                                <field name="backup_sha256" readonly="state in ('submitted', 'approved', 'voided')"/>
+                                <field name="backup_verified" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            </group>
+                            <field name="rollback_plan" readonly="state in ('submitted', 'approved', 'voided')"/>
+                            <field name="rollback_acceptance_criteria" readonly="state in ('submitted', 'approved', 'voided')"/>
+                        </page>
+                        <page string="Approval History">
+                            <group>
+                                <field name="preflight_by_id"/>
+                                <field name="preflight_date"/>
+                                <field name="submitted_by_id"/>
+                                <field name="submitted_date"/>
+                                <field name="approved_by_id"/>
+                                <field name="approved_date"/>
+                                <field name="returned_by_id"/>
+                                <field name="returned_date"/>
+                            </group>
+                            <field name="return_reason" readonly="state != 'submitted'"/>
+                            <field name="void_reason" readonly="state in ('approved', 'voided')"/>
+                        </page>
+                        <page string="Immutable Manifest" invisible="not manifest_snapshot">
+                            <field name="manifest_snapshot" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pm_qms_iso9001_migration_packages" model="ir.actions.act_window">
+        <field name="name">Migration Packages</field>
+        <field name="res_model">pm.qms.iso9001.migration.package</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
     <record id="action_pm_qms_iso9001_transition_reviews" model="ir.actions.act_window">
         <field name="name">Transition Readiness Reviews</field>
         <field name="res_model">pm.qms.iso9001.transition.review</field>
@@ -410,4 +507,5 @@
     <menuitem id="menu_pm_qms_iso9001_transition_scenarios" name="Implementation and Transition Scenarios" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_transition_scenarios" sequence="20" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
     <menuitem id="menu_pm_qms_iso9001_transition_actions" name="Transition Actions" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_transition_actions" sequence="30" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
     <menuitem id="menu_pm_qms_iso9001_transition_reviews" name="Transition Readiness Reviews" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_transition_reviews" sequence="40" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
+    <menuitem id="menu_pm_qms_iso9001_migration_packages" name="Migration Packages" parent="menu_pm_qms_iso9001" action="action_pm_qms_iso9001_migration_packages" sequence="50" groups="pm_qms_core.group_pm_qms_user,pm_qms_core.group_qms_viewer,pm_qms_core.group_pm_qms_administrator"/>
 </odoo>
