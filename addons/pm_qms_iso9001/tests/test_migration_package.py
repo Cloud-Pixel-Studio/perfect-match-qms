@@ -431,6 +431,9 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.assertEqual(len(original_digest), 64)
         line.write({"rationale": "Updated operator reconciliation evidence."})
         self.assertNotEqual(line.item_snapshot_sha256, original_digest)
+        line.unlink()
+        self.assertTrue(execution.reconciliation_ledger_started)
+        self.assertEqual(execution.reused_count, 0)
 
         with self.assertRaises(AccessError):
             execution.with_user(self.reviewer).write(
