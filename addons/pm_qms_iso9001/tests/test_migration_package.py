@@ -346,6 +346,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         execution.write(
             {
                 "execution_log_reference": "LOG-IMMUTABLE-001",
+                "execution_log_sha256": "b" * 64,
                 "post_migration_checks": "Historical records and relationships verified.",
                 "rollback_decision": "not_required",
                 "outcome": "completed",
@@ -377,6 +378,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         execution.write(
             {
                 "execution_log_reference": "LOG-IMMUTABLE-ROLLBACK",
+                "execution_log_sha256": "c" * 64,
                 "post_migration_checks": "Failure detected before closeout.",
                 "rollback_decision": "executed",
                 "outcome": "rolled_back",
