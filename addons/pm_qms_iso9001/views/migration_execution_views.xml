@@ -83,12 +83,30 @@
                                 <field name="rollback_evidence" readonly="state != 'in_progress'"/>
                             </group>
                             <group string="Result Counts" col="5">
-                                <field name="created_count" readonly="state != 'in_progress'"/>
-                                <field name="reused_count" readonly="state != 'in_progress'"/>
-                                <field name="skipped_count" readonly="state != 'in_progress'"/>
-                                <field name="rejected_count" readonly="state != 'in_progress'"/>
-                                <field name="manual_review_count" readonly="state != 'in_progress'"/>
+                                <field name="created_count" readonly="1"/>
+                                <field name="reused_count" readonly="1"/>
+                                <field name="skipped_count" readonly="1"/>
+                                <field name="rejected_count" readonly="1"/>
+                                <field name="manual_review_count" readonly="1"/>
                             </group>
+                        </page>
+                        <page string="Record Reconciliation">
+                            <field name="reconciliation_line_ids" readonly="state != 'in_progress'">
+                                <list editable="bottom" create="1" delete="1">
+                                    <field name="source_system_reference"/>
+                                    <field name="source_record_reference"/>
+                                    <field name="source_edition"/>
+                                    <field name="target_edition"/>
+                                    <field name="target_record_reference"/>
+                                    <field name="disposition"/>
+                                    <field name="historical_source_preserved"/>
+                                    <field name="rationale"/>
+                                    <field name="evidence_reference"/>
+                                    <field name="source_record_sha256"/>
+                                    <field name="target_record_sha256"/>
+                                    <field name="item_snapshot_sha256" readonly="1"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="Independent Closeout">
                             <field name="return_reason" readonly="state != 'submitted'"/>
