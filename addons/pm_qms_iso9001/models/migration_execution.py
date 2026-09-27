@@ -357,10 +357,6 @@ class PmQmsIso9001MigrationExecution(models.Model):
             if record.operator_id != self.env.user:
                 raise AccessError("Only the assigned operator can record the start.")
             record._assert_package_integrity()
-            if record._render_report_snapshot() != record.report_snapshot:
-                raise UserError("Execution report changed after outcome recording.")
-            if hashlib.sha256(record.report_snapshot.encode()).hexdigest() != record.report_sha256:
-                raise UserError("Execution report integrity check failed.")
             record._write_workflow(
                 {
                     "state": "in_progress",
@@ -461,6 +457,10 @@ class PmQmsIso9001MigrationExecution(models.Model):
             if not record.closeout_notes:
                 raise UserError("Document independent closeout notes.")
             record._assert_package_integrity()
+            if record._render_report_snapshot() != record.report_snapshot:
+                raise UserError("Execution report changed after outcome recording.")
+            if hashlib.sha256(record.report_snapshot.encode()).hexdigest() != record.report_sha256:
+                raise UserError("Execution report integrity check failed.")
             record._write_workflow(
                 {
                     "state": "closed",
