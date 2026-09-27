@@ -225,8 +225,8 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
     disposition = fields.Selection(DISPOSITIONS, required=True, index=True)
     historical_source_preserved = fields.Boolean(
         required=True,
-        default=True,
-        help="Operator attestation that the historical source record remains preserved.",
+        default=False,
+        help="Explicit operator attestation that the historical source record remains preserved.",
     )
     rationale = fields.Text(
         required=True,
