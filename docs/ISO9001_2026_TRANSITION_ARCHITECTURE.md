@@ -119,6 +119,19 @@ discarded.
 - Approval of a migration package is separate from technical import.
 - All state changes are auditable.
 
+## Controlled migration package boundary
+
+An approved readiness review may produce one versioned migration package. The
+package captures scope, source inventory, compatibility notes, isolated dry-run
+planning, backup identity and digest, rollback controls, and an independent
+approval. Its deterministic manifest detects changes between preflight,
+submission, and approval.
+
+The package has no execution method. It cannot import records, alter a customer
+database, deploy code, replace a framework pack, rewrite history, or update an
+environment. Technical execution and execution reporting remain a separate
+future increment with their own authorization and rollback gates.
+
 ## Demo and release isolation
 
 The delivered Demo2 remains unchanged. ISO 9001:2026 work is validated in a
