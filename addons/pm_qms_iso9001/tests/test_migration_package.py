@@ -423,7 +423,10 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         line = self._add_reconciliation_line(
             execution, "DUPLICATE-SOURCE", "reused", target_reference="TARGET-1"
         )
-        self.assertEqual(len(line.item_snapshot_sha256), 64)
+        original_digest = line.item_snapshot_sha256
+        self.assertEqual(len(original_digest), 64)
+        line.write({"rationale": "Updated operator reconciliation evidence."})
+        self.assertNotEqual(line.item_snapshot_sha256, original_digest)
 
         with self.assertRaises(AccessError):
             execution.reconciliation_line_ids.with_user(self.reviewer).create(
