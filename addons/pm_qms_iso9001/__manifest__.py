@@ -8,7 +8,7 @@ pack remain usable without this add-on. Only reference identifiers and
 Perfect Match-authored metadata belong here; official standard text is never
 copied into the product.
     """,
-    "version": "19.0.13.0.0",
+    "version": "19.0.14.0.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
@@ -20,6 +20,7 @@ copied into the product.
         "data/gap_assessment_data.xml",
         "data/initial_implementation_data.xml",
         "views/iso9001_views.xml",
+        "views/migration_execution_views.xml",
     ],
     "post_init_hook": "post_init_hook",
     "application": False,
