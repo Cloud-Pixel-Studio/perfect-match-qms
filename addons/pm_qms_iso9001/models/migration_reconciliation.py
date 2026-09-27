@@ -72,6 +72,22 @@ class PmQmsIso9001MigrationExecution(models.Model):
         return values
 
     def write(self, vals):
+        report_fields = {
+            "execution_log_reference",
+            "execution_log_sha256",
+            "post_migration_checks",
+            "rollback_decision",
+            "rollback_evidence",
+            "outcome",
+        }
+        if report_fields.intersection(vals) and any(
+            execution.state != "in_progress"
+            or execution.operator_id != self.env.user
+            for execution in self
+        ):
+            raise AccessError(
+                "Only the assigned operator can record outcome evidence while in progress."
+            )
         derived_counts = {
             "created_count",
             "reused_count",
