@@ -464,6 +464,50 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 }
             )
 
+    def test_reconciliation_acl_and_company_rule(self):
+        _package, execution = self._approved_execution_record()
+        execution.action_record_start()
+        line = self._add_reconciliation_line(
+            execution,
+            "COMPANY-BOUNDARY-SOURCE",
+            "reused",
+            target_reference="TARGET-COMPANY-BOUNDARY",
+        )
+        qms_user_group = self.env.ref("pm_qms_core.group_pm_qms_user")
+        reader = self.env["res.users"].create(
+            {
+                "name": "Migration reconciliation reader",
+                "login": "iso.migration.reader@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "groups_id": [Command.set(qms_user_group.ids)],
+            }
+        )
+        with self.assertRaises(AccessError):
+            execution.reconciliation_line_ids.with_user(reader).create(
+                {
+                    "source_system_reference": "LEGACY-QMS-2015",
+                    "source_record_reference": "READONLY-CREATE-ATTEMPT",
+                    "target_record_reference": "TARGET-READONLY-ATTEMPT",
+                    "disposition": "created",
+                    "rationale": "Read-only QMS users cannot create reconciliation rows.",
+                }
+            )
+
+        foreign_company = self.env["res.company"].create(
+            {"name": "Foreign Reconciliation Company"}
+        )
+        foreign_reader = self.env["res.users"].create(
+            {
+                "name": "Foreign migration reconciliation reader",
+                "login": "iso.foreign.migration.reader@example.invalid",
+                "company_id": foreign_company.id,
+                "company_ids": [Command.set(foreign_company.ids)],
+                "groups_id": [Command.set(qms_user_group.ids)],
+            }
+        )
+        self.assertFalse(line.with_user(foreign_reader).exists())
+
     def test_reconciliation_is_frozen_when_outcome_is_recorded(self):
         _package, execution = self._approved_execution_record()
         execution.action_record_start()
