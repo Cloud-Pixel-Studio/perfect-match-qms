@@ -460,6 +460,15 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
             execution.reconciliation_line_ids.create(
                 {
                     "source_system_reference": "LEGACY-QMS-2015",
+                    "source_record_reference": "SOURCE-ATTESTATION-OMITTED",
+                    "disposition": "manual_review",
+                    "rationale": "An explicit preservation attestation is required.",
+                }
+            )
+        with self.assertRaises(ValidationError):
+            execution.reconciliation_line_ids.create(
+                {
+                    "source_system_reference": "LEGACY-QMS-2015",
                     "source_record_reference": "SOURCE-NOT-PRESERVED",
                     "disposition": "manual_review",
                     "historical_source_preserved": False,
