@@ -78,7 +78,9 @@ as free-standing totals. Each line has a deterministic SHA-256 snapshot, and the
 frozen execution report includes the ordered line-level reconciliation and its
 digests. The report SHA-256 therefore covers both the details and derived
 counts. Editing is restricted to the assigned operator while the execution is
-in progress; outcome recording freezes the ledger.
+in progress; outcome recording freezes the ledger. Existing frozen reports
+created before this ledger remain verifiable in their original format. Starting
+a new execution or returning a report activates line-derived counts.
 
 Use only opaque identifiers. Never enter record contents, personal data,
 credentials, connection strings, database dumps, or licensed ISO publication
