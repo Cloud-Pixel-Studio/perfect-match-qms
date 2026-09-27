@@ -2,11 +2,11 @@ import hashlib
 import json
 import re
 
-
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
+
+
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 class PmQmsIso9001MigrationPackage(models.Model):
@@ -171,7 +171,7 @@ class PmQmsIso9001MigrationExecution(models.Model):
                 "code": f"{package.code}-EXEC-01",
                 "package_id": package.id,
                 "package_manifest_sha256": package.manifest_sha256,
-                "operator_id": self.env.user.id,
+                "operator_id": package.submitted_by_id.id,
                 "reviewer_id": package.approved_by_id.id,
                 "environment_reference": "PENDING-CONTROLLED-ENVIRONMENT",
                 "fresh_preflight_evidence": "Document fresh environment preflight evidence.",
