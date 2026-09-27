@@ -48,18 +48,56 @@ class PmQmsIso9001MigrationExecution(models.Model):
         compute="_compute_reconciliation_counts", store=True, readonly=True
     )
 
-    @api.depends("reconciliation_line_ids.disposition")
+    @api.depends(
+        "reconciliation_line_ids.disposition",
+        "report_snapshot",
+        "state",
+    )
     def _compute_reconciliation_counts(self):
         for execution in self:
             lines = execution.reconciliation_line_ids
+            if lines:
+                counts = {
+                    disposition: len(
+                        lines.filtered(lambda line: line.disposition == disposition)
+                    )
+                    for disposition, _label in DISPOSITIONS
+                }
+            elif execution.report_snapshot:
+                try:
+                    legacy_report = json.loads(execution.report_snapshot)
+                except (TypeError, ValueError):
+                    legacy_report = {}
+                if "reconciliation_items" not in legacy_report:
+                    counts = {
+                        disposition: legacy_report.get(
+                            f"{disposition}_count", execution[f"{disposition}_count"]
+                        )
+                        for disposition, _label in DISPOSITIONS
+                    }
+                else:
+                    counts = {
+                        disposition: legacy_report.get(f"{disposition}_count", 0)
+                        for disposition, _label in DISPOSITIONS
+                    }
+            else:
+                counts = {
+                    disposition: execution[f"{disposition}_count"]
+                    for disposition, _label in DISPOSITIONS
+                }
             for disposition, _label in DISPOSITIONS:
-                execution[f"{disposition}_count"] = len(
-                    lines.filtered(lambda line: line.disposition == disposition)
-                )
+                execution[f"{disposition}_count"] = counts[disposition]
 
     def _report_values(self):
         values = super()._report_values()
         for execution in self:
+            if not execution.reconciliation_line_ids and execution.report_snapshot:
+                try:
+                    previous_report = json.loads(execution.report_snapshot)
+                except (TypeError, ValueError):
+                    previous_report = {}
+                if "reconciliation_items" not in previous_report:
+                    continue
             lines = execution.reconciliation_line_ids.sorted(
                 key=lambda line: (
                     line.source_system_reference,
