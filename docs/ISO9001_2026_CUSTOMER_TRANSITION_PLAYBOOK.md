@@ -20,7 +20,7 @@ Record the applicable scenario in the ISO 9001 transition-scenario workflow befo
 
 | Scenario type | Use when | Route and boundary |
 | --- | --- | --- |
-| New implementation | The customer has no established QMS to transition. | The assessment/action-planning stage can use the active 2026 target profile, without inventing source records or migration counts. The current readiness-review workflow requires a source-edition snapshot, so a source-less implementation cannot proceed through readiness/package approval yet. Stop after assessment/action planning; do not enter a fictional source edition. |
+| New implementation | The customer has no established QMS to transition. | The assessment and independent readiness-review stages can use the active 2026 target profile without inventing a source edition, source records, or migration counts. Link the assessment to its implementation project. A source-less initial implementation is not a migration and cannot create a migration package; continue through the controlled initial implementation workflow. |
 | 2015 to 2026 transition | The existing QMS is based on ISO 9001:2015. | Preserve the 2015 profile, evidence, and completed history. Assess against the approved 2026 profile; reconcile each migrated, reused, skipped, rejected, or manually reviewed source record. |
 | Legacy or incomplete system migration | The source is an older, non-standard, incomplete, or unverified QMS. | Inventory what can be evidenced, classify unknown provenance as manual review, and do not infer an ISO edition or claim prior conformity. Preserve the source system and its records. |
 | Recertification | The work is a recertification cycle without an edition or scope transition. | The currently seeded recertification scenario is fixed to source 2015 and target 2026; it represents that edition transition, not same-edition recertification. Do not select it for same-edition recertification. That route needs a separately approved scenario/workflow before PMQMS can govern it. Certification-body requirements remain outside this product workflow. |
@@ -29,7 +29,7 @@ Record the applicable scenario in the ISO 9001 transition-scenario workflow befo
 | Integrated management system | The customer coordinates ISO 9001 with other management systems. | This workflow covers ISO 9001 only. Track interfaces and dependencies in the project; do not imply that other standards or their requirements are implemented by this ISO 9001 add-on. |
 | Partial implementation | The customer intentionally limits the initial rollout. | Record included sites/processes and exclusions, justify non-applicability, and report readiness only for the controlled scope. Do not present a partial rollout as organization-wide completion. |
 
-If the source edition, ownership, scope, or records cannot be established, pause at intake and resolve the uncertainty before approving a migration package. A source-less initial implementation, same-edition recertification, or completed assessment with no partial/gap actions currently lacks a full readiness-review path; do not bypass these holds or fabricate records/actions.
+If the source edition, ownership, scope, or records cannot be established for a migration, pause at intake and resolve the uncertainty before approving a migration package. A source-less initial implementation may proceed through independent readiness review only when linked to its implementation project; it remains outside migration-package workflow. Same-edition recertification remains unsupported by the currently registered recertification scenario.
 
 ## Roles
 
@@ -79,11 +79,11 @@ Generate actions only from partial/gap findings. Confirm each action has an acco
 
 Review due, overdue, blocked, and returned actions on a regular project cadence. Escalate overdue critical actions to the sponsor and transition lead. Do not close an action solely because a target date passed or a software update completed.
 
-**Accept when:** all actions required to proceed are independently verified, or an authorized readiness review explicitly chooses to continue controlled actions with documented residual risk. The latter is not authorization to execute a migration package. If the completed assessment has no partial/gap findings, the current workflow cannot generate an action or prepare a readiness review; hold at the completed assessment until a supported no-action review path exists.
+**Accept when:** all actions required to proceed are independently verified, or an authorized readiness review explicitly chooses to continue controlled actions with documented residual risk. A completed assessment with no partial/gap findings may proceed to an independent readiness review when it is linked to an implementation project; the review must snapshot zero actions and a migration package remains source-edition dependent.
 
 ### Gate 4 — Independent readiness decision
 
-Prepare the readiness review from the completed assessment only when at least one transition action exists. The current model requires an action to prepare a review and cannot complete a source-less readiness review. Snapshot the action state and counts. The submitter and reviewer must be different authorized users.
+Prepare the readiness review from a completed assessment linked to an implementation project. Partial/gap findings must have generated controlled actions; an assessment with no actions is eligible only when no partial/gap findings remain. The review snapshots the source and target editions (source may be empty for initial implementation) and action state/counts, including an explicit empty action list. The submitter and reviewer must be different authorized users.
 
 The reviewer records one controlled decision:
 
@@ -95,7 +95,7 @@ A review decision is a governance gate, not a conformity or certification statem
 
 ### Gate 5 — Migration package and technical preflight
 
-Prepare the versioned package only from an approved readiness review with the internal-review decision. Record:
+Prepare a versioned migration package only from an approved, source-backed readiness review with the internal-review decision. Source-less initial implementation proceeds through the implementation workflow and must not be represented as a migration. Record:
 
 - scope, sites, processes, included source categories, and exclusions;
 - source inventory reference and compatibility findings;

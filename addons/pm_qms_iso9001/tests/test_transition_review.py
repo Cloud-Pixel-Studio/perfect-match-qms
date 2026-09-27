@@ -56,6 +56,13 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
             ],
             limit=1,
         )
+        self.initial_scenario = self.env["pm.qms.iso9001.transition.scenario"].search(
+            [
+                ("code", "=", "ISO9001-2026-INITIAL"),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
 
     def _assessment_with_actions(self):
         assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
@@ -106,6 +113,159 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
             "residual_risk_summary": "Open actions remain controlled under assigned owners.",
             "decision_notes": "Continue controlled execution before internal review.",
         }
+
+    def _new_implementation_project(self):
+        return self.env["pm.qms.implementation.project"].create(
+            {
+                "name": "ISO 9001 initial implementation test project",
+                "company_id": self.env.company.id,
+                "organization_id": self.organization.id,
+                "project_manager_id": self.env.user.id,
+                "date_start": fields.Date.today(),
+                "target_date": fields.Date.today() + timedelta(days=90),
+                "implementation_type": "new_implementation",
+            }
+        )
+
+    def test_source_less_initial_implementation_can_reach_independent_readiness_review(self):
+        project = self._new_implementation_project()
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Source-less initial implementation assessment",
+                "scenario_id": self.initial_scenario.id,
+                "implementation_project_id": project.id,
+            }
+        )
+        assessment.action_start()
+        self.assertFalse(assessment.source_edition_snapshot)
+        self.assertEqual(assessment.target_edition_snapshot, "2026")
+        assessment.line_ids.write({"status": "conforming"})
+        line = assessment.line_ids[:1]
+        line.write(
+            {
+                "status": "gap",
+                "gap_description": "Initial implementation work remains.",
+                "action_plan": "Establish and verify the controlled implementation activity.",
+                "responsible_id": self.env.user.id,
+                "target_date": fields.Date.today() + timedelta(days=30),
+            }
+        )
+        assessment.action_complete()
+        assessment.action_generate_transition_plan()
+        assessment.transition_action_ids.write(
+            {"implementation_project_id": project.id}
+        )
+
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        self.assertFalse(review.source_edition_snapshot)
+        self.assertEqual(review.target_edition_snapshot, "2026")
+        review.write(self._review_values("continue_actions"))
+        review.action_submit()
+        review.with_user(self.reviewer).action_approve()
+        self.assertEqual(review.state, "approved")
+
+    def test_no_action_assessment_can_be_reviewed_with_project_and_empty_snapshot(self):
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Conforming source assessment",
+                "scenario_id": self.scenario.id,
+                "source_profile_id": self.source_profile.id,
+                "implementation_project_id": self.project.id,
+            }
+        )
+        assessment.action_start()
+        assessment.line_ids.write({"status": "conforming"})
+        assessment.action_complete()
+
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        self.assertFalse(assessment.transition_action_ids)
+        self.assertEqual(review.implementation_project_id, self.project)
+        review.write(self._review_values("internal_review"))
+        review.action_submit()
+        self.assertEqual(review.total_action_count_snapshot, 0)
+        self.assertEqual(review.open_action_count_snapshot, 0)
+        self.assertEqual(review.action_state_snapshot, "[]")
+        review.with_user(self.reviewer).action_approve()
+        self.assertEqual(review.state, "approved")
+
+    def test_no_action_assessment_requires_linked_project(self):
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Unlinked conforming assessment",
+                "scenario_id": self.scenario.id,
+                "source_profile_id": self.source_profile.id,
+            }
+        )
+        assessment.action_start()
+        assessment.line_ids.write({"status": "not_applicable", "disposition_rationale": "Outside approved scope."})
+        assessment.action_complete()
+        with self.assertRaisesRegex(UserError, "Link the completed assessment"):
+            self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+                assessment
+            )
+
+    def test_assessment_project_must_match_company(self):
+        foreign_company = self.env["res.company"].create(
+            {"name": "Foreign ISO Assessment Company"}
+        )
+        foreign_organization = self.env["pm.qms.organization"].create(
+            {
+                "name": "Foreign ISO Assessment Organization",
+                "code": "TRR-FOREIGN",
+                "company_id": foreign_company.id,
+            }
+        )
+        foreign_project = self.env["pm.qms.implementation.project"].create(
+            {
+                "name": "Foreign ISO implementation project",
+                "company_id": foreign_company.id,
+                "organization_id": foreign_organization.id,
+                "project_manager_id": self.env.user.id,
+                "date_start": fields.Date.today(),
+                "target_date": fields.Date.today() + timedelta(days=60),
+                "implementation_type": "new_implementation",
+            }
+        )
+        with self.assertRaises(ValidationError):
+            self.env["pm.qms.iso9001.gap.assessment"].create(
+                {
+                    "name": "Cross-company assessment",
+                    "scenario_id": self.scenario.id,
+                    "source_profile_id": self.source_profile.id,
+                    "implementation_project_id": foreign_project.id,
+                }
+            )
+
+    def test_no_action_review_rejects_partial_or_gap_findings(self):
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Unplanned gap assessment",
+                "scenario_id": self.scenario.id,
+                "source_profile_id": self.source_profile.id,
+                "implementation_project_id": self.project.id,
+            }
+        )
+        assessment.action_start()
+        assessment.line_ids.write({"status": "conforming"})
+        line = assessment.line_ids[:1]
+        line.write(
+            {
+                "status": "gap",
+                "gap_description": "A required action has not been planned.",
+                "action_plan": "Create the required controlled action.",
+                "responsible_id": self.env.user.id,
+                "target_date": fields.Date.today() + timedelta(days=30),
+            }
+        )
+        assessment.action_complete()
+        with self.assertRaisesRegex(UserError, "Generate controlled transition actions"):
+            self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+                assessment
+            )
 
     def test_review_preparation_is_controlled_and_idempotent(self):
         assessment = self._assessment_with_actions()

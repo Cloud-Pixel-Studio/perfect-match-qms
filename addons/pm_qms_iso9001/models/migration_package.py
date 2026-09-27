@@ -158,6 +158,10 @@ class PmQmsIso9001MigrationPackage(models.Model):
             raise UserError(
                 "An approved readiness review with the internal-review decision is required."
             )
+        if not review.source_edition_snapshot:
+            raise UserError(
+                "A source edition is required for a migration package; initial implementations use the implementation workflow."
+            )
         existing = self.search([("readiness_review_id", "=", review.id)], limit=1)
         if existing:
             return existing
@@ -201,6 +205,8 @@ class PmQmsIso9001MigrationPackage(models.Model):
     def _check_relationships(self):
         for package in self:
             review = package.readiness_review_id
+            if not review.source_edition_snapshot:
+                raise ValidationError("Migration packages require a source edition.")
             if package.source_edition_snapshot != review.source_edition_snapshot:
                 raise ValidationError("Migration package source edition must match its review.")
             if package.target_edition_snapshot != review.target_edition_snapshot:
@@ -274,8 +280,18 @@ class PmQmsIso9001MigrationPackage(models.Model):
             if review.state != "approved" or review.decision != "internal_review":
                 raise UserError("The readiness review is no longer approved for internal review.")
             actions = review.assessment_id.transition_action_ids
-            if not actions or any(action.state != "completed" for action in actions):
+            assessment = review.assessment_id
+            if actions and any(action.state != "completed" for action in actions):
                 raise UserError("Every transition action must remain completed.")
+            if not actions and (
+                assessment.line_ids.filtered(
+                    lambda line: line.status in ("partial", "gap")
+                )
+                or assessment.implementation_project_id != package.implementation_project_id
+            ):
+                raise UserError(
+                    "A no-action migration package requires a linked project and no partial or gap areas."
+                )
             if any(
                 not action.submitted_by_id
                 or not action.verified_by_id
@@ -283,7 +299,7 @@ class PmQmsIso9001MigrationPackage(models.Model):
                 for action in actions
             ):
                 raise UserError("Every transition action requires independent verification.")
-            if actions.mapped("implementation_project_id") != package.implementation_project_id:
+            if actions and actions.mapped("implementation_project_id") != package.implementation_project_id:
                 raise UserError("Transition actions no longer match the implementation project.")
             incomplete_fields = [
                 field_name

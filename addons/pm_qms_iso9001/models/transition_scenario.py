@@ -130,7 +130,6 @@ class PmQmsIso9001TransitionScenario(models.Model):
                 "source_profile_id": source_profile.id,
             }
         )
-        assessment.action_start()
         return {
             "type": "ir.actions.act_window",
             "name": "ISO 9001 Gap Assessment",

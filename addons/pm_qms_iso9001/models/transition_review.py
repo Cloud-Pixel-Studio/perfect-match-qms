@@ -101,7 +101,7 @@ class PmQmsIso9001TransitionReview(models.Model):
     review_basis = fields.Text(required=True)
     residual_risk_summary = fields.Text(required=True)
     decision_notes = fields.Text(required=True)
-    source_edition_snapshot = fields.Char(required=True, readonly=True)
+    source_edition_snapshot = fields.Char(readonly=True)
     target_edition_snapshot = fields.Char(required=True, readonly=True)
     total_action_count_snapshot = fields.Integer(readonly=True)
     completed_action_count_snapshot = fields.Integer(readonly=True)
@@ -137,13 +137,30 @@ class PmQmsIso9001TransitionReview(models.Model):
         if assessment.state != "completed":
             raise UserError("Complete the gap assessment before preparing a readiness review.")
         actions = assessment.transition_action_ids
-        if not actions:
-            raise UserError("Generate the controlled transition actions before preparing a readiness review.")
-        projects = actions.mapped("implementation_project_id")
-        if len(projects) != 1:
-            raise UserError(
-                "All transition actions must reference the same implementation project."
+        if actions:
+            projects = actions.mapped("implementation_project_id")
+            if len(projects) != 1:
+                raise UserError(
+                    "All transition actions must reference the same implementation project."
+                )
+            project = projects
+            if assessment.implementation_project_id and project != assessment.implementation_project_id:
+                raise UserError(
+                    "Assessment and transition actions must reference the same implementation project."
+                )
+        else:
+            unresolved = assessment.line_ids.filtered(
+                lambda line: line.status in ("partial", "gap")
             )
+            if unresolved:
+                raise UserError(
+                    "Generate controlled transition actions for every partial or gap area before review."
+                )
+            project = assessment.implementation_project_id
+            if not project:
+                raise UserError(
+                    "Link the completed assessment to an implementation project before preparing a no-action review."
+                )
         existing = self.search([("assessment_id", "=", assessment.id)], limit=1)
         if existing:
             return existing
@@ -156,7 +173,7 @@ class PmQmsIso9001TransitionReview(models.Model):
                 or "ISO-TRR-00000",
                 "assessment_id": assessment.id,
                 "company_id": assessment.company_id.id,
-                "implementation_project_id": projects.id,
+                "implementation_project_id": project.id,
                 "reviewer_id": self.env.user.id,
                 "review_basis": "Summarize the reviewed transition evidence and action results.",
                 "residual_risk_summary": "Document remaining transition risks and controls.",
@@ -183,13 +200,31 @@ class PmQmsIso9001TransitionReview(models.Model):
                 raise ValidationError(
                     "Readiness review implementation project must belong to the same company."
                 )
-            action_projects = review.assessment_id.transition_action_ids.mapped(
-                "implementation_project_id"
-            )
-            if action_projects != review.implementation_project_id:
+            actions = review.assessment_id.transition_action_ids
+            assessment = review.assessment_id
+            if (
+                assessment.implementation_project_id
+                and assessment.implementation_project_id != review.implementation_project_id
+            ):
                 raise ValidationError(
-                    "Readiness review project must match every transition action."
+                    "Readiness review project must match the assessment project."
                 )
+            if actions:
+                action_projects = actions.mapped("implementation_project_id")
+                if action_projects != review.implementation_project_id:
+                    raise ValidationError(
+                        "Readiness review project must match every transition action."
+                    )
+            else:
+                if (
+                    assessment.implementation_project_id != review.implementation_project_id
+                    or assessment.line_ids.filtered(
+                        lambda line: line.status in ("partial", "gap")
+                    )
+                ):
+                    raise ValidationError(
+                        "A no-action review requires a linked project and no partial or gap areas."
+                    )
             if review.company_id not in review.reviewer_id.company_ids:
                 raise ValidationError(
                     "The assigned reviewer must have access to the review company."
@@ -231,8 +266,6 @@ class PmQmsIso9001TransitionReview(models.Model):
             if review.reviewer_id == self.env.user:
                 raise UserError("The submitter and assigned reviewer must be different users.")
             total, completed, open_count = review._action_counts()
-            if not total:
-                raise UserError("At least one controlled transition action is required.")
             review._write_workflow(
                 {
                     "state": "submitted",
@@ -271,10 +304,29 @@ class PmQmsIso9001TransitionReview(models.Model):
                     "Transition action status or relationships changed after submission; return and resubmit the review."
                 )
             actions = review.assessment_id.transition_action_ids
-            if actions.mapped("implementation_project_id") != review.implementation_project_id:
+            assessment = review.assessment_id
+            if (
+                assessment.implementation_project_id
+                and assessment.implementation_project_id != review.implementation_project_id
+            ):
                 raise UserError(
-                    "Transition action project alignment changed after submission; return and resubmit the review."
+                    "Assessment project alignment changed after submission; return and resubmit the review."
                 )
+            if actions:
+                if actions.mapped("implementation_project_id") != review.implementation_project_id:
+                    raise UserError(
+                        "Transition action project alignment changed after submission; return and resubmit the review."
+                    )
+            else:
+                if (
+                    assessment.implementation_project_id != review.implementation_project_id
+                    or assessment.line_ids.filtered(
+                        lambda line: line.status in ("partial", "gap")
+                    )
+                ):
+                    raise UserError(
+                        "No-action review eligibility changed after submission; return and resubmit the review."
+                    )
             completed_actions = actions.filtered(lambda action: action.state == "completed")
             if any(
                 not action.submitted_by_id
