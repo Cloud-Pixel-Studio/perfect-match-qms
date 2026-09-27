@@ -38,7 +38,7 @@ Technical administration alone does not grant business authorization.
 4. **In Progress** — the assigned operator records that the separately operated
    activity started. No migration command is executed by PMQMS.
 5. **Outcome Recorded** — record immutable-log reference and SHA-256, post-migration checks,
-   created/reused/skipped/rejected/manual-review counts, and rollback decision.
+   record-level reconciliation entries and rollback decision.
 6. **Submitted for Closeout** — the operator submits evidence.
 7. **Returned** — the reviewer returns incomplete evidence.
 8. **Closed** — the reviewer independently accepts the outcome and the record
@@ -62,6 +62,29 @@ Counts distinguish:
 - records requiring manual review.
 
 These counts support reconciliation; they are not a certification statement.
+
+## Record-level reconciliation
+
+During **In Progress**, the assigned operator records one line per source
+record using opaque, non-secret source and target references. Each line captures
+the source and target editions, disposition (created, reused, skipped,
+rejected, or manual review), rationale, optional controlled-evidence reference,
+optional SHA-256 values, and an attestation that the historical source remains
+preserved. Created and reused entries require a target reference. Duplicate
+source identifiers within one execution are rejected.
+
+The five summary counts are derived from line dispositions and cannot be edited
+as free-standing totals. Each line has a deterministic SHA-256 snapshot, and the
+frozen execution report includes the ordered line-level reconciliation and its
+digests. The report SHA-256 therefore covers both the details and derived
+counts. Editing is restricted to the assigned operator while the execution is
+in progress; outcome recording freezes the ledger.
+
+Use only opaque identifiers. Never enter record contents, personal data,
+credentials, connection strings, database dumps, or licensed ISO publication
+text. The preservation flag is an operator attestation; this feature does not
+inspect or prove the external source system's contents. No source or target
+system is queried by this workflow.
 
 ## Explicit non-capabilities
 
