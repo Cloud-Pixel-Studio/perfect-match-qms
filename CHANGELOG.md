@@ -1,5 +1,12 @@
 # Changelog
 
+- Added controlled, versioned ISO 9001:2026 migration package manifests with
+  readiness gates, verified-backup references, deterministic SHA-256 snapshots,
+  rollback planning, independent approval, company isolation, and immutability.
+- Migration packages are planning and authorization records only; they do not
+  execute migrations, deploy software, modify customer data, or claim
+  certification.
+
 - Added controlled ISO 9001:2026 transition readiness reviews with
   independent submitter/reviewer separation, immutable action-count snapshots,
   company/project alignment, drift detection, and decision gates.
