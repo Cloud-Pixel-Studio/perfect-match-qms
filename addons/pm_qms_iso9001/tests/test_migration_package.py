@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -309,6 +310,22 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         execution.with_user(self.reviewer).action_authorize()
         return package, execution
 
+    def _add_reconciliation_line(
+        self, execution, source_reference, disposition, target_reference=None,
+        rationale="Reconciled against the approved migration mapping.",
+    ):
+        return execution.reconciliation_line_ids.create(
+            {
+                "source_system_reference": "LEGACY-QMS-2015",
+                "source_record_reference": source_reference,
+                "target_record_reference": target_reference or False,
+                "disposition": disposition,
+                "historical_source_preserved": True,
+                "rationale": rationale,
+                "evidence_reference": "EVIDENCE-MAP-2026-001",
+            }
+        )
+
     def test_execution_requires_approved_package_and_is_idempotent(self):
         review = self._approved_readiness_review()
         package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
@@ -343,6 +360,25 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
     def test_execution_records_counts_outcome_and_independent_closeout(self):
         _package, execution = self._approved_execution_record()
         execution.action_record_start()
+        dispositions = [
+            "created",
+            "created",
+            "reused",
+            "skipped",
+            "rejected",
+            "manual_review",
+            "manual_review",
+        ]
+        for index, disposition in enumerate(dispositions, start=1):
+            target_reference = (
+                f"TARGET-{index}" if disposition in ("created", "reused") else False
+            )
+            self._add_reconciliation_line(
+                execution,
+                f"SOURCE-{index}",
+                disposition,
+                target_reference=target_reference,
+            )
         execution.write(
             {
                 "execution_log_reference": "LOG-IMMUTABLE-001",
@@ -350,14 +386,24 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "post_migration_checks": "Historical records and relationships verified.",
                 "rollback_decision": "not_required",
                 "outcome": "completed",
-                "created_count": 12,
-                "reused_count": 8,
-                "skipped_count": 2,
-                "rejected_count": 1,
-                "manual_review_count": 3,
             }
         )
         execution.action_record_outcome()
+        self.assertEqual(execution.created_count, 2)
+        self.assertEqual(execution.reused_count, 1)
+        self.assertEqual(execution.skipped_count, 1)
+        self.assertEqual(execution.rejected_count, 1)
+        self.assertEqual(execution.manual_review_count, 2)
+        report = json.loads(execution.report_snapshot)
+        self.assertEqual(len(report["reconciliation_items"]), 7)
+        self.assertEqual(
+            report["reconciliation_items"][0]["source_record_reference"],
+            "SOURCE-1",
+        )
+        self.assertTrue(
+            all(len(item["item_snapshot_sha256"]) == 64
+                for item in report["reconciliation_items"])
+        )
         execution.action_submit_closeout()
         with self.assertRaises(AccessError):
             execution.action_close()
@@ -370,10 +416,70 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         with self.assertRaises(AccessError):
             execution.write({"post_migration_checks": "Rewrite history."})
 
+
+    def test_reconciliation_rejects_duplicate_sources_and_non_operator_edits(self):
+        _package, execution = self._approved_execution_record()
+        execution.action_record_start()
+        line = self._add_reconciliation_line(
+            execution, "DUPLICATE-SOURCE", "reused", target_reference="TARGET-1"
+        )
+        self.assertEqual(len(line.item_snapshot_sha256), 64)
+
+        with self.assertRaises(AccessError):
+            execution.reconciliation_line_ids.with_user(self.reviewer).create(
+                {
+                    "source_system_reference": "LEGACY-QMS-2015",
+                    "source_record_reference": "REVIEWER-ATTEMPT",
+                    "target_record_reference": "TARGET-2",
+                    "disposition": "created",
+                    "rationale": "Reviewer must not edit operator reconciliation.",
+                }
+            )
+        with self.assertRaises(ValidationError):
+            self._add_reconciliation_line(
+                execution,
+                "DUPLICATE-SOURCE",
+                "reused",
+                target_reference="TARGET-3",
+            )
+        with self.assertRaises(ValidationError):
+            execution.reconciliation_line_ids.create(
+                {
+                    "source_system_reference": "LEGACY-QMS-2015",
+                    "source_record_reference": "SOURCE-NOT-PRESERVED",
+                    "disposition": "manual_review",
+                    "historical_source_preserved": False,
+                    "rationale": "Historical source was not preserved.",
+                }
+            )
+
+    def test_reconciliation_is_frozen_when_outcome_is_recorded(self):
+        _package, execution = self._approved_execution_record()
+        execution.action_record_start()
+        line = self._add_reconciliation_line(
+            execution, "SOURCE-FROZEN", "skipped", rationale="Out of approved scope."
+        )
+        execution.write(
+            {
+                "execution_log_reference": "LOG-RECONCILIATION-FROZEN",
+                "execution_log_sha256": "d" * 64,
+                "post_migration_checks": "Reconciliation reviewed.",
+                "rollback_decision": "not_required",
+                "outcome": "completed",
+            }
+        )
+        execution.action_record_outcome()
+        with self.assertRaises(AccessError):
+            line.write({"rationale": "Attempt to rewrite recorded outcome."})
+        with self.assertRaises(AccessError):
+            line.unlink()
+        with self.assertRaises(AccessError):
+            execution.write({"created_count": 99})
+
     def test_execution_rollback_evidence_and_negative_counts_are_enforced(self):
         _package, execution = self._approved_execution_record()
         execution.action_record_start()
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(AccessError):
             execution.write({"rejected_count": -1})
         execution.write(
             {
