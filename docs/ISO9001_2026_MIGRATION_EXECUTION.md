@@ -37,7 +37,7 @@ Technical administration alone does not grant business authorization.
 3. **Authorized** — the independent reviewer authorizes the unchanged controls.
 4. **In Progress** — the assigned operator records that the separately operated
    activity started. No migration command is executed by PMQMS.
-5. **Outcome Recorded** — record immutable-log reference, post-migration checks,
+5. **Outcome Recorded** — record immutable-log reference and SHA-256, post-migration checks,
    created/reused/skipped/rejected/manual-review counts, and rollback decision.
 6. **Submitted for Closeout** — the operator submits evidence.
 7. **Returned** — the reviewer returns incomplete evidence.
@@ -50,7 +50,7 @@ require an executed rollback decision and evidence.
 ## Evidence rules
 
 References must be non-secret. Do not embed credentials, private keys, database
-dumps, licensed ISO publication text, or raw backup content. Evidence and logs
+dumps, licensed ISO publication text, or raw backup content. The execution report is frozen as deterministic JSON with its own SHA-256. Evidence and logs
 remain in approved controlled repositories.
 
 Counts distinguish:
