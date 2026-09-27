@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pm_qms_iso9001_migration_package_execution_inherit" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.migration.package.execution.inherit</field>
+        <field name="model">pm.qms.iso9001.migration.package</field>
+        <field name="inherit_id" ref="view_pm_qms_iso9001_migration_package_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_prepare_execution_record" type="object"
+                        string="Prepare Execution Record" class="btn-primary"
+                        invisible="state != 'approved'"
+                        groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+            </xpath>
+            <xpath expr="//field[@name='manifest_sha256']" position="after">
+                <field name="execution_record_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_iso9001_migration_execution_list" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.migration.execution.list</field>
+        <field name="model">pm.qms.iso9001.migration.execution</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0">
+                <field name="code"/>
+                <field name="package_id"/>
+                <field name="company_id"/>
+                <field name="operator_id"/>
+                <field name="reviewer_id"/>
+                <field name="outcome"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pm_qms_iso9001_migration_execution_form" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.migration.execution.form</field>
+        <field name="model">pm.qms.iso9001.migration.execution</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <button name="action_run_preflight" type="object" string="Run Fresh Preflight" class="btn-primary" invisible="state not in ('draft', 'returned')"/>
+                    <button name="action_authorize" type="object" string="Authorize" class="btn-primary" invisible="state != 'preflight_passed'"/>
+                    <button name="action_record_start" type="object" string="Record Start" class="btn-primary" invisible="state != 'authorized'"/>
+                    <button name="action_record_outcome" type="object" string="Record Outcome" class="btn-primary" invisible="state != 'in_progress'"/>
+                    <button name="action_submit_closeout" type="object" string="Submit Closeout" class="btn-primary" invisible="state != 'recorded'"/>
+                    <button name="action_return" type="object" string="Return" invisible="state != 'submitted'"/>
+                    <button name="action_close" type="object" string="Close" class="btn-primary" invisible="state != 'submitted'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,preflight_passed,authorized,in_progress,recorded,submitted,closed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="package_id"/>
+                            <field name="company_id"/>
+                            <field name="package_manifest_sha256"/>
+                        </group>
+                        <group>
+                            <field name="operator_id" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                            <field name="reviewer_id" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                            <field name="environment_reference" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                            <field name="outcome" readonly="state != 'in_progress'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Execution Controls">
+                            <group>
+                                <field name="fresh_preflight_evidence" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                                <field name="backup_access_evidence" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                                <field name="restoration_test_evidence" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                                <field name="dry_run_evidence" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                                <field name="authorization_notes" readonly="state not in ('draft', 'returned', 'preflight_passed')"/>
+                            </group>
+                        </page>
+                        <page string="Outcome Evidence">
+                            <group>
+                                <field name="execution_log_reference" readonly="state != 'in_progress'"/>
+                                <field name="post_migration_checks" readonly="state != 'in_progress'"/>
+                                <field name="rollback_decision" readonly="state != 'in_progress'"/>
+                                <field name="rollback_evidence" readonly="state != 'in_progress'"/>
+                            </group>
+                            <group string="Result Counts" col="5">
+                                <field name="created_count" readonly="state != 'in_progress'"/>
+                                <field name="reused_count" readonly="state != 'in_progress'"/>
+                                <field name="skipped_count" readonly="state != 'in_progress'"/>
+                                <field name="rejected_count" readonly="state != 'in_progress'"/>
+                                <field name="manual_review_count" readonly="state != 'in_progress'"/>
+                            </group>
+                        </page>
+                        <page string="Independent Closeout">
+                            <field name="return_reason" readonly="state != 'submitted'"/>
+                            <field name="closeout_notes" readonly="state != 'submitted'"/>
+                            <group>
+                                <field name="preflight_by_id"/>
+                                <field name="preflight_date"/>
+                                <field name="authorized_by_id"/>
+                                <field name="authorized_date"/>
+                                <field name="started_by_id"/>
+                                <field name="started_date"/>
+                                <field name="finished_by_id"/>
+                                <field name="finished_date"/>
+                                <field name="submitted_by_id"/>
+                                <field name="submitted_date"/>
+                                <field name="closed_by_id"/>
+                                <field name="closed_date"/>
+                            </group>
+                        </page>
+                        <page string="Immutable Control Snapshot" invisible="not control_snapshot">
+                            <field name="control_sha256" readonly="1"/>
+                            <field name="control_snapshot" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
