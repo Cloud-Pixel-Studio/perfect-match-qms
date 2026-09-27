@@ -2,10 +2,11 @@
 
 ## Purpose
 
-The migration package records the approved technical plan for a controlled
-ISO 9001 edition transition. It is a versioned manifest and approval record. It
-does not execute a migration, modify customer data, deploy software, or claim
-certification or conformity.
+The migration package records the approved technical plan for a source-backed,
+controlled ISO 9001 edition transition. It is a versioned manifest and approval
+record. It does not execute a migration, modify customer data, deploy software,
+or claim certification or conformity. Source-less initial implementation uses
+the implementation-project workflow and is not eligible for a migration package.
 
 All workflow guidance is authored by Perfect Match. No licensed ISO publication
 text is reproduced.
@@ -17,7 +18,10 @@ A package can be prepared only from a transition readiness review that:
 - is approved;
 - selected **Proceed to Internal Review**;
 - belongs to the same company and implementation project;
-- references transition actions that remain completed;
+- has a source-edition snapshot;
+- references transition actions that remain completed, or has zero actions because
+  the completed assessment contains no partial/gap findings and is linked to the
+  same implementation project;
 - preserves independent submitter/verifier separation.
 
 Only one package is permitted for each readiness review.
@@ -26,7 +30,7 @@ Only one package is permitted for each readiness review.
 
 Before preflight can pass, the package records:
 
-- package version and immutable source/target edition snapshots;
+- package version and immutable, non-empty source and target edition snapshots;
 - approved migration scope and exclusions;
 - controlled source-inventory reference;
 - compatibility findings and exceptions;
@@ -44,7 +48,8 @@ must not be embedded in the manifest.
 
 1. **Draft** — managers document package inputs.
 2. **Preflight Passed** — the system confirms readiness-review integrity,
-   completed independently verified actions, project alignment, and backup
+   completed independently verified actions (or a supported zero-action
+   assessment with no partial/gap findings), project alignment, and backup
    evidence; it then freezes a deterministic JSON manifest and SHA-256.
 3. **Submitted** — a manager submits the unchanged manifest to a different
    authorized reviewer.
