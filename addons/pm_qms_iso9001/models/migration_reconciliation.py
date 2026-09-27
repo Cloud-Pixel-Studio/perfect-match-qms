@@ -264,7 +264,10 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
                 values["target_record_sha256"] = values[
                     "target_record_sha256"
                 ].lower()
-            if values.get("historical_source_preserved") is False:
+            if (
+                "historical_source_preserved" in values
+                and not values["historical_source_preserved"]
+            ):
                 raise ValidationError(
                     "Historical source records must remain preserved."
                 )
@@ -285,7 +288,10 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
             values["source_record_sha256"] = values["source_record_sha256"].lower()
         if values.get("target_record_sha256"):
             values["target_record_sha256"] = values["target_record_sha256"].lower()
-        if values.get("historical_source_preserved") is False:
+        if (
+            "historical_source_preserved" in values
+            and not values["historical_source_preserved"]
+        ):
             raise ValidationError("Historical source records must remain preserved.")
         return super().write(values)
 
@@ -309,15 +315,15 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
     )
     def _check_reconciliation_values(self):
         for line in self:
-            if not line.source_system_reference.strip():
+            if not (line.source_system_reference or "").strip():
                 raise ValidationError("A source system reference is required.")
-            if not line.source_record_reference.strip():
+            if not (line.source_record_reference or "").strip():
                 raise ValidationError("A source record reference is required.")
             if not line.historical_source_preserved:
                 raise ValidationError(
                     "Historical source records must remain preserved."
                 )
-            if not line.rationale.strip():
+            if not (line.rationale or "").strip():
                 raise ValidationError("Document a rationale for every disposition.")
             if line.disposition in ("created", "reused") and not (
                 line.target_record_reference or "").strip():
