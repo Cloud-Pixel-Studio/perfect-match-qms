@@ -65,6 +65,13 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
             ],
             limit=1,
         )
+        self.initial_scenario = self.env["pm.qms.iso9001.transition.scenario"].search(
+            [
+                ("code", "=", "ISO9001-2026-INITIAL"),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
 
     def _approved_readiness_review(self):
         assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
@@ -116,6 +123,36 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         review.with_user(self.verifier).action_approve()
         return review
 
+    def _approved_no_action_review(self, source_backed=True):
+        values = {
+            "name": "No-action readiness assessment",
+            "scenario_id": (
+                self.scenario.id if source_backed else self.initial_scenario.id
+            ),
+            "implementation_project_id": self.project.id,
+        }
+        if source_backed:
+            values["source_profile_id"] = self.source_profile.id
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(values)
+        assessment.action_start()
+        assessment.line_ids.write({"status": "conforming"})
+        assessment.action_complete()
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        review.write(
+            {
+                "reviewer_id": self.verifier.id,
+                "decision": "internal_review",
+                "review_basis": "All controlled assessment areas were reviewed.",
+                "residual_risk_summary": "No partial or gap findings remain.",
+                "decision_notes": "Proceed after independent review of the completed assessment.",
+            }
+        )
+        review.action_submit()
+        review.with_user(self.verifier).action_approve()
+        return review
+
     def _complete_package_inputs(self, package):
         package.write(
             {
@@ -156,6 +193,25 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                     "code": "FORGED",
                     "readiness_review_id": review.id,
                 }
+            )
+
+    def test_no_action_source_backed_review_can_create_and_preflight_package(self):
+        review = self._approved_no_action_review(source_backed=True)
+        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            review
+        )
+        self._complete_package_inputs(package)
+        package.action_run_preflight()
+        manifest = json.loads(package.manifest_snapshot)
+        self.assertEqual(manifest["transition_actions"], [])
+        self.assertEqual(package.source_edition_snapshot, "2015")
+
+    def test_source_less_initial_review_cannot_create_migration_package(self):
+        review = self._approved_no_action_review(source_backed=False)
+        self.assertFalse(review.source_edition_snapshot)
+        with self.assertRaisesRegex(UserError, "A source edition is required"):
+            self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+                review
             )
 
     def test_preflight_requires_verified_backup_and_freezes_manifest(self):
