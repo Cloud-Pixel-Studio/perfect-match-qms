@@ -142,7 +142,10 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
     source_system_reference = fields.Char(
         required=True,
         size=128,
-        help="Opaque, non-secret identifier for the source system; never enter a connection string.",
+        help=(
+            "Opaque, non-secret identifier for the source system; "
+            "never enter a connection string."
+        ),
     )
     source_record_reference = fields.Char(
         required=True,
