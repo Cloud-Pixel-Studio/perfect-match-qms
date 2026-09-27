@@ -187,12 +187,12 @@ class PmQmsIso9001MigrationReconciliation(models.Model):
         readonly=True,
         index=True,
     )
-    source_edition = fields.Selection(
+    source_edition = fields.Char(
         related="execution_id.package_id.source_edition_snapshot",
         store=True,
         readonly=True,
     )
-    target_edition = fields.Selection(
+    target_edition = fields.Char(
         related="execution_id.package_id.target_edition_snapshot",
         store=True,
         readonly=True,
