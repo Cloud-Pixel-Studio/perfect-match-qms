@@ -1,5 +1,5 @@
-from datetime import timedelta
 import json
+from datetime import timedelta
 
 from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -120,7 +120,9 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         package.write(
             {
                 "reviewer_id": self.reviewer.id,
-                "migration_scope": "One company, approved sites, processes, and controlled records.",
+                "migration_scope": (
+                    "One company, approved sites, processes, and controlled records."
+                ),
                 "source_inventory": "Controlled inventory reference INV-2026-001.",
                 "compatibility_notes": "No unresolved compatibility exceptions.",
                 "dry_run_plan": "Run in an isolated clone and compare record relationships.",
@@ -128,7 +130,9 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "backup_sha256": "a" * 64,
                 "backup_verified": True,
                 "rollback_plan": "Restore the approved backup and verify relationships.",
-                "rollback_acceptance_criteria": "Historical records and relationships match the baseline.",
+                "rollback_acceptance_criteria": (
+                    "Historical records and relationships match the baseline."
+                ),
                 "execution_window": "Approved maintenance window required separately.",
             }
         )
