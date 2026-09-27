@@ -509,7 +509,12 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "groups_id": [Command.set(qms_user_group.ids)],
             }
         )
-        self.assertFalse(line.with_user(foreign_reader).exists())
+        visible_foreign_rows = self.env[
+            "pm.qms.iso9001.migration.reconciliation"
+        ].with_user(foreign_reader).with_context(
+            allowed_company_ids=foreign_company.ids
+        ).search([("id", "=", line.id)])
+        self.assertFalse(visible_foreign_rows)
 
     def test_legacy_frozen_report_remains_verifiable_after_upgrade(self):
         _package, execution = self._approved_execution_record()
