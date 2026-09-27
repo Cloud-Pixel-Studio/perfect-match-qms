@@ -397,3 +397,22 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.assertEqual(execution.state, "draft")
         self.assertFalse(execution.control_snapshot)
         self.assertFalse(execution.control_sha256)
+
+
+    def test_package_approver_can_prepare_execution_with_distinct_operator(self):
+        review = self._approved_readiness_review()
+        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            review
+        )
+        self._complete_package_inputs(package)
+        package.action_run_preflight()
+        package.action_submit()
+        package.with_user(self.reviewer).action_approve()
+
+        action = package.with_user(self.reviewer).action_prepare_execution_record()
+        execution = self.env["pm.qms.iso9001.migration.execution"].browse(
+            action["res_id"]
+        )
+        self.assertEqual(execution.operator_id, package.submitted_by_id)
+        self.assertEqual(execution.reviewer_id, package.approved_by_id)
+        self.assertNotEqual(execution.operator_id, execution.reviewer_id)
