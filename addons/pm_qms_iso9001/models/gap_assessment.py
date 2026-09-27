@@ -63,6 +63,12 @@ class PmQmsIso9001GapAssessment(models.Model):
         ondelete="restrict",
         index=True,
     )
+    implementation_project_id = fields.Many2one(
+        "pm.qms.implementation.project",
+        ondelete="restrict",
+        index=True,
+        domain="[('company_id', '=', company_id)]",
+    )
     target_profile_id = fields.Many2one(
         related="scenario_id.profile_id",
         store=True,
@@ -152,13 +158,20 @@ class PmQmsIso9001GapAssessment(models.Model):
             prepared_vals_list.append(vals)
         return super().create(prepared_vals_list)
 
-    @api.constrains("scenario_id", "company_id", "source_profile_id")
+    @api.constrains(
+        "scenario_id", "company_id", "source_profile_id", "implementation_project_id"
+    )
     def _check_profile_scope(self):
         for assessment in self:
             scenario = assessment.scenario_id
             source = assessment.source_profile_id
             if scenario.company_id != assessment.company_id:
                 raise ValidationError("Scenario and assessment company must match.")
+            project = assessment.implementation_project_id
+            if project and project.company_id != assessment.company_id:
+                raise ValidationError(
+                    "Implementation project and assessment company must match."
+                )
             if source:
                 if source.company_id != assessment.company_id:
                     raise ValidationError("Source profile and assessment company must match.")
@@ -248,7 +261,13 @@ class PmQmsIso9001GapAssessment(models.Model):
         }
         if workflow_fields.intersection(vals):
             raise AccessError("Workflow-owned assessment fields cannot be changed directly.")
-        identity_fields = {"scenario_id", "source_profile_id", "assessment_date", "assessor_id"}
+        identity_fields = {
+            "scenario_id",
+            "source_profile_id",
+            "implementation_project_id",
+            "assessment_date",
+            "assessor_id",
+        }
         if identity_fields.intersection(vals) and any(record.state != "draft" for record in self):
             raise AccessError("Assessment identity cannot change after the workflow starts.")
         protected = set(vals) - {"conclusion"}
