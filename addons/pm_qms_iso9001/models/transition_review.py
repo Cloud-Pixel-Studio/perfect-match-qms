@@ -201,6 +201,14 @@ class PmQmsIso9001TransitionReview(models.Model):
                     "Readiness review implementation project must belong to the same company."
                 )
             actions = review.assessment_id.transition_action_ids
+            assessment = review.assessment_id
+            if (
+                assessment.implementation_project_id
+                and assessment.implementation_project_id != review.implementation_project_id
+            ):
+                raise ValidationError(
+                    "Readiness review project must match the assessment project."
+                )
             if actions:
                 action_projects = actions.mapped("implementation_project_id")
                 if action_projects != review.implementation_project_id:
@@ -208,7 +216,6 @@ class PmQmsIso9001TransitionReview(models.Model):
                         "Readiness review project must match every transition action."
                     )
             else:
-                assessment = review.assessment_id
                 if (
                     assessment.implementation_project_id != review.implementation_project_id
                     or assessment.line_ids.filtered(
@@ -297,13 +304,20 @@ class PmQmsIso9001TransitionReview(models.Model):
                     "Transition action status or relationships changed after submission; return and resubmit the review."
                 )
             actions = review.assessment_id.transition_action_ids
+            assessment = review.assessment_id
+            if (
+                assessment.implementation_project_id
+                and assessment.implementation_project_id != review.implementation_project_id
+            ):
+                raise UserError(
+                    "Assessment project alignment changed after submission; return and resubmit the review."
+                )
             if actions:
                 if actions.mapped("implementation_project_id") != review.implementation_project_id:
                     raise UserError(
                         "Transition action project alignment changed after submission; return and resubmit the review."
                     )
             else:
-                assessment = review.assessment_id
                 if (
                     assessment.implementation_project_id != review.implementation_project_id
                     or assessment.line_ids.filtered(
