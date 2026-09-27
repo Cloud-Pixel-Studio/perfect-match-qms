@@ -508,6 +508,30 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         )
         self.assertFalse(line.with_user(foreign_reader).exists())
 
+    def test_legacy_frozen_report_remains_verifiable_after_upgrade(self):
+        _package, execution = self._approved_execution_record()
+        execution.action_record_start()
+        legacy_report = {
+            "execution_log_reference": "LEGACY-LOG-001",
+            "execution_log_sha256": "e" * 64,
+            "post_migration_checks": "Legacy outcome report.",
+            "rollback_decision": "not_required",
+            "rollback_evidence": "",
+            "outcome": "completed",
+            "created_count": 6,
+            "reused_count": 4,
+            "skipped_count": 2,
+            "rejected_count": 1,
+            "manual_review_count": 3,
+        }
+        execution._write_workflow(
+            {"report_snapshot": json.dumps(legacy_report, sort_keys=True)}
+        )
+        execution._compute_reconciliation_counts()
+        self.assertEqual(execution.created_count, 6)
+        self.assertEqual(execution.reused_count, 4)
+        self.assertEqual(execution._report_values(), legacy_report)
+
     def test_reconciliation_is_frozen_when_outcome_is_recorded(self):
         _package, execution = self._approved_execution_record()
         execution.action_record_start()
