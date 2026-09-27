@@ -279,3 +279,119 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         )
         self.assertFalse(hasattr(package, "action_execute"))
         self.assertFalse(hasattr(package, "action_migrate"))
+
+
+    def _approved_execution_record(self):
+        review = self._approved_readiness_review()
+        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            review
+        )
+        self._complete_package_inputs(package)
+        package.action_run_preflight()
+        package.action_submit()
+        package.with_user(self.reviewer).action_approve()
+        execution = self.env[
+            "pm.qms.iso9001.migration.execution"
+        ]._prepare_from_package(package)
+        execution.write(
+            {
+                "operator_id": self.env.user.id,
+                "reviewer_id": self.reviewer.id,
+                "environment_reference": "ENV-CONTROLLED-001",
+                "fresh_preflight_evidence": "Fresh environment checks passed.",
+                "backup_access_evidence": "Approved backup was accessible.",
+                "restoration_test_evidence": "Restoration rehearsal passed.",
+                "dry_run_evidence": "Isolated dry run passed.",
+                "authorization_notes": "Execution authorized for the approved window.",
+            }
+        )
+        execution.action_run_preflight()
+        execution.with_user(self.reviewer).action_authorize()
+        return package, execution
+
+    def test_execution_requires_approved_package_and_is_idempotent(self):
+        review = self._approved_readiness_review()
+        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            review
+        )
+        with self.assertRaises(UserError):
+            self.env[
+                "pm.qms.iso9001.migration.execution"
+            ]._prepare_from_package(package)
+
+        self._complete_package_inputs(package)
+        package.action_run_preflight()
+        package.action_submit()
+        package.with_user(self.reviewer).action_approve()
+        execution = package.action_prepare_execution_record()
+        same_execution = package.action_prepare_execution_record()
+        self.assertEqual(execution["res_id"], same_execution["res_id"])
+        with self.assertRaises(AccessError):
+            self.env["pm.qms.iso9001.migration.execution"].create(
+                {"name": "Forged", "code": "FORGED", "package_id": package.id}
+            )
+
+    def test_execution_has_independent_authorization_and_no_executor(self):
+        package, execution = self._approved_execution_record()
+        self.assertEqual(execution.state, "authorized")
+        self.assertEqual(execution.package_manifest_sha256, package.manifest_sha256)
+        self.assertFalse(hasattr(execution, "action_execute"))
+        self.assertFalse(hasattr(execution, "action_migrate"))
+        with self.assertRaises(AccessError):
+            execution.with_user(self.reviewer).action_record_start()
+
+    def test_execution_records_counts_outcome_and_independent_closeout(self):
+        _package, execution = self._approved_execution_record()
+        execution.action_record_start()
+        execution.write(
+            {
+                "execution_log_reference": "LOG-IMMUTABLE-001",
+                "post_migration_checks": "Historical records and relationships verified.",
+                "rollback_decision": "not_required",
+                "outcome": "completed",
+                "created_count": 12,
+                "reused_count": 8,
+                "skipped_count": 2,
+                "rejected_count": 1,
+                "manual_review_count": 3,
+            }
+        )
+        execution.action_record_outcome()
+        execution.action_submit_closeout()
+        with self.assertRaises(AccessError):
+            execution.action_close()
+        execution.with_user(self.reviewer).write(
+            {"closeout_notes": "Independent checks and counts accepted."}
+        )
+        execution.with_user(self.reviewer).action_close()
+        self.assertEqual(execution.state, "closed")
+        self.assertEqual(execution.closed_by_id, self.reviewer)
+        with self.assertRaises(AccessError):
+            execution.write({"post_migration_checks": "Rewrite history."})
+
+    def test_execution_rollback_evidence_and_negative_counts_are_enforced(self):
+        _package, execution = self._approved_execution_record()
+        execution.action_record_start()
+        with self.assertRaises(ValidationError):
+            execution.write({"rejected_count": -1})
+        execution.write(
+            {
+                "execution_log_reference": "LOG-IMMUTABLE-ROLLBACK",
+                "post_migration_checks": "Failure detected before closeout.",
+                "rollback_decision": "executed",
+                "outcome": "rolled_back",
+            }
+        )
+        with self.assertRaisesRegex(UserError, "rollback evidence"):
+            execution.action_record_outcome()
+        execution.write({"rollback_evidence": "Restore completed and verified."})
+        execution.action_record_outcome()
+        self.assertEqual(execution.state, "recorded")
+
+    def test_editing_preflight_controls_invalidates_snapshot(self):
+        _package, execution = self._approved_execution_record()
+        execution._write_workflow({"state": "returned"})
+        execution.write({"dry_run_evidence": "Updated isolated dry-run evidence."})
+        self.assertEqual(execution.state, "draft")
+        self.assertFalse(execution.control_snapshot)
+        self.assertFalse(execution.control_sha256)
