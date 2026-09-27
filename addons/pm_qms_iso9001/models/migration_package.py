@@ -390,10 +390,8 @@ class PmQmsIso9001MigrationPackage(models.Model):
                 raise AccessError("Submitted migration packages are locked.")
         self._check_manager_permission()
         result = super().write(vals)
-        if any(package.state == "preflight_passed" for package in self):
-            super(PmQmsIso9001MigrationPackage, self.filtered(
-                lambda package: package.state == "preflight_passed"
-            )).write(
+        for package in self.filtered(lambda item: item.state == "preflight_passed"):
+            package._write_workflow(
                 {
                     "state": "draft",
                     "manifest_snapshot": False,
