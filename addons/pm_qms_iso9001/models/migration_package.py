@@ -162,6 +162,10 @@ class PmQmsIso9001MigrationPackage(models.Model):
             raise UserError(
                 "A source edition is required for a migration package; initial implementations use the implementation workflow."
             )
+        if review.source_edition_snapshot == review.target_edition_snapshot:
+            raise UserError(
+                "Same-edition recertification readiness does not create an ISO edition migration package."
+            )
         existing = self.search([("readiness_review_id", "=", review.id)], limit=1)
         if existing:
             return existing
@@ -207,6 +211,10 @@ class PmQmsIso9001MigrationPackage(models.Model):
             review = package.readiness_review_id
             if not review.source_edition_snapshot:
                 raise ValidationError("Migration packages require a source edition.")
+            if review.source_edition_snapshot == review.target_edition_snapshot:
+                raise ValidationError(
+                    "Same-edition readiness cannot create an ISO edition migration package."
+                )
             if package.source_edition_snapshot != review.source_edition_snapshot:
                 raise ValidationError("Migration package source edition must match its review.")
             if package.target_edition_snapshot != review.target_edition_snapshot:
@@ -279,6 +287,10 @@ class PmQmsIso9001MigrationPackage(models.Model):
             review = package.readiness_review_id
             if review.state != "approved" or review.decision != "internal_review":
                 raise UserError("The readiness review is no longer approved for internal review.")
+            if package.source_edition_snapshot == package.target_edition_snapshot:
+                raise UserError(
+                    "Same-edition readiness cannot run an ISO edition migration preflight."
+                )
             actions = review.assessment_id.transition_action_ids
             assessment = review.assessment_id
             if actions and any(action.state != "completed" for action in actions):
