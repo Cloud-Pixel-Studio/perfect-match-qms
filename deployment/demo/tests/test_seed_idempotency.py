@@ -1623,6 +1623,10 @@ class GuidedCoverageContractTests(unittest.TestCase):
         self.assertIn("APEX-OOT-001", source)
         self.assertIn("Apex ISO 9001:2015 to 2026 guided gap assessment", source)
         self.assertIn('transition_assessment.with_user(demo_user).action_generate_transition_plan()', source)
+        self.assertIn(
+            ')._prepare_from_assessment(transition_assessment.with_user(demo_user))',
+            source,
+        )
         self.assertIn('if len(transition_actions) != 2:', source)
         self.assertIn('unlinked_actions.with_user(demo_user).write({"implementation_project_id": project.id})', source)
         self.assertIn('transition_review.with_user(demo_user).action_submit()', source)

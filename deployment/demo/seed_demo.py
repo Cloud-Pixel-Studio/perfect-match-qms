@@ -1074,7 +1074,7 @@ if model_exists("pm.qms.iso9001.gap.assessment") and model_exists("pm.qms.iso900
 
     transition_review = env["pm.qms.iso9001.transition.review"].with_user(
         demo_user
-    )._prepare_from_assessment(transition_assessment)
+    )._prepare_from_assessment(transition_assessment.with_user(demo_user))
     if transition_review.state == "draft":
         transition_review.with_user(demo_user).write(
             {
