@@ -96,6 +96,5 @@ class TestPmQmsIso9001TransitionScenarios(TransactionCase):
 
         self.assertEqual(
             {scenario.code: scenario.sequence for scenario in existing},
-            {code: sequence for code, sequence in EXPECTED_SCENARIO_SEQUENCES.items()
-             if code != "ISO9001-2026-RECERTIFICATION-SAME-EDITION"},
+            EXPECTED_SCENARIO_SEQUENCES,
         )
