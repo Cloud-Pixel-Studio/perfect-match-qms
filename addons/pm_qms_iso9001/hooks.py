@@ -199,6 +199,19 @@ ISO9001_TRANSITION_SCENARIOS = (
 )
 
 
+ISO9001_TRANSITION_SCENARIO_SEQUENCES = {
+    "ISO9001-2026-INITIAL": 10,
+    "ISO9001-2026-TRANSITION-2015": 11,
+    "ISO9001-2026-LEGACY": 12,
+    "ISO9001-2026-RECERTIFICATION": 13,
+    "ISO9001-2026-SCOPE-EXPANSION": 14,
+    "ISO9001-2026-MULTI-SITE": 15,
+    "ISO9001-2026-INTEGRATED": 16,
+    "ISO9001-2026-PARTIAL": 17,
+    "ISO9001-2026-RECERTIFICATION-SAME-EDITION": 18,
+}
+
+
 def seed_iso9001_transition_scenarios(env):
     company = env.ref("base.main_company")
     profile = _ensure_iso9001_2026_profile(env)
@@ -220,7 +233,7 @@ def seed_iso9001_transition_scenarios(env):
             "scenario_type": scenario_type,
             "source_edition": source_edition,
             "target_edition": target_edition,
-            "sequence": list(item[0] for item in ISO9001_TRANSITION_SCENARIOS).index(code) + 10,
+            "sequence": ISO9001_TRANSITION_SCENARIO_SEQUENCES[code],
             "profile_id": profile.id,
             "company_id": company.id,
             "objective": objective,
