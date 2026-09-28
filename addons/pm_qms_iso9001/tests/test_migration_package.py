@@ -25,7 +25,14 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.verifier@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "group_ids": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
             }
         )
         self.reviewer = self.env["res.users"].create(
@@ -34,7 +41,14 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.reviewer@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "group_ids": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
             }
         )
         self.manager = self.env["res.users"].create(
@@ -126,7 +140,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "status": "gap",
                 "gap_description": "Controlled source gap.",
                 "action_plan": "Complete the controlled migration prerequisite.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": fields.Date.today() + timedelta(days=30),
             }
         )
@@ -427,7 +441,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         ]._prepare_from_package(package)
         execution.write(
             {
-                "operator_id": self.env.user.id,
+                "operator_id": self.manager.id,
                 "reviewer_id": self.reviewer.id,
                 "environment_reference": "ENV-CONTROLLED-001",
                 "fresh_preflight_evidence": "Fresh environment checks passed.",
