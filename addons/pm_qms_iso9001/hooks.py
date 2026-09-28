@@ -142,6 +142,17 @@ ISO9001_TRANSITION_SCENARIOS = (
         "The product reports implementation readiness only and does not claim certification.",
     ),
     (
+        "ISO9001-2026-RECERTIFICATION-SAME-EDITION",
+        "ISO 9001:2026 same-edition recertification readiness",
+        "recertification",
+        "2026",
+        "2026",
+        "Review the continuing suitability and effectiveness of the existing same-edition QMS for an independent recertification-cycle readiness decision.",
+        "An established ISO 9001:2026 QMS baseline, current scope, and cycle evidence are available.",
+        "Evidence-based review of audit results, corrective-action effectiveness, QMS performance, management oversight, material changes, and continuing suitability.",
+        "This is a readiness assessment only; it does not represent a certification-body audit, decision, or certification claim.",
+    ),
+    (
         "ISO9001-2026-SCOPE-EXPANSION",
         "ISO 9001:2026 scope expansion",
         "scope_expansion",
