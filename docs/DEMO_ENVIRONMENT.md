@@ -28,11 +28,12 @@ peer environment.
 
 ## Multiple isolated Demo instances
 
-The launcher accepts `PMQMS_DEMO_INSTANCE`; the default `demo` preserves the
-original database, secret/backup paths, ports, volumes, network, project, and
-runtime lock. Instance names are restricted to lowercase letters, digits, and
-hyphens, beginning with a letter. The database, project, volumes, and network
-are derived from the instance name and mismatched overrides are rejected.
+The launcher accepts only the explicitly approved `PMQMS_DEMO_INSTANCE` values
+`demo`, `demo2`, and `demo3`; unknown names are rejected. The default `demo`
+preserves the original database, secret/backup paths, ports, volumes, network,
+project, and runtime lock. Each approved instance is paired with exactly one
+database (`demo` -> `pmqms_demo`, `demo2` -> `pmqms_demo2`, `demo3` ->
+`pmqms_demo3`); mismatched overrides are rejected.
 
 Demo2 uses an explicit isolated environment:
 
@@ -56,6 +57,22 @@ without creating files or changing permissions. Review it before running
 making any filesystem changes. A non-default instance stores its own copy of
 the tracked runtime lock under its secrets root. The Compose project derives
 container names automatically; no fixed `container_name` is used.
+
+Demo3 uses dedicated paths and ports that do not collide with Demo1 or Demo2:
+
+```bash
+export PMQMS_DEMO_INSTANCE=demo3
+export PMQMS_DEMO_DB=pmqms_demo3
+export PMQMS_DEMO_SECRETS_DIR=/opt/perfect-match/secrets/odoo-demo3
+export PMQMS_DEMO_BACKUP_DIR=/opt/perfect-match/backups/odoo-demo3
+export PMQMS_DEMO_COMPOSE_PROJECT=pmqms-demo3
+export PMQMS_DEMO_POSTGRES_VOLUME=pmqms_demo3_postgres
+export PMQMS_DEMO_ODOO_VOLUME=pmqms_demo3_odoo_data
+export PMQMS_DEMO_NETWORK=pmqms_demo3_network
+export ODOO_DEMO_HTTP_PORT=8172
+export ODOO_DEMO_LONGPOLLING_PORT=8175
+./deployment/scripts/odoo-demo.sh show-config
+```
 
 On initialization the launcher claims each secrets and backup root with a
 non-secret `.pmqms-demo-instance-owner` marker. Existing markers must match the

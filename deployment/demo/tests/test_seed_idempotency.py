@@ -139,6 +139,16 @@ class SeedIdentityTests(unittest.TestCase):
         guard = load_seed_database_guard()
         self.assertEqual(guard("demo", "pmqms_demo", "pmqms_demo"), "pmqms_demo")
 
+    def test_seed_database_guard_accepts_all_explicit_demo_pairs(self):
+        guard = load_seed_database_guard()
+        for instance, database in (
+            ("demo", "pmqms_demo"),
+            ("demo2", "pmqms_demo2"),
+            ("demo3", "pmqms_demo3"),
+        ):
+            with self.subTest(instance=instance):
+                self.assertEqual(guard(instance, database, database), database)
+
     def test_seed_database_guard_accepts_demo2_only_for_demo2_instance(self):
         guard = load_seed_database_guard()
         self.assertEqual(guard("demo2", "pmqms_demo2", "pmqms_demo2"), "pmqms_demo2")
@@ -158,10 +168,26 @@ class SeedIdentityTests(unittest.TestCase):
 
     def test_seed_database_guard_rejects_inconsistent_instance_and_database(self):
         guard = load_seed_database_guard()
-        with self.assertRaises(RuntimeError):
-            guard("demo2", "pmqms_demo2", "pmqms_demo")
-        with self.assertRaises(RuntimeError):
-            guard("demo2", "pmqms_demo", "pmqms_demo")
+        for instance, configured, actual in (
+            ("demo", "pmqms_demo", "pmqms_demo2"),
+            ("demo2", "pmqms_demo2", "pmqms_demo"),
+            ("demo3", "pmqms_demo3", "pmqms_demo2"),
+            ("demo3", "pmqms_demo2", "pmqms_demo2"),
+        ):
+            with self.subTest(instance=instance, configured=configured, actual=actual):
+                with self.assertRaises(RuntimeError):
+                    guard(instance, configured, actual)
+
+    def test_seed_database_guard_rejects_unknown_instances_and_arbitrary_databases(self):
+        guard = load_seed_database_guard()
+        for instance, configured, actual in (
+            ("demo4", "pmqms_demo4", "pmqms_demo4"),
+            ("demo3", "pmqms_demo999", "pmqms_demo999"),
+            ("demo", "pmqms_demo_prod", "pmqms_demo_prod"),
+        ):
+            with self.subTest(instance=instance, database=actual):
+                with self.assertRaises(RuntimeError):
+                    guard(instance, configured, actual)
 
     def test_guided_project_generation_uses_the_authorized_manager_identity(self):
         helper = load_seed_helpers("ensure_guided_implementation_project")[
@@ -399,21 +425,42 @@ class SeedIdentityTests(unittest.TestCase):
         guard = load_validation_database_guard()
         self.assertEqual(guard("demo", "pmqms_demo", "pmqms_demo"), "pmqms_demo")
 
+    def test_validation_guard_accepts_all_explicit_demo_pairs(self):
+        guard = load_validation_database_guard()
+        for instance, database in (
+            ("demo", "pmqms_demo"),
+            ("demo2", "pmqms_demo2"),
+            ("demo3", "pmqms_demo3"),
+        ):
+            with self.subTest(instance=instance):
+                self.assertEqual(guard(instance, database, database), database)
+
     def test_validation_guard_accepts_demo2_database_for_demo2_instance(self):
         guard = load_validation_database_guard()
         self.assertEqual(guard("demo2", "pmqms_demo2", "pmqms_demo2"), "pmqms_demo2")
 
     def test_validation_guard_rejects_unauthorized_database(self):
         guard = load_validation_database_guard()
-        with self.assertRaises(RuntimeError):
-            guard("demo2", "pmqms_production", "pmqms_production")
+        for instance, configured, actual in (
+            ("demo4", "pmqms_demo4", "pmqms_demo4"),
+            ("demo3", "pmqms_demo999", "pmqms_demo999"),
+            ("demo2", "pmqms_production", "pmqms_production"),
+        ):
+            with self.subTest(instance=instance, database=actual):
+                with self.assertRaises(RuntimeError):
+                    guard(instance, configured, actual)
 
     def test_validation_guard_rejects_inconsistent_instance_and_database(self):
         guard = load_validation_database_guard()
-        with self.assertRaises(RuntimeError):
-            guard("demo", "pmqms_demo2", "pmqms_demo2")
-        with self.assertRaises(RuntimeError):
-            guard("demo2", "pmqms_demo2", "pmqms_demo")
+        for instance, configured, actual in (
+            ("demo", "pmqms_demo2", "pmqms_demo2"),
+            ("demo2", "pmqms_demo2", "pmqms_demo"),
+            ("demo3", "pmqms_demo3", "pmqms_demo"),
+            ("demo3", "pmqms_demo", "pmqms_demo"),
+        ):
+            with self.subTest(instance=instance, configured=configured, actual=actual):
+                with self.assertRaises(RuntimeError):
+                    guard(instance, configured, actual)
 
     def test_seed_launcher_passes_instance_and_keeps_demo2_paths_isolated(self):
         launcher = (SEED_PATH.parents[1] / "scripts" / "odoo-demo.sh").read_text(encoding="utf-8")
@@ -425,7 +472,12 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertIn('DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-demo-isolated"', launcher)
         self.assertIn('DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-demo-isolated"', launcher)
         self.assertIn('PMQMS_DEMO_INSTANCE" == demo2', launcher)
-        self.assertIn('EXPECTED_DB_NAME="pmqms_${INSTANCE_SUFFIX}"', launcher)
+        self.assertIn('demo|demo2|demo3)', launcher)
+        self.assertIn('demo3) EXPECTED_DB_NAME="pmqms_demo3"', launcher)
+        self.assertIn('Unapproved PMQMS_DEMO_INSTANCE', launcher)
+        self.assertIn('DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-demo3"', launcher)
+        self.assertIn('DEFAULT_HTTP_PORT=8172', launcher)
+        self.assertIn('DEFAULT_LONGPOLLING_PORT=8175', launcher)
         validate_start = launcher.index("validate_demo() {")
         validate_end = launcher.index("\n}\n", validate_start)
         validate_block = launcher[validate_start:validate_end]
@@ -1692,7 +1744,8 @@ class GuidedCoverageContractTests(unittest.TestCase):
         self.assertEqual(set(expected.values()), {
             "overdue", "due_soon", "current", "quarantined", "out_for_calibration"
         })
-        self.assertIn('APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}', seed)
+        self.assertIn('"demo3": "pmqms_demo3",', seed)
+        self.assertIn('"demo3": "pmqms_demo3",', validator)
         self.assertIn('DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")', seed)
         self.assertIn('"EQ-0001": "quarantined"', seed)
         self.assertIn('"APEX-CAL-EVT-004": "EQ-0004"', seed)

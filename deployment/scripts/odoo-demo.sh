@@ -12,10 +12,18 @@ validate_instance_name() {
     return 2
   }
   [[ "$PMQMS_DEMO_INSTANCE" != *..* ]] || { echo "Invalid instance traversal sequence." >&2; return 2; }
+  case "$PMQMS_DEMO_INSTANCE" in
+    demo|demo2|demo3) ;;
+    *) echo "Unapproved PMQMS_DEMO_INSTANCE '$PMQMS_DEMO_INSTANCE'; allowed instances are demo, demo2, and demo3." >&2; return 2 ;;
+  esac
 }
 validate_instance_name || exit $?
 INSTANCE_SUFFIX="${PMQMS_DEMO_INSTANCE//-/_}"
-EXPECTED_DB_NAME="pmqms_${INSTANCE_SUFFIX}"
+case "$PMQMS_DEMO_INSTANCE" in
+  demo) EXPECTED_DB_NAME="pmqms_demo" ;;
+  demo2) EXPECTED_DB_NAME="pmqms_demo2" ;;
+  demo3) EXPECTED_DB_NAME="pmqms_demo3" ;;
+esac
 EXPECTED_PROJECT_NAME="pmqms-${PMQMS_DEMO_INSTANCE}"
 EXPECTED_POSTGRES_VOLUME="pmqms_${INSTANCE_SUFFIX}_postgres"
 EXPECTED_ODOO_VOLUME="pmqms_${INSTANCE_SUFFIX}_odoo_data"
@@ -30,6 +38,11 @@ elif [[ "$PMQMS_DEMO_INSTANCE" == demo2 ]]; then
   DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-demo-isolated"
   DEFAULT_HTTP_PORT=8171
   DEFAULT_LONGPOLLING_PORT=8174
+elif [[ "$PMQMS_DEMO_INSTANCE" == demo3 ]]; then
+  DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-demo3"
+  DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-demo3"
+  DEFAULT_HTTP_PORT=8172
+  DEFAULT_LONGPOLLING_PORT=8175
 else
   DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-${PMQMS_DEMO_INSTANCE}"
   DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-${PMQMS_DEMO_INSTANCE}"
