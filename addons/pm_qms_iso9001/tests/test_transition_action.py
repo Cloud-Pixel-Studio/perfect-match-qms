@@ -34,7 +34,14 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "login": "iso.action.verifier@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "group_ids": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
             }
         )
 
@@ -73,7 +80,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "status": "partial",
                 "gap_description": "Evidence exists but is not consistently controlled.",
                 "action_plan": "Standardize the evidence review and approval workflow.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": deadline,
             }
         )
@@ -82,7 +89,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "status": "gap",
                 "gap_description": "No controlled transition governance review exists.",
                 "action_plan": "Approve and execute a transition governance review.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": deadline,
             }
         )
@@ -144,7 +151,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                     "gap_description_snapshot": gap_line.gap_description,
                     "action_plan_snapshot": gap_line.action_plan,
                     "source_status_snapshot": "gap",
-                    "owner_id": self.env.user.id,
+                    "owner_id": self.manager.id,
                     "target_date": fields.Date.today(),
                 }
             )
@@ -174,7 +181,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
         )
         action.action_submit_verification()
         self.assertEqual(action.state, "verification")
-        self.assertEqual(action.submitted_by_id, self.env.user)
+        self.assertEqual(action.submitted_by_id, self.manager)
 
         with self.assertRaises(AccessError):
             action.action_complete()
