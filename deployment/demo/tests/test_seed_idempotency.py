@@ -475,6 +475,9 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertIn('demo|demo2|demo3)', launcher)
         self.assertIn('demo3) EXPECTED_DB_NAME="pmqms_demo3"', launcher)
         self.assertIn('Unapproved PMQMS_DEMO_INSTANCE', launcher)
+        self.assertIn('DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-demo3"', launcher)
+        self.assertIn('DEFAULT_HTTP_PORT=8172', launcher)
+        self.assertIn('DEFAULT_LONGPOLLING_PORT=8175', launcher)
         validate_start = launcher.index("validate_demo() {")
         validate_end = launcher.index("\n}\n", validate_start)
         validate_block = launcher[validate_start:validate_end]

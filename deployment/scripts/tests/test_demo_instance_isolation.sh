@@ -42,8 +42,29 @@ grep -Fxq 'license_file=/opt/perfect-match/secrets/odoo-demo-isolated/demo_licen
 ! grep -Fxq 'secrets_dir=/opt/perfect-match/secrets/odoo-demo' <<<"$demo2_official"
 ! grep -Fxq 'backup_dir=/opt/perfect-match/backups/odoo-demo' <<<"$demo2_official"
 
+demo3_official="$(PMQMS_DEMO_INSTANCE=demo3 "$LAUNCHER" show-config)"
+grep -Fxq 'demo_database=pmqms_demo3' <<<"$demo3_official"
+grep -Fxq 'compose_project=pmqms-demo3' <<<"$demo3_official"
+grep -Fxq 'secrets_dir=/opt/perfect-match/secrets/odoo-demo3' <<<"$demo3_official"
+grep -Fxq 'backup_dir=/opt/perfect-match/backups/odoo-demo3' <<<"$demo3_official"
+grep -Fxq 'postgres_volume=pmqms_demo3_postgres' <<<"$demo3_official"
+grep -Fxq 'odoo_volume=pmqms_demo3_odoo_data' <<<"$demo3_official"
+grep -Fxq 'network=pmqms_demo3_network' <<<"$demo3_official"
+grep -Fxq 'http_port=8172' <<<"$demo3_official"
+grep -Fxq 'longpolling_port=8175' <<<"$demo3_official"
+! grep -Fxq 'http_port=8170' <<<"$demo3_official"
+! grep -Fxq 'http_port=8171' <<<"$demo3_official"
+
+if PMQMS_DEMO_INSTANCE=demo4 "$LAUNCHER" show-config >"$WORK/unapproved-instance" 2>&1; then
+  echo "Unapproved Demo instance unexpectedly accepted." >&2
+  exit 1
+fi
+grep -Fq 'Unapproved PMQMS_DEMO_INSTANCE' "$WORK/unapproved-instance"
+
 demo2_secrets="$WORK/secrets/odoo-demo-isolated"
 demo2_backups="$WORK/backups/odoo-demo-isolated"
+demo3_secrets="$WORK/secrets/odoo-demo3"
+demo3_backups="$WORK/backups/odoo-demo3"
 demo1_test_secrets="$WORK/runtime-demo/secrets"
 demo1_test_backups="$WORK/runtime-demo/backups"
 PMQMS_DEMO_INSTANCE=demo \
@@ -64,6 +85,21 @@ grep -Fq 'network=pmqms_demo2_network' <<<"$demo2_config"
 ! grep -Fq '/opt/perfect-match/backups/odoo-demo' <<<"$demo2_config"
 ! grep -Eq 'pmqms_demo([^a-zA-Z0-9_]|$)' <<<"$demo2_config"
 
+demo3_config="$(PMQMS_DEMO_INSTANCE=demo3 \
+  PMQMS_DEMO_SECRETS_DIR="$demo3_secrets" \
+  PMQMS_DEMO_BACKUP_DIR="$demo3_backups" \
+  "$LAUNCHER" show-config)"
+grep -Fq 'demo_instance=demo3' <<<"$demo3_config"
+grep -Fq 'demo_database=pmqms_demo3' <<<"$demo3_config"
+grep -Fq 'compose_project=pmqms-demo3' <<<"$demo3_config"
+grep -Fq 'postgres_volume=pmqms_demo3_postgres' <<<"$demo3_config"
+grep -Fq 'odoo_volume=pmqms_demo3_odoo_data' <<<"$demo3_config"
+grep -Fq 'network=pmqms_demo3_network' <<<"$demo3_config"
+grep -Fq 'http_port=8172' <<<"$demo3_config"
+grep -Fq 'longpolling_port=8175' <<<"$demo3_config"
+! grep -Fq 'pmqms_demo_postgres' <<<"$demo3_config"
+! grep -Fq 'pmqms_demo2_postgres' <<<"$demo3_config"
+
 PMQMS_DEMO_INSTANCE=demo2 \
 PMQMS_DEMO_SECRETS_DIR="$demo2_secrets" \
 PMQMS_DEMO_BACKUP_DIR="$demo2_backups" \
@@ -72,6 +108,11 @@ grep -Fq "secrets_dir=$demo2_secrets" "$WORK/config-output"
 grep -Fq "backup_dir=$demo2_backups" "$WORK/config-output"
 grep -Fq -- '--project-name pmqms-demo ' "$TEST_DOCKER_LOG"
 grep -Fq -- '--project-name pmqms-demo2' "$TEST_DOCKER_LOG"
+PMQMS_DEMO_INSTANCE=demo3 \
+PMQMS_DEMO_SECRETS_DIR="$demo3_secrets" \
+PMQMS_DEMO_BACKUP_DIR="$demo3_backups" \
+"$LAUNCHER" config > "$WORK/demo3-config-output"
+grep -Fq -- '--project-name pmqms-demo3' "$TEST_DOCKER_LOG"
 ! grep -Fq '/opt/perfect-match/secrets/odoo-demo' "$TEST_DOCKER_LOG"
 ! grep -Fq '/opt/perfect-match/backups/odoo-demo' "$TEST_DOCKER_LOG"
 [[ "$(stat -c '%a' "$WORK/secrets/odoo-demo")" == 711 ]]

@@ -38,6 +38,11 @@ elif [[ "$PMQMS_DEMO_INSTANCE" == demo2 ]]; then
   DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-demo-isolated"
   DEFAULT_HTTP_PORT=8171
   DEFAULT_LONGPOLLING_PORT=8174
+elif [[ "$PMQMS_DEMO_INSTANCE" == demo3 ]]; then
+  DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-demo3"
+  DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-demo3"
+  DEFAULT_HTTP_PORT=8172
+  DEFAULT_LONGPOLLING_PORT=8175
 else
   DEFAULT_SECRETS_DIR="/opt/perfect-match/secrets/odoo-${PMQMS_DEMO_INSTANCE}"
   DEFAULT_BACKUP_DIR="/opt/perfect-match/backups/odoo-${PMQMS_DEMO_INSTANCE}"
