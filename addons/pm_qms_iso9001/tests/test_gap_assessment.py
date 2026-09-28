@@ -1,4 +1,4 @@
-from odoo import fields
+from odoo import Command, fields
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
@@ -12,14 +12,33 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
     def setUp(self):
         super().setUp()
         post_init_hook(self.env)
-        self.scenario = self.env["pm.qms.iso9001.transition.scenario"].search(
+        manager_group = self.env.ref("pm_qms_core.group_pm_qms_manager")
+        administrator_group = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+        self.manager = self.env["res.users"].create(
+            {
+                "name": "ISO 9001 Gap Assessment Test Manager",
+                "login": "iso.gap.manager@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                            administrator_group.id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.scenario = self.env["pm.qms.iso9001.transition.scenario"].with_user(self.manager).search(
             [
                 ("code", "=", "ISO9001-2026-TRANSITION-2015"),
                 ("company_id", "=", self.env.company.id),
             ],
             limit=1,
         )
-        self.source_profile = self.env["pm.qms.mapping.profile"].search(
+        self.source_profile = self.env["pm.qms.mapping.profile"].with_user(self.manager).search(
             [
                 ("code", "=", PROFILE_CODE),
                 ("company_id", "=", self.env.company.id),
@@ -28,7 +47,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         )
 
     def _assessment(self):
-        return self.env["pm.qms.iso9001.gap.assessment"].create(
+        return self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Controlled 2015 to 2026 assessment",
                 "scenario_id": self.scenario.id,
@@ -62,7 +81,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
 
         self.assertEqual(assessment.state, "completed")
         self.assertEqual(assessment.readiness_percent, 100.0)
-        self.assertEqual(assessment.completed_by_id, self.env.user)
+        self.assertEqual(assessment.completed_by_id, self.manager)
         with self.assertRaises(AccessError):
             assessment.write({"conclusion": "Historical content must remain immutable."})
 
@@ -79,7 +98,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         gap_line.write(
             {
                 "action_plan": "Approve and implement a controlled remediation plan.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": fields.Date.today(),
             }
         )
@@ -90,19 +109,19 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         self.assertLess(assessment.readiness_percent, 100.0)
 
     def test_scenario_action_leaves_assessment_draft_for_project_selection(self):
-        organization = self.env["pm.qms.organization"].create(
+        organization = self.env["pm.qms.organization"].with_user(self.manager).create(
             {
                 "name": "Gap Assessment Project Organization",
                 "code": "GAP-PROJECT-ORG",
                 "company_id": self.env.company.id,
             }
         )
-        project = self.env["pm.qms.implementation.project"].create(
+        project = self.env["pm.qms.implementation.project"].with_user(self.manager).create(
             {
                 "name": "Gap Assessment Transition Project",
                 "company_id": self.env.company.id,
                 "organization_id": organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today(),
                 "implementation_type": "migration",
@@ -110,7 +129,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         )
         before = len(self.scenario.assessment_ids)
         action = self.scenario.action_create_gap_assessment()
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].browse(action["res_id"])
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).browse(action["res_id"])
 
         self.assertEqual(len(self.scenario.assessment_ids), before + 1)
         self.assertEqual(assessment.state, "draft")
@@ -135,7 +154,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         assessment = self._assessment()
         code, name, purpose = GAP_FOCUS_DEFINITIONS[0]
         with self.assertRaises(AccessError):
-            self.env["pm.qms.iso9001.gap.assessment.line"].with_context(
+            self.env["pm.qms.iso9001.gap.assessment.line"].with_user(self.manager).with_context(
                 pm_qms_gap_initialize=True
             ).create(
                 {
@@ -160,7 +179,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
             assessment.with_context(pm_qms_gap_workflow=True).write(
                 {
                     "state": "completed",
-                    "completed_by_id": self.env.user.id,
+                    "completed_by_id": self.manager.id,
                     "completed_date": fields.Datetime.now(),
                 }
             )
@@ -191,7 +210,7 @@ class TestPmQmsIso9001GapAssessment(TransactionCase):
         other_company = self.env["res.company"].create(
             {"name": "Independent ISO Assessment Company"}
         )
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Company snapshot assessment",
                 "scenario_id": self.scenario.id,

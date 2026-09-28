@@ -8,6 +8,10 @@ record. It does not execute a migration, modify customer data, deploy software,
 or claim certification or conformity. Source-less initial implementation uses
 the implementation-project workflow and is not eligible for a migration package.
 
+A migration package is blocked when source and target editions are identical.
+Same-edition recertification uses its cycle-specific assessment and independent
+readiness review; it is not an edition migration.
+
 All workflow guidance is authored by Perfect Match. No licensed ISO publication
 text is reproduced.
 

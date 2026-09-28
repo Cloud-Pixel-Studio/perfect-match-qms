@@ -6,7 +6,11 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.pm_qms_iso9001.hooks import PROFILE_CODE, post_init_hook
+from odoo.addons.pm_qms_iso9001.hooks import (
+    PROFILE_2026_CODE,
+    PROFILE_CODE,
+    post_init_hook,
+)
 
 
 @tagged("-at_install", "post_install")
@@ -21,7 +25,14 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.verifier@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
             }
         )
         self.reviewer = self.env["res.users"].create(
@@ -30,7 +41,31 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.reviewer@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.manager = self.env["res.users"].create(
+            {
+                "name": "ISO 9001 Workflow Test Manager",
+                "login": "iso.workflow.manager@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                            self.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ]
+                    )
+                ],
             }
         )
         self.organization = self.env["pm.qms.organization"].create(
@@ -45,7 +80,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "name": "Controlled ISO migration project",
                 "company_id": self.env.company.id,
                 "organization_id": self.organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today() + timedelta(days=90),
                 "implementation_type": "migration",
@@ -65,6 +100,22 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
             ],
             limit=1,
         )
+        self.same_edition_recertification = self.env[
+            "pm.qms.iso9001.transition.scenario"
+        ].search(
+            [
+                ("code", "=", "ISO9001-2026-RECERTIFICATION-SAME-EDITION"),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        self.profile_2026 = self.env["pm.qms.mapping.profile"].search(
+            [
+                ("code", "=", PROFILE_2026_CODE),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
         self.initial_scenario = self.env["pm.qms.iso9001.transition.scenario"].search(
             [
                 ("code", "=", "ISO9001-2026-INITIAL"),
@@ -74,7 +125,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         )
 
     def _approved_readiness_review(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Migration package source assessment",
                 "scenario_id": self.scenario.id,
@@ -89,7 +140,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "status": "gap",
                 "gap_description": "Controlled source gap.",
                 "action_plan": "Complete the controlled migration prerequisite.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": fields.Date.today() + timedelta(days=30),
             }
         )
@@ -107,7 +158,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         action.action_submit_verification()
         action.with_user(self.verifier).action_complete()
 
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(
@@ -133,11 +184,11 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         }
         if source_backed:
             values["source_profile_id"] = self.source_profile.id
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(values)
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(values)
         assessment.action_start()
         assessment.line_ids.write({"status": "conforming"})
         assessment.action_complete()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(
@@ -206,6 +257,40 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.assertEqual(manifest["transition_actions"], [])
         self.assertEqual(package.source_edition_snapshot, "2015")
 
+    def test_same_edition_recertification_review_cannot_create_migration_package(self):
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
+            {
+                "name": "Same-edition recertification readiness",
+                "scenario_id": self.same_edition_recertification.id,
+                "source_profile_id": self.profile_2026.id,
+                "implementation_project_id": self.project.id,
+            }
+        )
+        assessment.action_start()
+        assessment.line_ids.write({"status": "conforming"})
+        assessment.action_complete()
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
+            assessment
+        )
+        review.write(
+            {
+                "reviewer_id": self.reviewer.id,
+                "decision": "internal_review",
+                "review_basis": "The same-edition readiness evidence was reviewed.",
+                "residual_risk_summary": "No unresolved partial or gap findings remain.",
+                "decision_notes": "This readiness decision is not an edition migration authorization.",
+            }
+        )
+        review.action_submit()
+        review.with_user(self.reviewer).action_approve()
+
+        self.assertEqual(review.source_edition_snapshot, "2026")
+        self.assertEqual(review.target_edition_snapshot, "2026")
+        with self.assertRaisesRegex(UserError, "Same-edition recertification readiness"):
+            self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+                review
+            )
+
     def test_source_less_initial_review_cannot_create_migration_package(self):
         review = self._approved_no_action_review(source_backed=False)
         self.assertFalse(review.source_edition_snapshot)
@@ -265,7 +350,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.foreign.migration@example.invalid",
                 "company_id": foreign_company.id,
                 "company_ids": [Command.set(foreign_company.ids)],
-                "groups_id": [
+                "group_ids": [
                     Command.set(
                         self.env.ref("pm_qms_core.group_pm_qms_manager").ids
                     )
@@ -356,7 +441,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         ]._prepare_from_package(package)
         execution.write(
             {
-                "operator_id": self.env.user.id,
+                "operator_id": self.manager.id,
                 "reviewer_id": self.reviewer.id,
                 "environment_reference": "ENV-CONTROLLED-001",
                 "fresh_preflight_evidence": "Fresh environment checks passed.",
@@ -548,7 +633,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.reader@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(qms_user_group.ids)],
+                "group_ids": [Command.set(qms_user_group.ids)],
             }
         )
         with self.assertRaises(AccessError):
@@ -571,7 +656,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.foreign.migration.reader@example.invalid",
                 "company_id": foreign_company.id,
                 "company_ids": [Command.set(foreign_company.ids)],
-                "groups_id": [Command.set(qms_user_group.ids)],
+                "group_ids": [Command.set(qms_user_group.ids)],
             }
         )
         visible_foreign_rows = self.env[

@@ -142,6 +142,17 @@ ISO9001_TRANSITION_SCENARIOS = (
         "The product reports implementation readiness only and does not claim certification.",
     ),
     (
+        "ISO9001-2026-RECERTIFICATION-SAME-EDITION",
+        "ISO 9001:2026 same-edition recertification readiness",
+        "recertification",
+        "2026",
+        "2026",
+        "Review the continuing suitability and effectiveness of the existing same-edition QMS for an independent recertification-cycle readiness decision.",
+        "An established ISO 9001:2026 QMS baseline, current scope, and cycle evidence are available.",
+        "Evidence-based review of audit results, corrective-action effectiveness, QMS performance, management oversight, material changes, and continuing suitability.",
+        "This is a readiness assessment only; it does not represent a certification-body audit, decision, or certification claim.",
+    ),
+    (
         "ISO9001-2026-SCOPE-EXPANSION",
         "ISO 9001:2026 scope expansion",
         "scope_expansion",
@@ -188,6 +199,19 @@ ISO9001_TRANSITION_SCENARIOS = (
 )
 
 
+ISO9001_TRANSITION_SCENARIO_SEQUENCES = {
+    "ISO9001-2026-INITIAL": 10,
+    "ISO9001-2026-TRANSITION-2015": 11,
+    "ISO9001-2026-LEGACY": 12,
+    "ISO9001-2026-RECERTIFICATION": 13,
+    "ISO9001-2026-SCOPE-EXPANSION": 14,
+    "ISO9001-2026-MULTI-SITE": 15,
+    "ISO9001-2026-INTEGRATED": 16,
+    "ISO9001-2026-PARTIAL": 17,
+    "ISO9001-2026-RECERTIFICATION-SAME-EDITION": 18,
+}
+
+
 def seed_iso9001_transition_scenarios(env):
     company = env.ref("base.main_company")
     profile = _ensure_iso9001_2026_profile(env)
@@ -209,7 +233,7 @@ def seed_iso9001_transition_scenarios(env):
             "scenario_type": scenario_type,
             "source_edition": source_edition,
             "target_edition": target_edition,
-            "sequence": list(item[0] for item in ISO9001_TRANSITION_SCENARIOS).index(code) + 10,
+            "sequence": ISO9001_TRANSITION_SCENARIO_SEQUENCES[code],
             "profile_id": profile.id,
             "company_id": company.id,
             "objective": objective,

@@ -36,6 +36,40 @@ GAP_FOCUS_DEFINITIONS = (
 )
 
 
+SAME_EDITION_RECERTIFICATION_FOCUS_DEFINITIONS = (
+    (
+        "audit_program_results",
+        "Audit program and results",
+        "Review the approved audit program, completed audit evidence, findings, follow-up, and documented conclusions for the review cycle.",
+    ),
+    (
+        "corrective_action_effectiveness",
+        "Corrective action and effectiveness",
+        "Review significant nonconformities, corrective-action completion, recurrence signals, and evidence that actions achieved intended results.",
+    ),
+    (
+        "qms_performance_trends",
+        "QMS performance and trends",
+        "Review controlled quality objectives, process performance, customer feedback, and relevant trend evidence for the defined cycle.",
+    ),
+    (
+        "management_oversight",
+        "Management oversight and decisions",
+        "Review management oversight inputs, decisions, assigned responsibilities, resources, and follow-up evidence for the cycle.",
+    ),
+    (
+        "scope_and_material_changes",
+        "Scope and material changes",
+        "Review changes to products, services, processes, sites, responsibilities, and interested-party assumptions affecting the established QMS scope.",
+    ),
+    (
+        "continuing_suitability",
+        "Continuing suitability and improvement",
+        "Record the evidence-based conclusion on continuing suitability, identified improvement opportunities, residual risks, and required follow-up.",
+    ),
+)
+
+
 class PmQmsIso9001GapAssessment(models.Model):
     _name = "pm.qms.iso9001.gap.assessment"
     _description = "PM-QMS ISO 9001 Edition Gap Assessment"
@@ -182,6 +216,22 @@ class PmQmsIso9001GapAssessment(models.Model):
             elif scenario.scenario_type in ("transition", "recertification"):
                 raise ValidationError("The selected transition scenario requires a source profile.")
 
+    def _focus_definitions(self):
+        self.ensure_one()
+        source_edition = (
+            self.source_profile_id.edition
+            if self.source_profile_id
+            else self.scenario_id.source_edition
+        )
+        target_edition = self.target_profile_id.edition
+        if (
+            self.scenario_id.scenario_type == "recertification"
+            and source_edition
+            and source_edition == target_edition
+        ):
+            return SAME_EDITION_RECERTIFICATION_FOCUS_DEFINITIONS
+        return GAP_FOCUS_DEFINITIONS
+
     def action_start(self):
         self._check_manager_permission()
         for assessment in self:
@@ -208,7 +258,7 @@ class PmQmsIso9001GapAssessment(models.Model):
         for assessment in self:
             if assessment.state != "in_progress":
                 raise UserError("Only in-progress gap assessments can be completed.")
-            if len(assessment.line_ids) != len(GAP_FOCUS_DEFINITIONS):
+            if len(assessment.line_ids) != len(assessment._focus_definitions()):
                 raise UserError("The complete controlled assessment area set is required.")
             pending = assessment.line_ids.filtered(lambda line: line.status == "not_assessed")
             if pending:
@@ -347,7 +397,7 @@ class PmQmsIso9001GapAssessmentLine(models.Model):
                     "purpose_snapshot": purpose,
                 }
                 for sequence, (code, name, purpose) in enumerate(
-                    GAP_FOCUS_DEFINITIONS, start=10
+                    assessment._focus_definitions(), start=10
                 )
             ]
         )

@@ -34,12 +34,36 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "login": "iso.action.verifier@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
             }
         )
 
+        self.manager = self.env["res.users"].create(
+            {
+                "name": "ISO 9001 Workflow Test Manager",
+                "login": "iso.workflow.manager@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                            self.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ]
+                    )
+                ],
+            }
+        )
     def _completed_assessment(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Actionable 2015 to 2026 assessment",
                 "scenario_id": self.scenario.id,
@@ -56,7 +80,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "status": "partial",
                 "gap_description": "Evidence exists but is not consistently controlled.",
                 "action_plan": "Standardize the evidence review and approval workflow.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": deadline,
             }
         )
@@ -65,7 +89,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "status": "gap",
                 "gap_description": "No controlled transition governance review exists.",
                 "action_plan": "Approve and execute a transition governance review.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": deadline,
             }
         )
@@ -127,7 +151,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                     "gap_description_snapshot": gap_line.gap_description,
                     "action_plan_snapshot": gap_line.action_plan,
                     "source_status_snapshot": "gap",
-                    "owner_id": self.env.user.id,
+                    "owner_id": self.manager.id,
                     "target_date": fields.Date.today(),
                 }
             )
@@ -157,7 +181,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
         )
         action.action_submit_verification()
         self.assertEqual(action.state, "verification")
-        self.assertEqual(action.submitted_by_id, self.env.user)
+        self.assertEqual(action.submitted_by_id, self.manager)
 
         with self.assertRaises(AccessError):
             action.action_complete()
@@ -169,7 +193,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
             action.write({"progress_notes": "Historical rewrite"})
 
     def test_plan_generation_requires_completed_assessment_and_actionable_lines(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Conforming assessment",
                 "scenario_id": self.scenario.id,
