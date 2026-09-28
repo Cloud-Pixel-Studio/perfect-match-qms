@@ -2,7 +2,7 @@
 
 ## Purpose and boundaries
 
-This playbook documents the eight registered ISO 9001 implementation/transition scenario types and routes only those paths supported by the current product workflows. A scenario being listed does not mean its complete end-to-end workflow is implemented. Explicit hold points below identify unsupported routes.
+This playbook documents the nine registered ISO 9001 implementation/transition routes across eight scenario types and routes only those paths supported by the current product workflows. A scenario being listed does not mean its complete end-to-end workflow is implemented. Explicit hold points below identify unsupported routes.
 
 It is planning and governance guidance. It does not install or upgrade PMQMS, connect to a customer system, import or alter customer records, perform a migration, or determine conformity or certification. A licensed copy of the applicable standard must be reviewed by an authorized human. Do not reproduce its publication text in PMQMS records, source code, tests, or this playbook.
 
