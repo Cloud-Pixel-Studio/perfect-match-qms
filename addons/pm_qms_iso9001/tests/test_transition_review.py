@@ -5,7 +5,11 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.pm_qms_iso9001.hooks import PROFILE_CODE, post_init_hook
+from odoo.addons.pm_qms_iso9001.hooks import (
+    PROFILE_2026_CODE,
+    PROFILE_CODE,
+    post_init_hook,
+)
 
 
 @tagged("-at_install", "post_install")
@@ -52,6 +56,22 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         self.source_profile = self.env["pm.qms.mapping.profile"].search(
             [
                 ("code", "=", PROFILE_CODE),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        self.same_edition_recertification = self.env[
+            "pm.qms.iso9001.transition.scenario"
+        ].search(
+            [
+                ("code", "=", "ISO9001-2026-RECERTIFICATION-SAME-EDITION"),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        self.profile_2026 = self.env["pm.qms.mapping.profile"].search(
+            [
+                ("code", "=", PROFILE_2026_CODE),
                 ("company_id", "=", self.env.company.id),
             ],
             limit=1,
@@ -163,6 +183,42 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         self.assertEqual(review.target_edition_snapshot, "2026")
         review.write(self._review_values("continue_actions"))
         review.action_submit()
+        review.with_user(self.reviewer).action_approve()
+        self.assertEqual(review.state, "approved")
+
+    def test_same_edition_recertification_uses_cycle_review_and_no_migration_actions(self):
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Same-edition recertification cycle assessment",
+                "scenario_id": self.same_edition_recertification.id,
+                "source_profile_id": self.profile_2026.id,
+                "implementation_project_id": self.project.id,
+            }
+        )
+        assessment.action_start()
+        self.assertEqual(
+            set(assessment.line_ids.mapped("focus_code")),
+            {
+                "audit_program_results",
+                "corrective_action_effectiveness",
+                "qms_performance_trends",
+                "management_oversight",
+                "scope_and_material_changes",
+                "continuing_suitability",
+            },
+        )
+        self.assertEqual(assessment.source_edition_snapshot, "2026")
+        self.assertEqual(assessment.target_edition_snapshot, "2026")
+        assessment.line_ids.write({"status": "conforming"})
+        assessment.action_complete()
+        self.assertFalse(assessment.transition_action_ids)
+
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        review.write(self._review_values("internal_review"))
+        review.action_submit()
+        self.assertEqual(review.total_action_count_snapshot, 0)
         review.with_user(self.reviewer).action_approve()
         self.assertEqual(review.state, "approved")
 
