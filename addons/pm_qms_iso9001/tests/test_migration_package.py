@@ -25,7 +25,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.verifier@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [Command.set(manager_group.ids)],
             }
         )
         self.reviewer = self.env["res.users"].create(
@@ -34,7 +34,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.reviewer@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [Command.set(manager_group.ids)],
             }
         )
         self.organization = self.env["pm.qms.organization"].create(
@@ -319,7 +319,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.foreign.migration@example.invalid",
                 "company_id": foreign_company.id,
                 "company_ids": [Command.set(foreign_company.ids)],
-                "groups_id": [
+                "group_ids": [
                     Command.set(
                         self.env.ref("pm_qms_core.group_pm_qms_manager").ids
                     )
@@ -602,7 +602,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.migration.reader@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(qms_user_group.ids)],
+                "group_ids": [Command.set(qms_user_group.ids)],
             }
         )
         with self.assertRaises(AccessError):
@@ -625,7 +625,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "login": "iso.foreign.migration.reader@example.invalid",
                 "company_id": foreign_company.id,
                 "company_ids": [Command.set(foreign_company.ids)],
-                "groups_id": [Command.set(qms_user_group.ids)],
+                "group_ids": [Command.set(qms_user_group.ids)],
             }
         )
         visible_foreign_rows = self.env[
