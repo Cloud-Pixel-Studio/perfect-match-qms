@@ -37,6 +37,23 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "group_ids": [Command.set(manager_group.ids)],
             }
         )
+        self.manager = self.env["res.users"].create(
+            {
+                "name": "ISO 9001 Workflow Test Manager",
+                "login": "iso.workflow.manager@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                            self.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ]
+                    )
+                ],
+            }
+        )
         self.organization = self.env["pm.qms.organization"].create(
             {
                 "name": "Migration Package Test Organization",
@@ -49,7 +66,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
                 "name": "Controlled ISO migration project",
                 "company_id": self.env.company.id,
                 "organization_id": self.organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today() + timedelta(days=90),
                 "implementation_type": "migration",
@@ -94,7 +111,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         )
 
     def _approved_readiness_review(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Migration package source assessment",
                 "scenario_id": self.scenario.id,
@@ -127,7 +144,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         action.action_submit_verification()
         action.with_user(self.verifier).action_complete()
 
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(
@@ -153,11 +170,11 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         }
         if source_backed:
             values["source_profile_id"] = self.source_profile.id
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(values)
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(values)
         assessment.action_start()
         assessment.line_ids.write({"status": "conforming"})
         assessment.action_complete()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(
@@ -227,7 +244,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.assertEqual(package.source_edition_snapshot, "2015")
 
     def test_same_edition_recertification_review_cannot_create_migration_package(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Same-edition recertification readiness",
                 "scenario_id": self.same_edition_recertification.id,
@@ -238,7 +255,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         assessment.action_start()
         assessment.line_ids.write({"status": "conforming"})
         assessment.action_complete()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(
