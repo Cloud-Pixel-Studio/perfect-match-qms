@@ -25,7 +25,14 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "login": "iso.transition.reviewer@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "group_ids": [Command.set(manager_group.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                        ]
+                    )
+                ],
             }
         )
         self.manager = self.env["res.users"].create(
@@ -118,7 +125,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                     "status": status,
                     "gap_description": f"Controlled {status} source finding.",
                     "action_plan": f"Complete the controlled {status} action.",
-                    "responsible_id": self.env.user.id,
+                    "responsible_id": self.manager.id,
                     "target_date": deadline,
                 }
             )
@@ -183,7 +190,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "status": "gap",
                 "gap_description": "Initial implementation work remains.",
                 "action_plan": "Establish and verify the controlled implementation activity.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": fields.Date.today() + timedelta(days=30),
             }
         )
@@ -330,7 +337,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "status": "gap",
                 "gap_description": "A required action has not been planned.",
                 "action_plan": "Create the required controlled action.",
-                "responsible_id": self.env.user.id,
+                "responsible_id": self.manager.id,
                 "target_date": fields.Date.today() + timedelta(days=30),
             }
         )
