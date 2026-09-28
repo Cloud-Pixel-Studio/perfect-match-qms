@@ -1,5 +1,10 @@
 # Changelog
 
+- Added a distinct same-edition ISO 9001 recertification-readiness scenario
+  with cycle-specific assessment areas and an independent readiness decision.
+  Same-edition readiness is blocked from ISO edition migration-package
+  preparation and does not represent a certification-body decision.
+
 - Added independent ISO 9001 readiness reviews for source-less initial implementations and completed assessments with no partial/gap actions. Source-less work remains in the implementation workflow and is explicitly blocked from migration-package creation; source-backed no-action packages retain project, review, and backup gates.
 
 - Added an operational playbook describing the eight registered ISO 9001:2026 scenarios, supported transition gates, and explicit holds for source-less readiness, no-action assessments, and same-edition recertification paths not yet supported end to end. Separates PMQMS software upgrades from QMS edition transitions; no customer migration is executed.
