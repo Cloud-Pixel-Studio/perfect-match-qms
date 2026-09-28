@@ -34,7 +34,7 @@ class TestPmQmsIso9001TransitionAction(TransactionCase):
                 "login": "iso.action.verifier@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [Command.set(manager_group.ids)],
             }
         )
 
