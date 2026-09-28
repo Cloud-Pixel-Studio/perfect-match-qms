@@ -18,16 +18,23 @@ requirements; official requirement text is never copied into the product.
 
 ## Implementation and transition scenarios
 
-The add-on seeds eight read-only scenario definitions for:
+The add-on seeds nine read-only scenario routes across eight scenario types:
 
 - new 2026 implementation;
 - 2015-to-2026 transition;
 - legacy or incomplete system migration;
-- recertification;
+- 2015-to-2026 recertification transition;
+- 2026 same-edition recertification readiness;
 - scope expansion;
 - multi-site rollout;
 - integrated management systems;
 - partial implementation.
+
+The two recertification routes serve different purposes: the 2015-to-2026
+route is an edition transition, while same-edition 2026 recertification uses
+cycle-specific focus areas and an independent readiness review. Same-edition
+readiness cannot create an edition migration package or make a
+certification-body decision.
 
 Scenario definitions describe entry conditions, expected outputs, migration
 policy, and historical-record protection. They do not create client projects

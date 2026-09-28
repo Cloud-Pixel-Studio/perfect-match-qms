@@ -7,7 +7,7 @@
 
 - Added independent ISO 9001 readiness reviews for source-less initial implementations and completed assessments with no partial/gap actions. Source-less work remains in the implementation workflow and is explicitly blocked from migration-package creation; source-backed no-action packages retain project, review, and backup gates.
 
-- Added an operational playbook describing the nine registered scenario routes across eight ISO 9001:2026 scenario types, supported transition gates, and explicit holds for source-less readiness, no-action assessments, and same-edition recertification paths not yet supported end to end. Separates PMQMS software upgrades from QMS edition transitions; no customer migration is executed.
+- Added an operational playbook describing the nine registered scenario routes across eight ISO 9001:2026 scenario types and their supported gates. Same-edition recertification now uses cycle-specific readiness review and remains excluded from edition migration-package creation; source-less readiness and no-action assessments retain their explicit hold points. Separates PMQMS software upgrades from QMS edition transitions; no customer migration is executed.
 
 - Added line-level ISO 9001 migration reconciliation with opaque source/target references, preserved-history attestation, per-line SHA-256, derived outcome counts, company isolation, and inclusion in the frozen execution report. It records external work only and does not read or migrate customer records.
 
