@@ -336,7 +336,7 @@
                     <button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state not in ('draft', 'returned')" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_approve" type="object" string="Approve Decision" class="btn-primary" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <button name="action_return" type="object" string="Return" invisible="state != 'submitted'" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
-                    <button name="action_prepare_migration_package" type="object" string="Prepare Migration Package" class="btn-primary" invisible="state != 'approved' or decision != 'internal_review' or not source_edition_snapshot" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
+                    <button name="action_prepare_migration_package" type="object" string="Prepare Migration Package" class="btn-primary" invisible="state != 'approved' or decision != 'internal_review' or not source_edition_snapshot or source_edition_snapshot == target_edition_snapshot" groups="pm_qms_core.group_pm_qms_manager,pm_qms_core.group_pm_qms_administrator"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,submitted,returned,approved"/>
                 </header>
                 <sheet>
