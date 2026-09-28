@@ -25,7 +25,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "login": "iso.transition.reviewer@example.invalid",
                 "company_id": self.env.company.id,
                 "company_ids": [Command.set(self.env.company.ids)],
-                "groups_id": [Command.set(manager_group.ids)],
+                "group_ids": [Command.set(manager_group.ids)],
             }
         )
         self.organization = self.env["pm.qms.organization"].create(
@@ -433,7 +433,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "login": "iso.foreign.reviewer@example.invalid",
                 "company_id": foreign_company.id,
                 "company_ids": [Command.set(foreign_company.ids)],
-                "groups_id": [Command.set(self.manager_group.ids)],
+                "group_ids": [Command.set(self.manager_group.ids)],
             }
         )
 
