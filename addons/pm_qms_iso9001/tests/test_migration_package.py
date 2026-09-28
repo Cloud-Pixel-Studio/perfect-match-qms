@@ -6,7 +6,11 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.pm_qms_iso9001.hooks import PROFILE_CODE, post_init_hook
+from odoo.addons.pm_qms_iso9001.hooks import (
+    PROFILE_2026_CODE,
+    PROFILE_CODE,
+    post_init_hook,
+)
 
 
 @tagged("-at_install", "post_install")
@@ -61,6 +65,22 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.source_profile = self.env["pm.qms.mapping.profile"].search(
             [
                 ("code", "=", PROFILE_CODE),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        self.same_edition_recertification = self.env[
+            "pm.qms.iso9001.transition.scenario"
+        ].search(
+            [
+                ("code", "=", "ISO9001-2026-RECERTIFICATION-SAME-EDITION"),
+                ("company_id", "=", self.env.company.id),
+            ],
+            limit=1,
+        )
+        self.profile_2026 = self.env["pm.qms.mapping.profile"].search(
+            [
+                ("code", "=", PROFILE_2026_CODE),
                 ("company_id", "=", self.env.company.id),
             ],
             limit=1,
@@ -205,6 +225,40 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         manifest = json.loads(package.manifest_snapshot)
         self.assertEqual(manifest["transition_actions"], [])
         self.assertEqual(package.source_edition_snapshot, "2015")
+
+    def test_same_edition_recertification_review_cannot_create_migration_package(self):
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+            {
+                "name": "Same-edition recertification readiness",
+                "scenario_id": self.same_edition_recertification.id,
+                "source_profile_id": self.profile_2026.id,
+                "implementation_project_id": self.project.id,
+            }
+        )
+        assessment.action_start()
+        assessment.line_ids.write({"status": "conforming"})
+        assessment.action_complete()
+        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            assessment
+        )
+        review.write(
+            {
+                "reviewer_id": self.reviewer.id,
+                "decision": "internal_review",
+                "review_basis": "The same-edition readiness evidence was reviewed.",
+                "residual_risk_summary": "No unresolved partial or gap findings remain.",
+                "decision_notes": "This readiness decision is not an edition migration authorization.",
+            }
+        )
+        review.action_submit()
+        review.with_user(self.reviewer).action_approve()
+
+        self.assertEqual(review.source_edition_snapshot, "2026")
+        self.assertEqual(review.target_edition_snapshot, "2026")
+        with self.assertRaisesRegex(UserError, "Same-edition recertification readiness"):
+            self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+                review
+            )
 
     def test_source_less_initial_review_cannot_create_migration_package(self):
         review = self._approved_no_action_review(source_backed=False)
