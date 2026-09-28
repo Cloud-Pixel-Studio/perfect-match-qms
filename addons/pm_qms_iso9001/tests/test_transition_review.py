@@ -28,6 +28,23 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "group_ids": [Command.set(manager_group.ids)],
             }
         )
+        self.manager = self.env["res.users"].create(
+            {
+                "name": "ISO 9001 Workflow Test Manager",
+                "login": "iso.workflow.manager@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            manager_group.id,
+                            self.env.ref("pm_qms_core.group_pm_qms_administrator").id,
+                        ]
+                    )
+                ],
+            }
+        )
         self.organization = self.env["pm.qms.organization"].create(
             {
                 "name": "Transition Review Test Organization",
@@ -40,7 +57,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "name": "ISO 9001 transition test project",
                 "company_id": self.env.company.id,
                 "organization_id": self.organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today() + timedelta(days=90),
                 "implementation_type": "migration",
@@ -85,7 +102,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         )
 
     def _assessment_with_actions(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Transition review source assessment",
                 "scenario_id": self.scenario.id,
@@ -140,7 +157,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "name": "ISO 9001 initial implementation test project",
                 "company_id": self.env.company.id,
                 "organization_id": self.organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today() + timedelta(days=90),
                 "implementation_type": "new_implementation",
@@ -149,7 +166,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
 
     def test_source_less_initial_implementation_can_reach_independent_readiness_review(self):
         project = self._new_implementation_project()
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Source-less initial implementation assessment",
                 "scenario_id": self.initial_scenario.id,
@@ -176,7 +193,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
             {"implementation_project_id": project.id}
         )
 
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         self.assertFalse(review.source_edition_snapshot)
@@ -187,7 +204,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         self.assertEqual(review.state, "approved")
 
     def test_same_edition_recertification_uses_cycle_review_and_no_migration_actions(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Same-edition recertification cycle assessment",
                 "scenario_id": self.same_edition_recertification.id,
@@ -213,7 +230,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         assessment.action_complete()
         self.assertFalse(assessment.transition_action_ids)
 
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(self._review_values("internal_review"))
@@ -223,7 +240,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         self.assertEqual(review.state, "approved")
 
     def test_no_action_assessment_can_be_reviewed_with_project_and_empty_snapshot(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Conforming source assessment",
                 "scenario_id": self.scenario.id,
@@ -235,7 +252,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         assessment.line_ids.write({"status": "conforming"})
         assessment.action_complete()
 
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         self.assertFalse(assessment.transition_action_ids)
@@ -249,7 +266,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         self.assertEqual(review.state, "approved")
 
     def test_no_action_assessment_requires_linked_project(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Unlinked conforming assessment",
                 "scenario_id": self.scenario.id,
@@ -260,7 +277,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         assessment.line_ids.write({"status": "not_applicable", "disposition_rationale": "Outside approved scope."})
         assessment.action_complete()
         with self.assertRaisesRegex(UserError, "Link the completed assessment"):
-            self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
                 assessment
             )
 
@@ -280,14 +297,14 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "name": "Foreign ISO implementation project",
                 "company_id": foreign_company.id,
                 "organization_id": foreign_organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today() + timedelta(days=60),
                 "implementation_type": "new_implementation",
             }
         )
         with self.assertRaises(ValidationError):
-            self.env["pm.qms.iso9001.gap.assessment"].create(
+            self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
                 {
                     "name": "Cross-company assessment",
                     "scenario_id": self.scenario.id,
@@ -297,7 +314,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
             )
 
     def test_no_action_review_rejects_partial_or_gap_findings(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].create(
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
             {
                 "name": "Unplanned gap assessment",
                 "scenario_id": self.scenario.id,
@@ -319,14 +336,14 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         )
         assessment.action_complete()
         with self.assertRaisesRegex(UserError, "Generate controlled transition actions"):
-            self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+            self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
                 assessment
             )
 
     def test_review_preparation_is_controlled_and_idempotent(self):
         assessment = self._assessment_with_actions()
 
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         same_review = assessment.action_prepare_readiness_review()
@@ -338,7 +355,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
         self.assertEqual(review.target_edition_snapshot, "2026")
 
         with self.assertRaises(AccessError):
-            self.env["pm.qms.iso9001.transition.review"].create(
+            self.env["pm.qms.iso9001.transition.review"].with_user(self.manager).create(
                 {
                     "name": "Forged review",
                     "code": "FORGED",
@@ -356,7 +373,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
 
     def test_submit_requires_independent_reviewer_and_snapshots_actions(self):
         assessment = self._assessment_with_actions()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         with self.assertRaises(UserError):
@@ -378,7 +395,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
 
     def test_internal_review_requires_all_actions_completed_and_fresh_snapshot(self):
         assessment = self._assessment_with_actions()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         values = self._review_values("internal_review")
@@ -407,7 +424,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
 
     def test_changed_action_state_after_submission_invalidates_snapshot(self):
         assessment = self._assessment_with_actions()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(self._review_values())
@@ -421,7 +438,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
 
     def test_reviewer_must_have_access_to_review_company(self):
         assessment = self._assessment_with_actions()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         foreign_company = self.env["res.company"].create(
@@ -442,7 +459,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
 
     def test_action_project_drift_after_submission_invalidates_review(self):
         assessment = self._assessment_with_actions()
-        review = self.env["pm.qms.iso9001.transition.review"]._prepare_from_assessment(
+        review = self.env["pm.qms.iso9001.transition.review"].with_user(self.manager)._prepare_from_assessment(
             assessment
         )
         review.write(self._review_values())
@@ -452,7 +469,7 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 "name": "Alternate ISO 9001 transition project",
                 "company_id": self.env.company.id,
                 "organization_id": self.organization.id,
-                "project_manager_id": self.env.user.id,
+                "project_manager_id": self.manager.id,
                 "date_start": fields.Date.today(),
                 "target_date": fields.Date.today() + timedelta(days=120),
                 "implementation_type": "migration",
