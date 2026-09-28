@@ -7,7 +7,11 @@ from odoo import Command, fields
 from odoo.addons.pm_qms_app.hooks import restrict_optional_platform_menus
 
 DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")
-APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}
+APPROVED_DEMO_DATABASES = {
+    "demo": "pmqms_demo",
+    "demo2": "pmqms_demo2",
+    "demo3": "pmqms_demo3",
+}
 EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", APPROVED_DEMO_DATABASES.get(DEMO_INSTANCE, ""))
 COMPANY_NAME = os.getenv("PMQMS_DEMO_COMPANY_NAME", "Apex Precision Electronics, Inc.")
 ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")

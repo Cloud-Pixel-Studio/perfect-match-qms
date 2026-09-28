@@ -82,7 +82,11 @@ GUIDED_MODEL_EXAMPLES = {
 }
 
 DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")
-APPROVED_DEMO_DATABASES = {"demo": "pmqms_demo", "demo2": "pmqms_demo2"}
+APPROVED_DEMO_DATABASES = {
+    "demo": "pmqms_demo",
+    "demo2": "pmqms_demo2",
+    "demo3": "pmqms_demo3",
+}
 EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", APPROVED_DEMO_DATABASES.get(DEMO_INSTANCE, ""))
 EXPECTED_ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 EXPECTED_QMS_PERSONAS = {
