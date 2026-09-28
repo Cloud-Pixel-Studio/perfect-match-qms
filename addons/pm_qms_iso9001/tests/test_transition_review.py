@@ -52,6 +52,31 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                 ],
             }
         )
+        self.quality_manager = self.env["res.users"].create(
+            {
+                "name": "Seed Quality Manager",
+                "login": "iso.seed.quality.manager@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [
+                    Command.set(
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("pm_qms_core.group_qms_quality_manager").id,
+                        ]
+                    )
+                ],
+            }
+        )
+        self.unauthorized_user = self.env["res.users"].create(
+            {
+                "name": "Unprivileged Seed Caller",
+                "login": "iso.seed.unprivileged@example.invalid",
+                "company_id": self.env.company.id,
+                "company_ids": [Command.set(self.env.company.ids)],
+                "group_ids": [Command.set([self.env.ref("base.group_user").id])],
+            }
+        )
         self.organization = self.env["pm.qms.organization"].create(
             {
                 "name": "Transition Review Test Organization",
@@ -108,8 +133,9 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
             limit=1,
         )
 
-    def _assessment_with_actions(self):
-        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(self.manager).create(
+    def _assessment_with_actions(self, user=None):
+        user = user or self.manager
+        assessment = self.env["pm.qms.iso9001.gap.assessment"].with_user(user).create(
             {
                 "name": "Transition review source assessment",
                 "scenario_id": self.scenario.id,
@@ -377,6 +403,33 @@ class TestPmQmsIso9001TransitionReview(TransactionCase):
                     "target_edition_snapshot": "2026",
                 }
             )
+
+    def test_non_manager_assessment_context_is_rejected(self):
+        assessment = self._assessment_with_actions()
+
+        with self.assertRaisesRegex(AccessError, "Only QMS Managers or Administrators"):
+            self.env["pm.qms.iso9001.transition.review"].with_user(
+                self.quality_manager
+            )._prepare_from_assessment(assessment.with_user(self.unauthorized_user))
+
+    def test_quality_manager_context_creates_and_reuses_transition_review(self):
+        self.assertTrue(
+            self.quality_manager.has_group("pm_qms_core.group_pm_qms_manager")
+        )
+        assessment = self._assessment_with_actions(user=self.quality_manager)
+        authorized_assessment = assessment.with_user(self.quality_manager)
+        reviews = self.env["pm.qms.iso9001.transition.review"].with_user(
+            self.quality_manager
+        )
+
+        review = reviews._prepare_from_assessment(authorized_assessment)
+        repeated_review = reviews._prepare_from_assessment(authorized_assessment)
+
+        self.assertEqual(review, repeated_review)
+        self.assertEqual(review.reviewer_id, self.quality_manager)
+        self.assertEqual(
+            reviews.search_count([("assessment_id", "=", assessment.id)]), 1
+        )
 
     def test_submit_requires_independent_reviewer_and_snapshots_actions(self):
         assessment = self._assessment_with_actions()
