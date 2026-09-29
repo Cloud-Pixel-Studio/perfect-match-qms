@@ -204,13 +204,15 @@ def qualification_identity_domain(
     )
 
 
-def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, required=True):
+def upsert(model_name, code=None, name=None, vals=None, extra_domain=None, required=True, user=None):
     vals = dict(vals or {})
     if not model_exists(model_name):
         if required:
             warnings.append(f"missing_model:{model_name}")
         return env["ir.model"].browse()
     model = env[model_name]
+    if user:
+        model = model.with_user(user)
     domain = domain_for(model_name, code=code, name=name, extra=extra_domain)
     record = model.search(domain, limit=1) if domain else model.browse()
     payload = filtered(model_name, vals)
@@ -1554,7 +1556,7 @@ upsert(
     extra_domain=[("review_id", "=", review.id if review else 0), ("name", "=", "Alternate supplier qualification decision")],
     required=False,
 )
-upsert("pm.qms.management.review.action", code="APEX-MRA-001", name="Review COPQ trend with leadership", vals={"review_id": review.id if review else False, "organization_id": organization.id, "company_id": company.id, "owner_id": demo_user.id, "target_date": due_soon, "description": "Fictional management review action to review quality cost trends and prevention spend."}, required=False)
+upsert("pm.qms.management.review.action", code="APEX-MRA-001", name="Review COPQ trend with leadership", vals={"review_id": review.id if review else False, "organization_id": organization.id, "company_id": company.id, "owner_id": demo_user.id, "target_date": due_soon, "description": "Fictional management review action to review quality cost trends and prevention spend."}, required=True, user=demo_user)
 generate_required_management_review_snapshot(review, demo_user)
 
 # Refresh Action Center from authoritative source records only.
