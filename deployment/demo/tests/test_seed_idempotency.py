@@ -732,6 +732,120 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertIn('require(line_count == expected_lines, f"expected {expected_lines} lines for {code}, found {line_count}")', source)
         self.assertIn('require(lines >= 6, "expected six Cost of Quality lines")', source)
 
+    def test_generic_upsert_uses_authorized_user_for_search_write_and_create(self):
+        namespace = load_seed_helpers("upsert", "field_value_equal")
+        manager = object()
+
+        class Field:
+            readonly = False
+            type = "char"
+
+        class Record:
+            def __init__(self, identity):
+                self.identity = identity
+                self.value = "before"
+
+            def __getitem__(self, _key):
+                return self.value
+
+            def write(self, values):
+                self.assert_authorized(self.identity)
+                self.value = values["name"]
+
+            @staticmethod
+            def assert_authorized(identity):
+                if identity is not manager:
+                    raise AssertionError("record mutation did not use the authorized manager")
+
+        class Savepoint:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        class Cursor:
+            def savepoint(self):
+                return Savepoint()
+
+        class Model:
+            _fields = {"name": Field()}
+
+            def __init__(self, existing=None, identity=None):
+                self.existing = existing
+                self.identity = identity
+
+            def with_user(self, user):
+                return Model(self.existing, user)
+
+            def search(self, _domain, limit=1):
+                Record.assert_authorized(self.identity)
+                return self.existing
+
+            def create(self, values):
+                Record.assert_authorized(self.identity)
+                return Record(self.identity)
+
+            def browse(self):
+                return None
+
+        class Env:
+            cr = Cursor()
+
+            def __init__(self, model):
+                self.model = model
+
+            def __getitem__(self, _model_name):
+                return self.model
+
+        existing = Record(manager)
+        base_model = Model(existing=existing)
+        namespace["model_exists"] = lambda _model_name: True
+        namespace["domain_for"] = lambda _model_name, **_kwargs: [("code", "=", "APEX-MRA-001")]
+        namespace["filtered"] = lambda _model_name, vals: dict(vals)
+        namespace["env"] = Env(base_model)
+        namespace["warnings"] = []
+
+        updated = namespace["upsert"](
+            "pm.qms.management.review.action",
+            code="APEX-MRA-001",
+            vals={"name": "updated"},
+            required=True,
+            user=manager,
+        )
+        self.assertIs(updated, existing)
+        self.assertEqual(existing.value, "updated")
+
+        namespace["env"] = Env(Model())
+        created = namespace["upsert"](
+            "pm.qms.management.review.action",
+            code="APEX-MRA-001",
+            vals={"name": "created"},
+            required=True,
+            user=manager,
+        )
+        self.assertIsInstance(created, Record)
+        self.assertIs(created.identity, manager)
+        self.assertEqual(namespace["warnings"], [])
+
+    def test_management_review_seed_action_is_required_and_uses_quality_manager(self):
+        source = SEED_PATH.read_text(encoding="utf-8")
+        call = next(
+            node
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "upsert"
+            and node.args
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "pm.qms.management.review.action"
+        )
+        keywords = {keyword.arg: keyword.value for keyword in call.keywords}
+        self.assertIsInstance(keywords["required"], ast.Constant)
+        self.assertTrue(keywords["required"].value)
+        self.assertIsInstance(keywords["user"], ast.Name)
+        self.assertEqual(keywords["user"].id, "demo_user")
+
     def test_generic_upsert_skips_unchanged_values(self):
         namespace = load_seed_helpers("upsert", "field_value_equal")
         writes = []
