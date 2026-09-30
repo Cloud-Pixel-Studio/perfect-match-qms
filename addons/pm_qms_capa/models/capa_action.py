@@ -88,6 +88,7 @@ class PmQmsCapaAction(models.Model):
         return super().write(vals)
 
     def unlink(self):
+        self.check_access("unlink")
         if any(action.capa_id.state != "draft" for action in self):
             raise UserError("CAPA actions cannot be deleted after CAPA workflow starts.")
         return super().unlink()
