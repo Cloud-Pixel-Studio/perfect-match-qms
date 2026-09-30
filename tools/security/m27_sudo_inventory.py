@@ -269,6 +269,19 @@ PRODUCTION_DETAILS = {
         "follow_up": "M28 add explicit cross-scope management-review aggregation fixture",
         "runtime_covered": "YES",
     },
+    ("addons/pm_qms_iso9001/hooks.py", "530"): {
+        "invoker": "ISO 9001 addon post-init or versioned module-upgrade seed",
+        "input_provenance": "Version-controlled draft pack blueprint validated before record creation",
+        "user_controlled_input": "NO; RPC callers cannot enable superuser mode, and a forged context marker alone is denied",
+        "records_before_sudo": "Draft mapping profile, draft pack controls, and validated reference identifiers are selected before the bounded create call",
+        "scope": "Creates only draft mappings for the ISO 9001:2026 draft profile; no searches, updates, approvals, or customer implementation records are elevated",
+        "output_mutation": "Creates the module's static draft reference mappings; mappings remain unapproved and require QMS Administrator review",
+        "audit_history": "Seeded draft definitions are module metadata; approval and later changes remain behind the existing QMS Administrator workflow",
+        "regression_test": "TestPmQmsIso9001ImplementationPack2026 seed and mapping coverage; TestPmQmsQualityPack.test_mapping_import_validation_approval_and_security forged-context denial",
+        "risk": "P1 authorization-sensitive",
+        "follow_up": "Keep sudo limited to this post-init/upgrade create call and require superuser mode, exact module marker, draft profile, draft status, and the forged-context denial regression",
+        "runtime_covered": "YES",
+    },
 }
 
 FIELDNAMES = (
