@@ -139,14 +139,26 @@ separate development or laboratory instance. The 2015 Demo profile remains
 available for historical demonstrations until a dedicated 2026 scenario passes
 its own validation.
 
-## Pending inputs
+## 2026 pack review and release gates
 
-The following must be supplied before authoring a complete 2026 mapping:
+A separate original ISO 9001:2026 implementation-pack draft is maintained in
+`docs/ISO9001_2026_IMPLEMENTATION_PACK.md` and
+`addons/pm_qms_iso9001/content/iso9001_2026_implementation_pack_v1_draft.json`.
+It does not replace the 2015/2024 pack or rewrite existing implementation
+history.
 
-- licensed ISO 9001:2026 publication;
-- licensed ISO 9000:2026 vocabulary, where required;
-- certification-body transition requirements;
-- Product Owner approval of the mapping;
-- review by a competent QMS practitioner.
+The draft remains unavailable for customer implementation until all of the
+following are complete:
 
-Until then, the 2026 profile is architectural preparation only.
+- an authorized reviewer verifies detailed traceability against the licensed
+  ISO 9001:2026 publication, including paragraph-level applicability;
+- licensed ISO 9000 vocabulary is consulted where needed;
+- applicable certification-body transition requirements are confirmed;
+- a competent QMS practitioner records approval of coverage, control sufficiency,
+  applicability, evidence examples, and acceptance criteria;
+- product tests and release gates pass on a new, versioned revision.
+
+The profile and pack remain separate metadata/content layers. The draft pack and
+mapping profile stay in draft state; mappings remain unapproved, evidence
+examples are non-mandatory, and activation is blocked in code. The reference
+inventory is a coverage aid, not a conformity or certification claim.
