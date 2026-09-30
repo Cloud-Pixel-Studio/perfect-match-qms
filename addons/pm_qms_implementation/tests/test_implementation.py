@@ -150,7 +150,9 @@ class TestPmQmsImplementation(TransactionCase):
                 "organization_id": organization.id,
                 "project_manager_id": manager.id,
                 "date_start": "2026-08-15",
-                "target_date": "2026-09-30",
+                "target_date": fields.Date.to_string(
+                    fields.Date.context_today(self) + timedelta(days=30)
+                ),
                 "implementation_type": "new_implementation",
                 "pack_ids": [Command.set([pack.id for pack in packs])],
                 "create_odoo_project": True,

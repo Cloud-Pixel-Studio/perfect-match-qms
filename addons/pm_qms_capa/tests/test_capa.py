@@ -194,6 +194,8 @@ class TestPmQmsCapa(TransactionCase):
         action = self.env["pm.qms.capa.action"].with_user(manager).create(
             {"capa_id": capa.id, "name": "Management child action"}
         )
+        with self.assertRaises(UserError):
+            action.with_user(manager).unlink()
         fishbone = self.env["pm.qms.capa.fishbone"].with_user(manager).create(
             {
                 "capa_id": capa.id,
