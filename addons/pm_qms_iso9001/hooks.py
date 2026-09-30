@@ -257,6 +257,281 @@ def seed_iso9001_transition_scenarios(env):
 def post_init_hook(env):
     seed_iso9001_initial_implementation(env)
     seed_iso9001_transition_scenarios(env)
+    seed_iso9001_2026_implementation_pack(env)
+
+
+
+ISO9001_2026_PACK_CODE = "PM-QMS-ISO9001-2026"
+ISO9001_2026_PACK_VERSION = "1.0"
+ISO9001_2026_PACK_PROFILE_CODE = "PM-QMS-QUALITY-ISO9001-2026-IMPLEMENTATION"
+
+
+def _iso9001_2026_pack_blueprint():
+    path = Path(__file__).parent / "content" / "iso9001_2026_implementation_pack_v1_draft.json"
+    try:
+        return json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        raise UserError("ISO 9001:2026 implementation pack draft is invalid.") from exc
+
+
+def _validate_iso9001_2026_pack_blueprint(data):
+    if (
+        not isinstance(data, dict)
+        or data.get("schema_version") != "pmqms.iso9001.implementation-pack.draft.v1"
+        or data.get("pack", {}).get("code") != ISO9001_2026_PACK_CODE
+        or data.get("pack", {}).get("version") != ISO9001_2026_PACK_VERSION
+        or data.get("pack", {}).get("status") != "draft_pending_competent_practitioner_review"
+        or data.get("pack", {}).get("activation_allowed") is not False
+        or not isinstance(data.get("areas"), list)
+        or not isinstance(data.get("controls"), list)
+        or not isinstance(data.get("normative_reference_inventory"), list)
+    ):
+        raise UserError("ISO 9001:2026 implementation pack draft metadata is invalid.")
+    area_codes = [area.get("code") for area in data["areas"]]
+    control_codes = [control.get("code") for control in data["controls"]]
+    inventory = data["normative_reference_inventory"]
+    mapped = [ref for control in data["controls"] for ref in control.get("clause_refs", [])]
+    if (
+        len(area_codes) != len(set(area_codes))
+        or len(control_codes) != len(set(control_codes))
+        or len(inventory) != len(set(inventory))
+        or set(inventory) != set(mapped)
+        or any(control.get("area") not in set(area_codes) for control in data["controls"])
+    ):
+        raise UserError("ISO 9001:2026 pack references, controls, or areas are incomplete or duplicated.")
+    required = (
+        "title", "objective", "implementation_actions", "owner_role", "outputs",
+        "evidence_examples", "acceptance_criteria", "category", "review_status",
+        "applicability_decision",
+    )
+    for control in data["controls"]:
+        if (
+            any(not control.get(field_name) for field_name in required)
+            or control.get("review_status") != "draft_pending_competent_practitioner"
+            or not isinstance(control.get("clause_refs"), list)
+            or not control["clause_refs"]
+            or not isinstance(control.get("evidence_examples"), list)
+        ):
+            raise UserError(f"ISO 9001:2026 draft control {control.get('code')} is incomplete.")
+    return data
+
+
+def seed_iso9001_2026_implementation_pack(env):
+    data = _validate_iso9001_2026_pack_blueprint(_iso9001_2026_pack_blueprint())
+    company = env.ref("base.main_company")
+    seed_env = env(context=dict(env.context, module="pm_qms_iso9001"))
+    Pack = seed_env["pm.qms.framework.pack"]
+    packs = Pack.search([
+        ("code", "=", ISO9001_2026_PACK_CODE),
+        ("version", "=", ISO9001_2026_PACK_VERSION),
+        ("company_id", "=", company.id),
+    ])
+    if len(packs) > 1:
+        raise UserError("Duplicate ISO 9001:2026 implementation packs exist.")
+    pack = packs[:1]
+    pack_values = {
+        "name": "ISO 9001:2026 Implementation Pack",
+        "code": ISO9001_2026_PACK_CODE,
+        "version": ISO9001_2026_PACK_VERSION,
+        "company_id": company.id,
+        "pack_type": "standard",
+        "description": (
+            "Draft, original Perfect Match implementation guidance for ISO 9001:2026. "
+            "Not approved for customer implementation until competent practitioner review."
+        ),
+    }
+    if pack:
+        _assert_definition(pack, {key: value for key, value in pack_values.items() if key != "description"}, "ISO 9001:2026 implementation pack")
+        if pack.state != "draft":
+            raise UserError("ISO 9001:2026 implementation pack must remain draft pending competent review.")
+    else:
+        pack = Pack.with_context(pm_qms_pack_workflow=True).create(pack_values)
+
+    Area = seed_env["pm.qms.framework.area"]
+    areas_by_code = {}
+    for sequence, definition in enumerate(data["areas"], 1):
+        areas = Area.search([("pack_id", "=", pack.id), ("code", "=", definition["code"])])
+        if len(areas) > 1:
+            raise UserError(f"Duplicate ISO 9001:2026 pack area {definition['code']} exists.")
+        values = {
+            "name": definition["name"],
+            "code": definition["code"],
+            "pack_id": pack.id,
+            "sequence": sequence * 10,
+            "description": "Original PMQMS implementation area; verify applicability for each organization.",
+            "active": True,
+        }
+        if areas:
+            _assert_definition(areas, values, f"ISO 9001:2026 area {definition['code']}")
+            area = areas
+        else:
+            area = Area.with_context(module=True).create(values)
+        areas_by_code[definition["code"]] = area
+
+    process = seed_env["pm.qms.process"].search([
+        ("code", "=", "PM-QMP-DOM-PROC"),
+        ("company_id", "=", company.id),
+    ], limit=1)
+    if not process:
+        raise UserError("The generic QMS process needed by the ISO 9001:2026 draft pack is missing.")
+
+    Control = seed_env["pm.qms.control"]
+    Line = seed_env["pm.qms.framework.pack.control"]
+    Activity = seed_env["pm.qms.activity"]
+    Requirement = seed_env["pm.qms.evidence.requirement"]
+    Mapping = seed_env["pm.qms.external.mapping"]
+    profile = seed_env["pm.qms.mapping.profile"].search([
+        ("code", "=", ISO9001_2026_PACK_PROFILE_CODE),
+        ("edition", "=", "2026"),
+        ("company_id", "=", company.id),
+    ])
+    if len(profile) > 1:
+        raise UserError("Duplicate ISO 9001:2026 pack mapping profiles exist.")
+    profile_values = {
+        "name": "ISO 9001:2026 Pack Mapping Review (Draft)",
+        "code": ISO9001_2026_PACK_PROFILE_CODE,
+        "company_id": company.id,
+        "pack_id": pack.id,
+        "standard_name": "ISO 9001",
+        "edition": "2026",
+        "publisher": "ISO",
+        "notes": "Draft clause-reference traceability only. Mapping approval requires competent practitioner review.",
+    }
+    if profile:
+        _assert_definition(profile, {key: value for key, value in profile_values.items() if key == "code" or key == "company_id" or key == "pack_id" or key == "standard_name" or key == "edition" or key == "publisher"}, "ISO 9001:2026 pack mapping profile")
+        if profile.state != "draft":
+            raise UserError("ISO 9001:2026 pack mapping profile must remain draft pending review.")
+    else:
+        profile = seed_env["pm.qms.mapping.profile"].with_context(module=True).create(profile_values)
+
+    seen_reference_count = 0
+    for sequence, definition in enumerate(data["controls"], 1):
+        control_code = f"PM-QMS-ISO9001-2026-{definition['code']}"
+        objective = definition["objective"]
+        evidence_text = "\n".join(definition["evidence_examples"])
+        values = {
+            "name": definition["title"],
+            "code": control_code,
+            "objective": objective,
+            "description": "Original Perfect Match implementation method. Applicability and sufficiency require organization-specific review.",
+            "guidance_purpose": objective,
+            "guidance_why": "Use this control to translate an owned QMS outcome into planned work and verifiable operating evidence.",
+            "implementation_guidance": definition["implementation_actions"],
+            "recommended_steps": definition["implementation_actions"],
+            "recommended_tools": "Use the related QMS process, implementation activity, evidence records, and linked clause references.",
+            "evidence_guidance": evidence_text + "\n" + definition["acceptance_criteria"],
+            "practical_notes": definition["applicability_decision"],
+            "process_id": process.id,
+            "category": definition["category"],
+            "state": "draft",
+            "active": True,
+        }
+        controls = Control.search([("code", "=", control_code), ("company_id", "=", company.id)])
+        if len(controls) > 1:
+            raise UserError(f"Duplicate ISO 9001:2026 control {control_code} exists.")
+        if controls:
+            control = controls
+            _assert_definition(control, values, f"ISO 9001:2026 control {control_code}")
+        else:
+            control = Control.with_context(module=True).create(values)
+
+        lines = Line.search([("pack_id", "=", pack.id), ("control_id", "=", control.id)])
+        if len(lines) > 1:
+            raise UserError(f"Duplicate ISO 9001:2026 pack line for {control_code}.")
+        line_values = {
+            "pack_id": pack.id,
+            "control_id": control.id,
+            "area_id": areas_by_code[definition["area"]].id,
+            "sequence": sequence * 10,
+            "required": True,
+            "notes": "Draft pending competent practitioner review.",
+            "active": True,
+        }
+        if lines:
+            _assert_definition(lines, line_values, f"ISO 9001:2026 pack line {control_code}")
+        else:
+            Line.with_context(module=True).create(line_values)
+
+        activity_key = f"ISO9001-2026-{definition['code']}-A001"
+        activity_values = {
+            "definition_key": activity_key,
+            "name": definition["title"],
+            "control_id": control.id,
+            "description": definition["implementation_actions"],
+            "objective": objective,
+            "why_it_matters": "An assigned implementation activity makes ownership, evidence, and review visible.",
+            "implementation_steps": definition["implementation_actions"],
+            "expected_output": definition["outputs"],
+            "evidence_expectations": evidence_text,
+            "success_criteria": definition["acceptance_criteria"],
+            "responsible_role": definition["owner_role"],
+            "activity_kind": "qms_implementation",
+            "readiness_required": True,
+            "active": True,
+        }
+        activities = Activity.search([("definition_key", "=", activity_key), ("company_id", "=", company.id)])
+        if len(activities) > 1:
+            raise UserError(f"Duplicate ISO 9001:2026 activity {activity_key} exists.")
+        if activities:
+            _assert_definition(activities, activity_values, f"ISO 9001:2026 activity {activity_key}")
+            if set(activities.applicable_pack_ids.ids) != {pack.id}:
+                raise UserError(f"ISO 9001:2026 activity {activity_key} has incompatible pack scope.")
+        else:
+            Activity.with_context(module=True).create({
+                **activity_values,
+                "applicable_pack_ids": [Command.set([pack.id])],
+            })
+
+        for evidence_index, example in enumerate(definition["evidence_examples"], 1):
+            requirement_key = f"PM-QMS-EVID-ISO9001-2026-{definition['code']}-{evidence_index:02d}"
+            req_values = {
+                "definition_key": requirement_key,
+                "sequence": evidence_index * 10,
+                "name": example,
+                "control_id": control.id,
+                "description": f"Evidence example supporting control outcome: {example}",
+                "acceptance_criteria": definition["acceptance_criteria"],
+                "evidence_type": "record",
+                "mandatory": True,
+                "active": True,
+            }
+            requirements = Requirement.search([("definition_key", "=", requirement_key), ("company_id", "=", company.id)])
+            if len(requirements) > 1:
+                raise UserError(f"Duplicate ISO 9001:2026 evidence definition {requirement_key} exists.")
+            if requirements:
+                _assert_definition(requirements, req_values, f"ISO 9001:2026 evidence {requirement_key}")
+            else:
+                Requirement.with_context(module=True).create(req_values)
+
+        for reference in definition["clause_refs"]:
+            mappings = Mapping.search([
+                ("mapping_profile_id", "=", profile.id),
+                ("control_id", "=", control.id),
+                ("reference", "=", reference),
+            ])
+            if len(mappings) > 1:
+                raise UserError(f"Duplicate ISO 9001:2026 mapping for {control_code} / {reference}.")
+            mapping_values = {
+                "mapping_profile_id": profile.id,
+                "control_id": control.id,
+                "standard_name": "ISO 9001",
+                "edition": "2026",
+                "reference": reference,
+                "note": "Draft traceability link only; competent practitioner review is required before approval.",
+                "mapping_type": "supporting",
+                "review_status": "draft",
+            }
+            if mappings:
+                _assert_definition(mappings, mapping_values, f"ISO 9001:2026 mapping {reference}")
+            else:
+                Mapping.with_context(module=True).create(mapping_values)
+            seen_reference_count += 1
+
+    if seen_reference_count != len(data["normative_reference_inventory"]):
+        raise UserError("ISO 9001:2026 draft mappings do not cover the reference inventory.")
+    return pack
+
+
 
 
 INITIAL_PACK_CODE = "PM-QMS-ISO9001-INITIAL"
