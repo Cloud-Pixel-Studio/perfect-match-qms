@@ -76,7 +76,7 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
         ])
         expected_count = sum(len(control["evidence_examples"]) for control in self.blueprint["controls"])
         self.assertEqual(len(requirements), expected_count)
-        self.assertTrue(all(requirement.mandatory for requirement in requirements))
+        self.assertTrue(all(not requirement.mandatory for requirement in requirements))
 
     def test_catalogue_is_complete_and_has_no_duplicates_or_orphans(self):
         controls = self.blueprint["controls"]
