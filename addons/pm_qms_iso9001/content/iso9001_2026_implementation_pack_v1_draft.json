@@ -244,7 +244,7 @@
         "Strategic or operational change assessments",
         "Action closure evidence"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain a repeatable method to identify business conditions that can affect QMS outcomes and to revisit material changes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -265,7 +265,7 @@
         "Obligation register",
         "Change notifications and disposition"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Translate relevant stakeholder expectations into owned QMS inputs and review triggers. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -286,7 +286,7 @@
         "Site/process boundary map",
         "Exclusion rationale and review"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Define the organizational, site, product, service, and process boundaries used by the QMS. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -310,7 +310,7 @@
         "KPI definitions/results",
         "Controlled procedures where needed"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Operate a process model with accountable owners, interfaces, resources, measures, and retained operating knowledge. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -332,7 +332,7 @@
         "Resource approvals",
         "Action closure and effectiveness review"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Make leadership ownership visible in business decisions, resources, performance follow-up, and QMS effectiveness. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -353,7 +353,7 @@
         "Complaint trends",
         "Delivery and conformity review"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Keep customer commitments and experience signals in operational planning and leadership oversight. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -376,7 +376,7 @@
         "Communication/acknowledgment records",
         "Awareness checks"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain an approved quality direction that is accessible, understood, and used in planning. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -397,7 +397,7 @@
         "Role assignments",
         "Escalation and decision logs"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Assign decision rights and escalation paths for QMS processes and quality-critical work. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "governance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -420,7 +420,7 @@
         "Treatment plans",
         "Effectiveness checks"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Identify uncertainty that could prevent intended QMS outcomes and manage responses proportionately. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "improvement",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -441,7 +441,7 @@
         "Pilot records",
         "Benefit/effectiveness measures"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Evaluate improvement opportunities separately and track selected actions through measurable outcomes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "improvement",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -464,7 +464,7 @@
         "Baseline/target records",
         "Progress reviews and actions"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Set measurable objectives with ownership, resources, milestones, and evaluation rules. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "performance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -485,7 +485,7 @@
         "Impact assessment",
         "Implementation verification"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Assess and control QMS changes before and after implementation to protect system integrity. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -507,7 +507,7 @@
         "Budget/resource decisions",
         "Follow-up"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Determine and provide resources needed to operate and improve QMS processes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -529,7 +529,7 @@
         "Qualifications",
         "Training effectiveness checks"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Ensure assigned people have suitable competence and that gaps are addressed and checked. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "training",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -551,7 +551,7 @@
         "Environmental monitoring",
         "Incident and impact records"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain infrastructure and working conditions appropriate to controlled process outputs. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -574,7 +574,7 @@
         "Verification records",
         "Out-of-tolerance assessments"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Ensure measurement results are suitable for their intended decisions and traceable where required. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "evidence",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -595,7 +595,7 @@
         "Lessons learned",
         "Succession/backup plans"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Identify and maintain knowledge needed for reliable process operation and adaptation. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "training",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -616,7 +616,7 @@
         "Role-based awareness checks",
         "Culture/ethical concern follow-up"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Build role-level understanding of quality priorities, contribution, and consequences of process deviations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "training",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -637,7 +637,7 @@
         "Customer/supplier notices",
         "Escalation records"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Control QMS communications so intended recipients receive accurate information at the right time. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -663,7 +663,7 @@
         "Access/distribution logs",
         "Retention/disposition records"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Create, approve, identify, access, protect, revise, retain, and disposition controlled information. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "document_control",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -684,7 +684,7 @@
         "Work instructions",
         "Process verification and change records"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Plan and operate processes under defined criteria while controlling planned and unplanned changes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -706,7 +706,7 @@
         "Complaint and feedback history",
         "Customer notices"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Manage customer interactions and preserve decisions affecting product/service commitments. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -731,7 +731,7 @@
         "Feasibility assessment",
         "Amended order and downstream acknowledgments"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Confirm requirement feasibility, resolve differences, and carry approved changes into affected operations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -754,7 +754,7 @@
         "Stage gates",
         "Technical responsibility matrix"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Plan design/development work with defined stages, interfaces, resources, responsibilities, and control points. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -777,7 +777,7 @@
         "Review/verification records",
         "Approved drawings/specifications"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain traceability from approved design inputs through verified outputs that support downstream production/service. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "evidence",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -798,7 +798,7 @@
         "Impact reviews",
         "Release and communication evidence"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Review, authorize, and verify design changes before release into affected operations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -822,7 +822,7 @@
         "Purchase requirements",
         "Incoming verification and supplier actions"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Apply risk-based controls to external products and services and communicate clear purchasing expectations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "supplier",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -844,7 +844,7 @@
         "In-process inspection",
         "Operator qualification"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Operate production or service under conditions that make process requirements and release criteria usable. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -866,7 +866,7 @@
         "Traveler and status records",
         "Customer property log"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain identification, status, and trace links appropriate to product/service and customer property. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "evidence",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -888,7 +888,7 @@
         "Shipment records",
         "Warranty/field action logs"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Protect output conformity during handling, storage, delivery, and applicable post-delivery activity. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -909,7 +909,7 @@
         "First-article/first-run results",
         "Updated work instructions"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Evaluate and authorize operational changes that may affect conformity before returning to routine production. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "process",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -930,7 +930,7 @@
         "Certificate or release record",
         "Authorized sign-off"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Release only after planned verification is complete and authorized acceptance is recorded. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "evidence",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -953,7 +953,7 @@
         "Concession authorization",
         "Rework verification and customer notification"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Prevent unintended use or delivery of nonconforming output and preserve disposition/authorization history. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "improvement",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -977,7 +977,7 @@
         "Customer satisfaction analysis",
         "Trend and effectiveness reports"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Define what to monitor, how results are obtained, and how data informs process and QMS decisions. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "performance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -1000,7 +1000,7 @@
         "Auditor qualification",
         "Reports and action verification"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Run a risk-informed audit program that yields objective findings and tracked follow-up. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "performance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -1024,7 +1024,7 @@
         "Minutes and decisions",
         "Tracked actions and closure evidence"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Provide leadership with a periodic evidence-based assessment and track decisions to completion. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "performance",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -1045,7 +1045,7 @@
         "Project outcomes",
         "Effectiveness measures"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Select and evaluate improvement work using evidence of need, expected effect, and actual result. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "improvement",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
@@ -1068,7 +1068,7 @@
         "Containment/disposition",
         "Effectiveness verification"
       ],
-      "acceptance_criteria": "Evidence is current, attributable to the organization, linked to the defined process and period, reviewed by an authorized role, and sufficient to demonstrate the stated outcome. Record gaps and corrective follow-up rather than treating a document's existence as proof of effectiveness.",
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Respond to failures, contain their effects, determine systemic causes, and verify actions reduce recurrence. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
       "category": "improvement",
       "review_status": "draft_pending_competent_practitioner",
       "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
