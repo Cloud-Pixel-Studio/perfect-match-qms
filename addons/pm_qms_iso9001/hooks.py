@@ -492,7 +492,7 @@ def seed_iso9001_2026_implementation_pack(env):
                 "description": f"Evidence example supporting control outcome: {example}",
                 "acceptance_criteria": definition["acceptance_criteria"],
                 "evidence_type": "record",
-                "mandatory": True,
+                "mandatory": False,
                 "active": True,
             }
             requirements = Requirement.search([("definition_key", "=", requirement_key), ("company_id", "=", company.id)])
