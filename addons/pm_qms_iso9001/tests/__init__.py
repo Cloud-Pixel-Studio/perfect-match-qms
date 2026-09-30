@@ -7,3 +7,4 @@ from . import test_gap_assessment
 from . import test_transition_action
 from . import test_transition_review
 from . import test_migration_package
+from . import test_implementation_pack_2026
