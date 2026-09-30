@@ -524,7 +524,10 @@ def seed_iso9001_2026_implementation_pack(env):
             if mappings:
                 _assert_definition(mappings, mapping_values, f"ISO 9001:2026 mapping {reference}")
             else:
-                Mapping.with_context(module=True).create(mapping_values)
+                Mapping.with_context(
+                    module="pm_qms_iso9001",
+                    pm_qms_iso9001_definition_seed=True,
+                ).sudo().create(mapping_values)
             seen_reference_count += 1
 
     if seen_reference_count != len(data["normative_reference_inventory"]):

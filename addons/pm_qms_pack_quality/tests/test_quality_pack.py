@@ -446,6 +446,18 @@ class TestPmQmsQualityPack(TransactionCase):
                 }
             )
         with self.assertRaises(AccessError):
+            mapping_model.with_context(
+                module="pm_qms_iso9001",
+                pm_qms_iso9001_definition_seed=True,
+            ).create(
+                {
+                    "mapping_profile_id": profile_a.id,
+                    "control_id": control_a.id,
+                    "reference": "VIEW-A-CONTEXT-SPOOF-DENIED",
+                    "review_status": "draft",
+                }
+            )
+        with self.assertRaises(AccessError):
             mapping_a.with_user(viewer).write({"note": "Viewer cannot write mappings."})
         with self.assertRaises(AccessError):
             mapping_a.with_user(viewer).unlink()
