@@ -64,4 +64,5 @@ class PmQmsCapaWhy(models.Model):
         return super().write(vals)
 
     def unlink(self):
+        self.check_access("unlink")
         raise UserError("5 Why analysis uses fixed slots; entries cannot be deleted.")

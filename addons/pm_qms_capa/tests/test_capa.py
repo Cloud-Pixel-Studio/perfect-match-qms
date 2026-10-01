@@ -267,6 +267,9 @@ class TestPmQmsCapa(TransactionCase):
                 record.with_user(management).write(management_values)
             with self.assertRaises(AccessError):
                 record.with_user(management).unlink()
+            if model_name in {"pm.qms.capa.why", "pm.qms.capa.is.is.not"}:
+                with self.assertRaises(UserError):
+                    record.with_user(manager).unlink()
 
         with self.assertRaises(AccessError):
             action.with_user(management).action_start()
