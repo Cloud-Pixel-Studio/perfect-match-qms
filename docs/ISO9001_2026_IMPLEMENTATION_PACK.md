@@ -33,6 +33,23 @@ Before a future approved release:
 4. Product tests and the standard CI/security gates must pass on that revised release.
 5. A separate release decision must remove the draft-only activation guard.
 
+### Reviewer worksheet
+
+`ISO9001_2026_REVIEW_WORKSHEET.csv` is a blank working register seeded only
+with the 83 reference identifiers and draft control links currently present in
+the pack. It is not a verified inventory of the publication. The authorized
+reviewer must compare it with the complete licensed source, add rows for every
+applicable subclause and distinct normative statement, and record review
+outcomes before any content approval is considered.
+
+Record only source locators (such as page and paragraph identifiers), review
+decisions, finding IDs, and controlled internal evidence references. Do not
+paste or paraphrase licensed publication content into the worksheet, GitHub,
+or product. Every seeded review outcome is `NOT_REVIEWED`; the worksheet must
+not be treated as complete until the reviewer independently reconciles the
+full source inventory and documents any additions, non-applicability
+rationales, gaps, and their closure.
+
 The current clause-reference inventory is a structural coverage aid. It is not a claim that every individual normative statement has already been mapped or that any organization conforms.
 
 ## Boundaries
