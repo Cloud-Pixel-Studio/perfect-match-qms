@@ -267,9 +267,20 @@ class TestPmQmsCapa(TransactionCase):
                 record.with_user(management).write(management_values)
             with self.assertRaises(AccessError):
                 record.with_user(management).unlink()
-            if model_name in {"pm.qms.capa.why", "pm.qms.capa.is.is.not"}:
-                with self.assertRaises(UserError):
+            if model_name == "pm.qms.capa.why":
+                with self.assertRaisesRegex(
+                    UserError,
+                    "^5 Why analysis uses fixed slots; entries cannot be deleted\\.$",
+                ) as raised:
                     record.with_user(manager).unlink()
+                self.assertIs(type(raised.exception), UserError)
+            elif model_name == "pm.qms.capa.is.is.not":
+                with self.assertRaisesRegex(
+                    UserError,
+                    "^Is / Is Not analysis uses fixed dimensions; rows cannot be deleted\\.$",
+                ) as raised:
+                    record.with_user(manager).unlink()
+                self.assertIs(type(raised.exception), UserError)
 
         with self.assertRaises(AccessError):
             action.with_user(management).action_start()

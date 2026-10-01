@@ -100,5 +100,6 @@ class PmQmsCapaIsIsNot(models.Model):
         return super().write(vals)
 
     def unlink(self):
-        self.check_access("unlink")
+        if self.env.user.has_group("pm_qms_core.group_qms_management_user"):
+            self.check_access("unlink")
         raise UserError("Is / Is Not analysis uses fixed dimensions; rows cannot be deleted.")
