@@ -147,22 +147,16 @@
     "4.2",
     "4.3",
     "4.4",
-    "4.4.1",
-    "4.4.2",
     "5.1",
     "5.1.1",
     "5.1.2",
     "5.2",
-    "5.2.1",
-    "5.2.2",
     "5.3",
     "6.1",
     "6.1.1",
     "6.1.2",
     "6.1.3",
     "6.2",
-    "6.2.1",
-    "6.2.2",
     "6.3",
     "7.1",
     "7.1.1",
@@ -170,8 +164,6 @@
     "7.1.3",
     "7.1.4",
     "7.1.5",
-    "7.1.5.1",
-    "7.1.5.2",
     "7.1.6",
     "7.2",
     "7.3",
@@ -180,15 +172,11 @@
     "7.5.1",
     "7.5.2",
     "7.5.3",
-    "7.5.3.1",
-    "7.5.3.2",
     "8.1",
     "8.2",
     "8.2.1",
     "8.2.2",
     "8.2.3",
-    "8.2.3.1",
-    "8.2.3.2",
     "8.2.4",
     "8.3",
     "8.3.1",
@@ -210,8 +198,6 @@
     "8.5.6",
     "8.6",
     "8.7",
-    "8.7.1",
-    "8.7.2",
     "9.1",
     "9.1.1",
     "9.1.2",
@@ -220,12 +206,8 @@
     "9.2.1",
     "9.2.2",
     "9.3",
-    "9.3.1",
-    "9.3.2",
-    "9.3.3",
     "10.1",
-    "10.2",
-    "10.2.1"
+    "10.2"
   ],
   "controls": [
     {
@@ -296,9 +278,7 @@
       "area": "CTX",
       "title": "Process system and interaction control",
       "clause_refs": [
-        "4.4",
-        "4.4.1",
-        "4.4.2"
+        "4.4"
       ],
       "objective": "Operate a process model with accountable owners, interfaces, resources, measures, and retained operating knowledge.",
       "implementation_actions": "Map sequence and interaction; define inputs/outputs, criteria, owners, measures, risks, and records; review process changes.",
@@ -363,9 +343,7 @@
       "area": "LEAD",
       "title": "Quality policy communication and use",
       "clause_refs": [
-        "5.2",
-        "5.2.1",
-        "5.2.2"
+        "5.2"
       ],
       "objective": "Maintain an approved quality direction that is accessible, understood, and used in planning.",
       "implementation_actions": "Draft organization-specific policy; approve and control revision; communicate by role; assess awareness and relevance.",
@@ -451,9 +429,7 @@
       "area": "PLAN",
       "title": "Quality objectives and deployment",
       "clause_refs": [
-        "6.2",
-        "6.2.1",
-        "6.2.2"
+        "6.2"
       ],
       "objective": "Set measurable objectives with ownership, resources, milestones, and evaluation rules.",
       "implementation_actions": "Set baselines and targets; define measures and cadence; cascade responsibilities; handle missed targets through review.",
@@ -561,9 +537,7 @@
       "area": "SUP",
       "title": "Monitoring and measurement resource integrity",
       "clause_refs": [
-        "7.1.5",
-        "7.1.5.1",
-        "7.1.5.2"
+        "7.1.5"
       ],
       "objective": "Ensure measurement results are suitable for their intended decisions and traceable where required.",
       "implementation_actions": "Inventory measurement resources; define checks and intervals; manage calibration/verification and out-of-tolerance impact.",
@@ -650,9 +624,7 @@
         "7.5",
         "7.5.1",
         "7.5.2",
-        "7.5.3",
-        "7.5.3.1",
-        "7.5.3.2"
+        "7.5.3"
       ],
       "objective": "Create, approve, identify, access, protect, revise, retain, and disposition controlled information.",
       "implementation_actions": "Set metadata and review rules; apply access/version controls; govern external documents; define retention and disposal; verify retrieval.",
@@ -718,8 +690,6 @@
       "clause_refs": [
         "8.2.2",
         "8.2.3",
-        "8.2.3.1",
-        "8.2.3.2",
         "8.2.4"
       ],
       "objective": "Confirm requirement feasibility, resolve differences, and carry approved changes into affected operations.",
@@ -940,9 +910,7 @@
       "area": "OPER",
       "title": "Nonconforming output containment and disposition",
       "clause_refs": [
-        "8.7",
-        "8.7.1",
-        "8.7.2"
+        "8.7"
       ],
       "objective": "Prevent unintended use or delivery of nonconforming output and preserve disposition/authorization history.",
       "implementation_actions": "Identify and segregate; record containment; assess impact; approve disposition and concessions; verify rework; communicate when needed.",
@@ -1010,10 +978,7 @@
       "area": "EVAL",
       "title": "Management review inputs, decisions and actions",
       "clause_refs": [
-        "9.3",
-        "9.3.1",
-        "9.3.2",
-        "9.3.3"
+        "9.3"
       ],
       "objective": "Provide leadership with a periodic evidence-based assessment and track decisions to completion.",
       "implementation_actions": "Set cadence and participants; consolidate performance/context/risk/audit/customer inputs; record decisions, resource needs, and follow-up.",
@@ -1055,8 +1020,7 @@
       "area": "IMPR",
       "title": "Incident correction, cause analysis and corrective action",
       "clause_refs": [
-        "10.2",
-        "10.2.1"
+        "10.2"
       ],
       "objective": "Respond to failures, contain their effects, determine systemic causes, and verify actions reduce recurrence.",
       "implementation_actions": "Record event and impact; correct/contain; evaluate recurrence and similar processes; analyze causes; assign systemic action; verify effectiveness; update risks and controls.",
