@@ -66,3 +66,33 @@ The current clause-reference inventory is a structural starting point based on t
 - No certification or guaranteed-conformity claim is made.
 - Existing 2015/2024 implementations, audits, evidence, customer history, and Demo databases are not migrated or rewritten by this pack seed.
 - The seed is company-scoped and idempotent. Existing records that conflict with the versioned definition must stop the seed rather than be overwritten.
+
+## Demo2 draft-only review deployment
+
+For the isolated Demo2 review database, use the launcher's
+`PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh upgrade-iso9001-module-demo2`
+operation only after a verified database-and-filestore backup and a rehearsal
+on an isolated restore. It is hard-bound to `pmqms_demo2`, its `pmqms-demo2`
+Compose project, volumes, and network. The operation checks that
+`pm_qms_iso9001` is already installed, then invokes Odoo with exactly
+`--update pm_qms_iso9001 --stop-after-init` and restarts only Demo2's Odoo
+service. It does not initialize modules, import/provision a license, or call
+the general Demo seed.
+
+The module upgrade loads the module's declared security CSV/XML, views, and
+`gap_assessment_data.xml`; that sequence data is marked `noupdate="1"`.
+The unguarded `initial_implementation_data.xml` function call is deliberately
+not in the manifest data list, because Odoo reloads manifest data files during
+module upgrades and that function also seeds the historical 2015 pack and
+transition scenarios. Fresh installation retains those initial records via
+`post_init_hook`, which runs only after module installation. The versioned
+post-migration for this upgrade creates the ISO 9001:2026 draft pack and its
+own records. No general demo seed is part of this operation.
+
+Expected effects are limited to newly created, versioned 2026 draft-pack
+records and ordinary module metadata/view/security-data loading. Existing
+2015 pack records and related controls, activities, implementations, tasks,
+evidence, and Cost of Quality records must compare unchanged in the isolated
+restore rehearsal before this operation may be run against Demo2. The 2026
+pack remains draft-only, mappings remain `NOT_REVIEWED`, and activation and
+customer implementation selection remain blocked.

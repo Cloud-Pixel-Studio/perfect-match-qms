@@ -350,6 +350,40 @@ update_app_shell() {
   run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init
 }
 
+# Upgrade only the ISO add-on in the isolated Demo2 database. This deliberately
+# avoids prepare_runtime_permissions (which may initialize/write secrets), the
+# all-addons update, license import, and the general Demo seed.
+upgrade_iso9001_module_demo2() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 &&
+     "$COMPOSE_PROJECT_NAME" == pmqms-demo2 &&
+     "$POSTGRES_VOLUME" == pmqms_demo2_postgres &&
+     "$ODOO_DATA_VOLUME" == pmqms_demo2_odoo_data &&
+     "$DEMO_NETWORK" == pmqms_demo2_network ]] || {
+    echo "Refusing ISO add-on upgrade outside the approved Demo2 instance/database/resources." >&2
+    return 2
+  }
+  [[ -r "$RUNTIME_LOCK_FILE" && -r "$PG_PASSWORD_FILE" &&
+     -r "$CONFIG_DIR/odoo.conf" && -r "$ENVIRONMENT_ID_FILE" ]] || {
+    echo "Demo2 runtime lock or existing read-only runtime configuration is unavailable." >&2
+    return 2
+  }
+  runtime_verify
+  compose up -d postgres-demo >/dev/null
+  wait_postgres
+  local module_state
+  module_state="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT state FROM ir_module_module WHERE name = 'pm_qms_iso9001'")"
+  [[ "$module_state" == installed ]] || {
+    echo "Refusing targeted upgrade: pm_qms_iso9001 is not installed in $DB_NAME." >&2
+    return 1
+  }
+  compose run --rm --no-deps odoo-demo odoo -d "$DB_NAME" \
+    --update pm_qms_iso9001 --stop-after-init
+  compose restart odoo-demo >/dev/null
+  echo "iso9001_module_upgrade=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_iso9001"
+}
+
 seed_demo() {
   assert_demo_database
   prepare_runtime_permissions
@@ -520,6 +554,8 @@ Commands:
   init-db        Initialize the selected instance database with base only.
   install        Install/update the full Perfect Match QMS demo stack and seed data.
   update-app-shell Update only pm_qms_app in the existing database; does not seed.
+  upgrade-iso9001-module-demo2
+                Update only pm_qms_iso9001 in the existing isolated Demo2 database; no license import or Demo seed.
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
@@ -550,6 +586,7 @@ case "${1:-}" in
   init-db) run_odoo -d "$DB_NAME" --init base --stop-after-init ;;
   install) install_or_update ;;
   update-app-shell) update_app_shell ;;
+  upgrade-iso9001-module-demo2) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; upgrade_iso9001_module_demo2 ;;
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;

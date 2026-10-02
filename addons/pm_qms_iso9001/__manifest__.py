@@ -18,7 +18,6 @@ copied into the product.
         "security/ir.model.access.csv",
         "security/security.xml",
         "data/gap_assessment_data.xml",
-        "data/initial_implementation_data.xml",
         "views/iso9001_views.xml",
         "views/migration_execution_views.xml",
     ],
