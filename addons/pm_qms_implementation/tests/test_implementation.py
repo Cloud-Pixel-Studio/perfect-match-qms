@@ -231,6 +231,22 @@ class TestPmQmsImplementation(TransactionCase):
             projects_before,
         )
 
+        with self.assertRaisesRegex(
+            ValidationError,
+            "Implementation projects can only reference active framework packs",
+        ):
+            with self.env.cr.savepoint():
+                self.env["pm.qms.implementation.project"].with_user(self.manager).create(
+                    {
+                        "name": "Direct draft project must be blocked",
+                        "company_id": self.company.id,
+                        "organization_id": self.organization.id,
+                        "date_start": "2026-08-15",
+                        "target_date": "2026-09-30",
+                        "pack_ids": [Command.set([draft_pack.id])],
+                    }
+                )
+
     def _accept_evidence(self, line):
         evidence = self.env["pm.qms.evidence"].with_user(self.manager).create(
             {
