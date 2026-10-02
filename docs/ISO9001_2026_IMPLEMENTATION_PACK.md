@@ -42,6 +42,14 @@ publication. The authorized reviewer must compare it with the complete
 licensed source, add rows for every distinct normative statement, and record
 review outcomes before any content approval is considered.
 
+The supplementary `ISO9001_2026_REQUIREMENT_REVIEW.csv` contains 220 candidate
+locators for clause-level `shall` statements and their labeled list items. Each
+row records PDF and printed page numbers, a clause identifier, and the linked
+Perfect Match control. These are review aids, not verified coverage decisions;
+all rows remain `NOT_REVIEWED`. The authorized reviewer must reconcile every
+locator with the complete licensed source and add, split, or remove rows as
+needed. No normative text is stored in this register.
+
 Record only source locators (such as page and paragraph identifiers), review
 decisions, finding IDs, and controlled internal evidence references. Do not
 paste or paraphrase licensed publication content into the worksheet, GitHub,
