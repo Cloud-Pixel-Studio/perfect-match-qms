@@ -1,3 +1,4 @@
+import csv
 import json
 from pathlib import Path
 
@@ -90,6 +91,26 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
         self.assertTrue(all(control["area"] in area_codes for control in controls))
         self.assertTrue(all(control["evidence_examples"] for control in controls))
         self.assertTrue(all(control["acceptance_criteria"] for control in controls))
+
+    def test_review_worksheet_has_page_locators_and_remains_unreviewed(self):
+        worksheet_path = Path(__file__).parents[3] / "docs" / "ISO9001_2026_REVIEW_WORKSHEET.csv"
+        with worksheet_path.open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream))
+        references = self.blueprint["normative_reference_inventory"]
+        self.assertEqual(len(rows), len(references))
+        self.assertEqual({row["draft_reference_id"] for row in rows}, set(references))
+        self.assertEqual(len({row["draft_reference_id"] for row in rows}), len(rows))
+        controls_by_reference = {}
+        for control in self.blueprint["controls"]:
+            for reference in control["clause_refs"]:
+                controls_by_reference.setdefault(reference, set()).add(control["code"])
+        for row in rows:
+            self.assertTrue(row["licensed_source_locator"].startswith("p."))
+            self.assertIn("§", row["licensed_source_locator"])
+            self.assertEqual(set(row["draft_control_links"].split("|")), controls_by_reference[row["draft_reference_id"]])
+            self.assertEqual(row["traceability_result"], "NOT_REVIEWED")
+            self.assertEqual(row["control_sufficiency"], "NOT_REVIEWED")
+            self.assertEqual(row["evidence_sufficiency"], "NOT_REVIEWED")
 
     def test_seed_is_idempotent_and_preserves_historical_packs_and_profiles(self):
         legacy = self.env["pm.qms.framework.pack"].search([
