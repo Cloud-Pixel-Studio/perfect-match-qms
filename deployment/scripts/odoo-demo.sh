@@ -378,9 +378,13 @@ upgrade_iso9001_module_demo2() {
     echo "Refusing targeted upgrade: pm_qms_iso9001 is not installed in $DB_NAME." >&2
     return 1
   }
-  compose run --rm --no-deps odoo-demo odoo -d "$DB_NAME" \
-    --update pm_qms_iso9001 --stop-after-init
-  compose restart odoo-demo >/dev/null
+  compose stop odoo-demo >/dev/null
+  if ! compose run --rm --no-deps odoo-demo odoo -d "$DB_NAME" \
+    --update pm_qms_iso9001 --stop-after-init; then
+    echo "ISO add-on update failed; Odoo remains stopped for safe recovery." >&2
+    return 1
+  fi
+  compose up -d odoo-demo >/dev/null
   echo "iso9001_module_upgrade=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_iso9001"
 }
 

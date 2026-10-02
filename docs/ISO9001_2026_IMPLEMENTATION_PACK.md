@@ -77,7 +77,9 @@ Compose project, volumes, and network. The operation checks that
 `pm_qms_iso9001` is already installed, then invokes Odoo with exactly
 `--update pm_qms_iso9001 --stop-after-init` and restarts only Demo2's Odoo
 service. It does not initialize modules, import/provision a license, or call
-the general Demo seed.
+the general Demo seed. The existing Demo2 Odoo service is stopped while the
+one-shot module upgrade runs and is started again only on successful completion;
+on failure it remains stopped rather than serving a potentially partial schema.
 
 The module upgrade loads the module's declared security CSV/XML, views, and
 `gap_assessment_data.xml`; that sequence data is marked `noupdate="1"`.

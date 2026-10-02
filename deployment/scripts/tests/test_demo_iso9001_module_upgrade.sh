@@ -20,6 +20,7 @@ case "$*" in
   "image inspect "*) exit 0 ;;
   *"exec -T postgres-demo pg_isready "*) exit 0 ;;
   *"psql -U odoo -d pmqms_demo2 -Atqc "*) printf '%s\n' "${MOCK_MODULE_STATE:-installed}" ;;
+  *"run --rm --no-deps odoo-demo odoo "*) exit "${MOCK_ODOO_EXIT:-0}" ;;
 esac
 DOCKER
 cat > "$WORK/bin/jq" <<'JQ'
@@ -45,7 +46,8 @@ export PMQMS_DEMO_RUNTIME_LOCK_FILE="$WORK/secrets/runtime/runtime-lock.json"
 grep -Fq 'iso9001_module_upgrade=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_iso9001' "$WORK/success.out"
 grep -Fq -- '--project-name pmqms-demo2' "$TEST_DOCKER_LOG"
 grep -Fq 'run --rm --no-deps odoo-demo odoo -d pmqms_demo2 --update pm_qms_iso9001 --stop-after-init' "$TEST_DOCKER_LOG"
-grep -Fq 'restart odoo-demo' "$TEST_DOCKER_LOG"
+grep -Fq 'stop odoo-demo' "$TEST_DOCKER_LOG"
+grep -Fq 'up -d odoo-demo' "$TEST_DOCKER_LOG"
 ! grep -Eq -- '--init|provision_license|import_license|seed_demo|seed-demo|install_or_update|--update [^ ]+,' "$TEST_DOCKER_LOG"
 
 if PMQMS_DEMO_INSTANCE=demo "$LAUNCHER" upgrade-iso9001-module-demo2 > "$WORK/wrong-instance.out" 2>&1; then
@@ -67,6 +69,13 @@ if MOCK_MODULE_STATE='to install' "$LAUNCHER" upgrade-iso9001-module-demo2 > "$W
 fi
 ! grep -Fq 'run --rm --no-deps odoo-demo' "$TEST_DOCKER_LOG"
 ! grep -Fq 'restart odoo-demo' "$TEST_DOCKER_LOG"
+: > "$TEST_DOCKER_LOG"
+if MOCK_ODOO_EXIT=23 "$LAUNCHER" upgrade-iso9001-module-demo2 > "$WORK/update-failed.out" 2>&1; then
+  echo 'Targeted ISO upgrade unexpectedly hid an Odoo update failure.' >&2
+  exit 1
+fi
+grep -Fq 'stop odoo-demo' "$TEST_DOCKER_LOG"
+! grep -Fq 'up -d odoo-demo' "$TEST_DOCKER_LOG"
 
 # The historical 2015 seed XML must not be replayed by a module upgrade. Fresh
 # installations still receive the initial packs from post_init_hook.
