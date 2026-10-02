@@ -36,11 +36,11 @@ Before a future approved release:
 ### Reviewer worksheet
 
 `ISO9001_2026_REVIEW_WORKSHEET.csv` is a blank working register seeded only
-with the 83 reference identifiers and draft control links currently present in
-the pack. It is not a verified inventory of the publication. The authorized
-reviewer must compare it with the complete licensed source, add rows for every
-applicable subclause and distinct normative statement, and record review
-outcomes before any content approval is considered.
+with the 65 reference identifiers, draft control links, and page locators
+currently present in the pack. It is not a verified inventory of the
+publication. The authorized reviewer must compare it with the complete
+licensed source, add rows for every distinct normative statement, and record
+review outcomes before any content approval is considered.
 
 Record only source locators (such as page and paragraph identifiers), review
 decisions, finding IDs, and controlled internal evidence references. Do not
