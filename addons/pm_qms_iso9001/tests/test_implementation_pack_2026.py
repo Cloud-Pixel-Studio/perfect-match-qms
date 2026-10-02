@@ -105,9 +105,32 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
             for reference in control["clause_refs"]:
                 controls_by_reference.setdefault(reference, set()).add(control["code"])
         for row in rows:
-            self.assertTrue(row["licensed_source_locator"].startswith("p."))
+            self.assertTrue(row["licensed_source_locator"].startswith("PDF p."))
+            self.assertIn("(printed p.", row["licensed_source_locator"])
             self.assertIn("§", row["licensed_source_locator"])
             self.assertEqual(set(row["draft_control_links"].split("|")), controls_by_reference[row["draft_reference_id"]])
+            self.assertEqual(row["traceability_result"], "NOT_REVIEWED")
+            self.assertEqual(row["control_sufficiency"], "NOT_REVIEWED")
+            self.assertEqual(row["evidence_sufficiency"], "NOT_REVIEWED")
+
+    def test_requirement_locator_register_is_linked_and_unreviewed(self):
+        register_path = Path(__file__).parents[3] / "docs" / "ISO9001_2026_REQUIREMENT_REVIEW.csv"
+        with register_path.open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream))
+        self.assertEqual(len(rows), 220)
+        locators = [row["requirement_locator"] for row in rows]
+        self.assertEqual(len(set(locators)), len(rows))
+        references = set(self.blueprint["normative_reference_inventory"])
+        controls_by_reference = {}
+        for control in self.blueprint["controls"]:
+            for reference in control["clause_refs"]:
+                controls_by_reference.setdefault(reference, set()).add(control["code"])
+        for row in rows:
+            reference = row["source_clause_reference"]
+            self.assertIn(reference, references)
+            self.assertTrue(row["requirement_locator"].startswith("PDF p."))
+            self.assertIn("(printed p.", row["requirement_locator"])
+            self.assertEqual(set(row["draft_control_links"].split("|")), controls_by_reference[reference])
             self.assertEqual(row["traceability_result"], "NOT_REVIEWED")
             self.assertEqual(row["control_sufficiency"], "NOT_REVIEWED")
             self.assertEqual(row["evidence_sufficiency"], "NOT_REVIEWED")
