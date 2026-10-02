@@ -52,11 +52,12 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
     def test_every_inventory_reference_maps_once_to_a_pack_control(self):
         inventory = self.blueprint["normative_reference_inventory"]
         mappings = self.profile.mapping_ids
-        self.assertEqual(len(inventory), 83)
+        self.assertEqual(len(inventory), 65)
         self.assertEqual(len(mappings), len(inventory))
         self.assertEqual(set(mappings.mapped("reference")), set(inventory))
         self.assertEqual(len(set(mappings.mapped("reference"))), len(mappings))
         self.assertTrue(all(mapping.review_status == "draft" for mapping in mappings))
+        self.assertFalse({"4.4.1", "4.4.2", "5.2.1", "5.2.2", "6.2.1", "6.2.2", "7.1.5.1", "7.1.5.2", "7.5.3.1", "7.5.3.2", "8.2.3.1", "8.2.3.2", "8.7.1", "8.7.2", "9.3.1", "9.3.2", "9.3.3", "10.2.1"}.intersection(inventory))
         self.assertFalse(mappings.filtered(lambda mapping: mapping.review_status == "approved"))
         controls = set(self.pack.control_line_ids.mapped("control_id").ids)
         self.assertTrue(all(mapping.control_id.id in controls for mapping in mappings))
