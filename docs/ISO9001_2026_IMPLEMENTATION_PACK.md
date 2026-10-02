@@ -16,7 +16,7 @@ The versioned draft is identified as `PM-QMS-ISO9001-2026` version `1.0`. It con
 - 38 original control definitions;
 - one guided implementation activity per control;
 - explicit evidence examples and acceptance guidance;
-- 83 clause-reference links covering the clause-reference inventory from clauses 4–10;
+- 65 clause and subclause identifiers from the 2026 edition contents across clauses 4–10;
 - a separate ISO 9001:2026 mapping profile in draft state.
 
 The references are identifiers only. The control names, outcomes, actions, evidence examples, and acceptance guidance are original Perfect Match content. The evidence examples are not universal mandatory documents; each organization must choose suitable evidence based on its scope, processes, risks, obligations, and operating model.
@@ -50,7 +50,7 @@ not be treated as complete until the reviewer independently reconciles the
 full source inventory and documents any additions, non-applicability
 rationales, gaps, and their closure.
 
-The current clause-reference inventory is a structural coverage aid. It is not a claim that every individual normative statement has already been mapped or that any organization conforms.
+The current clause-reference inventory is a structural starting point based on the 2026 edition contents. It is not a claim that every individual normative statement has already been mapped or that any organization conforms.
 
 ## Boundaries
 
