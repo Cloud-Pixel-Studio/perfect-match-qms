@@ -44,7 +44,15 @@ class PmQmsExternalMapping(models.Model):
         for vals in vals_list:
             profile = self.env["pm.qms.mapping.profile"].browse(vals.get("mapping_profile_id"))
             if profile:
-                self._check_mapping_admin()
+                module_definition_seed = (
+                    self.env.su
+                    and self.env.context.get("module") == "pm_qms_iso9001"
+                    and self.env.context.get("pm_qms_iso9001_definition_seed") is True
+                    and profile.state == "draft"
+                    and vals.get("review_status", "draft") == "draft"
+                )
+                if not module_definition_seed:
+                    self._check_mapping_admin()
                 vals.setdefault("standard_name", profile.standard_name)
                 vals.setdefault("edition", profile.edition)
                 vals.setdefault("imported_by_id", self.env.user.id)

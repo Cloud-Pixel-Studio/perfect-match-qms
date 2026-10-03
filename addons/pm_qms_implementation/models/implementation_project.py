@@ -150,6 +150,12 @@ class PmQmsImplementationProject(models.Model):
                 raise ValidationError("Completion date cannot be before the implementation start date.")
         self._validate_pack_version_selection()
 
+    @api.constrains("pack_ids")
+    def _check_project_pack_activation(self):
+        for project in self:
+            if any(pack.state != "active" for pack in project.pack_ids):
+                raise ValidationError("Implementation projects can only reference active framework packs.")
+
     def _validate_pack_version_selection(self):
         for project in self:
             codes = project.pack_ids.mapped("code")

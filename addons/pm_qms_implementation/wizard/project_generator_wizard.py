@@ -37,7 +37,12 @@ class PmQmsProjectGeneratorWizard(models.TransientModel):
         default="new_implementation",
         required=True,
     )
-    pack_ids = fields.Many2many("pm.qms.framework.pack", string="Framework Packs", required=True)
+    pack_ids = fields.Many2many(
+        "pm.qms.framework.pack",
+        string="Framework Packs",
+        required=True,
+        domain="[('state', '=', 'active'), ('company_id', '=', company_id)]",
+    )
     create_odoo_project = fields.Boolean(default=True)
     notes = fields.Text()
 

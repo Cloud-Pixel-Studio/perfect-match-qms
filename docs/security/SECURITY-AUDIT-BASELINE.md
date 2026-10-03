@@ -65,7 +65,7 @@ result, and malformed output or tool failure produces `ERROR/BLOCKED`.
 | pip-audit | `PASS_NO_FINDINGS` | 0 vulnerabilities in repository-owned `requirements.txt`; Security Audit run `35383772331`, exact SHA `89fce668f330dd5ff52c5289cf91568b1b66fda6`. The pinned Odoo image separately contains `psycopg2 2.9.9`; it is not represented as a repository requirement because pip-audit's requirements resolver requires `pg_config` for that sdist. |
 | PMQMS secret scan | `PASS` | Current-code scan pass; masked git-history scan pass with 0 locations. |
 | OWASP ZAP | `NOT_EXECUTED` | No disposable local Odoo target and non-destructive test-account configuration are defined. |
-| M27 evidence tools | `PASS` | 4 unit tests pass; sudo inventory reports 18 production-reviewed sites and 130 test-only fixtures. |
+| M27 evidence tools | `PASS` | 4 unit tests pass; sudo inventory reports 21 production-reviewed sites and 205 test-only fixtures. |
 
 The authoritative finding statement is: **0 confirmed P0/P1 from executed
 OpenGrep, Trivy and secret scans.** This does not mean total P0/P1 open is

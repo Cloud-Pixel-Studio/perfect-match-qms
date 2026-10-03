@@ -1,0 +1,1041 @@
+{
+  "schema_version": "pmqms.iso9001.implementation-pack.draft.v1",
+  "pack": {
+    "code": "PM-QMS-ISO9001-2026",
+    "version": "1.0",
+    "name": "ISO 9001:2026 Implementation Pack",
+    "edition": "2026",
+    "status": "draft_pending_competent_practitioner_review",
+    "profile_code": "PM-QMS-QUALITY-ISO9001-2026",
+    "activation_allowed": false
+  },
+  "authoring_boundary": "Original Perfect Match implementation guidance. Clause identifiers are trace references only. This file contains no official standard text or close paraphrases.",
+  "review_gates": [
+    "Verify every normative requirement reference against the licensed publication in the authorized review process.",
+    "Have a competent QMS practitioner approve each control's applicability, mapping, implementation sufficiency, and evidence acceptance criteria.",
+    "Do not activate or market as complete/conformity-guaranteeing until review and product release gates pass."
+  ],
+  "areas": [
+    {
+      "code": "CTX",
+      "name": "Organization and QMS boundaries",
+      "refs": [
+        "4.1",
+        "4.2",
+        "4.3",
+        "4.4",
+        "4.4.1",
+        "4.4.2"
+      ]
+    },
+    {
+      "code": "LEAD",
+      "name": "Leadership, culture and accountability",
+      "refs": [
+        "5.1",
+        "5.1.1",
+        "5.1.2",
+        "5.2",
+        "5.2.1",
+        "5.2.2",
+        "5.3"
+      ]
+    },
+    {
+      "code": "PLAN",
+      "name": "Risks, opportunities, objectives and change",
+      "refs": [
+        "6.1",
+        "6.1.1",
+        "6.1.2",
+        "6.1.3",
+        "6.2",
+        "6.2.1",
+        "6.2.2",
+        "6.3"
+      ]
+    },
+    {
+      "code": "SUP",
+      "name": "Resources, competence and controlled information",
+      "refs": [
+        "7.1",
+        "7.1.1",
+        "7.1.2",
+        "7.1.3",
+        "7.1.4",
+        "7.1.5",
+        "7.1.5.1",
+        "7.1.5.2",
+        "7.1.6",
+        "7.2",
+        "7.3",
+        "7.4",
+        "7.5",
+        "7.5.1",
+        "7.5.2",
+        "7.5.3",
+        "7.5.3.1",
+        "7.5.3.2"
+      ]
+    },
+    {
+      "code": "OPER",
+      "name": "Customer, design, supply and production controls",
+      "refs": [
+        "8.1",
+        "8.2",
+        "8.2.1",
+        "8.2.2",
+        "8.2.3",
+        "8.2.3.1",
+        "8.2.3.2",
+        "8.2.4",
+        "8.3",
+        "8.3.1",
+        "8.3.2",
+        "8.3.3",
+        "8.3.4",
+        "8.3.5",
+        "8.3.6",
+        "8.4",
+        "8.4.1",
+        "8.4.2",
+        "8.4.3",
+        "8.5",
+        "8.5.1",
+        "8.5.2",
+        "8.5.3",
+        "8.5.4",
+        "8.5.5",
+        "8.5.6",
+        "8.6",
+        "8.7",
+        "8.7.1",
+        "8.7.2"
+      ]
+    },
+    {
+      "code": "EVAL",
+      "name": "Measurement, audit and management review",
+      "refs": [
+        "9.1",
+        "9.1.1",
+        "9.1.2",
+        "9.1.3",
+        "9.2",
+        "9.2.1",
+        "9.2.2",
+        "9.3",
+        "9.3.1",
+        "9.3.2",
+        "9.3.3"
+      ]
+    },
+    {
+      "code": "IMPR",
+      "name": "Nonconformity and improvement",
+      "refs": [
+        "10.1",
+        "10.2",
+        "10.2.1"
+      ]
+    }
+  ],
+  "normative_reference_inventory": [
+    "4.1",
+    "4.2",
+    "4.3",
+    "4.4",
+    "5.1",
+    "5.1.1",
+    "5.1.2",
+    "5.2",
+    "5.3",
+    "6.1",
+    "6.1.1",
+    "6.1.2",
+    "6.1.3",
+    "6.2",
+    "6.3",
+    "7.1",
+    "7.1.1",
+    "7.1.2",
+    "7.1.3",
+    "7.1.4",
+    "7.1.5",
+    "7.1.6",
+    "7.2",
+    "7.3",
+    "7.4",
+    "7.5",
+    "7.5.1",
+    "7.5.2",
+    "7.5.3",
+    "8.1",
+    "8.2",
+    "8.2.1",
+    "8.2.2",
+    "8.2.3",
+    "8.2.4",
+    "8.3",
+    "8.3.1",
+    "8.3.2",
+    "8.3.3",
+    "8.3.4",
+    "8.3.5",
+    "8.3.6",
+    "8.4",
+    "8.4.1",
+    "8.4.2",
+    "8.4.3",
+    "8.5",
+    "8.5.1",
+    "8.5.2",
+    "8.5.3",
+    "8.5.4",
+    "8.5.5",
+    "8.5.6",
+    "8.6",
+    "8.7",
+    "9.1",
+    "9.1.1",
+    "9.1.2",
+    "9.1.3",
+    "9.2",
+    "9.2.1",
+    "9.2.2",
+    "9.3",
+    "10.1",
+    "10.2"
+  ],
+  "controls": [
+    {
+      "code": "CTX-01",
+      "area": "CTX",
+      "title": "Context monitoring and change signals",
+      "clause_refs": [
+        "4.1"
+      ],
+      "objective": "Maintain a repeatable method to identify business conditions that can affect QMS outcomes and to revisit material changes.",
+      "implementation_actions": "Define internal and external input sources; assign owners and review cadence; record changes and resulting decisions.",
+      "owner_role": "QMS Manager",
+      "outputs": "Dated context register; change log; assigned review actions.",
+      "evidence_examples": [
+        "Context review records",
+        "Strategic or operational change assessments",
+        "Action closure evidence"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain a repeatable method to identify business conditions that can affect QMS outcomes and to revisit material changes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "CTX-02",
+      "area": "CTX",
+      "title": "Interested-party obligations and expectations",
+      "clause_refs": [
+        "4.2"
+      ],
+      "objective": "Translate relevant stakeholder expectations into owned QMS inputs and review triggers.",
+      "implementation_actions": "Identify relevant parties; distinguish binding obligations from monitored expectations; assign process owners and review dates.",
+      "owner_role": "QMS Manager",
+      "outputs": "Stakeholder register connected to obligations, risks, and process controls.",
+      "evidence_examples": [
+        "Stakeholder review record",
+        "Obligation register",
+        "Change notifications and disposition"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Translate relevant stakeholder expectations into owned QMS inputs and review triggers. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "CTX-03",
+      "area": "CTX",
+      "title": "Scope and boundary rationale",
+      "clause_refs": [
+        "4.3"
+      ],
+      "objective": "Define the organizational, site, product, service, and process boundaries used by the QMS.",
+      "implementation_actions": "Document included locations and activities; assess interfaces and exclusions; obtain management approval; review scope changes.",
+      "owner_role": "Top Management",
+      "outputs": "Approved scope statement and change history.",
+      "evidence_examples": [
+        "Scope approval",
+        "Site/process boundary map",
+        "Exclusion rationale and review"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Define the organizational, site, product, service, and process boundaries used by the QMS. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "CTX-04",
+      "area": "CTX",
+      "title": "Process system and interaction control",
+      "clause_refs": [
+        "4.4"
+      ],
+      "objective": "Operate a process model with accountable owners, interfaces, resources, measures, and retained operating knowledge.",
+      "implementation_actions": "Map sequence and interaction; define inputs/outputs, criteria, owners, measures, risks, and records; review process changes.",
+      "owner_role": "Process Owner",
+      "outputs": "Controlled process architecture and per-process operating records.",
+      "evidence_examples": [
+        "Process maps",
+        "Process owner assignments",
+        "KPI definitions/results",
+        "Controlled procedures where needed"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Operate a process model with accountable owners, interfaces, resources, measures, and retained operating knowledge. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "LEAD-01",
+      "area": "LEAD",
+      "title": "Leadership oversight and QMS integration",
+      "clause_refs": [
+        "5.1",
+        "5.1.1"
+      ],
+      "objective": "Make leadership ownership visible in business decisions, resources, performance follow-up, and QMS effectiveness.",
+      "implementation_actions": "Set review rhythm; track decisions and actions; connect quality priorities to planning and operational reviews.",
+      "owner_role": "Top Management",
+      "outputs": "Leadership decision/action register with owners and due dates.",
+      "evidence_examples": [
+        "Leadership meeting minutes",
+        "Resource approvals",
+        "Action closure and effectiveness review"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Make leadership ownership visible in business decisions, resources, performance follow-up, and QMS effectiveness. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "LEAD-02",
+      "area": "LEAD",
+      "title": "Customer outcome governance",
+      "clause_refs": [
+        "5.1.2"
+      ],
+      "objective": "Keep customer commitments and experience signals in operational planning and leadership oversight.",
+      "implementation_actions": "Define customer-related measures; review complaint, feedback, delivery, and requirement-change signals; assign actions.",
+      "owner_role": "Customer Process Owner",
+      "outputs": "Customer outcome dashboard and action trail.",
+      "evidence_examples": [
+        "Customer feedback analysis",
+        "Complaint trends",
+        "Delivery and conformity review"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Keep customer commitments and experience signals in operational planning and leadership oversight. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "LEAD-03",
+      "area": "LEAD",
+      "title": "Quality policy communication and use",
+      "clause_refs": [
+        "5.2"
+      ],
+      "objective": "Maintain an approved quality direction that is accessible, understood, and used in planning.",
+      "implementation_actions": "Draft organization-specific policy; approve and control revision; communicate by role; assess awareness and relevance.",
+      "owner_role": "Top Management",
+      "outputs": "Current approved policy with distribution and review history.",
+      "evidence_examples": [
+        "Policy approvals",
+        "Communication/acknowledgment records",
+        "Awareness checks"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain an approved quality direction that is accessible, understood, and used in planning. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "LEAD-04",
+      "area": "LEAD",
+      "title": "Responsibilities, authority and escalation",
+      "clause_refs": [
+        "5.3"
+      ],
+      "objective": "Assign decision rights and escalation paths for QMS processes and quality-critical work.",
+      "implementation_actions": "Define role ownership and deputies; connect authorities to workflows; publish changes; test escalation paths.",
+      "owner_role": "QMS Manager",
+      "outputs": "Approved role/authority matrix and escalation records.",
+      "evidence_examples": [
+        "Responsibility matrix",
+        "Role assignments",
+        "Escalation and decision logs"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Assign decision rights and escalation paths for QMS processes and quality-critical work. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "governance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "PLAN-01",
+      "area": "PLAN",
+      "title": "Risk identification and treatment",
+      "clause_refs": [
+        "6.1",
+        "6.1.1",
+        "6.1.2"
+      ],
+      "objective": "Identify uncertainty that could prevent intended QMS outcomes and manage responses proportionately.",
+      "implementation_actions": "Define assessment criteria; identify process and change risks; assign treatment owners; review residual exposure and effectiveness.",
+      "owner_role": "Risk Owner",
+      "outputs": "Risk register with linked actions and review history.",
+      "evidence_examples": [
+        "Risk assessments",
+        "Treatment plans",
+        "Effectiveness checks"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Identify uncertainty that could prevent intended QMS outcomes and manage responses proportionately. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "improvement",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "PLAN-02",
+      "area": "PLAN",
+      "title": "Opportunity evaluation and realization",
+      "clause_refs": [
+        "6.1.3"
+      ],
+      "objective": "Evaluate improvement opportunities separately and track selected actions through measurable outcomes.",
+      "implementation_actions": "Capture opportunity sources; prioritize using defined criteria; assign experiments or actions; evaluate outcome and learning.",
+      "owner_role": "Process Owner",
+      "outputs": "Opportunity register with selection rationale and results.",
+      "evidence_examples": [
+        "Opportunity reviews",
+        "Pilot records",
+        "Benefit/effectiveness measures"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Evaluate improvement opportunities separately and track selected actions through measurable outcomes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "improvement",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "PLAN-03",
+      "area": "PLAN",
+      "title": "Quality objectives and deployment",
+      "clause_refs": [
+        "6.2"
+      ],
+      "objective": "Set measurable objectives with ownership, resources, milestones, and evaluation rules.",
+      "implementation_actions": "Set baselines and targets; define measures and cadence; cascade responsibilities; handle missed targets through review.",
+      "owner_role": "Top Management",
+      "outputs": "Approved objective plans linked to KPI measurements.",
+      "evidence_examples": [
+        "Objective approval",
+        "Baseline/target records",
+        "Progress reviews and actions"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Set measurable objectives with ownership, resources, milestones, and evaluation rules. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "performance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "PLAN-04",
+      "area": "PLAN",
+      "title": "Planned QMS change control",
+      "clause_refs": [
+        "6.3"
+      ],
+      "objective": "Assess and control QMS changes before and after implementation to protect system integrity.",
+      "implementation_actions": "Log proposed changes; assess purpose, effects, resources, responsibilities, and interfaces; approve, implement, and verify.",
+      "owner_role": "Change Owner",
+      "outputs": "Change record with approval and post-change review.",
+      "evidence_examples": [
+        "Change request",
+        "Impact assessment",
+        "Implementation verification"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Assess and control QMS changes before and after implementation to protect system integrity. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-01",
+      "area": "SUP",
+      "title": "Resource capacity planning",
+      "clause_refs": [
+        "7.1",
+        "7.1.1"
+      ],
+      "objective": "Determine and provide resources needed to operate and improve QMS processes.",
+      "implementation_actions": "Review workload, capability, constraints, resource gaps, and funding; connect decisions to objectives and risks.",
+      "owner_role": "Top Management",
+      "outputs": "Resource plan with gap actions and approvals.",
+      "evidence_examples": [
+        "Capacity reviews",
+        "Budget/resource decisions",
+        "Follow-up"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Determine and provide resources needed to operate and improve QMS processes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-02",
+      "area": "SUP",
+      "title": "People and role capability",
+      "clause_refs": [
+        "7.1.2",
+        "7.2"
+      ],
+      "objective": "Ensure assigned people have suitable competence and that gaps are addressed and checked.",
+      "implementation_actions": "Define role criteria; assess personnel; plan training/coaching; verify effectiveness; retain appropriate records.",
+      "owner_role": "People Manager",
+      "outputs": "Competence matrix and evaluated development actions.",
+      "evidence_examples": [
+        "Role criteria",
+        "Qualifications",
+        "Training effectiveness checks"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Ensure assigned people have suitable competence and that gaps are addressed and checked. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "training",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-03",
+      "area": "SUP",
+      "title": "Infrastructure and process environment",
+      "clause_refs": [
+        "7.1.3",
+        "7.1.4"
+      ],
+      "objective": "Maintain infrastructure and working conditions appropriate to controlled process outputs.",
+      "implementation_actions": "Identify assets/environment factors; set maintenance/monitoring needs; record incidents and response; assess impact on product/service.",
+      "owner_role": "Operations Manager",
+      "outputs": "Infrastructure and environment control plan with execution records.",
+      "evidence_examples": [
+        "Maintenance logs",
+        "Environmental monitoring",
+        "Incident and impact records"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain infrastructure and working conditions appropriate to controlled process outputs. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-04",
+      "area": "SUP",
+      "title": "Monitoring and measurement resource integrity",
+      "clause_refs": [
+        "7.1.5"
+      ],
+      "objective": "Ensure measurement results are suitable for their intended decisions and traceable where required.",
+      "implementation_actions": "Inventory measurement resources; define checks and intervals; manage calibration/verification and out-of-tolerance impact.",
+      "owner_role": "Metrology Owner",
+      "outputs": "Equipment status, traceability and impact-assessment trail.",
+      "evidence_examples": [
+        "Calibration certificates",
+        "Verification records",
+        "Out-of-tolerance assessments"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Ensure measurement results are suitable for their intended decisions and traceable where required. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "evidence",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-05",
+      "area": "SUP",
+      "title": "Organizational knowledge continuity",
+      "clause_refs": [
+        "7.1.6"
+      ],
+      "objective": "Identify and maintain knowledge needed for reliable process operation and adaptation.",
+      "implementation_actions": "Identify critical knowledge; protect access; define transfer/backup methods; review losses and lessons learned.",
+      "owner_role": "Process Owner",
+      "outputs": "Knowledge register and continuity actions.",
+      "evidence_examples": [
+        "Knowledge transfer records",
+        "Lessons learned",
+        "Succession/backup plans"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Identify and maintain knowledge needed for reliable process operation and adaptation. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "training",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-06",
+      "area": "SUP",
+      "title": "Awareness and quality culture",
+      "clause_refs": [
+        "7.3"
+      ],
+      "objective": "Build role-level understanding of quality priorities, contribution, and consequences of process deviations.",
+      "implementation_actions": "Define awareness by role; communicate policy/objectives; use briefings and feedback; assess understanding and ethical concerns.",
+      "owner_role": "People Manager",
+      "outputs": "Awareness plan and evaluation records.",
+      "evidence_examples": [
+        "Briefing attendance",
+        "Role-based awareness checks",
+        "Culture/ethical concern follow-up"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Build role-level understanding of quality priorities, contribution, and consequences of process deviations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "training",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-07",
+      "area": "SUP",
+      "title": "Internal and external communication",
+      "clause_refs": [
+        "7.4"
+      ],
+      "objective": "Control QMS communications so intended recipients receive accurate information at the right time.",
+      "implementation_actions": "Define what, when, who, channel, and owner; control external quality notices; retain key communication records.",
+      "owner_role": "QMS Manager",
+      "outputs": "Communication matrix and controlled communication history.",
+      "evidence_examples": [
+        "Communication plan",
+        "Customer/supplier notices",
+        "Escalation records"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Control QMS communications so intended recipients receive accurate information at the right time. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "SUP-08",
+      "area": "SUP",
+      "title": "Documented information lifecycle",
+      "clause_refs": [
+        "7.5",
+        "7.5.1",
+        "7.5.2",
+        "7.5.3"
+      ],
+      "objective": "Create, approve, identify, access, protect, revise, retain, and disposition controlled information.",
+      "implementation_actions": "Set metadata and review rules; apply access/version controls; govern external documents; define retention and disposal; verify retrieval.",
+      "owner_role": "Document Controller",
+      "outputs": "Document register and lifecycle audit trail.",
+      "evidence_examples": [
+        "Approvals and revision history",
+        "Access/distribution logs",
+        "Retention/disposition records"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Create, approve, identify, access, protect, revise, retain, and disposition controlled information. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "document_control",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-01",
+      "area": "OPER",
+      "title": "Operational planning and control",
+      "clause_refs": [
+        "8.1"
+      ],
+      "objective": "Plan and operate processes under defined criteria while controlling planned and unplanned changes.",
+      "implementation_actions": "Define acceptance criteria, resources, records, outsourced interfaces, change controls, and release gates by process risk.",
+      "owner_role": "Operations Manager",
+      "outputs": "Operational control plans and execution records.",
+      "evidence_examples": [
+        "Control plans",
+        "Work instructions",
+        "Process verification and change records"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Plan and operate processes under defined criteria while controlling planned and unplanned changes. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-02",
+      "area": "OPER",
+      "title": "Customer communication and requirement capture",
+      "clause_refs": [
+        "8.2",
+        "8.2.1"
+      ],
+      "objective": "Manage customer interactions and preserve decisions affecting product/service commitments.",
+      "implementation_actions": "Define communication channels; capture inquiries, orders, feedback, complaints, property and contingency contacts.",
+      "owner_role": "Sales/Customer Owner",
+      "outputs": "Customer interaction records linked to contract/order.",
+      "evidence_examples": [
+        "Inquiry/order records",
+        "Complaint and feedback history",
+        "Customer notices"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Manage customer interactions and preserve decisions affecting product/service commitments. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-03",
+      "area": "OPER",
+      "title": "Requirement review and change confirmation",
+      "clause_refs": [
+        "8.2.2",
+        "8.2.3",
+        "8.2.4"
+      ],
+      "objective": "Confirm requirement feasibility, resolve differences, and carry approved changes into affected operations.",
+      "implementation_actions": "Capture stated and applicable obligations; review capability; resolve discrepancies; approve changes; update downstream records.",
+      "owner_role": "Contract Review Owner",
+      "outputs": "Traceable requirement review and change propagation.",
+      "evidence_examples": [
+        "Contract review",
+        "Feasibility assessment",
+        "Amended order and downstream acknowledgments"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Confirm requirement feasibility, resolve differences, and carry approved changes into affected operations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-04",
+      "area": "OPER",
+      "title": "Design planning and responsibility",
+      "clause_refs": [
+        "8.3",
+        "8.3.1",
+        "8.3.2"
+      ],
+      "objective": "Plan design/development work with defined stages, interfaces, resources, responsibilities, and control points.",
+      "implementation_actions": "Determine design applicability; assign technical authority; define review, verification, validation, and configuration controls.",
+      "owner_role": "Design Owner",
+      "outputs": "Approved design plan and responsibility records.",
+      "evidence_examples": [
+        "Design plan",
+        "Stage gates",
+        "Technical responsibility matrix"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Plan design/development work with defined stages, interfaces, resources, responsibilities, and control points. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-05",
+      "area": "OPER",
+      "title": "Design inputs, outputs and verification",
+      "clause_refs": [
+        "8.3.3",
+        "8.3.4",
+        "8.3.5"
+      ],
+      "objective": "Maintain traceability from approved design inputs through verified outputs that support downstream production/service.",
+      "implementation_actions": "Capture input sources and conflicts; set acceptance criteria; review and verify outputs; retain objective decisions.",
+      "owner_role": "Design Engineer",
+      "outputs": "Design traceability and verification package.",
+      "evidence_examples": [
+        "Design inputs register",
+        "Review/verification records",
+        "Approved drawings/specifications"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain traceability from approved design inputs through verified outputs that support downstream production/service. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "evidence",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-06",
+      "area": "OPER",
+      "title": "Design change and configuration control",
+      "clause_refs": [
+        "8.3.6"
+      ],
+      "objective": "Review, authorize, and verify design changes before release into affected operations.",
+      "implementation_actions": "Assess technical, regulatory, customer, risk, and compatibility impact; approve changes; update configuration and notify affected parties.",
+      "owner_role": "Design Owner",
+      "outputs": "Controlled design change record and revised baseline.",
+      "evidence_examples": [
+        "Engineering change orders",
+        "Impact reviews",
+        "Release and communication evidence"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Review, authorize, and verify design changes before release into affected operations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-07",
+      "area": "OPER",
+      "title": "External provider qualification and oversight",
+      "clause_refs": [
+        "8.4",
+        "8.4.1",
+        "8.4.2",
+        "8.4.3"
+      ],
+      "objective": "Apply risk-based controls to external products and services and communicate clear purchasing expectations.",
+      "implementation_actions": "Classify external supply risk; define approval/monitoring criteria; evaluate performance; communicate specs, competence, verification, and change notices.",
+      "owner_role": "Supplier Quality Owner",
+      "outputs": "Approved provider list and performance-based control records.",
+      "evidence_examples": [
+        "Supplier evaluations",
+        "Purchase requirements",
+        "Incoming verification and supplier actions"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Apply risk-based controls to external products and services and communicate clear purchasing expectations. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "supplier",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-08",
+      "area": "OPER",
+      "title": "Production/service process control",
+      "clause_refs": [
+        "8.5",
+        "8.5.1"
+      ],
+      "objective": "Operate production or service under conditions that make process requirements and release criteria usable.",
+      "implementation_actions": "Define controlled conditions, qualified resources, suitable infrastructure, in-process checks, and documented instructions as needed.",
+      "owner_role": "Production Manager",
+      "outputs": "Process control plan and lot/job execution records.",
+      "evidence_examples": [
+        "Work orders/travelers",
+        "In-process inspection",
+        "Operator qualification"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Operate production or service under conditions that make process requirements and release criteria usable. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-09",
+      "area": "OPER",
+      "title": "Identification, traceability and customer property",
+      "clause_refs": [
+        "8.5.2",
+        "8.5.3"
+      ],
+      "objective": "Maintain identification, status, and trace links appropriate to product/service and customer property.",
+      "implementation_actions": "Define identifiers and status points; preserve lot/component genealogy when required; register customer property and report loss/damage.",
+      "owner_role": "Production Manager",
+      "outputs": "Traceability records and property custody events.",
+      "evidence_examples": [
+        "Lot/serial records",
+        "Traveler and status records",
+        "Customer property log"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Maintain identification, status, and trace links appropriate to product/service and customer property. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "evidence",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-10",
+      "area": "OPER",
+      "title": "Preservation and post-delivery controls",
+      "clause_refs": [
+        "8.5.4",
+        "8.5.5"
+      ],
+      "objective": "Protect output conformity during handling, storage, delivery, and applicable post-delivery activity.",
+      "implementation_actions": "Define preservation criteria; control packaging/storage/transport; assess post-delivery obligations and feedback; escalate field issues.",
+      "owner_role": "Logistics Owner",
+      "outputs": "Preservation controls and post-delivery response trail.",
+      "evidence_examples": [
+        "Packaging/storage checks",
+        "Shipment records",
+        "Warranty/field action logs"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Protect output conformity during handling, storage, delivery, and applicable post-delivery activity. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-11",
+      "area": "OPER",
+      "title": "Production change authorization",
+      "clause_refs": [
+        "8.5.6"
+      ],
+      "objective": "Evaluate and authorize operational changes that may affect conformity before returning to routine production.",
+      "implementation_actions": "Record change trigger; assess risk and acceptance criteria; authorize; validate first-run outcomes; update controlled instructions.",
+      "owner_role": "Production Engineering",
+      "outputs": "Approved process change and verification record.",
+      "evidence_examples": [
+        "Change approvals",
+        "First-article/first-run results",
+        "Updated work instructions"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Evaluate and authorize operational changes that may affect conformity before returning to routine production. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "process",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-12",
+      "area": "OPER",
+      "title": "Release approval and acceptance status",
+      "clause_refs": [
+        "8.6"
+      ],
+      "objective": "Release only after planned verification is complete and authorized acceptance is recorded.",
+      "implementation_actions": "Define inspection/release gates; identify authorized approvers; retain objective results and trace to order/lot.",
+      "owner_role": "Quality Engineer",
+      "outputs": "Release package with approval and acceptance evidence.",
+      "evidence_examples": [
+        "Inspection/test results",
+        "Certificate or release record",
+        "Authorized sign-off"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Release only after planned verification is complete and authorized acceptance is recorded. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "evidence",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "OPER-13",
+      "area": "OPER",
+      "title": "Nonconforming output containment and disposition",
+      "clause_refs": [
+        "8.7"
+      ],
+      "objective": "Prevent unintended use or delivery of nonconforming output and preserve disposition/authorization history.",
+      "implementation_actions": "Identify and segregate; record containment; assess impact; approve disposition and concessions; verify rework; communicate when needed.",
+      "owner_role": "Quality Manager",
+      "outputs": "Nonconformance record linked to lot, decision, and follow-up.",
+      "evidence_examples": [
+        "NCR/MRB record",
+        "Concession authorization",
+        "Rework verification and customer notification"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Prevent unintended use or delivery of nonconforming output and preserve disposition/authorization history. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "improvement",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "EVAL-01",
+      "area": "EVAL",
+      "title": "Monitoring plan and performance analysis",
+      "clause_refs": [
+        "9.1",
+        "9.1.1",
+        "9.1.2",
+        "9.1.3"
+      ],
+      "objective": "Define what to monitor, how results are obtained, and how data informs process and QMS decisions.",
+      "implementation_actions": "Set measures, methods, timing and ownership; monitor customer perception; analyze trends, conformity, process performance, provider performance, and actions.",
+      "owner_role": "Performance Owner",
+      "outputs": "Performance review records tied to decisions.",
+      "evidence_examples": [
+        "KPI definitions and results",
+        "Customer satisfaction analysis",
+        "Trend and effectiveness reports"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Define what to monitor, how results are obtained, and how data informs process and QMS decisions. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "performance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "EVAL-02",
+      "area": "EVAL",
+      "title": "Internal audit program and impartial execution",
+      "clause_refs": [
+        "9.2",
+        "9.2.1",
+        "9.2.2"
+      ],
+      "objective": "Run a risk-informed audit program that yields objective findings and tracked follow-up.",
+      "implementation_actions": "Set scope, criteria, frequency, methods, auditor competence and impartiality; report findings; assign correction and effectiveness checks.",
+      "owner_role": "Internal Audit Lead",
+      "outputs": "Audit program, working records, findings and closure trail.",
+      "evidence_examples": [
+        "Audit schedule",
+        "Auditor qualification",
+        "Reports and action verification"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Run a risk-informed audit program that yields objective findings and tracked follow-up. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "performance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "EVAL-03",
+      "area": "EVAL",
+      "title": "Management review inputs, decisions and actions",
+      "clause_refs": [
+        "9.3"
+      ],
+      "objective": "Provide leadership with a periodic evidence-based assessment and track decisions to completion.",
+      "implementation_actions": "Set cadence and participants; consolidate performance/context/risk/audit/customer inputs; record decisions, resource needs, and follow-up.",
+      "owner_role": "Top Management",
+      "outputs": "Approved management review record and action register.",
+      "evidence_examples": [
+        "Agenda and input package",
+        "Minutes and decisions",
+        "Tracked actions and closure evidence"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Provide leadership with a periodic evidence-based assessment and track decisions to completion. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "performance",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "IMPR-01",
+      "area": "IMPR",
+      "title": "Improvement opportunity portfolio",
+      "clause_refs": [
+        "10.1"
+      ],
+      "objective": "Select and evaluate improvement work using evidence of need, expected effect, and actual result.",
+      "implementation_actions": "Capture improvement signals; prioritize; plan change; evaluate benefits and unintended effects; share learning.",
+      "owner_role": "Continuous Improvement Owner",
+      "outputs": "Improvement portfolio with before/after measures.",
+      "evidence_examples": [
+        "Improvement proposals",
+        "Project outcomes",
+        "Effectiveness measures"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Select and evaluate improvement work using evidence of need, expected effect, and actual result. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "improvement",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    },
+    {
+      "code": "IMPR-02",
+      "area": "IMPR",
+      "title": "Incident correction, cause analysis and corrective action",
+      "clause_refs": [
+        "10.2"
+      ],
+      "objective": "Respond to failures, contain their effects, determine systemic causes, and verify actions reduce recurrence.",
+      "implementation_actions": "Record event and impact; correct/contain; evaluate recurrence and similar processes; analyze causes; assign systemic action; verify effectiveness; update risks and controls.",
+      "owner_role": "Quality Manager",
+      "outputs": "Closed corrective action with evidence, effectiveness decision, and linked updates.",
+      "evidence_examples": [
+        "NCR/CAPA records",
+        "Cause analysis",
+        "Containment/disposition",
+        "Effectiveness verification"
+      ],
+      "acceptance_criteria": "A reviewer can verify that the declared scope and responsible owner are clear; the selected records support this outcome: Respond to failures, contain their effects, determine systemic causes, and verify actions reduce recurrence. Evidence is current, attributable, traceable to the relevant process and period, reviewed by an authorized role, and gaps are recorded with follow-up. These examples are not universal mandatory documents; the organization and competent reviewer determine what is appropriate.",
+      "category": "improvement",
+      "review_status": "draft_pending_competent_practitioner",
+      "applicability_decision": "Organization-specific applicability and rationale must be recorded during implementation."
+    }
+  ]
+}

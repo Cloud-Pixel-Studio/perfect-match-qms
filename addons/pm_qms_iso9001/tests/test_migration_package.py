@@ -228,7 +228,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
     def test_package_requires_approved_internal_review_and_is_idempotent(self):
         review = self._approved_readiness_review()
 
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         same_package = review.action_prepare_migration_package()
@@ -248,7 +248,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_no_action_source_backed_review_can_create_and_preflight_package(self):
         review = self._approved_no_action_review(source_backed=True)
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         self._complete_package_inputs(package)
@@ -287,7 +287,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         self.assertEqual(review.source_edition_snapshot, "2026")
         self.assertEqual(review.target_edition_snapshot, "2026")
         with self.assertRaisesRegex(UserError, "Same-edition recertification readiness"):
-            self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
                 review
             )
 
@@ -295,13 +295,13 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
         review = self._approved_no_action_review(source_backed=False)
         self.assertFalse(review.source_edition_snapshot)
         with self.assertRaisesRegex(UserError, "A source edition is required"):
-            self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+            self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
                 review
             )
 
     def test_preflight_requires_verified_backup_and_freezes_manifest(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         package.write({"reviewer_id": self.reviewer.id})
@@ -321,7 +321,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_independent_approval_and_immutability(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         self._complete_package_inputs(package)
@@ -338,7 +338,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_reviewer_must_have_company_access(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         foreign_company = self.env["res.company"].create(
@@ -362,7 +362,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_preflight_rejects_placeholders_and_zero_digest(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         package.write(
@@ -391,7 +391,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_returned_edit_clears_snapshot_and_submitted_void_is_reviewer_only(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         self._complete_package_inputs(package)
@@ -420,7 +420,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_manifest_has_no_execution_operation(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         self.assertFalse(hasattr(package, "action_execute"))
@@ -429,7 +429,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def _approved_execution_record(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         self._complete_package_inputs(package)
@@ -473,7 +473,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_execution_requires_approved_package_and_is_idempotent(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         with self.assertRaises(UserError):
@@ -744,7 +744,7 @@ class TestPmQmsIso9001MigrationPackage(TransactionCase):
 
     def test_package_approver_can_prepare_execution_with_distinct_operator(self):
         review = self._approved_readiness_review()
-        package = self.env["pm.qms.iso9001.migration.package"]._prepare_from_review(
+        package = self.env["pm.qms.iso9001.migration.package"].with_user(self.manager)._prepare_from_review(
             review
         )
         self._complete_package_inputs(package)
