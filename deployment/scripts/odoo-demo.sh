@@ -388,6 +388,62 @@ upgrade_iso9001_module_demo2() {
   echo "iso9001_module_upgrade=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_iso9001"
 }
 
+# Update only the implementation engine in the approved Demo2 instance. The
+# module manifest reloads technical ACL/rule, sequence, view, and menu data,
+# so this command requires an existing healthy Demo2 stack and refuses demo
+# data mode. It never initializes secrets or invokes licensing/demo workflows.
+upgrade_implementation_module_demo2() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 &&
+     "$COMPOSE_PROJECT_NAME" == pmqms-demo2 &&
+     "$POSTGRES_VOLUME" == pmqms_demo2_postgres &&
+     "$ODOO_DATA_VOLUME" == pmqms_demo2_odoo_data &&
+     "$DEMO_NETWORK" == pmqms_demo2_network &&
+     "$ODOO_DEMO_HTTP_PORT" == 8171 && "$ODOO_DEMO_LONGPOLLING_PORT" == 8174 ]] || {
+    echo "Refusing implementation-module upgrade outside the approved Demo2 instance/database/resources." >&2
+    return 2
+  }
+  [[ -r "$RUNTIME_LOCK_FILE" && -r "$PG_PASSWORD_FILE" &&
+     -r "$CONFIG_DIR/odoo.conf" && -r "$ENVIRONMENT_ID_FILE" ]] || {
+    echo "Demo2 runtime lock or existing read-only runtime configuration is unavailable." >&2
+    return 2
+  }
+  runtime_verify
+
+  local postgres_id odoo_id module_state
+  local -a postgres_ids odoo_ids
+  mapfile -t postgres_ids < <(compose ps -q postgres-demo)
+  mapfile -t odoo_ids < <(compose ps -q odoo-demo)
+  [[ ${#postgres_ids[@]} -eq 1 && ${#odoo_ids[@]} -eq 1 ]] || {
+    echo "Refusing implementation-module upgrade unless exactly one Demo2 PostgreSQL and Odoo container already exists." >&2
+    return 1
+  }
+  postgres_id="${postgres_ids[0]}"
+  odoo_id="${odoo_ids[0]}"
+  [[ "$(docker inspect --format '{{.State.Running}}' "$postgres_id")" == true &&
+     "$(docker inspect --format '{{.State.Health.Status}}' "$postgres_id")" == healthy &&
+     "$(docker inspect --format '{{.State.Running}}' "$odoo_id")" == true ]] || {
+    echo "Refusing implementation-module upgrade unless Demo2 PostgreSQL is healthy and Odoo is running." >&2
+    return 1
+  }
+
+  module_state="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT state || '|' || demo::text FROM ir_module_module WHERE name = 'pm_qms_implementation'")"
+  [[ "$module_state" == 'installed|false' ]] || {
+    echo "Refusing targeted upgrade: pm_qms_implementation must be installed with demo data disabled in $DB_NAME." >&2
+    return 1
+  }
+
+  compose stop odoo-demo >/dev/null
+  if ! compose run --rm --no-deps odoo-demo odoo -d "$DB_NAME" \
+    --update pm_qms_implementation --stop-after-init; then
+    echo "Implementation-module update failed; Demo2 Odoo remains stopped for safe recovery." >&2
+    return 1
+  fi
+  compose up -d odoo-demo >/dev/null
+  echo "implementation_module_upgrade=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_implementation"
+}
+
 seed_demo() {
   assert_demo_database
   prepare_runtime_permissions
@@ -560,6 +616,8 @@ Commands:
   update-app-shell Update only pm_qms_app in the existing database; does not seed.
   upgrade-iso9001-module-demo2
                 Update only pm_qms_iso9001 in the existing isolated Demo2 database; no license import or Demo seed.
+  upgrade-implementation-module-demo2
+                Update only pm_qms_implementation in the existing isolated Demo2 database; requires demo data disabled and never runs a seed.
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
@@ -591,6 +649,7 @@ case "${1:-}" in
   install) install_or_update ;;
   update-app-shell) update_app_shell ;;
   upgrade-iso9001-module-demo2) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; upgrade_iso9001_module_demo2 ;;
+  upgrade-implementation-module-demo2) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; upgrade_implementation_module_demo2 ;;
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
