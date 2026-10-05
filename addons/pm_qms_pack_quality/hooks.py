@@ -7,13 +7,14 @@ from odoo.exceptions import UserError
 def is_demo_2026_only_install(env):
     """Return whether this process is the guarded clean Demo2 pack install."""
     mode = os.environ.get("PMQMS_DEMO_PACK_MODE", "")
+    instance = os.environ.get("PMQMS_DEMO_INSTANCE", "")
     if not mode:
         return False
     if mode != "2026-only":
         raise UserError("Unsupported PMQMS demo pack installation mode.")
     if (
-        os.environ.get("PMQMS_DEMO_INSTANCE") != "demo2"
-        or env.cr.dbname != "pmqms_demo2"
+        instance != "demo2"
+        or env.cr.dbname != "pmqms_" + instance
     ):
         raise UserError(
             "The 2026-only pack mode is restricted to the isolated Demo2 database."

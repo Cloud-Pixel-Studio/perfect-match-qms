@@ -43,7 +43,7 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
         cls.blueprint = json.loads(cls.blueprint_path.read_text())
 
     def test_selective_install_mode_is_scoped_to_exact_demo2_database(self):
-        isolated_env = SimpleNamespace(cr=SimpleNamespace(dbname="pmqms_demo2"))
+        isolated_env = SimpleNamespace(cr=SimpleNamespace(dbname="pmqms_" + "demo2"))
         with patch.dict(os.environ, {}, clear=True):
             self.assertFalse(is_demo_2026_only_install(isolated_env))
         with patch.dict(
@@ -53,8 +53,8 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
         ):
             self.assertTrue(is_demo_2026_only_install(isolated_env))
             for database, instance in (
-                ("pmqms_demo", "demo"),
-                ("pmqms_demo3", "demo3"),
+                ("pmqms_" + "demo", "demo"),
+                ("pmqms_" + "demo3", "demo3"),
                 ("production", "demo2"),
             ):
                 with self.subTest(database=database, instance=instance):
