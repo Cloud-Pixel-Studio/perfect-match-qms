@@ -230,7 +230,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep signature/environment validation before create; no new bypass",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_pack_quality/hooks.py", "1024"): {
+    ("addons/pm_qms_pack_quality/hooks.py", "1050"): {
         "invoker": "Framework synchronization hook after explicit implementation action",
         "input_provenance": "Project record and selected framework pack relations",
         "user_controlled_input": "Project selection is authorized by normal model/action permissions; hook receives current project",
@@ -269,7 +269,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "M28 add explicit cross-scope management-review aggregation fixture",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_iso9001/hooks.py", "530"): {
+    ("addons/pm_qms_iso9001/hooks.py", "535"): {
         "invoker": "ISO 9001 addon post-init or versioned module-upgrade seed",
         "input_provenance": "Version-controlled draft pack blueprint validated before record creation",
         "user_controlled_input": "NO; RPC callers cannot enable superuser mode, and a forged context marker alone is denied",

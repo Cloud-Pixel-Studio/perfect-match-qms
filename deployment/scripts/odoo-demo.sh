@@ -413,7 +413,7 @@ install_demo2_2026_only() {
   }
 
   local backup_output archive backup_size backup_sha
-  backup_output="$(backup_demo)"
+  backup_output="$(backup_demo | tail -n 1)"
   archive="${backup_output#demo_backup=}"
   [[ "$archive" == "$BACKUP_DIR"/* && -f "$archive" ]] || {
     echo "Official initial backup was not created in the isolated Demo2 backup directory." >&2
