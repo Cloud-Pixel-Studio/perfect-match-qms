@@ -78,6 +78,8 @@ CREATED=1
   cat "$WORK/install.log" >&2
   exit 1
 }
+grep -E '^(demo_backup_diagnostics|archive_command=|Filesystem|fs type=|ulimit -f=|source=)' \
+  "$WORK/install.log"
 grep -Fq 'demo2_2026_only_install=PASS' "$WORK/install.log"
 backup_line="$(grep -F 'demo2_initial_backup=' "$WORK/install.log")"
 backup_path="$(printf '%s\n' "$backup_line" | awk '{print $1}' | cut -d= -f2-)"
