@@ -59,6 +59,7 @@ printf 'demo2\n' > "$WORK/backups/.pmqms-demo-instance-owner"
 chmod 600 "$WORK/secrets/.pmqms-demo-instance-owner" "$WORK/backups/.pmqms-demo-instance-owner"
 
 export PMQMS_DEMO_INSTANCE=demo2
+export PMQMS_DEMO_BACKUP_DIAGNOSTICS=1
 export PMQMS_DEMO_SECRETS_DIR="$WORK/secrets"
 export PMQMS_DEMO_BACKUP_DIR="$BACKUP_WORK"
 export PMQMS_DEMO_RUNTIME_LOCK_FILE="$WORK/secrets/runtime/runtime-lock.json"

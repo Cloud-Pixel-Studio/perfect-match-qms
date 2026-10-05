@@ -683,7 +683,27 @@ backup_demo() {
   dump="$(mktemp -d)"
   compose exec -T postgres-demo pg_dump -U odoo -d "$DB_NAME" --format=custom > "$dump/database.dump"
   docker run --rm -v "$ODOO_DATA_VOLUME:/var/lib/odoo:ro" -v "$dump:/backup" "$PMQMS_ALPINE_IMAGE" sh -lc "cd /var/lib/odoo && tar -czf /backup/filestore.tar.gz filestore || true"
-  tar -czf "$archive" -C "$dump" .
+  if [[ "${PMQMS_DEMO_BACKUP_DIAGNOSTICS:-0}" == 1 ]]; then
+    printf 'demo_backup_diagnostics phase=before-archive archive_fs=%s dump=%s\n' "$BACKUP_DIR" "$dump" >&2
+    printf 'archive_command=tar -czf %q -C %q .\n' "$archive" "$dump" >&2
+    df -Pk "$BACKUP_DIR" "$dump" >&2
+    df -Pi "$BACKUP_DIR" "$dump" >&2
+    stat -f -c 'fs type=%T blocks=%b free=%f available=%a block_size=%S inodes=%c free_inodes=%d' \
+      "$BACKUP_DIR" "$dump" >&2
+    printf 'ulimit -f=' >&2; ulimit -f >&2
+    stat -c 'source=%n size=%s mode=%a' "$dump/database.dump" "$dump/filestore.tar.gz" >&2
+  fi
+  if ! tar -czf "$archive" -C "$dump" .; then
+    if [[ "${PMQMS_DEMO_BACKUP_DIAGNOSTICS:-0}" == 1 ]]; then
+      printf 'demo_backup_diagnostics phase=archive-failed archive=%s\n' "$archive" >&2
+      df -Pk "$BACKUP_DIR" "$dump" >&2
+      df -Pi "$BACKUP_DIR" "$dump" >&2
+      stat -f -c 'fs type=%T blocks=%b free=%f available=%a block_size=%S inodes=%c free_inodes=%d' \
+        "$BACKUP_DIR" "$dump" >&2
+      stat -c 'source=%n size=%s mode=%a' "$dump/database.dump" "$dump/filestore.tar.gz" >&2
+    fi
+    return 1
+  fi
   rm -rf "$dump"
   echo "demo_backup=$archive"
 }
