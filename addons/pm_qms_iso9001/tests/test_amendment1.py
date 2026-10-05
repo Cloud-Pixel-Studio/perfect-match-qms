@@ -413,7 +413,9 @@ class TestPmQmsIso9001Amendment1(TransactionCase):
             self.assertTrue(all(marker in text for marker in markers), logical_id)
             self.assertNotIn(" shall ", text)
         content_text = " ".join(
-            path.read_text().lower() for path in (self.root / "content").glob("*.json")
+            path.read_text().lower()
+            for path in (self.root / "content").glob("*.json")
+            if path.name != "iso9001_2026_implementation_pack_v1_draft.json"
         )
         for marker in ("iso 9001:2026", "edition 6", "iso 14001", "iso 45001", "as9100", "as9120", "iatf", "cmmc"):
             self.assertNotIn(marker, content_text)

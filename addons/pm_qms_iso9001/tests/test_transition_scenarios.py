@@ -4,6 +4,7 @@ from odoo.tests.common import TransactionCase
 from odoo.addons.pm_qms_iso9001.hooks import (
     PROFILE_2026_CODE,
     PROFILE_2026_EDITION,
+    ISO9001_2026_PACK_PROFILE_CODE,
     PROFILE_CODE,
     PROFILE_EDITION,
     post_init_hook,
@@ -36,7 +37,7 @@ class TestPmQmsIso9001TransitionScenarios(TransactionCase):
         )
         self.assertEqual(
             {(profile.code, profile.edition) for profile in profiles},
-            {(PROFILE_CODE, PROFILE_EDITION), (PROFILE_2026_CODE, PROFILE_2026_EDITION)},
+            {(PROFILE_CODE, PROFILE_EDITION), (PROFILE_2026_CODE, PROFILE_2026_EDITION), (ISO9001_2026_PACK_PROFILE_CODE, PROFILE_2026_EDITION)},
         )
         self.assertFalse(
             any(

@@ -188,6 +188,65 @@ class TestPmQmsImplementation(TransactionCase):
         self.assertEqual(set(quality_manager.group_ids.ids), original_groups)
         self.assertFalse(self.user.has_group("pm_qms_core.group_pm_qms_manager"))
 
+    def test_draft_packs_are_hidden_and_rejected_by_generator(self):
+        pack_domain = self.env["pm.qms.project.generator.wizard"]._fields["pack_ids"].domain
+        self.assertEqual(
+            pack_domain,
+            "[('state', '=', 'active'), ('company_id', '=', company_id)]",
+        )
+
+        draft_pack = self.env["pm.qms.framework.pack"].with_user(self.admin).create(
+            {
+                "name": "Draft Generator Test Pack",
+                "code": "PM-TST-DRAFT-GENERATOR",
+                "version": "1.0",
+                "company_id": self.company.id,
+                "pack_type": "standard",
+            }
+        )
+        wizard = self.env["pm.qms.project.generator.wizard"].with_user(self.manager).create(
+            {
+                "name": "Draft packs must not generate implementations",
+                "company_id": self.company.id,
+                "organization_id": self.organization.id,
+                "project_manager_id": self.manager.id,
+                "date_start": "2026-08-15",
+                "target_date": "2026-09-30",
+                "implementation_type": "new_implementation",
+                "pack_ids": [Command.set([draft_pack.id])],
+            }
+        )
+        projects_before = self.env["pm.qms.implementation.project"].search_count(
+            [("name", "=", wizard.name), ("company_id", "=", self.company.id)]
+        )
+
+        with self.assertRaisesRegex(UserError, "Only active framework packs can be deployed"):
+            with self.env.cr.savepoint():
+                wizard.action_generate_implementation()
+
+        self.assertEqual(
+            self.env["pm.qms.implementation.project"].search_count(
+                [("name", "=", wizard.name), ("company_id", "=", self.company.id)]
+            ),
+            projects_before,
+        )
+
+        with self.assertRaisesRegex(
+            ValidationError,
+            "Implementation projects can only reference active framework packs",
+        ):
+            with self.env.cr.savepoint():
+                self.env["pm.qms.implementation.project"].with_user(self.manager).create(
+                    {
+                        "name": "Direct draft project must be blocked",
+                        "company_id": self.company.id,
+                        "organization_id": self.organization.id,
+                        "date_start": "2026-08-15",
+                        "target_date": "2026-09-30",
+                        "pack_ids": [Command.set([draft_pack.id])],
+                    }
+                )
+
     def _accept_evidence(self, line):
         evidence = self.env["pm.qms.evidence"].with_user(self.manager).create(
             {

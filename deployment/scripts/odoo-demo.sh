@@ -320,6 +320,140 @@ run_odoo() {
   compose run --rm odoo-demo odoo "$@"
 }
 
+run_odoo_demo_pack_mode() {
+  local mode="$1"
+  shift
+  assert_demo_database
+  prepare_runtime_permissions
+  compose run --rm --no-deps \
+    -e "PMQMS_DEMO_PACK_MODE=$mode" \
+    -e "PMQMS_DEMO_INSTANCE=$PMQMS_DEMO_INSTANCE" \
+    odoo-demo odoo "$@"
+}
+
+assert_demo2_install_target() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 &&
+     "$COMPOSE_PROJECT_NAME" == pmqms-demo2 &&
+     "$POSTGRES_VOLUME" == pmqms_demo2_postgres &&
+     "$ODOO_DATA_VOLUME" == pmqms_demo2_odoo_data &&
+     "$DEMO_NETWORK" == pmqms_demo2_network &&
+     "$ODOO_DEMO_HTTP_PORT" == 8171 && "$ODOO_DEMO_LONGPOLLING_PORT" == 8174 ]] || {
+    echo "Refusing selective installation outside the dedicated Demo2 database and resources." >&2
+    return 2
+  }
+  [[ "$DEMO_ADDONS" == "$(module_list)" ]] || {
+    echo "Selective installation requires the canonical QMS addon set; custom module lists are refused." >&2
+    return 2
+  }
+}
+
+assert_demo2_install_host_capacity() {
+  local total_kb available_kb disk_available_kb cpu_count
+  total_kb="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
+  available_kb="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"
+  disk_available_kb="$(df -Pk "$REPO_ROOT" | awk 'NR == 2 {print $4}')"
+  cpu_count="$(getconf _NPROCESSORS_ONLN)"
+  [[ "$total_kb" =~ ^[0-9]+$ && "$available_kb" =~ ^[0-9]+$ &&
+     "$disk_available_kb" =~ ^[0-9]+$ && "$cpu_count" =~ ^[0-9]+$ ]] || {
+    echo "Could not establish host capacity for the selective Demo2 install." >&2
+    return 1
+  }
+  (( total_kb >= 6 * 1024 * 1024 && available_kb >= 3 * 1024 * 1024 &&
+     disk_available_kb >= 8 * 1024 * 1024 && cpu_count >= 2 )) || {
+    echo "Insufficient host capacity: require >=6 GiB RAM, >=3 GiB available RAM, >=8 GiB free disk, and >=2 CPUs before creating Demo2 services." >&2
+    return 1
+  }
+}
+
+assert_demo2_install_resources_absent() {
+  local volume
+  if docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME" | grep -q .; then
+    echo "Refusing fresh Demo2 installation: Compose project already has containers." >&2
+    return 1
+  fi
+  for volume in "$POSTGRES_VOLUME" "$ODOO_DATA_VOLUME"; do
+    if docker volume inspect "$volume" >/dev/null 2>&1; then
+      echo "Refusing fresh Demo2 installation: target volume '$volume' already exists." >&2
+      return 1
+    fi
+  done
+  if docker network inspect "$DEMO_NETWORK" >/dev/null 2>&1; then
+    echo "Refusing fresh Demo2 installation: target network '$DEMO_NETWORK' already exists." >&2
+    return 1
+  fi
+}
+
+install_demo2_2026_only() {
+  assert_demo2_install_target
+  runtime_verify
+  assert_demo2_install_host_capacity
+  assert_demo2_install_resources_absent
+
+  # This is a first-install path only. It never updates an existing database,
+  # imports a license, creates demo personas, or calls the general Demo seed.
+  init_secrets
+  compose up -d postgres-demo >/dev/null
+  wait_postgres
+  local existing_db
+  existing_db="$(compose exec -T postgres-demo psql -U odoo -d postgres -Atqc \
+    "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'")"
+  [[ -z "$existing_db" ]] || {
+    echo "Refusing selective installation: target database '$DB_NAME' already exists." >&2
+    return 1
+  }
+
+  run_odoo -d "$DB_NAME" --init base --stop-after-init
+  local installed_qms_addons
+  installed_qms_addons="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT count(*) FROM ir_module_module WHERE name LIKE 'pm_qms_%' AND state = 'installed'")"
+  [[ "$installed_qms_addons" == 0 ]] || {
+    echo "Refusing selective installation: base-only database unexpectedly contains installed QMS addons." >&2
+    return 1
+  }
+
+  local backup_output archive backup_size backup_sha
+  backup_output="$(backup_demo | tail -n 1)"
+  archive="${backup_output#demo_backup=}"
+  [[ "$archive" == "$BACKUP_DIR"/* && -f "$archive" ]] || {
+    echo "Official initial backup was not created in the isolated Demo2 backup directory." >&2
+    return 1
+  }
+  chmod 600 "$archive"
+  gzip -t "$archive"
+  tar -tzf "$archive" | grep -F 'database.dump' >/dev/null
+  tar -tzf "$archive" | grep -F 'filestore.tar.gz' >/dev/null
+  tar -xOf "$archive" ./database.dump | docker run --rm -i "$PMQMS_POSTGRES_IMAGE" pg_restore --list >/dev/null
+  tar -xOf "$archive" ./filestore.tar.gz | gzip -t
+  backup_size="$(stat -c '%s' "$archive")"
+  backup_sha="$(sha256sum "$archive" | awk '{print $1}')"
+  [[ "$backup_size" =~ ^[0-9]+$ && "$backup_size" -gt 0 && "$backup_sha" =~ ^[0-9a-f]{64}$ ]] || {
+    echo "Official initial Demo2 backup failed size or checksum verification." >&2
+    return 1
+  }
+  printf 'demo2_initial_backup=%s size=%s sha256=%s\n' "$archive" "$backup_size" "$backup_sha"
+
+  run_odoo_demo_pack_mode 2026-only -d "$DB_NAME" --init "$DEMO_ADDONS" \
+    --without-demo=all --stop-after-init
+
+  local packs profiles scenarios non_draft_mappings
+  packs="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT count(*) || '|' || coalesce(string_agg(code || '|' || version || '|' || state, ',' ORDER BY code), '') FROM pm_qms_framework_pack")"
+  profiles="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT count(*) || '|' || coalesce(string_agg(code || '|' || edition || '|' || state, ',' ORDER BY code), '') FROM pm_qms_mapping_profile")"
+  scenarios="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT count(*) FROM pm_qms_iso9001_transition_scenario")"
+  non_draft_mappings="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT count(*) FROM pm_qms_external_mapping WHERE review_status <> 'draft'")"
+  [[ "$packs" == "1|PM-QMS-ISO9001-2026|1.0|draft" &&
+     "$profiles" == "1|PM-QMS-QUALITY-ISO9001-2026-IMPLEMENTATION|2026|draft" &&
+     "$scenarios" == 0 && "$non_draft_mappings" == 0 ]] || {
+    echo "Selective installation verification failed: unexpected pack/profile/scenario state; database is preserved for diagnosis." >&2
+    return 1
+  }
+  echo "demo2_2026_only_install=PASS instance=demo2 database=pmqms_demo2 pack=PM-QMS-ISO9001-2026 state=draft profile=2026 mappings=unreviewed"
+}
+
 install_or_update() {
   assert_demo_database
   prepare_runtime_permissions
@@ -348,6 +482,108 @@ update_app_shell() {
     return 1
   }
   run_odoo -d "$DB_NAME" --update pm_qms_app --stop-after-init
+}
+
+# Upgrade only the ISO add-on in the isolated Demo2 database. This deliberately
+# avoids prepare_runtime_permissions (which may initialize/write secrets), the
+# all-addons update, license import, and the general Demo seed.
+upgrade_iso9001_module_demo2() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 &&
+     "$COMPOSE_PROJECT_NAME" == pmqms-demo2 &&
+     "$POSTGRES_VOLUME" == pmqms_demo2_postgres &&
+     "$ODOO_DATA_VOLUME" == pmqms_demo2_odoo_data &&
+     "$DEMO_NETWORK" == pmqms_demo2_network ]] || {
+    echo "Refusing ISO add-on upgrade outside the approved Demo2 instance/database/resources." >&2
+    return 2
+  }
+  [[ -r "$RUNTIME_LOCK_FILE" && -r "$PG_PASSWORD_FILE" &&
+     -r "$CONFIG_DIR/odoo.conf" && -r "$ENVIRONMENT_ID_FILE" ]] || {
+    echo "Demo2 runtime lock or existing read-only runtime configuration is unavailable." >&2
+    return 2
+  }
+  runtime_verify
+  compose up -d postgres-demo >/dev/null
+  wait_postgres
+  local module_state
+  module_state="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT state FROM ir_module_module WHERE name = 'pm_qms_iso9001'")"
+  [[ "$module_state" == installed ]] || {
+    echo "Refusing targeted upgrade: pm_qms_iso9001 is not installed in $DB_NAME." >&2
+    return 1
+  }
+  compose stop odoo-demo >/dev/null
+  if ! compose run --rm --no-deps odoo-demo odoo -d "$DB_NAME" \
+    --update pm_qms_iso9001 --stop-after-init; then
+    echo "ISO add-on update failed; Odoo remains stopped for safe recovery." >&2
+    return 1
+  fi
+  compose up -d odoo-demo >/dev/null
+  echo "iso9001_module_upgrade=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_iso9001"
+}
+
+# Deploy Python-only implementation changes to the approved Demo2 instance.
+# A module `--update` replays XML across Odoo's module load graph and can run
+# data functions in dependent modules; recreate only the Odoo service instead.
+deploy_implementation_code_demo2() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 &&
+     "$COMPOSE_PROJECT_NAME" == pmqms-demo2 &&
+     "$POSTGRES_VOLUME" == pmqms_demo2_postgres &&
+     "$ODOO_DATA_VOLUME" == pmqms_demo2_odoo_data &&
+     "$DEMO_NETWORK" == pmqms_demo2_network &&
+     "$ODOO_DEMO_HTTP_PORT" == 8171 && "$ODOO_DEMO_LONGPOLLING_PORT" == 8174 ]] || {
+    echo "Refusing implementation-code deployment outside the approved Demo2 instance/database/resources." >&2
+    return 2
+  }
+  [[ -r "$RUNTIME_LOCK_FILE" && -r "$PG_PASSWORD_FILE" &&
+     -r "$CONFIG_DIR/odoo.conf" && -r "$ENVIRONMENT_ID_FILE" ]] || {
+    echo "Demo2 runtime lock or existing read-only runtime configuration is unavailable." >&2
+    return 2
+  }
+  runtime_verify
+
+  local postgres_id odoo_id module_state
+  local -a postgres_ids odoo_ids
+  mapfile -t postgres_ids < <(compose ps -q postgres-demo)
+  mapfile -t odoo_ids < <(compose ps -q odoo-demo)
+  [[ ${#postgres_ids[@]} -eq 1 && ${#odoo_ids[@]} -eq 1 ]] || {
+    echo "Refusing implementation-code deployment unless exactly one Demo2 PostgreSQL and Odoo container already exists." >&2
+    return 1
+  }
+  postgres_id="${postgres_ids[0]}"
+  odoo_id="${odoo_ids[0]}"
+  [[ "$(docker inspect --format '{{.State.Running}}' "$postgres_id")" == true &&
+     "$(docker inspect --format '{{.State.Health.Status}}' "$postgres_id")" == healthy &&
+     "$(docker inspect --format '{{.State.Running}}' "$odoo_id")" == true ]] || {
+    echo "Refusing implementation-code deployment unless Demo2 PostgreSQL is healthy and Odoo is running." >&2
+    return 1
+  }
+
+  module_state="$(compose exec -T postgres-demo psql -U odoo -d "$DB_NAME" -Atqc \
+    "SELECT state || '|' || demo::text FROM ir_module_module WHERE name = 'pm_qms_implementation'")"
+  [[ "$module_state" == 'installed|false' ]] || {
+    echo "Refusing code deployment: pm_qms_implementation must already be installed with demo data disabled in $DB_NAME." >&2
+    return 1
+  }
+
+  if ! compose up -d --no-deps --force-recreate odoo-demo >/dev/null; then
+    echo "Implementation-code deployment failed while recreating only Demo2 Odoo." >&2
+    return 1
+  fi
+  local refreshed_postgres_id refreshed_odoo_id
+  refreshed_postgres_id="$(compose ps -q postgres-demo)"
+  refreshed_odoo_id="$(compose ps -q odoo-demo)"
+  [[ "$refreshed_postgres_id" == "$postgres_id" && -n "$refreshed_odoo_id" && "$refreshed_odoo_id" != "$odoo_id" ]] || {
+    echo "Demo2 Odoo was recreated but its PostgreSQL container identity changed unexpectedly." >&2
+    return 1
+  }
+  [[ "$(docker inspect --format '{{.State.Running}}' "$refreshed_odoo_id")" == true &&
+     "$(docker inspect --format '{{.State.Health.Status}}' "$postgres_id")" == healthy ]] || {
+    echo "Demo2 code deployment did not leave Odoo running with PostgreSQL healthy." >&2
+    return 1
+  }
+  echo "implementation_code_deploy=PASS instance=demo2 database=pmqms_demo2 module=pm_qms_implementation operation=odoo-service-recreate-only"
 }
 
 seed_demo() {
@@ -440,10 +676,34 @@ backup_demo() {
   local stamp archive dump
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   archive="$BACKUP_DIR/${DB_NAME}-${stamp}.tar.gz"
+  [[ ! -e "$archive" && ! -L "$archive" ]] || {
+    echo "Refusing to overwrite an existing Demo backup: $archive" >&2
+    return 1
+  }
   dump="$(mktemp -d)"
   compose exec -T postgres-demo pg_dump -U odoo -d "$DB_NAME" --format=custom > "$dump/database.dump"
   docker run --rm -v "$ODOO_DATA_VOLUME:/var/lib/odoo:ro" -v "$dump:/backup" "$PMQMS_ALPINE_IMAGE" sh -lc "cd /var/lib/odoo && tar -czf /backup/filestore.tar.gz filestore || true"
-  tar -czf "$archive" -C "$dump" .
+  if [[ "${PMQMS_DEMO_BACKUP_DIAGNOSTICS:-0}" == 1 ]]; then
+    printf 'demo_backup_diagnostics phase=before-archive archive_fs=%s dump=%s\n' "$BACKUP_DIR" "$dump" >&2
+    printf 'archive_command=tar -czf %q -C %q .\n' "$archive" "$dump" >&2
+    df -Pk "$BACKUP_DIR" "$dump" >&2
+    df -Pi "$BACKUP_DIR" "$dump" >&2
+    stat -f -c 'fs type=%T blocks=%b free=%f available=%a block_size=%S inodes=%c free_inodes=%d' \
+      "$BACKUP_DIR" "$dump" >&2
+    printf 'ulimit -f=' >&2; ulimit -f >&2
+    stat -c 'source=%n size=%s mode=%a' "$dump/database.dump" "$dump/filestore.tar.gz" >&2
+  fi
+  if ! tar -czf "$archive" -C "$dump" .; then
+    if [[ "${PMQMS_DEMO_BACKUP_DIAGNOSTICS:-0}" == 1 ]]; then
+      printf 'demo_backup_diagnostics phase=archive-failed archive=%s\n' "$archive" >&2
+      df -Pk "$BACKUP_DIR" "$dump" >&2
+      df -Pi "$BACKUP_DIR" "$dump" >&2
+      stat -f -c 'fs type=%T blocks=%b free=%f available=%a block_size=%S inodes=%c free_inodes=%d' \
+        "$BACKUP_DIR" "$dump" >&2
+      stat -c 'source=%n size=%s mode=%a' "$dump/database.dump" "$dump/filestore.tar.gz" >&2
+    fi
+    return 1
+  fi
   rm -rf "$dump"
   echo "demo_backup=$archive"
 }
@@ -519,7 +779,13 @@ Commands:
   shell          Open a shell in the demo Odoo container.
   init-db        Initialize the selected instance database with base only.
   install        Install/update the full Perfect Match QMS demo stack and seed data.
+  install-demo2-2026-only
+                Install the canonical QMS addons into a new Demo2 database, creating only the 2026 draft pack; never updates, imports a license, or runs Demo seed.
   update-app-shell Update only pm_qms_app in the existing database; does not seed.
+  upgrade-iso9001-module-demo2
+                Update only pm_qms_iso9001 in the existing isolated Demo2 database; no license import or Demo seed.
+  deploy-implementation-code-demo2
+                Recreate only the existing isolated Demo2 Odoo service for Python-only pm_qms_implementation changes; never upgrades modules or loads XML.
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
@@ -549,7 +815,10 @@ case "${1:-}" in
   shell) prepare_runtime_permissions; compose run --rm odoo-demo bash ;;
   init-db) run_odoo -d "$DB_NAME" --init base --stop-after-init ;;
   install) install_or_update ;;
+  install-demo2-2026-only) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; install_demo2_2026_only ;;
   update-app-shell) update_app_shell ;;
+  upgrade-iso9001-module-demo2) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; upgrade_iso9001_module_demo2 ;;
+  deploy-implementation-code-demo2) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; deploy_implementation_code_demo2 ;;
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
