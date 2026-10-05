@@ -61,6 +61,9 @@ jobs:
       - name: Run Demo2 implementation-module-only upgrade regressions
         run: bash deployment/scripts/tests/test_demo_implementation_module_upgrade.sh
 
+      - name: Run clean Demo2 ISO 9001:2026-only install integration
+        run: bash deployment/scripts/tests/test_demo_2026_only_install.sh
+
       - name: Validate customer proxy client-IP contract
         run: bash deployment/scripts/tests/test_customer_proxy_contract.sh
 

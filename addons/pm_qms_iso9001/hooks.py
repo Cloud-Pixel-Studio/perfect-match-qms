@@ -4,6 +4,8 @@ from pathlib import Path
 from odoo import Command
 from odoo.exceptions import UserError
 
+from odoo.addons.pm_qms_pack_quality.hooks import is_demo_2026_only_install
+
 
 PROFILE_CODE = "PM-QMS-QUALITY-ISO9001"
 PROFILE_EDITION = "2015"
@@ -255,6 +257,9 @@ def seed_iso9001_transition_scenarios(env):
 
 
 def post_init_hook(env):
+    if is_demo_2026_only_install(env):
+        seed_iso9001_2026_implementation_pack(env)
+        return
     seed_iso9001_initial_implementation(env)
     seed_iso9001_transition_scenarios(env)
     seed_iso9001_2026_implementation_pack(env)

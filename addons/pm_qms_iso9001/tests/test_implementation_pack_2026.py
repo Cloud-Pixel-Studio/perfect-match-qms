@@ -1,6 +1,9 @@
 import csv
 import json
+import os
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from odoo.exceptions import UserError
 from odoo.tests import tagged
@@ -13,6 +16,7 @@ from odoo.addons.pm_qms_iso9001.hooks import (
     ISO9001_2026_PACK_VERSION,
     ISO9001_2026_PACK_PROFILE_CODE,
     PROFILE_2026_CODE,
+    is_demo_2026_only_install,
     seed_iso9001_2026_implementation_pack,
 )
 
@@ -37,6 +41,39 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
             Path(__file__).parents[1] / "content" / "iso9001_2026_implementation_pack_v1_draft.json"
         )
         cls.blueprint = json.loads(cls.blueprint_path.read_text())
+
+    def test_selective_install_mode_is_scoped_to_exact_demo2_database(self):
+        isolated_env = SimpleNamespace(cr=SimpleNamespace(dbname="pmqms_demo2"))
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(is_demo_2026_only_install(isolated_env))
+        with patch.dict(
+            os.environ,
+            {"PMQMS_DEMO_PACK_MODE": "2026-only", "PMQMS_DEMO_INSTANCE": "demo2"},
+            clear=True,
+        ):
+            self.assertTrue(is_demo_2026_only_install(isolated_env))
+            for database, instance in (
+                ("pmqms_demo", "demo"),
+                ("pmqms_demo3", "demo3"),
+                ("production", "demo2"),
+            ):
+                with self.subTest(database=database, instance=instance):
+                    bad_env = SimpleNamespace(cr=SimpleNamespace(dbname=database))
+                    with patch.dict(
+                        os.environ,
+                        {
+                            "PMQMS_DEMO_PACK_MODE": "2026-only",
+                            "PMQMS_DEMO_INSTANCE": instance,
+                        },
+                        clear=True,
+                    ), self.assertRaises(UserError):
+                        is_demo_2026_only_install(bad_env)
+        with patch.dict(
+            os.environ,
+            {"PMQMS_DEMO_PACK_MODE": "all", "PMQMS_DEMO_INSTANCE": "demo2"},
+            clear=True,
+        ), self.assertRaises(UserError):
+            is_demo_2026_only_install(isolated_env)
 
     def test_draft_pack_is_distinct_and_review_gated(self):
         self.assertTrue(self.pack)

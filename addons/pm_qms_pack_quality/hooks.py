@@ -1,4 +1,24 @@
+import os
+
 from odoo import Command, fields
+from odoo.exceptions import UserError
+
+
+def is_demo_2026_only_install(env):
+    """Return whether this process is the guarded clean Demo2 pack install."""
+    mode = os.environ.get("PMQMS_DEMO_PACK_MODE", "")
+    if not mode:
+        return False
+    if mode != "2026-only":
+        raise UserError("Unsupported PMQMS demo pack installation mode.")
+    if (
+        os.environ.get("PMQMS_DEMO_INSTANCE") != "demo2"
+        or env.cr.dbname != "pmqms_demo2"
+    ):
+        raise UserError(
+            "The 2026-only pack mode is restricted to the isolated Demo2 database."
+        )
+    return True
 
 
 QUALITY_AREA_DEFINITIONS = [
@@ -837,6 +857,7 @@ def _find_or_create(env, model_name, domain, values):
 
 
 def seed_quality_pack(env):
+    demo_2026_only = is_demo_2026_only_install(env)
     company = env.ref("base.main_company")
     today = fields.Date.context_today(env["res.company"])
     organization = _find_or_create(
@@ -930,6 +951,11 @@ def seed_quality_pack(env):
                 })
             else:
                 env["pm.qms.evidence.requirement"].create(values)
+
+    # Keep the shared authored controls/process catalog needed by the ISO 2026
+    # draft, but do not create or activate the generic pack in selective mode.
+    if demo_2026_only:
+        return
 
     pack = env["pm.qms.framework.pack"].search(
         [
