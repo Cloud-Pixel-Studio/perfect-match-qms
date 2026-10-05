@@ -423,7 +423,7 @@ install_demo2_2026_only() {
   gzip -t "$archive"
   tar -tzf "$archive" | grep -F 'database.dump' >/dev/null
   tar -tzf "$archive" | grep -F 'filestore.tar.gz' >/dev/null
-  tar -xOf "$archive" ./database.dump | docker run --rm -i "$PMQMS_POSTGRES_IMAGE" pg_restore --list - >/dev/null
+  tar -xOf "$archive" ./database.dump | docker run --rm -i "$PMQMS_POSTGRES_IMAGE" pg_restore --list >/dev/null
   tar -xOf "$archive" ./filestore.tar.gz | gzip -t
   backup_size="$(stat -c '%s' "$archive")"
   backup_sha="$(sha256sum "$archive" | awk '{print $1}')"
