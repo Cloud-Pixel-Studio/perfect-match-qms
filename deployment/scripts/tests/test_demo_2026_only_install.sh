@@ -15,6 +15,7 @@ POSTGRES_VOLUME="pmqms_demo2_postgres"
 ODOO_VOLUME="pmqms_demo2_odoo_data"
 NETWORK="pmqms_demo2_network"
 WORK="$(mktemp -d)"
+BACKUP_WORK="$(mktemp -d /dev/shm/pmqms-demo2-backups.XXXXXX)"
 CREATED=0
 
 compose_test() {
@@ -32,6 +33,7 @@ cleanup() {
     compose_test down --volumes --remove-orphans >/dev/null 2>&1 || true
   fi
   rm -rf -- "$WORK"
+  rm -rf -- "$BACKUP_WORK"
 }
 trap cleanup EXIT
 
@@ -58,7 +60,7 @@ chmod 600 "$WORK/secrets/.pmqms-demo-instance-owner" "$WORK/backups/.pmqms-demo-
 
 export PMQMS_DEMO_INSTANCE=demo2
 export PMQMS_DEMO_SECRETS_DIR="$WORK/secrets"
-export PMQMS_DEMO_BACKUP_DIR="$WORK/backups"
+export PMQMS_DEMO_BACKUP_DIR="$BACKUP_WORK"
 export PMQMS_DEMO_RUNTIME_LOCK_FILE="$WORK/secrets/runtime/runtime-lock.json"
 export ODOO_DEMO_HTTP_BIND=127.0.0.1
 export ODOO_DEMO_LONGPOLLING_BIND=127.0.0.1
@@ -79,7 +81,7 @@ grep -Fq 'demo2_2026_only_install=PASS' "$WORK/install.log"
 backup_line="$(grep -F 'demo2_initial_backup=' "$WORK/install.log")"
 backup_path="$(printf '%s\n' "$backup_line" | awk '{print $1}' | cut -d= -f2-)"
 backup_recorded_sha="$(printf '%s\n' "$backup_line" | awk '{for (i = 1; i <= NF; i++) if ($i ~ /^sha256=/) {sub(/^sha256=/, "", $i); print $i}}')"
-[[ "$backup_path" == "$WORK/backups/"* && -f "$backup_path" ]]
+[[ "$backup_path" == "$BACKUP_WORK/"* && -f "$backup_path" ]]
 [[ "$(stat -c '%a' "$backup_path")" == 600 ]]
 [[ "$(sha256sum "$backup_path" | awk '{print $1}')" == "$backup_recorded_sha" ]]
 

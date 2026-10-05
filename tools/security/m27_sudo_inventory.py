@@ -230,7 +230,7 @@ PRODUCTION_DETAILS = {
         "follow_up": "Keep signature/environment validation before create; no new bypass",
         "runtime_covered": "YES",
     },
-    ("addons/pm_qms_pack_quality/hooks.py", "1050"): {
+    ("addons/pm_qms_pack_quality/hooks.py", "1051"): {
         "invoker": "Framework synchronization hook after explicit implementation action",
         "input_provenance": "Project record and selected framework pack relations",
         "user_controlled_input": "Project selection is authorized by normal model/action permissions; hook receives current project",
