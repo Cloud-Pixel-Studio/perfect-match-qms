@@ -15,7 +15,7 @@ POSTGRES_VOLUME="pmqms_demo2_postgres"
 ODOO_VOLUME="pmqms_demo2_odoo_data"
 NETWORK="pmqms_demo2_network"
 WORK="$(mktemp -d)"
-BACKUP_WORK="$(mktemp -d /dev/shm/pmqms-demo2-backups.XXXXXX)"
+BACKUP_WORK="$(mktemp -d)"
 CREATED=0
 
 compose_test() {
