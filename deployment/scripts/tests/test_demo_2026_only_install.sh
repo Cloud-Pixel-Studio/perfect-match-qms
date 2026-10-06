@@ -119,6 +119,7 @@ grep -Fq 'The exact valid Demo2026 v3 license is required' "$WORK/seed-without-l
 
 # Catalog seeding is also a separate licensed operation; the clean install
 # must not acquire scenario records merely because its 2026 pack exists.
+"$LAUNCHER" up &> "$WORK/start-unlicensed-demo.log"
 if PMQMS_SCENARIO_DRY_RUN=1 "$LAUNCHER" seed-demo2-2026-scenarios &> "$WORK/scenarios-without-license.log"; then
   echo "Scenario templates unexpectedly installed without a license." >&2
   exit 1
