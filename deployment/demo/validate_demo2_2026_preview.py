@@ -42,6 +42,7 @@ if not (
     and target_profile.state == "draft"
     and len(target_profile.mapping_ids) == 65
     and all(mapping.review_status == "draft" for mapping in target_profile.mapping_ids)
+    and len(target_profile.mapping_ids.filtered("demo_preview_usable")) == 65
     and len(source_profile) == 1
     and source_profile.pack_id == generic_pack
     and source_profile.standard_name == "ISO 9001"
@@ -132,7 +133,7 @@ for model_name, minimum in required_examples.items():
 
 print("DEMO2026_PREVIEW_VALIDATION=PASS")
 print("license=valid-v3-demo-qa limits=1/3/7")
-print("pack=demo_preview profile=draft mappings=unreviewed")
+print("pack=demo_preview profile=draft mappings=demo-only-usable/unreviewed approved-coverage=0")
 print("scenario_templates=9 source_profile_2015=active-fictional-fixture mappings=0")
 print(f"gap_assessments={len(assessments)}")
 print(f"operational_examples_checked={len(required_examples)}")

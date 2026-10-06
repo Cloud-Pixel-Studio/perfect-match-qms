@@ -1,4 +1,5 @@
 from . import framework_pack
+from . import demo_mapping_preview
 from . import implementation_project
 from . import transition_scenario
 from . import gap_assessment

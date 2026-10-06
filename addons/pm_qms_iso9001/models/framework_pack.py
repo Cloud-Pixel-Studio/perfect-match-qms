@@ -6,6 +6,7 @@ from odoo.exceptions import AccessError, UserError
 from odoo.addons.pm_qms_license.services.environment import read_environment_id
 
 from ..hooks import (
+    ISO9001_2026_PACK_PROFILE_CODE,
     seed_iso9001_initial_implementation,
     seed_iso9001_transition_scenarios,
     seed_iso9001_2026_implementation_pack,
@@ -41,6 +42,24 @@ def is_authorized_demo_2026_preview(env):
         and scope == "demo-qa"
         and (license_record.company_limit, license_record.site_limit, license_record.named_user_limit)
         == (1, 3, 7)
+    )
+
+
+def is_authorized_demo_2026_mapping_preview(env, mapping):
+    """Permit draft 2026 references to be displayed only in the licensed Demo Preview."""
+    profile = mapping.mapping_profile_id
+    return bool(
+        is_authorized_demo_2026_preview(env)
+        and profile
+        and profile.code == ISO9001_2026_PACK_PROFILE_CODE
+        and profile.edition == "2026"
+        and profile.standard_name == "ISO 9001"
+        and profile.state == "draft"
+        and profile.pack_id.code == ISO9001_2026_PACK_CODE
+        and profile.pack_id.state == "demo_preview"
+        and profile.company_id == env.company
+        and mapping.review_status == "draft"
+        and mapping.demo_preview_usable
     )
 
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -19,7 +19,10 @@ from odoo.addons.pm_qms_iso9001.hooks import (
     is_demo_2026_only_install,
     seed_iso9001_2026_implementation_pack,
 )
-from odoo.addons.pm_qms_iso9001.models.framework_pack import is_authorized_demo_2026_preview
+from odoo.addons.pm_qms_iso9001.models.framework_pack import (
+    is_authorized_demo_2026_mapping_preview,
+    is_authorized_demo_2026_preview,
+)
 
 
 @tagged("-at_install", "post_install")
@@ -105,6 +108,40 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
         self.assertTrue(all(mapping.review_status == "draft" for mapping in self.profile.mapping_ids))
         with self.assertRaises(UserError):
             self.pack.action_activate()
+
+    def test_draft_mappings_can_be_used_only_as_labeled_demo_preview(self):
+        admin_user = self.env.ref("base.user_admin")
+        admin_group = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+        admin_user.write({"group_ids": [(4, admin_group.id)]})
+        with patch(
+            "odoo.addons.pm_qms_iso9001.models.framework_pack.is_authorized_demo_2026_preview",
+            return_value=True,
+        ):
+            self.pack.with_user(admin_user).action_enable_demo_preview()
+        with patch(
+            "odoo.addons.pm_qms_iso9001.models.demo_mapping_preview.is_authorized_demo_2026_preview",
+            return_value=True,
+        ):
+            profile = self.profile.with_user(admin_user)
+            self.assertTrue(profile.action_enable_demo_preview_mappings())
+            self.assertTrue(profile.action_enable_demo_preview_mappings())
+        mappings = self.profile.mapping_ids
+        self.assertEqual(len(mappings.filtered("demo_preview_usable")), 65)
+        self.assertTrue(all(mapping.review_status == "draft" for mapping in mappings))
+        self.assertEqual(self.profile.mapped_control_count, 0)
+        self.assertEqual(self.profile.mapping_completeness_percent, 0.0)
+        self.assertEqual(self.profile.demo_preview_usable_count, 65)
+        self.assertTrue(all(mapping.demo_preview_enabled_by_id == admin_user for mapping in mappings))
+        self.assertFalse(mappings.filtered(lambda mapping: mapping.reviewed_by_id or mapping.review_date))
+        self.assertFalse(mappings.filtered(lambda mapping: mapping.review_status != "draft"))
+        self.assertFalse(is_authorized_demo_2026_mapping_preview(self.env, mappings[0]))
+        with patch(
+            "odoo.addons.pm_qms_iso9001.models.framework_pack.is_authorized_demo_2026_preview",
+            return_value=True,
+        ):
+            self.assertTrue(is_authorized_demo_2026_mapping_preview(self.env, mappings[0]))
+        with self.assertRaises(AccessError):
+            mappings[0].with_user(admin_user).write({"demo_preview_usable": True})
 
     def test_demo_preview_project_use_fails_closed_outside_isolated_license(self):
         with patch(

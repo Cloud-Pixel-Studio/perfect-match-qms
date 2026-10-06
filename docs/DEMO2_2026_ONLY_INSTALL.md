@@ -80,8 +80,13 @@ testing, while any real customer transition still requires that customer's
 validated 2015 profile and historical records.
 
 The ISO 9001:2026 pack is in `demo_preview`, not customer-active. Its mapping
-profile and individual mappings remain draft and unapproved. The preview is
-valid only for the exact Demo2 database and signed v3 Demo/QA license; a clone
-or another environment cannot generate or synchronize projects from it. Normal
-activation and customer release remain blocked pending independent practitioner
-review and approved publication. The UI labels the preview as not approved.
+profile and individual mappings remain draft and unapproved. In the exact
+licensed Demo2026 only, a QMS Administrator can use **Enable 2026 Mappings for
+Demo Preview** on that profile to expose the 65 draft references in generated
+implementation-project alignment summaries. Each displayed reference is
+explicitly labeled `DEMO PREVIEW ONLY — NOT APPROVED`. This does not change
+review status, reviewer/date, approved coverage, profile state, or release gates.
+The preview is valid only for the exact Demo2 database and signed v3 Demo/QA
+license; a clone or another environment cannot generate or synchronize
+projects from it. Normal activation and customer release remain blocked pending
+independent practitioner review and approved publication.
