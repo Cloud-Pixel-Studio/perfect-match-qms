@@ -2,7 +2,12 @@
 
 import os
 
+from odoo.addons.pm_qms_iso9001.hooks import ISO9001_TRANSITION_SCENARIOS
 from odoo.addons.pm_qms_iso9001.models.framework_pack import is_authorized_demo_2026_preview
+
+
+SOURCE_FIXTURE_CODE = "PM-QMS-DEMO-SOURCE-ISO9001-2015"
+GENERIC_PACK_CODE = "PM-QMS-QUALITY"
 
 
 if (
@@ -15,19 +20,63 @@ if (
 
 pack_model = env["pm.qms.framework.pack"].sudo()
 packs = pack_model.search([])
-if len(packs) != 1 or packs.code != "PM-QMS-ISO9001-2026" or packs.state != "demo_preview":
-    raise RuntimeError("Expected only the ISO 9001:2026 pack in Demo Preview")
-
-profiles = env["pm.qms.mapping.profile"].sudo().search([])
+target_pack = packs.filtered(lambda item: item.code == "PM-QMS-ISO9001-2026")
+generic_pack = packs.filtered(lambda item: item.code == GENERIC_PACK_CODE)
 if not (
-    len(profiles) == 1
-    and profiles.pack_id == packs
-    and profiles.edition == "2026"
-    and profiles.state == "draft"
-    and all(mapping.review_status == "draft" for mapping in profiles.mapping_ids)
-    and not env["pm.qms.iso9001.transition.scenario"].sudo().search_count([])
+    len(packs) == 2
+    and len(target_pack) == 1
+    and target_pack.state == "demo_preview"
+    and len(generic_pack) == 1
+    and generic_pack.state == "active"
 ):
-    raise RuntimeError("The 2026 mapping profile or transition isolation is invalid")
+    raise RuntimeError("Expected the 2026 Preview pack and the active generic source-fixture pack")
+
+profile_model = env["pm.qms.mapping.profile"].sudo()
+profiles = profile_model.search([])
+target_profile = profiles.filtered(lambda item: item.edition == "2026")
+source_profile = profiles.filtered(lambda item: item.code == SOURCE_FIXTURE_CODE)
+if not (
+    len(profiles) == 2
+    and len(target_profile) == 1
+    and target_profile.pack_id == target_pack
+    and target_profile.state == "draft"
+    and len(target_profile.mapping_ids) == 65
+    and all(mapping.review_status == "draft" for mapping in target_profile.mapping_ids)
+    and len(target_profile.mapping_ids.filtered("demo_preview_usable")) == 65
+    and len(source_profile) == 1
+    and source_profile.pack_id == generic_pack
+    and source_profile.standard_name == "ISO 9001"
+    and source_profile.edition == "2015"
+    and source_profile.state == "active"
+    and source_profile.name.startswith("DEMO FIXTURE ONLY")
+    and "Fictional source-edition profile" in source_profile.notes
+    and not source_profile.mapping_ids
+):
+    raise RuntimeError("The 2026 Preview profile or fictional active 2015 source fixture is invalid")
+
+scenarios = env["pm.qms.iso9001.transition.scenario"].sudo().search([])
+expected_scenarios = {definition[0]: definition for definition in ISO9001_TRANSITION_SCENARIOS}
+assessments = env["pm.qms.iso9001.gap.assessment"].sudo().search([])
+if not (
+    len(expected_scenarios) == 9
+    and len(scenarios) == 9
+    and set(scenarios.mapped("code")) == set(expected_scenarios)
+    and all(
+        scenario.profile_id == target_profile
+        and scenario.target_edition == "2026"
+        and scenario.state == "active"
+        and scenario.active
+        and scenario.source_edition == expected_scenarios[scenario.code][3]
+        for scenario in scenarios
+    )
+    and all(
+        assessment.company_id == env.ref("base.main_company")
+        and assessment.scenario_id in scenarios
+        and assessment.state in ("draft", "in_progress", "completed", "cancelled")
+        for assessment in assessments
+    )
+):
+    raise RuntimeError("The nine 2026 templates, assessments, or Demo2026 isolation are invalid")
 
 organization = env["pm.qms.organization"].sudo().search(
     [("code", "=", "APEX"), ("organization_kind", "=", "operational")], limit=1
@@ -48,9 +97,12 @@ if (
 
 projects = env["pm.qms.implementation.project"].sudo().search(
     [("organization_id", "=", organization.id)]
-).filtered(lambda project: packs in project.pack_ids)
-if len(projects) != 1 or len(projects.implementation_control_ids) < 38:
-    raise RuntimeError("The 2026 Demo Preview implementation project is incomplete")
+).filtered(lambda project: target_pack in project.pack_ids)
+seeded_projects = projects.filtered(
+    lambda project: project.name == "Apex Precision Electronics QMS Guided Implementation"
+)
+if len(seeded_projects) != 1 or len(seeded_projects.implementation_control_ids) < 38:
+    raise RuntimeError("The seeded 2026 Demo Preview implementation project is incomplete")
 
 required_examples = {
     "pm.qms.process": 10,
@@ -81,5 +133,7 @@ for model_name, minimum in required_examples.items():
 
 print("DEMO2026_PREVIEW_VALIDATION=PASS")
 print("license=valid-v3-demo-qa limits=1/3/7")
-print("pack=demo_preview profile=draft mappings=unreviewed")
+print("pack=demo_preview profile=draft mappings=demo-only-usable/unreviewed approved-coverage=0")
+print("scenario_templates=9 source_profile_2015=active-fictional-fixture mappings=0")
+print(f"gap_assessments={len(assessments)}")
 print(f"operational_examples_checked={len(required_examples)}")

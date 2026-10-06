@@ -47,7 +47,20 @@
         <field name="model">pm.qms.mapping.profile</field>
         <field name="arch" type="xml">
             <form create="0" edit="0" delete="0">
+                <header>
+                    <button name="action_enable_demo_preview_mappings" type="object"
+                            string="Enable 2026 Mappings for Demo Preview"
+                            class="btn-primary"
+                            invisible="code != 'PM-QMS-QUALITY-ISO9001-2026-IMPLEMENTATION' or state != 'draft' or demo_preview_pack_state != 'demo_preview' or demo_preview_usable_count == 65"
+                            groups="pm_qms_core.group_pm_qms_administrator"/>
+                </header>
                 <sheet>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="edition != '2026' or demo_preview_pack_state != 'demo_preview'">
+                        These references are unreviewed. Enabling them below makes them visible only in the isolated Demo Preview;
+                        it does not approve them, change coverage, or authorize customer use.
+                    </div>
+                    <field name="demo_preview_pack_state" invisible="1"/>
                     <group>
                         <group>
                             <field name="name"/>
@@ -61,6 +74,7 @@
                             <field name="mapped_control_count"/>
                             <field name="unmapped_control_count"/>
                             <field name="pending_mapping_count"/>
+                            <field name="demo_preview_usable_count" string="Demo-only usable (not approved)"/>
                             <field name="rejected_mapping_count"/>
                             <field name="mapping_completeness_percent"/>
                         </group>
@@ -75,6 +89,9 @@
                                     <field name="review_status"/>
                                     <field name="reviewed_by_id"/>
                                     <field name="review_date"/>
+                                    <field name="demo_preview_usable" string="Demo-only usable"/>
+                                    <field name="demo_preview_enabled_by_id"/>
+                                    <field name="demo_preview_enabled_on"/>
                                 </list>
                             </field>
                         </page>

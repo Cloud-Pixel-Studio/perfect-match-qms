@@ -51,12 +51,42 @@ from that pack.
 After seeding, run
 `PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh validate-demo2-2026-preview`.
 This read-only check requires the signed 1/3/7 entitlement, exactly one
-Preview pack, an unapproved 2026 mapping profile, one generated implementation
-project, and operational examples across the installed QMS modules.
+Preview pack, an unapproved 2026 mapping profile, the seeded implementation
+project (while permitting separate user-created projects), nine scenario
+templates, and operational examples across the installed
+QMS modules.
+
+The scenario catalog is installed separately with
+`PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh seed-demo2-2026-scenarios`
+after a verified backup. Set `PMQMS_SCENARIO_DRY_RUN=1` for a rollback-only
+rehearsal. This command requires the exact licensed Demo2 Preview and the
+single draft 2026 profile. It is idempotent, rejects unexpected definitions,
+and does not load the general ISO hook or create assessments. The nine active *templates* are new implementation,
+2015-to-2026 transition, legacy migration, recertification from 2015,
+same-edition 2026 recertification, scope expansion, multi-site rollout,
+integrated system, and partial implementation.
+
+An active template is only selectable catalog metadata, not an approved ISO
+mapping or a completed transition. To exercise the 2015 source-profile gate in
+the isolated demo, an operator may run
+`PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh seed-demo2-2015-source-fixture`
+after a verified backup. `PMQMS_2015_FIXTURE_DRY_RUN=1` rehearses and rolls back
+the operation. The command creates a standard-neutral generic QMS pack and an
+active profile explicitly named `DEMO FIXTURE ONLY`; it creates no mappings,
+certificate, customer history, or implementation evidence. It is synthetic
+workflow-test data and must never be represented as a customer's 2015 baseline.
+The 2015 transition and recertification routes can then open assessments for
+testing, while any real customer transition still requires that customer's
+validated 2015 profile and historical records.
 
 The ISO 9001:2026 pack is in `demo_preview`, not customer-active. Its mapping
-profile and individual mappings remain draft and unapproved. The preview is
-valid only for the exact Demo2 database and signed v3 Demo/QA license; a clone
-or another environment cannot generate or synchronize projects from it. Normal
-activation and customer release remain blocked pending independent practitioner
-review and approved publication. The UI labels the preview as not approved.
+profile and individual mappings remain draft and unapproved. In the exact
+licensed Demo2026 only, a QMS Administrator can use **Enable 2026 Mappings for
+Demo Preview** on that profile to expose the 65 draft references in generated
+implementation-project alignment summaries. Each displayed reference is
+explicitly labeled `DEMO PREVIEW ONLY — NOT APPROVED`. This does not change
+review status, reviewer/date, approved coverage, profile state, or release gates.
+The preview is valid only for the exact Demo2 database and signed v3 Demo/QA
+license; a clone or another environment cannot generate or synchronize
+projects from it. Normal activation and customer release remain blocked pending
+independent practitioner review and approved publication.
