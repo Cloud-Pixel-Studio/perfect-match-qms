@@ -51,8 +51,9 @@ from that pack.
 After seeding, run
 `PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh validate-demo2-2026-preview`.
 This read-only check requires the signed 1/3/7 entitlement, exactly one
-Preview pack, an unapproved 2026 mapping profile, one generated implementation
-project, nine scenario templates, and operational examples across the installed
+Preview pack, an unapproved 2026 mapping profile, the seeded implementation
+project (while permitting separate user-created projects), nine scenario
+templates, and operational examples across the installed
 QMS modules.
 
 The scenario catalog is installed separately with

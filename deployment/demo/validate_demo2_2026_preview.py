@@ -67,8 +67,11 @@ if (
 projects = env["pm.qms.implementation.project"].sudo().search(
     [("organization_id", "=", organization.id)]
 ).filtered(lambda project: packs in project.pack_ids)
-if len(projects) != 1 or len(projects.implementation_control_ids) < 38:
-    raise RuntimeError("The 2026 Demo Preview implementation project is incomplete")
+seeded_projects = projects.filtered(
+    lambda project: project.name == "Apex Precision Electronics QMS Guided Implementation"
+)
+if len(seeded_projects) != 1 or len(seeded_projects.implementation_control_ids) < 38:
+    raise RuntimeError("The seeded 2026 Demo Preview implementation project is incomplete")
 
 required_examples = {
     "pm.qms.process": 10,
