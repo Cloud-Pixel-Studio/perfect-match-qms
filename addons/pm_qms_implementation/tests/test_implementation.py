@@ -192,7 +192,7 @@ class TestPmQmsImplementation(TransactionCase):
         pack_domain = self.env["pm.qms.project.generator.wizard"]._fields["pack_ids"].domain
         self.assertEqual(
             pack_domain,
-            "[('state', '=', 'active'), ('company_id', '=', company_id)]",
+            "[('state', 'in', ['active', 'demo_preview']), ('company_id', '=', company_id)]",
         )
 
         draft_pack = self.env["pm.qms.framework.pack"].with_user(self.admin).create(
