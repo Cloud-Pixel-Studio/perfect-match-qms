@@ -60,6 +60,17 @@ rationales, gaps, and their closure.
 
 The current clause-reference inventory is a structural starting point based on the 2026 edition contents. It is not a claim that every individual normative statement has already been mapped or that any organization conforms.
 
+### Isolated Demo2026 product preview
+
+The licensed Demo2 environment may use a separate `demo_preview` workflow to
+exercise the implementation screens and fictional scenario. The workflow
+requires the exact Demo2 database, runtime marker, environment-bound v3 Demo/QA
+license, 1/3/7 limits, administrator role, and unchanged draft mapping inventory.
+It does not approve mappings or make this pack customer-active. Normal
+`action_activate` continues to reject the 2026 pack everywhere. The preview
+state and visible warning must never be represented as standards approval,
+certification, or a production release.
+
 ## Boundaries
 
 - The ISO publication, screenshots, extracts, and close paraphrases are not stored in this repository or product.

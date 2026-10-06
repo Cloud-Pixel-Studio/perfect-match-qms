@@ -35,16 +35,28 @@ implementation project, or claim that a customer QMS is compliant or certified.
 ## Licensed operational demonstration
 
 After importing an independently issued, valid Demo/QA v3 license bound to
-Demo2 with limits 1 company / 3 sites / 7 named users, an operator may run
+Demo2 with limits 1 company / 3 sites / 7 named users, and after deploying the
+reviewed Demo Preview code, an operator may run
 `PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh seed-demo2-2026-only`
 following a verified database-and-filestore backup. This command refuses any
 other instance, a missing or mismatched license, extra packs or profiles, an
-active pack, transition scenarios, or a missing technical admin account. It
+already customer-active pack, transition scenarios, or a missing technical admin account. It
 does not read or replace the existing admin password. It creates the fictional
 Apex operational company, three sites, seven QMS personas, and cross-module
-operational records without loading a generic or ISO 9001:2015 pack, a
-transition assessment, or a guided implementation project.
+operational records without loading a generic or ISO 9001:2015 pack or a
+transition assessment. It calls the guarded pack workflow to enter the
+isolated Demo Preview state and generates a fictional implementation project
+from that pack.
 
-The ISO 9001:2026 pack and mapping profile stay in draft. Their activation and
-pack-based implementation features remain blocked pending the independent
-practitioner review and approved release described in the pack documentation.
+After seeding, run
+`PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh validate-demo2-2026-preview`.
+This read-only check requires the signed 1/3/7 entitlement, exactly one
+Preview pack, an unapproved 2026 mapping profile, one generated implementation
+project, and operational examples across the installed QMS modules.
+
+The ISO 9001:2026 pack is in `demo_preview`, not customer-active. Its mapping
+profile and individual mappings remain draft and unapproved. The preview is
+valid only for the exact Demo2 database and signed v3 Demo/QA license; a clone
+or another environment cannot generate or synchronize projects from it. Normal
+activation and customer release remain blocked pending independent practitioner
+review and approved publication. The UI labels the preview as not approved.

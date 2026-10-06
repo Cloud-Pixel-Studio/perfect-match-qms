@@ -19,6 +19,7 @@ from odoo.addons.pm_qms_iso9001.hooks import (
     is_demo_2026_only_install,
     seed_iso9001_2026_implementation_pack,
 )
+from odoo.addons.pm_qms_iso9001.models.framework_pack import is_authorized_demo_2026_preview
 
 
 @tagged("-at_install", "post_install")
@@ -86,6 +87,41 @@ class TestPmQmsIso9001ImplementationPack2026(TransactionCase):
         self.assertEqual(self.profile.state, "draft")
         with self.assertRaises(UserError):
             self.pack.action_activate()
+
+    def test_demo_preview_requires_isolated_license_and_preserves_unreviewed_mappings(self):
+        self.assertFalse(is_authorized_demo_2026_preview(self.env))
+        admin_user = self.env.ref("base.user_admin")
+        admin_group = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+        admin_user.write({"group_ids": [(4, admin_group.id)]})
+        with self.assertRaises(UserError):
+            self.pack.with_user(admin_user).action_enable_demo_preview()
+        with patch(
+            "odoo.addons.pm_qms_iso9001.models.framework_pack.is_authorized_demo_2026_preview",
+            return_value=True,
+        ):
+            self.pack.with_user(admin_user).action_enable_demo_preview()
+        self.assertEqual(self.pack.state, "demo_preview")
+        self.assertEqual(self.profile.state, "draft")
+        self.assertTrue(all(mapping.review_status == "draft" for mapping in self.profile.mapping_ids))
+        with self.assertRaises(UserError):
+            self.pack.action_activate()
+
+    def test_demo_preview_project_use_fails_closed_outside_isolated_license(self):
+        with patch(
+            "odoo.addons.pm_qms_iso9001.models.framework_pack.is_authorized_demo_2026_preview",
+            return_value=True,
+        ):
+            admin_user = self.env.ref("base.user_admin")
+            admin_group = self.env.ref("pm_qms_core.group_pm_qms_administrator")
+            admin_user.write({"group_ids": [(4, admin_group.id)]})
+            self.pack.with_user(admin_user).action_enable_demo_preview()
+        project_model = self.env["pm.qms.implementation.project"]
+        self.assertFalse(project_model._is_pack_usable_for_project(self.pack))
+        with patch(
+            "odoo.addons.pm_qms_iso9001.models.implementation_project.is_authorized_demo_2026_preview",
+            return_value=True,
+        ):
+            self.assertTrue(project_model._is_pack_usable_for_project(self.pack))
 
     def test_every_inventory_reference_maps_once_to_a_pack_control(self):
         inventory = self.blueprint["normative_reference_inventory"]

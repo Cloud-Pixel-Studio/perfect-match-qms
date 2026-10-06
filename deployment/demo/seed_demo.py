@@ -106,7 +106,7 @@ if SELECTIVE_2026:
     if not (
         len(packs) == 1
         and packs.code == "PM-QMS-ISO9001-2026"
-        and packs.state == "draft"
+        and packs.state in ("draft", "demo_preview")
         and len(profiles) == 1
         and profiles.edition == "2026"
         and profiles.state == "draft"
@@ -712,6 +712,15 @@ else:
         technical_admin_values["password"] = ADMIN_PASSWORD
     technical_admin = env["res.users"].with_context(no_reset_password=True).create(technical_admin_values)
 
+if SELECTIVE_2026:
+    preview_pack = env["pm.qms.framework.pack"].search(
+        [("code", "=", "PM-QMS-ISO9001-2026")], limit=1
+    )
+    if preview_pack.state == "draft":
+        preview_pack.with_user(technical_admin).action_enable_demo_preview()
+    if preview_pack.state != "demo_preview":
+        raise RuntimeError("The isolated ISO 9001:2026 Demo Preview could not be enabled")
+
 # The framework/library organization is internal product content, not a
 # separately licensed customer company. Normalize the legacy demo row before
 # touching the operational organization so the Mission 20 company entitlement
@@ -973,7 +982,7 @@ if legacy_persons and site_by_code.get("APEX-HQ"):
     legacy_persons.write({"site_id": site_by_code["APEX-HQ"].id, "active": False})
 
 # Implementation project from the existing Perfect Match Quality Pack.
-pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") and not SELECTIVE_2026 else False
+pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-ISO9001-2026" if SELECTIVE_2026 else "PM-QMS-QUALITY"), ("state", "=", "demo_preview" if SELECTIVE_2026 else "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") else False
 if not pack and model_exists("pm.qms.framework.pack") and not SELECTIVE_2026:
     pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active")], limit=1)
 project = env["pm.qms.implementation.project"].search([("name", "in", ["Apex Precision QMS Demo Implementation", "Apex Precision Electronics QMS Guided Implementation"]), ("organization_id", "=", organization.id)], limit=1) if model_exists("pm.qms.implementation.project") else False
@@ -989,14 +998,18 @@ if pack:
             "project_manager_id": demo_user.id,
             "date_start": today - relativedelta(days=45),
             "target_date": today + relativedelta(days=75),
-            "implementation_type": "migration",
+            "implementation_type": "new_implementation" if SELECTIVE_2026 else "migration",
             "pack_ids": pack.ids,
             "create_odoo_project": True,
-            "notes": "Fictional guided implementation for Apex Precision Electronics using only original Perfect Match control content; no external copyrighted standard text is copied.",
+            "notes": (
+                "Fictional Demo Preview implementation for product testing only; the 2026 pack and mappings are not approved."
+                if SELECTIVE_2026 else
+                "Fictional guided implementation for Apex Precision Electronics using only original Perfect Match control content; no external copyrighted standard text is copied."
+            ),
         })
     except Exception as exc:
         raise RuntimeError("Guided implementation project generation failed") from exc
-if not project and not SELECTIVE_2026:
+if not project:
     raise RuntimeError("Required guided implementation project or Quality Pack is missing")
 if project:
     try:
