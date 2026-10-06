@@ -31,3 +31,20 @@ then removes only the test-owned Compose project and volumes.
 
 This path does not activate the pack, alter review decisions, create an
 implementation project, or claim that a customer QMS is compliant or certified.
+
+## Licensed operational demonstration
+
+After importing an independently issued, valid Demo/QA v3 license bound to
+Demo2 with limits 1 company / 3 sites / 7 named users, an operator may run
+`PMQMS_DEMO_INSTANCE=demo2 ./deployment/scripts/odoo-demo.sh seed-demo2-2026-only`
+following a verified database-and-filestore backup. This command refuses any
+other instance, a missing or mismatched license, extra packs or profiles, an
+active pack, transition scenarios, or a missing technical admin account. It
+does not read or replace the existing admin password. It creates the fictional
+Apex operational company, three sites, seven QMS personas, and cross-module
+operational records without loading a generic or ISO 9001:2015 pack, a
+transition assessment, or a guided implementation project.
+
+The ISO 9001:2026 pack and mapping profile stay in draft. Their activation and
+pack-based implementation features remain blocked pending the independent
+practitioner review and approved release described in the pack documentation.

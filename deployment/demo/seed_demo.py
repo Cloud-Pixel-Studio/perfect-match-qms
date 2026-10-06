@@ -1,10 +1,12 @@
 import base64
+import json
 import os
 from pathlib import Path
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from odoo import Command, fields
 from odoo.addons.pm_qms_app.hooks import restrict_optional_platform_menus
+from odoo.addons.pm_qms_license.services.environment import read_environment_id
 
 DEMO_INSTANCE = os.getenv("PMQMS_DEMO_INSTANCE", "demo")
 APPROVED_DEMO_DATABASES = {
@@ -16,6 +18,10 @@ EXPECTED_DB = os.getenv("PMQMS_DEMO_DB", APPROVED_DEMO_DATABASES.get(DEMO_INSTAN
 COMPANY_NAME = os.getenv("PMQMS_DEMO_COMPANY_NAME", "Apex Precision Electronics, Inc.")
 ADMIN_LOGIN = os.getenv("PMQMS_DEMO_ADMIN_LOGIN", "admin")
 ADMIN_PASSWORD = os.getenv("PMQMS_DEMO_ADMIN_PASSWORD")
+SEED_MODE = os.getenv("PMQMS_DEMO_SEED_MODE", "full")
+if SEED_MODE not in ("full", "2026-only"):
+    raise RuntimeError("Unapproved Demo seed mode")
+SELECTIVE_2026 = SEED_MODE == "2026-only"
 QUALITY_MANAGER_LOGIN = os.getenv("PMQMS_DEMO_QUALITY_MANAGER_LOGIN", "olivia.parker.demo@perfectmatch.local")
 PERSONA_PASSWORD_DIR = Path(os.getenv("PMQMS_DEMO_PERSONA_PASSWORD_DIR", "/run/pmqms-demo-persona-passwords"))
 ORG_CODE = "APEX"
@@ -77,6 +83,37 @@ def ensure_guided_implementation_project(project_model, manager_user, existing_p
 
 
 validate_seed_database(DEMO_INSTANCE, EXPECTED_DB, env.cr.dbname)
+
+if SELECTIVE_2026:
+    if DEMO_INSTANCE != "demo2" or ADMIN_PASSWORD:
+        raise RuntimeError("The 2026-only seed requires Demo2 and must not receive an admin password")
+    license_record = env["pm.qms.license"].current()
+    license_payload = json.loads(license_record.payload_json) if license_record else {}
+    if not (
+        license_record
+        and license_record.effective_state in ("valid", "expiring")
+        and license_record.environment_id == read_environment_id()
+        and license_record.key_id == "pmqms-demo-2026-v3"
+        and license_record.public_key_fingerprint
+        == "2b9b1f747ffa21e0aed00e461f661ca81536689a842566263ac96948e65d6ee7"
+        and license_payload.get("deployment_scope") == "demo-qa"
+        and (license_record.company_limit, license_record.site_limit, license_record.named_user_limit)
+        == (1, 3, 7)
+    ):
+        raise RuntimeError("The exact valid Demo2026 v3 license is required before selective seeding")
+    packs = env["pm.qms.framework.pack"].search([])
+    profiles = env["pm.qms.mapping.profile"].search([])
+    if not (
+        len(packs) == 1
+        and packs.code == "PM-QMS-ISO9001-2026"
+        and packs.state == "draft"
+        and len(profiles) == 1
+        and profiles.edition == "2026"
+        and profiles.state == "draft"
+        and not env["pm.qms.iso9001.transition.scenario"].search_count([])
+        and env["res.users"].search_count([("login", "=", ADMIN_LOGIN)]) == 1
+    ):
+        raise RuntimeError("Demo2 must have only the draft 2026 pack/profile and an existing admin")
 
 restrict_optional_platform_menus(env)
 
@@ -936,8 +973,8 @@ if legacy_persons and site_by_code.get("APEX-HQ"):
     legacy_persons.write({"site_id": site_by_code["APEX-HQ"].id, "active": False})
 
 # Implementation project from the existing Perfect Match Quality Pack.
-pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") else False
-if not pack and model_exists("pm.qms.framework.pack"):
+pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active"), ("company_id", "=", company.id)], limit=1) if model_exists("pm.qms.framework.pack") and not SELECTIVE_2026 else False
+if not pack and model_exists("pm.qms.framework.pack") and not SELECTIVE_2026:
     pack = env["pm.qms.framework.pack"].search([("code", "=", "PM-QMS-QUALITY"), ("state", "=", "active")], limit=1)
 project = env["pm.qms.implementation.project"].search([("name", "in", ["Apex Precision QMS Demo Implementation", "Apex Precision Electronics QMS Guided Implementation"]), ("organization_id", "=", organization.id)], limit=1) if model_exists("pm.qms.implementation.project") else False
 if pack:
@@ -959,7 +996,7 @@ if pack:
         })
     except Exception as exc:
         raise RuntimeError("Guided implementation project generation failed") from exc
-if not project:
+if not project and not SELECTIVE_2026:
     raise RuntimeError("Required guided implementation project or Quality Pack is missing")
 if project:
     try:
@@ -988,7 +1025,7 @@ if project:
 # Controlled ISO 9001:2015-to-2026 transition example. The seed uses only
 # Perfect Match-authored guidance and workflow actions; it does not reproduce
 # licensed ISO requirement text or infer certification/conformity.
-if model_exists("pm.qms.iso9001.gap.assessment") and model_exists("pm.qms.iso9001.transition.action"):
+if not SELECTIVE_2026 and model_exists("pm.qms.iso9001.gap.assessment") and model_exists("pm.qms.iso9001.transition.action"):
     transition_scenario = env["pm.qms.iso9001.transition.scenario"].search(
         [
             ("code", "=", "ISO9001-2026-TRANSITION-2015"),
