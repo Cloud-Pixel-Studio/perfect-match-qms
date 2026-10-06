@@ -8,12 +8,12 @@ pack remain usable without this add-on. Only reference identifiers and
 Perfect Match-authored metadata belong here; official standard text is never
 copied into the product.
     """,
-    "version": "19.0.16.0.0",
+    "version": "19.0.16.1.0",
     "category": "Operations/Quality",
     "author": "Perfect Match Investments LLC",
     "website": "https://cloudpixelstudio.agency",
     "license": "Other proprietary",
-    "depends": ["pm_qms_pack_quality"],
+    "depends": ["pm_qms_pack_quality", "pm_qms_license"],
     "data": [
         "security/ir.model.access.csv",
         "security/security.xml",

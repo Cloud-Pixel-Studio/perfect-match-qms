@@ -153,8 +153,11 @@ class PmQmsImplementationProject(models.Model):
     @api.constrains("pack_ids")
     def _check_project_pack_activation(self):
         for project in self:
-            if any(pack.state != "active" for pack in project.pack_ids):
-                raise ValidationError("Implementation projects can only reference active framework packs.")
+            if any(not project._is_pack_usable_for_project(pack) for pack in project.pack_ids):
+                raise ValidationError("Implementation projects can only reference active or authorized Demo Preview framework packs.")
+
+    def _is_pack_usable_for_project(self, pack):
+        return pack.state == "active"
 
     def _validate_pack_version_selection(self):
         for project in self:
@@ -238,9 +241,9 @@ class PmQmsImplementationProject(models.Model):
             project._validate_pack_version_selection()
             if not project.pack_ids:
                 raise UserError("Select at least one framework pack.")
-            inactive = project.pack_ids.filtered(lambda pack: pack.state != "active")
+            inactive = project.pack_ids.filtered(lambda pack: not project._is_pack_usable_for_project(pack))
             if inactive:
-                raise UserError("Only active framework pack versions can be deployed.")
+                raise UserError("Only active or authorized Demo Preview framework pack versions can be deployed.")
             wrong_company = project.pack_ids.filtered(lambda pack: pack.company_id != project.company_id)
             if wrong_company:
                 raise ValidationError("Framework packs must belong to the same company as the implementation project.")

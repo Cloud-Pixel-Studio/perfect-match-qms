@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="view_pm_qms_iso9001_demo_preview_pack_form" model="ir.ui.view">
+        <field name="name">pm.qms.iso9001.demo.preview.pack.form</field>
+        <field name="model">pm.qms.framework.pack</field>
+        <field name="inherit_id" ref="pm_qms_implementation.view_pm_qms_framework_pack_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_activate']" position="attributes">
+                <attribute name="invisible">state != 'draft' or code == 'PM-QMS-ISO9001-2026'</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='action_activate']" position="after">
+                <button name="action_enable_demo_preview" type="object" string="Enable Demo Preview"
+                        invisible="state != 'draft' or code != 'PM-QMS-ISO9001-2026'"
+                        groups="pm_qms_core.group_pm_qms_administrator"/>
+            </xpath>
+            <xpath expr="//header/field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">draft,demo_preview,active,retired</attribute>
+            </xpath>
+            <xpath expr="//sheet/group" position="before">
+                <div class="alert alert-warning" role="alert" invisible="state != 'demo_preview'">
+                    Demo Preview is for isolated product testing only. This pack and its reference mappings
+                    have not passed independent practitioner review and are not an approved customer release.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_pm_qms_iso9001_profile_list" model="ir.ui.view">
         <field name="name">pm.qms.iso9001.mapping.profile.list</field>
         <field name="model">pm.qms.mapping.profile</field>

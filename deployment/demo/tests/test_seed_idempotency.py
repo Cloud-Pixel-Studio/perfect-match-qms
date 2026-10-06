@@ -421,6 +421,19 @@ class SeedIdentityTests(unittest.TestCase):
         self.assertNotIn("sudo(", block)
         self.assertNotIn("group_ids", block)
 
+    def test_demo2026_selective_seed_and_license_import_keep_security_boundaries(self):
+        seed = SEED_PATH.read_text(encoding="utf-8")
+        launcher = (SEED_PATH.parents[1] / "scripts" / "odoo-demo.sh").read_text(encoding="utf-8")
+        importer = (SEED_PATH.parent / "import_license.py").read_text(encoding="utf-8")
+        self.assertIn('SEED_MODE == "2026-only"', seed)
+        self.assertIn("action_enable_demo_preview()", seed)
+        self.assertIn('if not SELECTIVE_2026 and model_exists("pm.qms.iso9001.gap.assessment")', seed)
+        self.assertIn('seed-demo2-2026-only) seed_demo 2026-only', launcher)
+        self.assertIn('[[ "$(stat -c \'%a\' "$DEMO_LICENSE_FILE")" == 600 ]]', launcher)
+        self.assertNotIn('chmod 644 "$DEMO_LICENSE_FILE"', launcher)
+        self.assertNotIn('license_id={license_record.license_id}', importer)
+        self.assertNotIn('environment={license_record.environment_short}', importer)
+
     def test_validation_guard_accepts_original_demo_database(self):
         guard = load_validation_database_guard()
         self.assertEqual(guard("demo", "pmqms_demo", "pmqms_demo"), "pmqms_demo")

@@ -41,7 +41,7 @@ class PmQmsProjectGeneratorWizard(models.TransientModel):
         "pm.qms.framework.pack",
         string="Framework Packs",
         required=True,
-        domain="[('state', '=', 'active'), ('company_id', '=', company_id)]",
+        domain="[('state', 'in', ['active', 'demo_preview']), ('company_id', '=', company_id)]",
     )
     create_odoo_project = fields.Boolean(default=True)
     notes = fields.Text()
@@ -52,8 +52,9 @@ class PmQmsProjectGeneratorWizard(models.TransientModel):
             raise ValidationError("Organization must belong to the selected company.")
         if not self.pack_ids:
             raise UserError("Select at least one active framework pack.")
-        if any(pack.state != "active" for pack in self.pack_ids):
-            raise UserError("Only active framework packs can be deployed.")
+        project_model = self.env["pm.qms.implementation.project"]
+        if any(not project_model._is_pack_usable_for_project(pack) for pack in self.pack_ids):
+            raise UserError("Only active or authorized Demo Preview framework packs can be deployed.")
         if any(pack.company_id != self.company_id for pack in self.pack_ids):
             raise ValidationError("Framework packs must belong to the selected company.")
         project = self.env["pm.qms.implementation.project"].generate_from_wizard(

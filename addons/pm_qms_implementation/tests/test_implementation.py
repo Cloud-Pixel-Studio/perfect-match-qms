@@ -192,7 +192,7 @@ class TestPmQmsImplementation(TransactionCase):
         pack_domain = self.env["pm.qms.project.generator.wizard"]._fields["pack_ids"].domain
         self.assertEqual(
             pack_domain,
-            "[('state', '=', 'active'), ('company_id', '=', company_id)]",
+            "[('state', 'in', ['active', 'demo_preview']), ('company_id', '=', company_id)]",
         )
 
         draft_pack = self.env["pm.qms.framework.pack"].with_user(self.admin).create(
@@ -220,7 +220,7 @@ class TestPmQmsImplementation(TransactionCase):
             [("name", "=", wizard.name), ("company_id", "=", self.company.id)]
         )
 
-        with self.assertRaisesRegex(UserError, "Only active framework packs can be deployed"):
+        with self.assertRaisesRegex(UserError, "Only active or authorized Demo Preview framework packs can be deployed"):
             with self.env.cr.savepoint():
                 wizard.action_generate_implementation()
 
@@ -233,7 +233,7 @@ class TestPmQmsImplementation(TransactionCase):
 
         with self.assertRaisesRegex(
             ValidationError,
-            "Implementation projects can only reference active framework packs",
+            "Implementation projects can only reference active or authorized Demo Preview framework packs",
         ):
             with self.env.cr.savepoint():
                 self.env["pm.qms.implementation.project"].with_user(self.manager).create(

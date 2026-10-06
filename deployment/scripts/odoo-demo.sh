@@ -589,8 +589,22 @@ deploy_implementation_code_demo2() {
 seed_demo() {
   assert_demo_database
   prepare_runtime_permissions
-  local password
-  password="$(cat "$DEMO_ADMIN_PASSWORD_FILE")"
+  local mode="${1:-full}"
+  local -a password_env=()
+  case "$mode" in
+    full)
+      local password
+      password="$(cat "$DEMO_ADMIN_PASSWORD_FILE")"
+      password_env=(-e "PMQMS_DEMO_ADMIN_PASSWORD=$password")
+      ;;
+    2026-only)
+      [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 ]] || {
+        echo "The 2026-only seed is restricted to the isolated Demo2 database." >&2
+        return 2
+      }
+      ;;
+    *) echo "Unknown Demo seed mode." >&2; return 2 ;;
+  esac
   compose up -d postgres-demo >/dev/null
   wait_postgres
   # Persona files remain operator-owned (0700/0600). The one-shot seed runs
@@ -602,9 +616,10 @@ seed_demo() {
     -e PMQMS_DEMO_COMPANY_NAME="$DEMO_COMPANY_NAME" \
     -e PMQMS_DEMO_ADMIN_LOGIN="$DEMO_ADMIN_LOGIN" \
     -e PMQMS_DEMO_QUALITY_MANAGER_LOGIN="$DEMO_QUALITY_MANAGER_LOGIN" \
+    -e PMQMS_DEMO_SEED_MODE="$mode" \
     -e PMQMS_DEMO_PERSONA_PASSWORD_DIR=/run/pmqms-demo-persona-passwords \
     -v "$PERSONA_PASSWORD_DIR:/run/pmqms-demo-persona-passwords:ro" \
-    -e PMQMS_DEMO_ADMIN_PASSWORD="$password" \
+    "${password_env[@]}" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/seed_demo.py"
   repair_odoo_filestore_permissions
 }
@@ -646,17 +661,19 @@ repair_odoo_filestore_permissions() {
 provision_license() {
   assert_demo_database
   prepare_runtime_permissions
-  [[ -f "$DEMO_LICENSE_FILE" ]] || { echo "Demo license file not found: $DEMO_LICENSE_FILE" >&2; exit 1; }
+  [[ -f "$DEMO_LICENSE_FILE" && ! -L "$DEMO_LICENSE_FILE" ]] || {
+    echo "Demo license file is missing or is a symlink: $DEMO_LICENSE_FILE" >&2
+    return 1
+  }
+  [[ "$(stat -c '%a' "$DEMO_LICENSE_FILE")" == 600 ]] || {
+    echo "Demo license file must have mode 0600 before import." >&2
+    return 1
+  }
   compose up -d postgres-demo >/dev/null
   wait_postgres
-  chmod 644 "$DEMO_LICENSE_FILE"
-  set +e
-  compose run --rm -v "$DEMO_LICENSE_FILE:/run/pmqms-demo-license.pmql:ro" \
+  # Read the 0600 mount as container root; never widen host permissions.
+  compose run --rm --user root -v "$DEMO_LICENSE_FILE:/run/pmqms-demo-license.pmql:ro" \
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/import_license.py"
-  local rc=$?
-  set -e
-  chmod 600 "$DEMO_LICENSE_FILE"
-  return "$rc"
 }
 
 validate_demo() {
@@ -668,9 +685,25 @@ validate_demo() {
     odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/validate_demo.py"
 }
 
+validate_demo2_2026_preview() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 ]] || {
+    echo "Demo2026 Preview validation is restricted to the isolated Demo2 database." >&2
+    return 2
+  }
+  prepare_runtime_permissions
+  compose run --rm \
+    -e PMQMS_DEMO_INSTANCE=demo2 \
+    -e PMQMS_DEMO_DB=pmqms_demo2 \
+    odoo-demo odoo shell -d "$DB_NAME" --log-level=error < "$REPO_ROOT/deployment/demo/validate_demo2_2026_preview.py"
+}
+
 backup_demo() {
   assert_demo_database
   prepare_runtime_permissions
+  # The archive contains a database dump and filestore. Keep it private at
+  # creation time even when the caller's umask is permissive.
+  umask 077
   compose up -d postgres-demo >/dev/null
   wait_postgres
   local stamp archive dump
@@ -789,8 +822,12 @@ Commands:
   update         Update addons and reseed idempotently.
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
+  seed-demo2-2026-only
+                Seed only the licensed Demo2 operational scenario; preserve admin password, 2026 draft pack, and absence of ISO 2015 content.
   repair-filestore Repair only the selected Demo filestore ownership for Odoo runtime.
   validate-demo  Validate expected fictional demo records and metrics.
+  validate-demo2-2026-preview
+                Check the isolated licensed Preview, 1/3/7 usage, and operational examples without changing data.
   provision-license
                 Import the externally issued Demo license from the secrets directory.
   backup         Create a demo-only backup archive.
@@ -822,9 +859,11 @@ case "${1:-}" in
   update) install_or_update ;;
   reset-demo) reset_demo ;;
   seed-demo) seed_demo ;;
+  seed-demo2-2026-only) seed_demo 2026-only ;;
   repair-filestore) prepare_runtime_permissions; repair_odoo_filestore_permissions ;;
   provision-license) provision_license ;;
   validate-demo) validate_demo ;;
+  validate-demo2-2026-preview) validate_demo2_2026_preview ;;
   backup) backup_demo ;;
   health) health ;;
   credentials) credentials ;;

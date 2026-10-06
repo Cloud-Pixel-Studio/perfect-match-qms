@@ -15,7 +15,7 @@ POSTGRES_VOLUME="pmqms_demo2_postgres"
 ODOO_VOLUME="pmqms_demo2_odoo_data"
 NETWORK="pmqms_demo2_network"
 WORK="$(mktemp -d)"
-BACKUP_WORK="$(mktemp -d /dev/shm/pmqms-demo2-backups.XXXXXX)"
+BACKUP_WORK="$(mktemp -d)"
 CREATED=0
 
 compose_test() {
@@ -74,6 +74,8 @@ for image in \
 done
 
 CREATED=1
+# Prove the launcher protects the backup independently of the caller's umask.
+umask 022
 "$LAUNCHER" install-demo2-2026-only &> "$WORK/install.log" || {
   cat "$WORK/install.log" >&2
   exit 1
@@ -104,5 +106,15 @@ non_draft_mappings="$(compose_test exec -T postgres-demo psql -U odoo -d pmqms_d
   "SELECT 1 FROM pm_qms_framework_pack WHERE code IN ('PM-QMS-QUALITY', 'PM-QMS-ISO9001-INITIAL') LIMIT 1" | grep -q 1
 ! compose_test exec -T postgres-demo psql -U odoo -d pmqms_demo2 -Atqc \
   "SELECT 1 FROM pm_qms_mapping_profile WHERE edition = '2015' LIMIT 1" | grep -q 1
+
+# The selective operational seed must fail closed before any data changes
+# until the exact Demo2 v3 license has been imported.
+if "$LAUNCHER" seed-demo2-2026-only &> "$WORK/seed-without-license.log"; then
+  echo "Selective Demo2 seed unexpectedly ran without a license." >&2
+  exit 1
+fi
+grep -Fq 'The exact valid Demo2026 v3 license is required' "$WORK/seed-without-license.log"
+! compose_test exec -T postgres-demo psql -U odoo -d pmqms_demo2 -Atqc \
+  "SELECT 1 FROM pm_qms_organization WHERE code = 'APEX' LIMIT 1" | grep -q 1
 
 echo 'Clean Demo2 2026-only Odoo installation and pack-selection integration: PASS'
