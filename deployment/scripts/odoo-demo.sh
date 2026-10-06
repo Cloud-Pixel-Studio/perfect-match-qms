@@ -738,6 +738,45 @@ seed_demo2_2026_scenarios() {
     < "$REPO_ROOT/deployment/demo/seed_demo2_2026_scenarios.py"
 }
 
+seed_demo2_2015_source_fixture() {
+  assert_demo_database
+  [[ "$PMQMS_DEMO_INSTANCE" == demo2 && "$DB_NAME" == pmqms_demo2 &&
+     "$COMPOSE_PROJECT_NAME" == pmqms-demo2 &&
+     "$POSTGRES_VOLUME" == pmqms_demo2_postgres &&
+     "$ODOO_DATA_VOLUME" == pmqms_demo2_odoo_data &&
+     "$DEMO_NETWORK" == pmqms_demo2_network ]] || {
+    echo "The fictional 2015 source fixture is restricted to isolated Demo2026." >&2
+    return 2
+  }
+  [[ -r "$RUNTIME_LOCK_FILE" && -r "$PG_PASSWORD_FILE" &&
+     -r "$CONFIG_DIR/odoo.conf" && -r "$ENVIRONMENT_ID_FILE" ]] || {
+    echo "Demo2026 runtime configuration is unavailable." >&2
+    return 2
+  }
+  [[ "${PMQMS_2015_FIXTURE_DRY_RUN:-0}" =~ ^[01]$ ]] || {
+    echo "PMQMS_2015_FIXTURE_DRY_RUN must be 0 or 1." >&2
+    return 2
+  }
+  runtime_verify
+  local postgres_id odoo_id
+  postgres_id="$(compose ps -q postgres-demo)"
+  odoo_id="$(compose ps -q odoo-demo)"
+  [[ -n "$postgres_id" && -n "$odoo_id" &&
+     "$(docker inspect --format '{{.State.Running}}' "$postgres_id")" == true &&
+     "$(docker inspect --format '{{.State.Health.Status}}' "$postgres_id")" == healthy &&
+     "$(docker inspect --format '{{.State.Running}}' "$odoo_id")" == true ]] || {
+    echo "The existing Demo2026 Odoo and healthy PostgreSQL services are required." >&2
+    return 1
+  }
+  compose run --rm --no-deps \
+    -e PMQMS_DEMO_INSTANCE=demo2 \
+    -e PMQMS_DEMO_DB=pmqms_demo2 \
+    -e PMQMS_DEMO_PACK_MODE= \
+    -e PMQMS_2015_FIXTURE_DRY_RUN="${PMQMS_2015_FIXTURE_DRY_RUN:-0}" \
+    odoo-demo odoo shell -d "$DB_NAME" --log-level=error \
+    < "$REPO_ROOT/deployment/demo/seed_demo2_2015_source_fixture.py"
+}
+
 backup_demo() {
   assert_demo_database
   prepare_runtime_permissions
@@ -863,13 +902,15 @@ Commands:
   reset-demo     Delete only the selected instance volumes, reinstall, and seed.
   seed-demo      Reseed fictional demo data idempotently.
   seed-demo2-2026-only
-                Seed only the licensed Demo2 operational scenario; preserve admin password, 2026 draft pack, and absence of ISO 2015 content.
+                Seed only the licensed Demo2 operational scenario; preserve admin password and 2026 Preview boundaries.
   seed-demo2-2026-scenarios
                 Install only the nine authored 2026 scenario templates in licensed Demo2 Preview; optional PMQMS_SCENARIO_DRY_RUN=1 rolls back the rehearsal.
+  seed-demo2-2015-source-fixture
+                Create the explicitly fictional active 2015 source profile for transition workflow testing in licensed Demo2026; optional PMQMS_2015_FIXTURE_DRY_RUN=1 rolls back the rehearsal.
   repair-filestore Repair only the selected Demo filestore ownership for Odoo runtime.
   validate-demo  Validate expected fictional demo records and metrics.
   validate-demo2-2026-preview
-                Check the isolated licensed Preview, 1/3/7 usage, and operational examples without changing data.
+                Check the isolated licensed Preview, fictional source fixture, 1/3/7 usage, and operational examples without changing data.
   provision-license
                 Import the externally issued Demo license from the secrets directory.
   backup         Create a demo-only backup archive.
@@ -903,6 +944,7 @@ case "${1:-}" in
   seed-demo) seed_demo ;;
   seed-demo2-2026-only) seed_demo 2026-only ;;
   seed-demo2-2026-scenarios) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; seed_demo2_2026_scenarios ;;
+  seed-demo2-2015-source-fixture) [[ $# -eq 1 ]] || { echo "This command accepts no additional arguments." >&2; exit 2; }; seed_demo2_2015_source_fixture ;;
   repair-filestore) prepare_runtime_permissions; repair_odoo_filestore_permissions ;;
   provision-license) provision_license ;;
   validate-demo) validate_demo ;;

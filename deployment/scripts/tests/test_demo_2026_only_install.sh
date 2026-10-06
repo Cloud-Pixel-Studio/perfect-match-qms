@@ -129,4 +129,16 @@ grep -Fq 'Scenario installation requires the licensed isolated Demo2026 Preview'
 [[ "$(compose_test exec -T postgres-demo psql -U odoo -d pmqms_demo2 -Atqc \
   'SELECT count(*) FROM pm_qms_iso9001_transition_scenario')" == 0 ]]
 
+if PMQMS_2015_FIXTURE_DRY_RUN=1 "$LAUNCHER" seed-demo2-2015-source-fixture \
+  &> "$WORK/source-fixture-without-license.log"; then
+  echo "The fictional 2015 source fixture unexpectedly ran without a license." >&2
+  exit 1
+fi
+grep -Fq 'The source fixture requires the licensed isolated Demo2026 Preview' \
+  "$WORK/source-fixture-without-license.log"
+[[ "$(compose_test exec -T postgres-demo psql -U odoo -d pmqms_demo2 -Atqc \
+  "SELECT count(*) FROM pm_qms_framework_pack WHERE code = 'PM-QMS-QUALITY'")" == 0 ]]
+[[ "$(compose_test exec -T postgres-demo psql -U odoo -d pmqms_demo2 -Atqc \
+  "SELECT count(*) FROM pm_qms_mapping_profile WHERE edition = '2015'")" == 0 ]]
+
 echo 'Clean Demo2 2026-only Odoo installation and pack-selection integration: PASS'
