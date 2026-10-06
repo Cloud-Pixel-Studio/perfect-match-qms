@@ -96,7 +96,7 @@ if (
 
 projects = env["pm.qms.implementation.project"].sudo().search(
     [("organization_id", "=", organization.id)]
-).filtered(lambda project: packs in project.pack_ids)
+).filtered(lambda project: target_pack in project.pack_ids)
 seeded_projects = projects.filtered(
     lambda project: project.name == "Apex Precision Electronics QMS Guided Implementation"
 )
