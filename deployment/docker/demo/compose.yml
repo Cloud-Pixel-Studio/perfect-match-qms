@@ -39,6 +39,7 @@ services:
       PASSWORD_FILE: /run/secrets/odoo_pg_password
       PMQMS_ENVIRONMENT_ID_FILE: /etc/odoo/environment_id
       PMQMS_DEMO_INSTANCE: ${PMQMS_DEMO_INSTANCE:-demo}
+      PMQMS_DEMO_DATABASE: ${PMQMS_DEMO_DB:-pmqms_demo}
     command: ["odoo", "--log-level=info"]
     volumes:
       - ../../../addons:/mnt/extra-addons:rw

@@ -19,7 +19,11 @@ DEMO_2026_PUBLIC_FINGERPRINT = "2b9b1f747ffa21e0aed00e461f661ca81536689a84256626
 
 def is_authorized_demo_2026_preview(env):
     """Allow unreviewed pack exploration only in the licensed isolated Demo2."""
-    if env.cr.dbname != "pmqms_demo2" or os.getenv("PMQMS_DEMO_INSTANCE") != "demo2":
+    if (
+        os.getenv("PMQMS_DEMO_INSTANCE") != "demo2"
+        or not os.getenv("PMQMS_DEMO_DATABASE")
+        or env.cr.dbname != os.getenv("PMQMS_DEMO_DATABASE")
+    ):
         return False
     license_record = env["pm.qms.license"].current()
     if not license_record:
