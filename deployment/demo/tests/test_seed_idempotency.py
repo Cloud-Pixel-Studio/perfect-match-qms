@@ -414,7 +414,7 @@ class SeedIdentityTests(unittest.TestCase):
 
     def test_guided_project_seed_keeps_existing_project_idempotent_and_uses_no_sudo(self):
         source = SEED_PATH.read_text(encoding="utf-8")
-        block = source[source.index("if pack:"):source.index("if not project:", source.index("if pack:"))]
+        block = source[source.index("if pack:"):source.index("if not project and not SELECTIVE_2026:", source.index("if pack:"))]
         self.assertIn("if existing_project:", source)
         self.assertIn("ensure_guided_implementation_project", block)
         self.assertIn('users["Quality Manager"]', source)
