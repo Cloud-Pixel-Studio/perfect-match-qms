@@ -74,8 +74,8 @@ class PmQmsIso9001FrameworkPack(models.Model):
             raise UserError("Only the draft ISO 9001:2026 pack can enter Demo Preview.")
         if not is_authorized_demo_2026_preview(self.env):
             raise UserError("Demo Preview requires the licensed, isolated Demo2 environment.")
-        if self.company_id != self.env.company or self.sudo().search_count([]) != 1:
-            raise UserError("Demo Preview requires one pack in the isolated Demo2 company.")
+        if self.company_id != self.env.company:
+            raise UserError("Demo Preview pack must belong to the isolated Demo2 company.")
         profiles = self.env["pm.qms.mapping.profile"].search([("pack_id", "=", self.id)])
         if not (
             len(self.area_ids) == 7
